@@ -1,0 +1,48 @@
+{{- if .Values.db.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "janus.fullname" . }}-db
+  labels:
+    {{- include "janus.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.db.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "janus.db.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "janus.db.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: db
+          image: "{{ .Values.db.image }}"
+          imagePullPolicy: {{ .Values.db.imagePullPolicy }}
+          env:
+          {{- with .Values.db.env }}
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
+          ports:
+            - name: db
+              containerPort: 5432
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.db.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "janus.fullname" . }}-db
+  labels:
+    {{- include "janus.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.db.service.type }}
+  ports:
+    - port: {{ .Values.db.service.port }}
+      targetPort: {{ .Values.db.service.targetPort }}
+      protocol: {{ default "TCP" .Values.db.service.protocol }}
+      name: {{ .Values.db.service.name }}
+  selector:
+    {{- include "janus.db.selectorLabels" . | nindent 4 }}
+{{- end }}

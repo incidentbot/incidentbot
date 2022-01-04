@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: janus-db
+  namespace: janus
+spec:
+  selector:
+    matchLabels:
+      app: janus-db
+  template:
+    metadata:
+      labels:
+        app: janus-db
+    spec:
+      containers:
+        - name: db
+          image: postgres:13
+          env:
+            - name: POSTGRES_PASSWORD
+              value: 'foobar1234'
+            - name: POSTGRES_USER
+              value: 'postgres'
+          resources:
+            limits:
+              memory: '128Mi'
+              cpu: '500m'
+          ports:
+            - containerPort: 5432
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: janus-db
+  namespace: janus
+spec:
+  selector:
+    app: janus-db
+  ports:
+    - port: 5432
+      targetPort: 5432

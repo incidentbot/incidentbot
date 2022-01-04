@@ -1,0 +1,44 @@
+{
+  "channel": "{channel_id_var_placeholder}",
+  "blocks": [
+    { "type": "divider" },
+    {
+      "type": "header",
+      "text": {
+        "type": "plain_text",
+        "text": ":white_check_mark: Incident Resolved"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "This incident has been marked as resolved - but our work isn't quite over yet! Check out the incident guide to be sure all steps have been followed."
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "Please remember to create a postmortem for this incident and add it to the collection linked below. If necessary, schedule a postmortem call to go over the incident and discuss action items.."
+      }
+    },
+    {
+      "block_id": "help_buttons",
+      "type": "actions",
+      "elements": [
+        {
+          "type": "button",
+          "text": { "type": "plain_text", "text": "Incident Guide" },
+          "url": "https://www.foo.com/incident_guide"
+        },
+        {
+          "type": "button",
+          "text": { "type": "plain_text", "text": "Incident Postmortems" },
+          "url": "https://www.foo.com/incident_guide"
+        }
+      ]
+    },
+    { "type": "divider" }
+  ]
+}

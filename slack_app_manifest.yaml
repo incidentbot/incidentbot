@@ -1,0 +1,48 @@
+_metadata:
+  major_version: 1
+  minor_version: 1
+display_information:
+  name: janus
+  description: Janus helps with DevOps stuff.
+  background_color: '#000a47'
+features:
+  bot_user:
+    display_name: janus
+    always_online: false
+  slash_commands:
+    - command: /incident
+      url: https://foo.com/hooks/incident
+      description: Manages incidents.
+      should_escape: false
+oauth_config:
+  scopes:
+    bot:
+      - app_mentions:read
+      - channels:history
+      - channels:manage
+      - channels:read
+      - chat:write
+      - commands
+      - groups:read
+      - groups:write
+      - im:read
+      - im:write
+      - mpim:read
+      - mpim:write
+      - pins:write
+      - reactions:read
+      - usergroups:read
+      - users:read
+settings:
+  event_subscriptions:
+    request_url: https://foo.com/slack/events
+    bot_events:
+      - app_mention
+      - message.channels
+      - reaction_added
+  interactivity:
+    is_enabled: true
+    request_url: https://foo.com/hooks/actions
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false

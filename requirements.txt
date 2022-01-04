@@ -1,0 +1,7 @@
+flask
+psycopg2
+pyjokes
+python-dotenv
+requests
+slackclient
+slackeventsapi

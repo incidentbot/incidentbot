@@ -1,0 +1,41 @@
+version: '3.9'
+services:
+  db:
+    image: postgres:13
+    hostname: db
+    environment:
+      POSTGRES_PASSWORD: 'foobar1234'
+      POSTGRES_USER: 'postgres'
+    ports:
+      - '5432:5432'
+  server:
+    build:
+      context: .
+    depends_on:
+      - db
+    environment:
+      INCIDENTS_DIGEST_CHANNEL: 'incidents'
+      SLACK_SIGNING_SECRET: ''
+      SLACK_BOT_TOKEN: ''
+      SLACK_VERIFICATION_TOKEN: ''
+      SLACK_WORKSPACE_ID: 'myslackworkspace'
+      DATABASE_HOST: db
+      DATABASE_NAME: postgres
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: foobar1234
+      DATABASE_PORT: 5432
+      INCIDENT_AUTO_GROUP_INVITE_ENABLED: 'false'
+      INCIDENT_AUTO_GROUP_INVITE_GROUP_NAME: ''
+      INCIDENT_EXTERNAL_PROVIDERS_ENABLED: 'false'
+      INCIDENT_EXTERNAL_PROVIDERS_LIST: 'github'
+      VIDEO_CONFERENCING_LINK: ''
+      STATUSPAGE_INTEGRATION_ENABLED: 'false'
+      STATUSPAGE_API_KEY: ''
+      STATUSPAGE_PAGE_ID: ''
+    links:
+      - db
+    ports:
+      - target: 3000
+        published: 3000
+        protocol: tcp
+        mode: host

@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: janus
+  namespace: janus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: janus
+  template:
+    metadata:
+      labels:
+        app: janus
+    spec:
+      containers:
+        - name: janus
+          image: eb129/janus:v1.0.0
+          imagePullPolicy: Always
+          env:
+            - name: DATABASE_HOST
+              value: 'janus-db.janus.svc.cluster.local'
+            - name: DATABASE_NAME
+              value: 'postgres'
+            - name: DATABASE_USER
+              value: 'postgres'
+            - name: DATABASE_PASSWORD
+              value: 'foobar1234'
+            - name: DATABASE_PORT
+              value: '5432'
+            - name: SLACK_SIGNING_SECRET
+              value: ''
+            - name: SLACK_BOT_TOKEN
+              value: 'xoxb-'
+            - name: SLACK_VERIFICATION_TOKEN
+              value: ''
+            - name: SLACK_WORKSPACE_ID
+              value: ''
+            - name: INCIDENTS_DIGEST_CHANNEL
+              value: 'incidents'
+            - name: INCIDENT_AUTO_GROUP_INVITE_ENABLED
+              value: 'false'
+            - name: INCIDENT_AUTO_GROUP_INVITE_GROUP_NAME
+              value: ''
+            - name: INCIDENT_EXTERNAL_PROVIDERS_ENABLED
+              value: 'false'
+            - name: INCIDENT_EXTERNAL_PROVIDERS_LIST
+              value: 'github'
+            - name: STATUSPAGE_INTEGRATION_ENABLED
+              value: 'false'
+            - name: STATUSPAGE_API_KEY
+              value: ''
+            - name: STATUSPAGE_PAGE_ID
+              value: ''
+            - name: VIDEO_CONFERENCING_LINK
+              value: 'https://zoom.com/some-meeting-link'
+          resources:
+            limits:
+              memory: '128Mi'
+              cpu: '500m'
+          ports:
+            - containerPort: 3000
