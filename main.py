@@ -6,8 +6,9 @@ import sys
 from dotenv import load_dotenv
 from flask import Flask
 from lib.db import db
+from waitress import serve
 
-__version__ = "v1.0.0"
+__version__ = "v1.3.0"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -122,4 +123,4 @@ if __name__ == "__main__":
     templates_dir_check()
     # Startup splash for confirming key options
     startup_message()
-    app.run(host="0.0.0.0", port=3000)
+    serve(app, host="0.0.0.0", port=3000)
