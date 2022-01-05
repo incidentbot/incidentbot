@@ -1,6 +1,6 @@
 # janus
 
-<img src="https://github.com/echoboomer/janus/blob/main/assets/janus-icon.png" width="200" height="200">
+<img src="https://github.com/echoboomer/janus/blob/main/assets/janus-icon.png" width="125" height="125">
 
 An incident management ChatOps bot for Slack.
 
@@ -40,7 +40,7 @@ Don't let this bot drive your incident management process - customize it to matc
 
 The app is written in Python and backed by Postgresql.
 
-When using Docker, the `postgres` image is used with a common sense latest version.
+When using Docker, the `postgres` image is used with a common sense latest version. `nginx` is also used as a reverse proxy.
 
 The following environment variables are referenced for the database:
 
@@ -50,7 +50,7 @@ The following environment variables are referenced for the database:
 - `DATABASE_PASSWORD` - password for the user.
 - `DATABASE_PORT` - the port to use when connecting to the database.
 
-Each incident stores unique data referenced by processes throughout the app for lifecycle management on creation. The database should be durable. In the event that a record is lost while an incident is open, the bot will be unable to manage that incident and none of the commands will work.
+Each incident stores unique data referenced by processes throughout the app for lifecycle management on creation. The database should be durable and connection information should be passed to the application securely. In the event that a record is lost while an incident is open, the bot will be unable to manage that incident and none of the commands will work.
 
 If you plan on allowing users to reopen incidents by setting their status back to anything other than `Resolved`, you will need to keep these records intact as well.
 
@@ -114,7 +114,9 @@ From here, others can claim roles or assign roles and the status can be changed.
 
 When someone claims a role or is assigned a role, the bot will message that user with some helpful information regarding the role.
 
-Finally, whenever a role is assigned or claimed or the status is changed, the bot will message the incident channel:.
+Finally, whenever a role is assigned or claimed or the status is changed, the bot will message the incident channel.
+
+You can mention the bot and type `help` for a help menu.
 
 #### Incident Management Features
 
@@ -197,9 +199,11 @@ Note that `{templates_directory}` is replaced with the value of the `TEMPLATES_D
 
 You can run `python3 main.py` from the project root to start the app after adding required vars to `.env` and then use something like [ngrok](https://ngrok.com/) to route to your app for testing. It's handy to have a test Slack workspace for this.
 
-Alternatively, you can use `docker-compose.yml` and provide the environment variables. Doing this method will also run and start the database for you.
+Alternatively, you can use `docker-compose.yml` and provide the environment variables. Doing this method will also run and start the database for you as well as `nginx`.
 
 If you simply wish to start the database for local testing without starting the app, you can run `docker compose up db`. This is useful when running the app via Python directly.
+
+Keep in mind that regardless of environment, the app uses `waitress` as a production-grade WSGI. The default Flask Werkzeug process will never be used.
 
 ## Deploying
 
@@ -214,6 +218,8 @@ If you choose to use a different directory, update the environment variable `TEM
 ##### Using eb129/janus
 
 There is a version of the Dockerfile in this repository available for use according to the latest tags. In order to use this image, you'll need to have a `templates/` directory (or, again, whatever the value of `TEMPLATES_DIRECTORY` is if choosing to override) ready to be volumed in.
+
+Visit the [Dockerhub page](https://hub.docker.com/repository/docker/eb129/janus) for all available tags.
 
 #### Kubernetes
 

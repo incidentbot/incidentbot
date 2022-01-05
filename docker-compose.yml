@@ -1,14 +1,6 @@
 version: '3.9'
 services:
-  db:
-    image: postgres:13
-    hostname: db
-    environment:
-      POSTGRES_PASSWORD: 'foobar1234'
-      POSTGRES_USER: 'postgres'
-    ports:
-      - '5432:5432'
-  server:
+  bot:
     build:
       context: .
     depends_on:
@@ -32,10 +24,24 @@ services:
       STATUSPAGE_INTEGRATION_ENABLED: 'false'
       STATUSPAGE_API_KEY: ''
       STATUSPAGE_PAGE_ID: ''
+    expose:
+      - 3000
     links:
       - db
+  db:
+    image: postgres:13
+    hostname: db
+    environment:
+      POSTGRES_PASSWORD: 'foobar1234'
+      POSTGRES_USER: 'postgres'
+    expose:
+      - 5432
+  nginx:
+    build: ./nginx
+    depends_on:
+      - bot
     ports:
-      - target: 3000
-        published: 3000
+      - target: 8080
+        published: 8080
         protocol: tcp
         mode: host
