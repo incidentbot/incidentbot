@@ -1,8 +1,10 @@
 import logging
 import os
 
+from __main__ import app, config
 from dotenv import load_dotenv
 from slack import WebClient, errors
+from slackeventsapi import SlackEventAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -12,8 +14,12 @@ dotenv_path = os.path.join(
 )
 load_dotenv(dotenv_path)
 
-slack_web_client = WebClient(token=os.getenv("SLACK_BOT_TOKEN"))
-verification_token = os.getenv("SLACK_VERIFICATION_TOKEN")
+# Initialize Slack clients
+verification_token = config.slack_verification_token
+slack_events_adapter = SlackEventAdapter(
+    config.slack_signing_secret, "/slack/events", server=app
+)
+slack_web_client = WebClient(token=config.slack_bot_token)
 
 """
 Reusable variables

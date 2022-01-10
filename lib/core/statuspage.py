@@ -1,13 +1,13 @@
 import logging
 import os
 
+from __main__ import config
+from ..db import db
+from ..slack import slack_tools
+from ..statuspage import slack as spslack, statuspage
+from . import action_parameters as ap
 from dotenv import load_dotenv
 from slack import errors
-from ..statuspage import slack as spslack, statuspage
-
-from . import slack_tools
-from ..db import db
-from . import action_parameters as ap
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ dotenv_path = os.path.join(
 )
 load_dotenv(dotenv_path)
 
-log_level = os.getenv("BOT_LOG_LEVEL")
+log_level = config.log_level
 
 
 def components_select(action_parameters: type[ap.ActionParameters]):
@@ -99,7 +99,6 @@ def components_select(action_parameters: type[ap.ActionParameters]):
     logger.info(
         f"Updating incident record in database to add Statuspage incident id for channel {channel_name}..."
     )
-    print(sp_inc.info["id"])
     try:
         db.db_update_incident_sp_id_col(
             incident_id=channel_name,

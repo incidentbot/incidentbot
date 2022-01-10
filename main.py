@@ -1,3 +1,4 @@
+import config
 import logging
 import logging.config
 import os
@@ -8,26 +9,18 @@ from flask import Flask
 from lib.db import db
 from waitress import serve
 
-__version__ = "v1.3.0"
-
-# .env parse
-dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
-load_dotenv(dotenv_path)
+__version__ = "v1.4.0"
 
 # Create the logging object
 # This is used by submodules as well
 logger = logging.getLogger(__name__)
-LOGLEVEL = os.getenv("LOGLEVEL", "INFO").upper()
-logging.basicConfig(stream=sys.stdout, level=LOGLEVEL)
-
-# Where do we look for templates?
-templates_directory = os.getenv("TEMPLATES_DIRECTORY", default="templates/")
+logging.basicConfig(stream=sys.stdout, level=config.log_level)
 
 # App
 app = Flask(__name__)
 # Import routes for Flask
 import lib.core.routes
-import lib.core.slack_events
+import lib.slack.slack_events
 import lib.incident.routes
 
 
@@ -35,10 +28,10 @@ def db_check():
     logger.info("Testing the database connection...")
     db_info = f"""
 ------------------------------
-Database host:  {os.getenv("DATABASE_HOST")}
-Database port:  {os.getenv("DATABASE_PORT")}
-Database user:  {os.getenv("DATABASE_USER")}
-Database name:  {os.getenv("DATABASE_NAME")}
+Database host:  {config.database_host}
+Database port:  {config.database_port}
+Database user:  {config.database_user}
+Database name:  {config.database_name}
 ------------------------------
     """
     print(db_info)
@@ -52,50 +45,38 @@ Database name:  {os.getenv("DATABASE_NAME")}
         db.db_bootstrap()
 
 
-def env_check(envs):
-    for e in envs:
-        if os.getenv(e) == "":
-            logger.fatal(f"The environment variable {e} cannot be empty.")
-            exit(1)
-        else:
-            pass
-    if os.getenv("STATUSPAGE_INTEGRATION_ENABLED") == "true":
-        for var in ["STATUSPAGE_API_KEY", "STATUSPAGE_PAGE_ID"]:
-            if os.getenv(var) == "":
-                logger.fatal(
-                    f"If enabling the Statuspage integration, the {var} variable must be set."
-                )
-                exit(1)
-
-
 def startup_message():
     startup_message = f"""
 --------------------------------------------------------------------------------
                                 incident bot
 --------------------------------------------------------------------------------
 Core functionality:
-    Database host:                      {os.getenv("DATABASE_HOST")}
-    Incidents digest channel:           {os.getenv("INCIDENTS_DIGEST_CHANNEL")}
-    Slack workspace:                    {os.getenv("SLACK_WORKSPACE_ID")}
-    Logging level:                      {LOGLEVEL}
+    Database host:                      {config.database_host}
+    Incidents digest channel:           {config.incidents_digest_channel}
+    Slack workspace:                    {config.slack_workspace_id}
+    Logging level:                      {config.log_level}
 
 Options:
-    External providers enabled:         {os.getenv("INCIDENT_EXTERNAL_PROVIDERS_ENABLED")}
-    External providers list:            {os.getenv("INCIDENT_EXTERNAL_PROVIDERS_LIST")}
-    Statuspage integration enabled:     {os.getenv("STATUSPAGE_INTEGRATION_ENABLED")}
-    Statuspage API key:                 {os.getenv("STATUSPAGE_API_KEY")[-4:].rjust(len(os.getenv("STATUSPAGE_API_KEY")), "*")}
-    Statuspage page ID:                 {os.getenv("STATUSPAGE_PAGE_ID")[-4:].rjust(len(os.getenv("STATUSPAGE_PAGE_ID")), "*")}
+    Auto group invite enabled:          {config.incident_auto_group_invite_enabled}
+    Auto group invite group name:       {config.incident_auto_group_invite_group_name}
+    External providers enabled:         {config.incident_external_providers_enabled}
+    External providers list:            {config.incident_external_providers_list}
+    React to create incident enabled:   {config.incident_auto_create_from_react_enabled}
+    React emoji:                        {config.incident_auto_create_from_react_emoji_name}
+    Statuspage integration enabled:     {config.statuspage_integration_enabled}
+    Statuspage API key:                 {config.statuspage_api_key[-4:].rjust(len(config.statuspage_api_key), "*")}
+    Statuspage page ID:                 {config.statuspage_page_id[-4:].rjust(len(config.statuspage_page_id), "*")}
 --------------------------------------------------------------------------------
     """
     print(startup_message)
 
 
 def templates_dir_check():
-    if os.path.isdir(templates_directory):
-        logger.info(f"Templates directory found at {templates_directory}.")
+    if os.path.isdir(config.templates_directory):
+        logger.info(f"Templates directory found at {config.templates_directory}.")
     else:
         logger.fatal(
-            f"Templates directory not found - {templates_directory} was specified as the location."
+            f"Templates directory not found - {config.templates_directory} was specified as the location."
         )
         exit(1)
 
@@ -103,7 +84,7 @@ def templates_dir_check():
 if __name__ == "__main__":
     # Pre-flight checks
     # Check for environment variables
-    env_check(
+    config.env_check(
         [
             "INCIDENTS_DIGEST_CHANNEL",
             "SLACK_SIGNING_SECRET",

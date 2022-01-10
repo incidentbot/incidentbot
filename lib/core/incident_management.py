@@ -2,16 +2,15 @@ import logging
 import os
 import re
 
-from dotenv import load_dotenv
-from slack import errors
-from typing import Dict
-
-from . import slack_tools
+from __main__ import config
+from ..slack import slack_tools
 from ..incident import incident
 from ..db import db
 from ..shared import tools
-
 from . import action_parameters as ap
+from dotenv import load_dotenv
+from slack import errors
+from typing import Dict
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +20,7 @@ dotenv_path = os.path.join(
 )
 load_dotenv(dotenv_path)
 
-log_level = os.getenv("BOT_LOG_LEVEL")
+log_level = config.log_level
 
 
 def database_read(action_parameters: type[ap.ActionParameters]) -> Dict[str, str]:
@@ -158,7 +157,7 @@ def set_incident_status(action_parameters: type[ap.ActionParameters]):
         logger.info(f"Sent resolution info to {channel_name}.")
     # Also updates digest message
     channels = slack_tools.return_slack_channel_info()
-    index = tools.find_index_in_list(channels, "name", incident.digest_channel)
+    index = tools.find_index_in_list(channels, "name", config.incidents_digest_channel)
     digest_channel_id = channels[index]["id"]
     # Retrieve the existing value of severity since we need to put that back
     try:
@@ -232,7 +231,7 @@ def set_severity(action_parameters: type[ap.ActionParameters]):
     logger.info(f"Updated incident severity for {channel_name} to {action_value}.")
     # Also updates digest message
     channels = slack_tools.return_slack_channel_info()
-    index = tools.find_index_in_list(channels, "name", incident.digest_channel)
+    index = tools.find_index_in_list(channels, "name", config.incidents_digest_channel)
     digest_channel_id = channels[index]["id"]
     # Retrieve the existing value of status since we need to put that back
     try:
