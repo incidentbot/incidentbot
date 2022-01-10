@@ -15,6 +15,7 @@ An incident management ChatOps bot for Slack.
       - [Incident Management Features](#incident-management-features)
         - [Automatically inviting specific members to the channel every time an incident is started.](#automatically-inviting-specific-members-to-the-channel-every-time-an-incident-is-started)
         - [Automatically posting information regarding external providers](#automatically-posting-information-regarding-external-providers)
+        - [Automatically creating an incident via a react](#automatically-creating-an-incident-via-a-react)
       - [Statuspage Integration](#statuspage-integration)
   - [Templates](#templates)
   - [Required Variables](#required-variables)
@@ -139,6 +140,10 @@ To enable, set `INCIDENT_EXTERNAL_PROVIDERS_ENABLED` to `true` and set `INCIDENT
 
 By enabling this feature, a message will be dropped into each new incident channel providing a snapshot of the provider's current status.
 
+##### Automatically creating an incident via a react
+
+If setting `INCIDENT_AUTO_CREATE_FROM_REACT_ENABLED` to `true` and `INCIDENT_AUTO_CREATE_FROM_REACT_EMOJI_NAME` to the name of a Slack emoji, you can automatically have an incident create based on reacting to a message. The bot will create the channel with the suffix `auto-<random 6 char hashed value>` and will paste the contents of the message that was reacted to in the incident channel.
+
 #### Statuspage Integration
 
 If enabling the variable to set the Statuspage integration to enabled (see below) and providing the API key and page ID for your Statuspage account, the bot will drop in a message after the incident is opened that will allow you to create a corresponding Statuspage incident. In a future update, this process will be automated and tied to stages managed by the bot.
@@ -189,6 +194,8 @@ Note that `{templates_directory}` is replaced with the value of the `TEMPLATES_D
 - `INCIDENT_AUTO_GROUP_INVITE_GROUP_NAME` - if enabling the automatic invitation of a Slack group to each newly created incident channel (documented above), set this to the name of the Slack group. For example: `whatever-group`
 - `INCIDENT_EXTERNAL_PROVIDERS_ENABLED` - if enabling status snapshots for external providers (documented above), set this to `true`.
 - `INCIDENT_EXTERNAL_PROVIDERS_LIST` - if enabling status snapshots for external providers (documented above), set this to a comma-separated list of providers to enable. For example: `github,heroku`
+- `INCIDENT_AUTO_CREATE_FROM_REACT_ENABLED` - if enabling auto incident channel create based on react, set this to `true`.
+- `INCIDENT_AUTO_CREATE_FROM_REACT_EMOJI_NAME` - the name of the emoji that will trigger automatic incident creation.
 - `STATUSPAGE_INTEGRATION_ENABLED` - set to `true` to enable the Statuspage integration.
 - `STATUSPAGE_API_KEY` - Statuspage API key if enabling.
 - `STATUSPAGE_PAGE_ID` - Statuspage page ID if enabling.

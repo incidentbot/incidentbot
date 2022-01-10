@@ -3,6 +3,7 @@ import logging
 import os
 import requests
 
+from __main__ import config
 from dotenv import load_dotenv
 from typing import Dict, List
 
@@ -15,8 +16,8 @@ dotenv_path = os.path.join(
 load_dotenv(dotenv_path)
 
 api = "https://api.statuspage.io/v1/"
-api_key = os.getenv("STATUSPAGE_API_KEY")
-page_id = os.getenv("STATUSPAGE_PAGE_ID")
+api_key = config.statuspage_api_key
+page_id = config.statuspage_page_id
 
 headers = {
     "Authorization": f"OAuth {api_key}",

@@ -1,13 +1,10 @@
-import json
 import logging
 import os
 
-from __main__ import app
+from __main__ import app, config
 from dotenv import load_dotenv
 from flask import request
-from typing import Dict
 from ..statuspage import statuspage
-
 from . import action_parameters as ap
 from . import incident_management
 from . import statuspage
@@ -20,7 +17,7 @@ dotenv_path = os.path.join(
 )
 load_dotenv(dotenv_path)
 
-log_level = os.getenv("BOT_LOG_LEVEL")
+log_level = config.log_level
 
 
 @app.route("/hooks/actions", methods=["POST"])

@@ -1,30 +1,65 @@
 import logging
-import os
-from typing import Dict, List, Tuple
 import pyjokes
+import random
+import string
 
-from __main__ import app, __version__
-from ..core import slack_tools
+from __main__ import __version__, config
 from ..db import db
+from ..incident import routes as inc
 from ..statuspage import statuspage
-from datetime import datetime
-from slackeventsapi import SlackEventAdapter
+from . import slack_tools
+from typing import Dict, List, Tuple
 
 logger = logging.getLogger(__name__)
 
-# Initialize Slack Web API client
-slack_events_adapter = SlackEventAdapter(
-    os.getenv("SLACK_SIGNING_SECRET"), "/slack/events", server=app
-)
-
 # Error events
-@slack_events_adapter.on("error")
+@slack_tools.slack_events_adapter.on("error")
 def error_handler(err):
     print("ERROR: " + str(err))
 
 
-# Example responder to bot mentions
-@slack_events_adapter.on("app_mention")
+# React
+@slack_tools.slack_events_adapter.on("reaction_added")
+def reaction_added(event_data):
+    # Automatically create incident based on reaction with specific emoji
+    if config.incident_auto_create_from_react_enabled == "true":
+        event = event_data["event"]
+        emoji = event["reaction"]
+        channel = event["item"]["channel"]
+        ts = event["item"]["ts"]
+        # Only act if the emoji is the one we care about
+        if emoji == config.incident_auto_create_from_react_emoji_name:
+            # Retrieve the content of the message that was reacted to
+            try:
+                result = slack_tools.slack_web_client.conversations_history(
+                    channel=channel, inclusive=True, oldest=ts, limit=1
+                )
+                message = result["messages"][0]
+                message_reacted_to_content = message["text"]
+            except slack_tools.errors.SlackApiError as error:
+                logger.error(f"Error when trying to retrieve a message: {error}")
+            suffix = "".join(
+                random.choices(string.ascii_lowercase + string.digits, k=6)
+            )
+            request_parameters = {
+                "channel": channel,
+                "channel_description": f"auto-{suffix}",
+                "descriptor": f"auto-{suffix}",
+                "user": "internal_auto_create",
+                "token": slack_tools.verification_token,
+                "message_reacted_to_content": message_reacted_to_content,
+                "original_message_timestamp": ts,
+            }
+            # Create an incident based on the message using the internal path
+            try:
+                inc.create_incident(
+                    internal=True, request_parameters=request_parameters
+                )
+            except Exception as error:
+                logger.error(f"Error when trying to create an incident: {error}")
+
+
+@slack_tools.slack_events_adapter.on("app_mention")
 def handle_mentions(event_data):
     event = event_data["event"]
     # Remove the bot's user ID from the mention to parse only the text
@@ -36,25 +71,88 @@ def handle_mentions(event_data):
         else:
             channel = event["channel"]
             resp = return_help(channel)
-            slack_tools.slack_web_client.chat_postMessage(**resp)
+            try:
+                slack_tools.slack_web_client.chat_postMessage(**resp)
+            except slack_tools.errors.SlackApiError as error:
+                logger.error(f"Error when trying to post help message: {error}")
     elif "lsoi" in message:
         channel = event["channel"]
         database_data = db.db_read_all_incidents()
         resp = format_incident_list_message(channel, database_data, all=False)
-        slack_tools.slack_web_client.chat_postMessage(**resp)
+        try:
+            slack_tools.slack_web_client.chat_postMessage(**resp)
+        except slack_tools.errors.SlackApiError as error:
+            logger.error(f"Error when trying to list open incidents: {error}")
     elif "lsai" in message:
         channel = event["channel"]
         database_data = db.db_read_all_incidents()
         resp = format_incident_list_message(channel, database_data, all=True)
-        slack_tools.slack_web_client.chat_postMessage(**resp)
+        try:
+            slack_tools.slack_web_client.chat_postMessage(**resp)
+        except slack_tools.errors.SlackApiError as error:
+            logger.error(f"Error when trying to list all incidents: {error}")
     elif "ls spinc" in " ".join(message):
         channel = event["channel"]
-        if os.getenv("INCIDENT_EXTERNAL_PROVIDERS_ENABLED") != "true":
+        if config.statuspage_integration_enabled == "true":
             sp_objects = statuspage.StatuspageObjects()
             sp_incidents = sp_objects.open_incidents
             resp = format_sp_incident_list_message(channel, sp_incidents)
-            slack_tools.slack_web_client.chat_postMessage(**resp)
+            try:
+                slack_tools.slack_web_client.chat_postMessage(**resp)
+            except slack_tools.errors.SlackApiError as error:
+                logger.error(
+                    f"Error when trying to list open Statuspage incidents: {error}"
+                )
         else:
+            try:
+                slack_tools.slack_web_client.chat_postMessage(
+                    channel=channel,
+                    blocks=[
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": f"The Statuspage integration is not enabled. I cannot provide information from Statuspage as a result.",
+                            },
+                        },
+                    ],
+                )
+            except slack_tools.errors.SlackApiError as error:
+                logger.error(
+                    f"Error when trying to list open Statuspage incidents: {error}"
+                )
+    elif "tell me a joke" in " ".join(message):
+        channel = event["channel"]
+        resp = pyjokes.get_joke()
+        try:
+            slack_tools.slack_web_client.chat_postMessage(
+                channel=channel,
+                text=resp,
+            )
+        except slack_tools.errors.SlackApiError as error:
+            logger.error(f"Error when trying to send a joke: {error}")
+    elif "ping" in message:
+        channel = event["channel"]
+        try:
+            slack_tools.slack_web_client.chat_postMessage(
+                channel=channel,
+                text="pong",
+            )
+        except slack_tools.errors.SlackApiError as error:
+            logger.error(f"Error when trying to respond to a ping: {error}")
+    elif "version" in message:
+        channel = event["channel"]
+        try:
+            slack_tools.slack_web_client.chat_postMessage(
+                channel=channel,
+                text=f"I am currently running version: {__version__}",
+            )
+        except slack_tools.errors.SlackApiError as error:
+            logger.error(f"Error when trying to print version: {error}")
+    else:
+        channel = event["channel"]
+        requested = " ".join(message)
+        try:
             slack_tools.slack_web_client.chat_postMessage(
                 channel=channel,
                 blocks=[
@@ -62,55 +160,13 @@ def handle_mentions(event_data):
                         "type": "section",
                         "text": {
                             "type": "mrkdwn",
-                            "text": f"The Statuspage integration is not enabled. I cannot provide information from Statuspage as a result.",
+                            "text": f"Sorry, I don't know the command *{requested}* yet.",
                         },
                     },
                 ],
             )
-    elif "tell me a joke" in " ".join(message):
-        channel = event["channel"]
-        resp = pyjokes.get_joke()
-        slack_tools.slack_web_client.chat_postMessage(
-            channel=channel,
-            text=resp,
-        )
-    elif "ping" in message:
-        channel = event["channel"]
-        slack_tools.slack_web_client.chat_postMessage(
-            channel=channel,
-            text="pong",
-        )
-    elif "version" in message:
-        channel = event["channel"]
-        slack_tools.slack_web_client.chat_postMessage(
-            channel=channel,
-            text=f"I am currently running version: {__version__}",
-        )
-    else:
-        channel = event["channel"]
-        requested = " ".join(message)
-        slack_tools.slack_web_client.chat_postMessage(
-            channel=channel,
-            blocks=[
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": f"Sorry, I don't know the command *{requested}* yet.",
-                    },
-                },
-            ],
-        )
-
-
-## React
-# @slack_tools.slack_events_adapter.on("reaction_added")
-# def reaction_added(event_data):
-#    event = event_data["event"]
-#    emoji = event["reaction"]
-#    channel = event["item"]["channel"]
-#    text = ":%s:" % emoji
-#    slack_tools.slack_web_client.chat_postMessage(channel=channel, text=text)
+        except slack_tools.errors.SlackApiError as error:
+            logger.error(f"Error when trying to state a command doesn't exist: {error}")
 
 
 def format_incident_list_message(
@@ -304,52 +360,43 @@ def return_help(channel_id: str) -> List[str]:
     """
     Help information
     """
+    base_block = [
+        {"type": "divider"},
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": ":robot_face: Incident Bot Help",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "To use any of these commands, simply mention me and then provide the command listed below. For example: `@Incident Bot lsai`",
+            },
+        },
+        {"type": "divider"},
+    ]
+    commands = {
+        "help": "This command that explains help options.",
+        "lsai": "List *all* incidents regardless of status.",
+        "lsoi": "List only incidents that are still *open* - as in non-resolved.",
+        "ls spinc": "List *open* Statuspage incidents (if the integration is enabled)",
+        "ping": "Ping the bot to check and see if it's alive and responding.",
+        "version": "Have the bot respond with current application version.",
+    }
+    for key, value in commands.items():
+        base_block.append(
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*{key}:* {value}",
+                },
+            },
+        )
     return {
         "channel": channel_id,
-        "blocks": [
-            {"type": "divider"},
-            {
-                "type": "header",
-                "text": {
-                    "type": "plain_text",
-                    "text": ":robot_face: Incident Bot Help",
-                },
-            },
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "To use any of these commands, simply mention me and then provide the command listed below. For example: `@Incident Bot lsai`",
-                },
-            },
-            {"type": "divider"},
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "*help:* This command that explains help options.",
-                },
-            },
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "*lsoi:* List only incidents that are still *open* - as in non-resolved.",
-                },
-            },
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "*lsai:* List *all* incidents regardless of status.",
-                },
-            },
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "*ls spinc:* List *open* Statuspage incidents (if the integration is enabled).",
-                },
-            },
-        ],
+        "blocks": base_block,
     }

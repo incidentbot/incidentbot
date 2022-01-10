@@ -2,6 +2,7 @@ import datetime
 import logging
 import os
 
+from __main__ import config
 from dotenv import load_dotenv
 from ..shared import tools
 from typing import Dict
@@ -11,11 +12,6 @@ dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
 load_dotenv(dotenv_path)
 
 logger = logging.getLogger(__name__)
-
-digest_channel = os.getenv("INCIDENTS_DIGEST_CHANNEL")
-templates_directory = os.getenv("TEMPLATES_DIRECTORY", default="templates/")
-slack_workspace_id = os.getenv("SLACK_WORKSPACE_ID")
-video_conferencing_link = os.getenv("VIDEO_CONFERENCING_LINK")
 
 
 class Incident:
@@ -54,12 +50,12 @@ def build_digest_notification(createdChannelDetails: Dict[str, str]) -> Dict[str
     to be sent to Slack
     """
     variables = {
-        "channel_id_var_placeholder": digest_channel,
+        "channel_id_var_placeholder": config.incidents_digest_channel,
         "channel_name_var_placeholder": createdChannelDetails["name"],
-        "slack_workspace_id_var_placeholder": slack_workspace_id,
+        "slack_workspace_id_var_placeholder": config.slack_workspace_id,
     }
     return tools.render_json(
-        f"{templates_directory}incident_digest_notification.json", variables
+        f"{config.templates_directory}incident_digest_notification.json", variables
     )
 
 
@@ -73,7 +69,7 @@ def build_incident_channel_boilerplate(
         "channel_id_var_placeholder": createdChannelDetails["id"],
     }
     return tools.render_json(
-        f"{templates_directory}incident_channel_boilerplate.json", variables
+        f"{config.templates_directory}incident_channel_boilerplate.json", variables
     )
 
 
@@ -92,7 +88,7 @@ def build_post_resolution_message(channel: str, status: str) -> Dict[str, str]:
         "channel_id_var_placeholder": channel,
     }
     return tools.render_json(
-        f"{templates_directory}incident_resolution_message.json", variables
+        f"{config.templates_directory}incident_resolution_message.json", variables
     )
 
 
@@ -114,7 +110,7 @@ def build_role_update(channel: str, role: str, user: str) -> Dict[str, str]:
         "role_var_placeholder": role,
     }
     return tools.render_json(
-        f"{templates_directory}incident_role_update.json", variables
+        f"{config.templates_directory}incident_role_update.json", variables
     )
 
 
@@ -141,7 +137,7 @@ def build_severity_update(channel: str, severity: str) -> Dict[str, str]:
         "severity_description_var_placeholder": severity_descriptions[severity],
     }
     return tools.render_json(
-        f"{templates_directory}incident_severity_update.json", variables
+        f"{config.templates_directory}incident_severity_update.json", variables
     )
 
 
@@ -161,7 +157,7 @@ def build_status_update(channel: str, status: str) -> Dict[str, str]:
         "status_var_placeholder": status.title(),
     }
     return tools.render_json(
-        f"{templates_directory}incident_status_update.json", variables
+        f"{config.templates_directory}incident_status_update.json", variables
     )
 
 
@@ -169,7 +165,7 @@ def build_topic() -> str:
     """Formats the boilerplate messaging that will
     be used as the incident channel topic
     """
-    return f"Video Conferencing Link: {video_conferencing_link}"
+    return f"Video Conferencing Link: {config.video_conferencing_link}"
 
 
 def build_updated_digest_message(
@@ -192,10 +188,11 @@ def build_updated_digest_message(
         "status_var_placeholder": status.title(),
         "severity_var_placeholder": severity.upper(),
         "message_var_placeholder": message,
-        "slack_workspace_id_var_placeholder": slack_workspace_id,
+        "slack_workspace_id_var_placeholder": config.slack_workspace_id,
     }
     return tools.render_json(
-        f"{templates_directory}incident_digest_notification_update.json", variables
+        f"{config.templates_directory}incident_digest_notification_update.json",
+        variables,
     )
 
 
@@ -206,7 +203,6 @@ def build_user_role_notification(
     details about their role when they are assigned a role
     during an incident
     """
-    print(user, role, channel_id)
     role_descriptions = {
         "incident_commander": "The Incident Commander is the decision maker during a major incident, delegating tasks and listening to input from subject matter experts in order to bring the incident to resolution. They become the highest ranking individual on any major incident call, regardless of their day-to-day rank. Their decisions made as commander are final.\\n\\nYour job as an Incident Commander is to listen to the call and to watch the incident Slack room in order to provide clear coordination, recruiting others to gather context and details. You should not be performing any actions or remediations, checking graphs, or investigating logs. Those tasks should be delegated.\\n\\nAn IC should also be considering next steps and backup plans at every opportunity, in an effort to avoid getting stuck without any clear options to proceed and to keep things moving towards resolution.\\n\\nMore information: https://response.pagerduty.com/training/incident_commander/",
         "communications_liaison": "The purpose of the Communications Liaison is to be the primary individual in charge of notifying our customers of the current conditions, and informing the Incident Commander of any relevant feedback from customers as the incident progresses.\\n\\nIt's important for the rest of the command staff to be able to focus on the problem at hand, rather than worrying about crafting messages to customers.\\n\\nYour job as Communications Liaison is to listen to the call, watch the incident Slack room, and track incoming customer support requests, keeping track of what's going on and how far the incident is progressing (still investigating vs close to resolution).\\n\\nThe Incident Commander will instruct you to notify customers of the incident and keep them updated at various points throughout the call. You will be required to craft the message, gain approval from the IC, and then disseminate that message to customers.\\n\\nMore information: https://response.pagerduty.com/training/customer_liaison/",
@@ -219,5 +215,5 @@ def build_user_role_notification(
         "user_var_placeholder": user,
     }
     return tools.render_json(
-        f"{templates_directory}incident_user_role_dm.json", variables
+        f"{config.templates_directory}incident_user_role_dm.json", variables
     )

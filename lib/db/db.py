@@ -2,6 +2,7 @@ import logging
 import os
 import psycopg2
 
+from __main__ import config
 from dotenv import load_dotenv
 from psycopg2 import sql
 
@@ -81,11 +82,11 @@ def db_connect():
         logger.info("Connecting to database...")
         # connect to the PostgreSQL server
         conn = psycopg2.connect(
-            host=os.getenv("DATABASE_HOST"),
-            database=os.getenv("DATABASE_NAME"),
-            user=os.getenv("DATABASE_USER"),
-            password=os.getenv("DATABASE_PASSWORD"),
-            port=os.getenv("DATABASE_PORT"),
+            host=config.database_host,
+            database=config.database_name,
+            user=config.database_user,
+            password=config.database_password,
+            port=config.database_port,
         )
     except (Exception, psycopg2.DatabaseError) as e:
         logger.error(f"Error connecting to database: {e}")

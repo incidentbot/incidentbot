@@ -1,11 +1,11 @@
 import logging
-import os
 
-from __main__ import app
+from __main__ import app, config
 from flask import request
 from slack import errors
+from typing import Dict
 from ..db import db
-from ..core import slack_tools
+from ..slack import slack_tools
 from ..external import external
 from ..statuspage import slack as spslack, statuspage
 from .incident import (
@@ -30,23 +30,49 @@ enabled_providers = [
 ]
 
 
+# Route for handling inboud requests to create incidents
 @app.route("/hooks/incident", methods=["POST"])
 def incident():
-    if request.form["token"] == slack_tools.verification_token:
+    # Parse parameters from request
+    request_parameters = {
+        "channel": request.form.get("channel_name"),
+        "channel_description": request.form.get("text"),
+        "descriptor": request.form.get("text"),
+        "user": request.form.get("user_name"),
+        "token": request.form.get("token"),
+    }
+    # Pass to method to create incident
+    resp = create_incident(request_parameters)
+    # View methods must return, so this gets sent back to the user
+    return resp
+
+
+def create_incident(
+    request_parameters: Dict[str, str],
+    internal: bool = False,
+) -> str:
+    """
+    Create an incident
+    """
+    if request_parameters["token"] == slack_tools.verification_token or internal:
         """
         Return formatted incident channel name
         Typically inc-datefmt-topic
         """
-        channel_description = request.form["text"]
+        channel_description = request_parameters["channel_description"]
+        channel = request_parameters["channel"]
+        descriptor = request_parameters["descriptor"]
+        user = request_parameters["user"]
+
         if channel_description != "":
             if len(channel_description) < channel_description_max_length:
                 return_message = """
-                """
+                    """
                 incident = Incident(
                     request_data={
-                        "descriptor": request.form["text"],
-                        "channel": request.form.get("channel_name"),
-                        "user": request.form.get("user_name"),
+                        "descriptor": descriptor,
+                        "channel": channel,
+                        "user": user,
                     }
                 )
                 fmt_channel_name = incident.return_channel_name()
@@ -89,6 +115,8 @@ def incident():
                         f"Error sending message to incident digest channel: {error}"
                     )
                 channel_name = createdChannelDetails["name"]
+                channel_id = createdChannelDetails["id"]
+
                 logger.info(f"Sending message to digest channel for: {channel_name}")
 
                 """
@@ -143,10 +171,10 @@ def incident():
                 """
                 Invite required participants (optional)
                 """
-                if os.getenv("INCIDENT_AUTO_GROUP_INVITE_ENABLED") == "true":
-                    groups = slack_tools.all_workspace_groups["usergroups"]
-                    group_to_invite = os.getenv("INCIDENT_AUTO_GROUP_INVITE_GROUP_NAME")
-                    if len(groups) == 0:
+                if config.incident_auto_group_invite_enabled == "true":
+                    all_groups = slack_tools.all_workspace_groups["usergroups"]
+                    group_to_invite = config.incident_auto_group_invite_group_name
+                    if len(all_groups) == 0:
                         logger.error(
                             f"Error when inviting mandatory users: looked for group {group_to_invite} but did not find it."
                         )
@@ -157,7 +185,7 @@ def incident():
                     else:
                         try:
                             required_participants_group = [
-                                g for g in groups if g["name"] == group_to_invite
+                                g for g in all_groups if g["handle"] == group_to_invite
                             ][0]["id"]
                             required_participants_group_members = (
                                 slack_tools.slack_web_client.usergroups_users_list(
@@ -166,7 +194,7 @@ def incident():
                             )["users"]
                         except Exception as error:
                             logger.error(
-                                f"Error when inviting mandatory users: {error}"
+                                f"Error when formatting automatic invitees group name: {error}"
                             )
                         try:
                             invite = slack_tools.slack_web_client.conversations_invite(
@@ -186,9 +214,9 @@ def incident():
                 """
                 External provider statuses (optional)
                 """
-                if os.getenv("INCIDENT_EXTERNAL_PROVIDERS_ENABLED") == "true":
+                if config.incident_external_providers_enabled == "true":
                     providers = str.split(
-                        str.lower(os.getenv("INCIDENT_EXTERNAL_PROVIDERS_LIST")), ","
+                        str.lower(config.incident_external_providers_list), ","
                     )
                     for p in providers:
                         if p not in enabled_providers:
@@ -224,7 +252,7 @@ def incident():
                 """
                 Post prompt for creating Statuspage incident
                 """
-                if os.getenv("STATUSPAGE_INTEGRATION_ENABLED") == "true":
+                if config.statuspage_integration_enabled == "true":
                     sp_components = statuspage.StatuspageComponents()
                     sp_components_list = sp_components.list_of_names()
                     sp_starter_message_content = spslack.return_new_incident_message(
@@ -252,6 +280,69 @@ def incident():
                         )
                     except Exception as error:
                         logger.fatal(f"Error writing entry to database: {error}")
+
+                """
+                If this is an internal incident, parse additional values
+                """
+                if (
+                    internal
+                    and config.incident_auto_create_from_react_enabled == "true"
+                ):
+                    response = request_parameters["message_reacted_to_content"]
+                    original_channel = request_parameters["channel"]
+                    original_message_timestamp = request_parameters[
+                        "original_message_timestamp"
+                    ]
+                    formatted_timestamp = str.replace(
+                        original_message_timestamp, ".", ""
+                    )
+                    link_to_message = f"https://developstreet.slack.com/archives/{original_channel}/p{formatted_timestamp}"
+                    try:
+                        slack_tools.slack_web_client.chat_postMessage(
+                            channel=createdChannelDetails["id"],
+                            blocks=[
+                                {"type": "divider"},
+                                {
+                                    "type": "header",
+                                    "text": {
+                                        "type": "plain_text",
+                                        "text": ":warning: This incident was created via a reaction to a message.",
+                                    },
+                                },
+                                {"type": "divider"},
+                                {
+                                    "type": "section",
+                                    "text": {
+                                        "type": "mrkdwn",
+                                        "text": f"Here is a link to the original message: <{link_to_message}>",
+                                    },
+                                },
+                            ],
+                        )
+                    except errors.SlackApiError as error:
+                        logger.error(
+                            f"Error sending additional information to the incident channel {channel_name}: {error}"
+                        )
+                    logger.info(f"Sending additional information to {channel_name}.")
+                    # Message the channel where the react request came from to inform
+                    # regarding incident channel creation"\nI've created the incident channel: <#{}>".format(
+                    try:
+                        slack_tools.slack_web_client.chat_postMessage(
+                            channel=original_channel,
+                            blocks=[
+                                {
+                                    "type": "section",
+                                    "text": {
+                                        "type": "mrkdwn",
+                                        "text": f"I've created the incident channel as requested: <#{channel_id}>",
+                                    },
+                                },
+                            ],
+                        )
+                    except errors.SlackApiError as error:
+                        logger.error(
+                            f"Error when trying to let {channel_name} know about an auto created incident: {error}"
+                        )
 
                 """
                 Notify user who ran command
