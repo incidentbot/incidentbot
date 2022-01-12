@@ -1,19 +1,11 @@
 import json
 import logging
-import os
 import requests
 
 from __main__ import config
-from dotenv import load_dotenv
 from typing import Dict, List
 
 logger = logging.getLogger(__name__)
-
-# .env parse
-dotenv_path = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env"
-)
-load_dotenv(dotenv_path)
 
 api = "https://api.statuspage.io/v1/"
 api_key = config.statuspage_api_key

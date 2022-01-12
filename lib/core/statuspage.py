@@ -1,22 +1,13 @@
 import logging
-import os
 
 from __main__ import config
 from ..db import db
 from ..slack import slack_tools
 from ..statuspage import slack as spslack, statuspage
 from . import action_parameters as ap
-from dotenv import load_dotenv
 from slack import errors
 
 logger = logging.getLogger(__name__)
-
-# .env parse
-dotenv_path = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env"
-)
-load_dotenv(dotenv_path)
-
 log_level = config.log_level
 
 

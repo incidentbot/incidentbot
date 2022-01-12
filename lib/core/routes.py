@@ -1,8 +1,6 @@
 import logging
-import os
 
 from __main__ import app, config
-from dotenv import load_dotenv
 from flask import request
 from ..statuspage import statuspage
 from . import action_parameters as ap
@@ -10,13 +8,6 @@ from . import incident_management
 from . import statuspage
 
 logger = logging.getLogger(__name__)
-
-# .env parse
-dotenv_path = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env"
-)
-load_dotenv(dotenv_path)
-
 log_level = config.log_level
 
 
@@ -28,7 +19,6 @@ def actions():
     """
     payload = request.form["payload"]
     params = ap.ActionParameters(payload=payload)
-
     """
     Handle requests
     """
@@ -45,6 +35,9 @@ def actions():
             incident_management.set_incident_status(action_parameters=params)
         elif p["action_id"] == "incident.set_severity":
             incident_management.set_severity(action_parameters=params)
+        # Refresh an external provider status message
+        elif p["action_id"] == "incident.reload_status_message":
+            incident_management.reload_status_message(action_parameters=params)
     # Handle statuspage actions
     elif "statuspage" in p["action_id"]:
         # components_select only appears in the initial message and is used to create a statuspage incident

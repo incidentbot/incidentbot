@@ -11,10 +11,12 @@ log_level = os.getenv("LOGLEVEL", "INFO").upper()
 # This is used by submodules as well
 logger = logging.getLogger(__name__)
 
+
 """
 Global Variables
 """
 templates_directory = os.getenv("TEMPLATES_DIRECTORY", default="templates/")
+
 
 """
 Database Settings
@@ -25,12 +27,12 @@ database_password = os.getenv("DATABASE_PASSWORD")
 database_port = os.getenv("DATABASE_PORT")
 database_user = os.getenv("DATABASE_USER")
 
+
 """
 Incidents Module
 """
 incidents_digest_channel = os.getenv("INCIDENTS_DIGEST_CHANNEL")
 slack_workspace_id = os.getenv("SLACK_WORKSPACE_ID")
-video_conferencing_link = os.getenv("VIDEO_CONFERENCING_LINK", default="")
 
 ## Options
 incident_auto_create_from_react_enabled = os.getenv(
@@ -51,13 +53,18 @@ incident_external_providers_enabled = os.getenv(
 incident_external_providers_list = os.getenv(
     "INCIDENT_EXTERNAL_PROVIDERS_LIST", default="false"
 )
+incident_channel_topic = os.getenv("INCIDENT_CHANNEL_TOPIC")
+incident_guide_link = os.getenv("INCIDENT_GUIDE_LINK")
+incident_postmortems_link = os.getenv("INCIDENT_POSTMORTEMS_LINK")
+
 
 """
 Slack
 """
-slack_verification_token = os.getenv("SLACK_VERIFICATION_TOKEN")
-slack_signing_secret = os.getenv("SLACK_SIGNING_SECRET")
 slack_bot_token = os.getenv("SLACK_BOT_TOKEN")
+slack_signing_secret = os.getenv("SLACK_SIGNING_SECRET")
+slack_verification_token = os.getenv("SLACK_VERIFICATION_TOKEN")
+
 
 """
 Statuspage Module
@@ -67,6 +74,14 @@ statuspage_integration_enabled = os.getenv(
     "STATUSPAGE_INTEGRATION_ENABLED", default="false"
 )
 statuspage_page_id = os.getenv("STATUSPAGE_PAGE_ID", default="")
+statuspage_url = os.getenv("STATUSPAGE_URL", default="")
+
+
+"""
+External
+"""
+auth0_domain = os.getenv("AUTH0_DOMAIN", default="")
+
 
 """
 Helper Methods
@@ -74,6 +89,7 @@ Helper Methods
 
 
 def env_check(envs):
+    logger.info("Running env check...")
     for e in envs:
         if os.getenv(e) == "":
             logger.fatal(f"The environment variable {e} cannot be empty.")
@@ -92,8 +108,15 @@ def env_check(envs):
                 f"If enabling auto group invite, the INCIDENT_AUTO_GROUP_INVITE_GROUP_NAME variable must be set."
             )
             exit(1)
+    if incident_external_providers_enabled == "true":
+        if "auth0" in incident_external_providers_list:
+            if auth0_domain == "":
+                logger.fatal(
+                    f"If enabling Auth0 status updates via external providers, you must set AUTH0_DOMAIN."
+                )
+                exit(1)
     if statuspage_integration_enabled == "true":
-        for var in ["STATUSPAGE_API_KEY", "STATUSPAGE_PAGE_ID"]:
+        for var in ["STATUSPAGE_API_KEY", "STATUSPAGE_PAGE_ID", "STATUSPAGE_URL"]:
             if os.getenv(var) == "":
                 logger.fatal(
                     f"If enabling the Statuspage integration, the {var} variable must be set."

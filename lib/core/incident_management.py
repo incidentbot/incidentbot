@@ -1,25 +1,17 @@
 import logging
-import os
 import re
 
 from __main__ import config
-from ..slack import slack_tools
-from ..incident import incident
 from ..db import db
+from ..external import external
+from ..incident import incident
 from ..shared import tools
+from ..slack import slack_tools
 from . import action_parameters as ap
-from dotenv import load_dotenv
 from slack import errors
 from typing import Dict
 
 logger = logging.getLogger(__name__)
-
-# .env parse
-dotenv_path = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env"
-)
-load_dotenv(dotenv_path)
-
 log_level = config.log_level
 
 
@@ -204,6 +196,48 @@ def set_incident_status(action_parameters: type[ap.ActionParameters]):
         )
     except Exception as error:
         logger.fatal(f"Error updating entry in database: {error}")
+
+
+def reload_status_message(action_parameters: type[ap.ActionParameters]):
+    """When an incoming action is incident.reload_status_message, this method
+    checks an external provider's status page for updates
+    """
+    p = action_parameters.parameters()
+    ts = action_parameters.message_details()["ts"]
+    channel_id = p["channel_id"]
+    channel_name = p["channel_name"]
+    provider = action_parameters.actions()["value"]
+
+    # Fetch latest Status to format message
+    ext_incidents = external.ExternalProviderIncidents(
+        provider=provider,
+        days_back=5,
+        slack_channel=channel_id,
+    )
+    # Delete existing message and repost
+    try:
+        result = slack_tools.slack_web_client.chat_delete(
+            channel=channel_id,
+            ts=ts,
+        )
+        logger.debug(f"\n{result}\n")
+    except errors.SlackApiError as error:
+        logger.error(
+            f"Error deleting external provider message from channel {channel_name}: {error}"
+        )
+    # Post new message
+    try:
+        result = slack_tools.slack_web_client.chat_postMessage(
+            **ext_incidents.slack_message()
+        )
+        logger.debug(f"\n{result}\n")
+    except errors.SlackApiError as error:
+        logger.error(
+            f"Error sending external provider message to incident channel {channel_name}: {error}"
+        )
+    logger.info(
+        f"Updated external provider message for {provider} in channel {channel_name}"
+    )
 
 
 def set_severity(action_parameters: type[ap.ActionParameters]):

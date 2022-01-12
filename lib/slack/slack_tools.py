@@ -1,18 +1,10 @@
 import logging
-import os
 
 from __main__ import app, config
-from dotenv import load_dotenv
 from slack import WebClient, errors
 from slackeventsapi import SlackEventAdapter
 
 logger = logging.getLogger(__name__)
-
-# .env parse
-dotenv_path = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env"
-)
-load_dotenv(dotenv_path)
 
 # Initialize Slack clients
 verification_token = config.slack_verification_token

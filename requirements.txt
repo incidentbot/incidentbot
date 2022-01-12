@@ -1,3 +1,4 @@
+feedparser
 flask
 psycopg2
 pyjokes

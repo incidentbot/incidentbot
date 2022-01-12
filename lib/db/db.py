@@ -1,14 +1,8 @@
 import logging
-import os
 import psycopg2
 
 from __main__ import config
-from dotenv import load_dotenv
 from psycopg2 import sql
-
-# .env parse
-dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
-load_dotenv(dotenv_path)
 
 logger = logging.getLogger(__name__)
 
@@ -159,7 +153,6 @@ def db_write_incident(
 
     Args:
         incident_id - The formatted channel name (title) for the incident (primary key)
-        creation_ts - Creation timestsamp of the incident channel
         channel_id - ID of the incident channel
         channel_name - Slack channel name
         status - Status of the incident

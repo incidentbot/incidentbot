@@ -1,3 +1,4 @@
+from __main__ import config
 from typing import Dict, List
 
 sp_logo_url = "https://i.imgur.com/v4xmF6u.png"
@@ -85,7 +86,7 @@ def return_new_incident_message(
                     "action_id": "statuspage.impact_select",
                     "placeholder": {
                         "type": "plain_text",
-                        "text": "Minor",
+                        "text": "Select an impact...",
                         "emoji": True,
                     },
                     "options": [
@@ -125,7 +126,7 @@ def return_new_incident_message(
                     "action_id": "statuspage.components_status_select",
                     "placeholder": {
                         "type": "plain_text",
-                        "text": "Degraded Performance",
+                        "text": "Select status of components...",
                         "emoji": True,
                     },
                     "options": [
@@ -175,7 +176,7 @@ def return_new_incident_message(
                         "type": "button",
                         "style": "primary",
                         "text": {"type": "plain_text", "text": "Open Statuspage"},
-                        "url": "https://status.foo.com/",
+                        "url": config.statuspage_url,
                     },
                 ],
             },

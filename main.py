@@ -9,7 +9,7 @@ from flask import Flask
 from lib.db import db
 from waitress import serve
 
-__version__ = "v1.4.0"
+__version__ = "v1.5.0"
 
 # Create the logging object
 # This is used by submodules as well
@@ -87,6 +87,9 @@ if __name__ == "__main__":
     config.env_check(
         [
             "INCIDENTS_DIGEST_CHANNEL",
+            "INCIDENT_GUIDE_LINK",
+            "INCIDENT_POSTMORTEMS_LINK",
+            "INCIDENT_CHANNEL_TOPIC",
             "SLACK_SIGNING_SECRET",
             "SLACK_BOT_TOKEN",
             "SLACK_VERIFICATION_TOKEN",
