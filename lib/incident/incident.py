@@ -1,15 +1,9 @@
 import datetime
 import logging
-import os
 
 from __main__ import config
-from dotenv import load_dotenv
 from ..shared import tools
 from typing import Dict
-
-# .env parse
-dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
-load_dotenv(dotenv_path)
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +47,8 @@ def build_digest_notification(createdChannelDetails: Dict[str, str]) -> Dict[str
         "channel_id_var_placeholder": config.incidents_digest_channel,
         "channel_name_var_placeholder": createdChannelDetails["name"],
         "slack_workspace_id_var_placeholder": config.slack_workspace_id,
+        "incident_guide_link_var_placeholder": config.incident_guide_link,
+        "incident_postmortems_link_var_placeholder": config.incident_postmortems_link,
     }
     return tools.render_json(
         f"{config.templates_directory}incident_digest_notification.json", variables
@@ -67,6 +63,8 @@ def build_incident_channel_boilerplate(
     """
     variables = {
         "channel_id_var_placeholder": createdChannelDetails["id"],
+        "incident_guide_link_var_placeholder": config.incident_guide_link,
+        "incident_postmortems_link_var_placeholder": config.incident_postmortems_link,
     }
     return tools.render_json(
         f"{config.templates_directory}incident_channel_boilerplate.json", variables
@@ -86,6 +84,8 @@ def build_post_resolution_message(channel: str, status: str) -> Dict[str, str]:
     """
     variables = {
         "channel_id_var_placeholder": channel,
+        "incident_guide_link_var_placeholder": config.incident_guide_link,
+        "incident_postmortems_link_var_placeholder": config.incident_postmortems_link,
     }
     return tools.render_json(
         f"{config.templates_directory}incident_resolution_message.json", variables
@@ -165,7 +165,7 @@ def build_topic() -> str:
     """Formats the boilerplate messaging that will
     be used as the incident channel topic
     """
-    return f"Video Conferencing Link: {config.video_conferencing_link}"
+    return config.incident_channel_topic
 
 
 def build_updated_digest_message(
@@ -189,6 +189,8 @@ def build_updated_digest_message(
         "severity_var_placeholder": severity.upper(),
         "message_var_placeholder": message,
         "slack_workspace_id_var_placeholder": config.slack_workspace_id,
+        "incident_guide_link_var_placeholder": config.incident_guide_link,
+        "incident_postmortems_link_var_placeholder": config.incident_postmortems_link,
     }
     return tools.render_json(
         f"{config.templates_directory}incident_digest_notification_update.json",

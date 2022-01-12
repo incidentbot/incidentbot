@@ -1,145 +1,139 @@
+import feedparser
 import json
+import logging
 import requests
 
-from datetime import date, datetime, timedelta
-from typing import Dict
-from ..shared import tools
+from __main__ import config
+from datetime import datetime, timedelta
+from typing import Any, Dict
 
-# Upstream URLs for provider statuses
-provider_urls = {
-    "github": "https://kctbh9vrtdwd.statuspage.io/api/v2",
-    "heroku": "https://status.heroku.com/api/v4",
-}
-
-# Time/Data Scoping Variables
-time = datetime.now().strftime("%H:%M:%S")
-today = date.today()
-yesterday = today - timedelta(days=1)
+logger = logging.getLogger(__name__)
 
 
-def build_incident_channel_provider_updates(
-    channel: str, provider: str
-) -> Dict[str, str]:
-    """Formats the notification that will be
-    sent when a channel is started if service provider
-    updates are enabled
-
-    Args:
-        channel: str
-        provider: str
-
-    Returns dict[str, str] containing the formatted message
-    to be sent to Slack
+class ExternalProviderIncidents:
     """
-    if provider == "github":
-        blocks = get_github_status(github_api=provider_urls["github"])
+    Retrieve and use incidents from external providers
+    """
+
+    def __init__(
+        self,
+        provider: str,
+        slack_channel: str,
+        days_back: int = 2,
+        feed_type: str = "atom",
+    ):
+        self.provider = provider
+        self.slack_channel = slack_channel
+        self.days_back = days_back
+        self.feed_type = feed_type
+        self.provider_urls = {
+            "auth0": f"https://status.auth0.com/feed?domain={config.auth0_domain}",
+            "github": "https://www.githubstatus.com/history.atom",
+            "heroku": "https://status.heroku.com/api/v4/current-status",
+        }
+        self.parsed_feed = feedparser.parse(self.provider_urls[self.provider.lower()])
+        self.stamper = datetime.now().astimezone().strftime("%Y-%m-%dT%H:%M:%S %Z")
+
+    def matched(self) -> Dict[str, Any]:
+        """
+        Return incidents within the time delta window
+        """
+        if self.feed_type == "json":
+            resp = requests.get(self.feed)
+            resp_json = json.loads(resp.text)
+            return resp_json
+        else:
+            matched = []
+            for e in self.parsed_feed.entries:
+                updated_ts = e["updated_parsed"]
+                dt = datetime(*updated_ts[:6])
+                delta = datetime.today() - timedelta(days=self.days_back)
+                if dt > delta:
+                    matched.append(e)
+            return matched
+
+    def slack_message(self) -> Dict[str, str]:
+        blocks = [
+            {"type": "divider"},
+            {
+                "block_id": "header",
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": f":gear: Recent {self.provider} Status Updates",
+                },
+            },
+        ]
+        if len(self.matched()) == 0:
+            blocks.append(
+                {
+                    "type": "section",
+                    "fields": [
+                        {
+                            "type": "mrkdwn",
+                            "text": f"No events in the last {self.days_back} days.",
+                        },
+                    ],
+                }
+            )
+        else:
+            for e in self.matched():
+                title = e["title"]
+                link = e["link"]
+                updated = e["updated"]
+                summary = e["summary"]
+                blocks.append(
+                    {
+                        "type": "section",
+                        "fields": [
+                            {
+                                "type": "mrkdwn",
+                                "text": f"<{link}|{title}>",
+                            },
+                            {
+                                "type": "mrkdwn",
+                                "text": f"*Updated:* {updated}",
+                            },
+                        ],
+                    }
+                )
+        blocks.append(
+            {"type": "divider"},
+        )
         blocks.append(
             {
-                "block_id": "buttons",
+                "type": "context",
+                "elements": [
+                    {
+                        "type": "mrkdwn",
+                        "text": f":hourglass: Updated at {self.stamper}",
+                    },
+                ],
+            }
+        )
+        blocks.append(
+            {"type": "divider"},
+        )
+        blocks.append(
+            {
                 "type": "actions",
                 "elements": [
                     {
                         "type": "button",
-                        "text": {
-                            "type": "plain_text",
-                            "text": "GitHub Status",
-                        },
-                        "url": "https://githubstatus.com/",
-                    }
-                ],
-            }
-        )
-        msg = {
-            "channel": channel,
-            "blocks": blocks,
-        }
-    elif provider == "heroku":
-        blocks = get_heroku_status(heroku_api=provider_urls["heroku"])
-        blocks.append(
-            {
-                "block_id": "buttons",
-                "type": "actions",
-                "elements": [
+                        "text": {"type": "plain_text", "text": "Reload"},
+                        "style": "primary",
+                        "value": self.provider,
+                        "action_id": "incident.reload_status_message",
+                    },
                     {
                         "type": "button",
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Heroku Status",
-                        },
-                        "url": "https://status.heroku.com/",
-                    }
+                        "text": {"type": "plain_text", "text": "Provider Status"},
+                        "url": f"https://status.{self.provider}.com",
+                    },
                 ],
-            }
+            },
         )
-        msg = {
-            "channel": channel,
+        return {
+            "channel": self.slack_channel,
             "blocks": blocks,
         }
-    return msg
-
-
-def get_github_status(github_api) -> Dict[str, str]:
-    sr = requests.get(f"{github_api}/summary.json")
-    sp = json.loads(sr.text)
-    apps_status = sp["components"]
-    blocks = [
-        {"type": "divider"},
-        {
-            "block_id": "header",
-            "type": "header",
-            "text": {
-                "type": "plain_text",
-                "text": "Current GitHub Status",
-            },
-        },
-    ]
-    for a in apps_status:
-        n = a["name"]
-        s = a["status"]
-        d = a["description"] or "None provided"
-
-        blocks.append(
-            {
-                "block_id": f"{n}_info",
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": f"*{n}* */* `{s}`",
-                },
-            },
-        )
-    blocks.append({"type": "divider"})
-    return blocks
-
-
-def get_heroku_status(heroku_api):
-    sr = requests.get(f"{heroku_api}/current-status")
-    sp = json.loads(sr.text)
-    apps_status = sp["status"]
-    blocks = [
-        {"type": "divider"},
-        {
-            "block_id": "header",
-            "type": "header",
-            "text": {
-                "type": "plain_text",
-                "text": "Current Heroku Status",
-            },
-        },
-    ]
-    for a in apps_status:
-        l = a["system"]
-        s = a["status"]
-
-        blocks.append(
-            {
-                "block_id": f"{l}_info",
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": f"*{l}* */* `{s}`",
-                },
-            },
-        )
-    blocks.append({"type": "divider"})
-    return blocks

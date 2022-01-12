@@ -133,12 +133,12 @@ Set the OS environment variable `INCIDENT_AUTO_GROUP_INVITE_GROUP_NAME` to the n
 
 This feature currently supports the following providers, but you can write your own using the existing logic:
 
+- Auth0
 - GitHub
-- Heroku
 
-To enable, set `INCIDENT_EXTERNAL_PROVIDERS_ENABLED` to `true` and set `INCIDENT_EXTERNAL_PROVIDERS_LIST` to a comma-separated list of providers you'd like to enable. Example: `github,heroku`
+To enable, set `INCIDENT_EXTERNAL_PROVIDERS_ENABLED` to `true` and set `INCIDENT_EXTERNAL_PROVIDERS_LIST` to a comma-separated list of providers you'd like to enable. Example: `auth0,github`
 
-By enabling this feature, a message will be dropped into each new incident channel providing a snapshot of the provider's current status.
+By enabling this feature, a message will be dropped into each new incident channel for each provider that recaps, by default, all incidents in the last 5 days. There is a refresh button that will fetch status again and repost the message. This is handy when a provider is experiencing an incident but hasn't updated their status page yet.
 
 ##### Automatically creating an incident via a react
 
@@ -183,6 +183,9 @@ Note that `{templates_directory}` is replaced with the value of the `TEMPLATES_D
 - `DATABASE_PASSWORD` - password for the user.
 - `DATABASE_PORT` - the port to use when connecting to the database.
 - `INCIDENTS_DIGEST_CHANNEL` - the **name** of the incidents digest channel as described above.
+- `INCIDENT_GUIDE_LINK` - a link to your internal guide for handling incidents.
+- `INCIDENT_POSTMORTEMS_LINK` - a link to your postmortem process documentation or postmortem collection.
+- `INCIDENT_CHANNEL_TOPIC` - the topic that will be set for all new incident channels.
 - `SLACK_SIGNING_SECRET` - the signing secret pulled from the OAuth data for your Slack app.
 - `SLACK_BOT_TOKEN` - the API token to be used by your bot once it is deployed to your workspace.
 - `SLACK_VERIFICATION_TOKEN` - the verification token pulled from the OAuth data for your Slack app.
@@ -199,6 +202,7 @@ Note that `{templates_directory}` is replaced with the value of the `TEMPLATES_D
 - `STATUSPAGE_INTEGRATION_ENABLED` - set to `true` to enable the Statuspage integration.
 - `STATUSPAGE_API_KEY` - Statuspage API key if enabling.
 - `STATUSPAGE_PAGE_ID` - Statuspage page ID if enabling.
+- `STATUSPAGE_URL` - Link to the public Statuspage for your organization in the form `https://status.foo.com`.
 - `TEMPLATES_DIRECTORY` - set this to the directory your templates will be located in from the project root if you want to override the default of `templates/`. You do not need to provide this otherwise. If you do, you must include the trailing `/` - i.e. `mydirfortemplates/`
 - `VIDEO_CONFERENCING_LINK` - by default, the topic for each incident channel is set to a string containing the video conferencing link. By providing this value, it will automatically set it. If you choose not to provide this value, the topic will simply be blank.
 

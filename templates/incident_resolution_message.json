@@ -30,12 +30,12 @@
         {
           "type": "button",
           "text": { "type": "plain_text", "text": "Incident Guide" },
-          "url": "https://www.foo.com/incident_guide"
+          "url": "{incident_guide_link_var_placeholder}"
         },
         {
           "type": "button",
           "text": { "type": "plain_text", "text": "Incident Postmortems" },
-          "url": "https://www.foo.com/incident_guide"
+          "url": "{incident_postmortems_link_var_placeholder}"
         }
       ]
     },
