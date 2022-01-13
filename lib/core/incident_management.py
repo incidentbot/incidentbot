@@ -15,22 +15,12 @@ logger = logging.getLogger(__name__)
 log_level = config.log_level
 
 
-def database_read(action_parameters: type[ap.ActionParameters]) -> Dict[str, str]:
-    """Reads database data regarding an incident so values can be used
-    index 3 is boilerplate message timestamp
-    index 4 is digest message timestamp
-    """
-    p = action_parameters.parameters()
-    database_data = db.db_read_incident(p["channel_name"])
-    return {
-        "bp_message_ts": database_data[5],
-        "dig_message_ts": database_data[6],
-    }
-
-
 def assign_role(action_parameters: type[ap.ActionParameters]):
     """When an incoming action is incident.assign_role, this method
     assigns the role to the user provided in the input
+
+    Keyword arguments:
+    action_parameters -- type[ap.ActionParameters] containing Slack actions data
     """
     p = action_parameters.parameters()
     channel_name = p["channel_name"]
@@ -73,6 +63,9 @@ def assign_role(action_parameters: type[ap.ActionParameters]):
 def claim_role(action_parameters: type[ap.ActionParameters]):
     """When an incoming action is incident.claim_role, this method
     assigns the role to the user that hit the claim button
+
+    Keyword arguments:
+    action_parameters -- type[ap.ActionParameters] containing Slack actions data
     """
     p = action_parameters.parameters()
     channel_name = p["channel_name"]
@@ -114,9 +107,56 @@ def claim_role(action_parameters: type[ap.ActionParameters]):
     logger.info(f"{user} has claimed {action_value} in {channel_name}")
 
 
+def database_read(action_parameters: type[ap.ActionParameters]) -> Dict[str, str]:
+    """Reads database data regarding an incident so values can be used
+
+    Keyword arguments:
+    action_parameters -- type[ap.ActionParameters] containing Slack actions data
+    """
+    p = action_parameters.parameters()
+    database_data = db.db_read_incident(p["channel_name"])
+    return {
+        "bp_message_ts": database_data[5],
+        "dig_message_ts": database_data[6],
+    }
+
+
+def export_chat_logs(action_parameters: type[ap.ActionParameters]):
+    """When an incoming action is incident.export_chat_logs, this method
+    fetches channel history, formats it, and returns it to the channel
+
+    Keyword arguments:
+    action_parameters -- type[ap.ActionParameters] containing Slack actions data
+    """
+    p = action_parameters.parameters()
+    channel_id = p["channel_id"]
+    channel_name = p["channel_name"]
+
+    # Retrieve channel history and post as text attachment
+    history = slack_tools.get_formatted_channel_history(
+        channel_id=channel_id, channel_name=channel_name
+    )
+    try:
+        logger.info(f"Sending chat transcript to {channel_name}.")
+        result = slack_tools.slack_web_client.files_upload(
+            channels=channel_id,
+            content=history,
+            filename=f"{channel_name} Chat Transcript",
+            filetype="txt",
+            initial_comment="As requested, here is the chat transcript. Remember - while this is useful, it will likely need cultivation before being added to a postmortem.",
+            title=f"{channel_name} Chat Transcript",
+        )
+        logger.debug(f"\n{result}\n")
+    except errors.SlackApiError as error:
+        logger.error(f"Error sending message and attachment to {channel_name}: {error}")
+
+
 def set_incident_status(action_parameters: type[ap.ActionParameters]):
     """When an incoming action is incident.set_incident_status, this method
     updates the status of the incident
+
+    Keyword arguments:
+    action_parameters -- type[ap.ActionParameters] containing Slack actions data
     """
     p = action_parameters.parameters()
     channel_name = p["channel_name"]
@@ -201,6 +241,9 @@ def set_incident_status(action_parameters: type[ap.ActionParameters]):
 def reload_status_message(action_parameters: type[ap.ActionParameters]):
     """When an incoming action is incident.reload_status_message, this method
     checks an external provider's status page for updates
+
+    Keyword arguments:
+    action_parameters -- type[ap.ActionParameters] containing Slack actions data
     """
     p = action_parameters.parameters()
     ts = action_parameters.message_details()["ts"]
@@ -243,6 +286,9 @@ def reload_status_message(action_parameters: type[ap.ActionParameters]):
 def set_severity(action_parameters: type[ap.ActionParameters]):
     """When an incoming action is incident.set_severity, this method
     updates the severity of the incident
+
+    Keyword arguments:
+    action_parameters -- type[ap.ActionParameters] containing Slack actions data
     """
     p = action_parameters.parameters()
     channel_name = p["channel_name"]

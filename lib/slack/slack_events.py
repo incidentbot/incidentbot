@@ -12,6 +12,8 @@ from typing import Dict, List, Tuple
 
 logger = logging.getLogger(__name__)
 
+bot_user_id = slack_tools.slack_web_client.auth_test()["user_id"]
+
 # Error events
 @slack_tools.slack_events_adapter.on("error")
 def error_handler(err):
@@ -172,8 +174,12 @@ def handle_mentions(event_data):
 def format_incident_list_message(
     channel_id: str, incidents: List[Tuple], all: bool = False
 ) -> Dict[str, str]:
-    """
-    Format the response to show open incidents
+    """Return a message containing details on incidents
+
+    Keyword arguments:
+    channel_id -- String containing the ID of the Slack channel to send the message to
+    incidents -- List[Tuple] containing incident information
+    all -- Bool indicating whether or not all incidents should be returned regardless of status
     """
     base_block = [
         {
@@ -262,8 +268,11 @@ def format_incident_list_message(
 def format_sp_incident_list_message(
     channel_id: str, incidents: List[Dict[str, str]]
 ) -> Dict[str, str]:
-    """
-    Format the response to show open Statuspage ncidents
+    """Return a message containing details on Statuspage incidents
+
+    Keyword arguments:
+    channel_id -- String containing the ID of the Slack channel to send the message to
+    incidents -- List[Dict[str, str]] containing Statuspage incident information
     """
     base_block = [
         {
@@ -357,8 +366,10 @@ def format_sp_incident_list_message(
 
 
 def return_help(channel_id: str) -> List[str]:
-    """
-    Help information
+    """Return the help menu
+
+    Keyword arguments:
+    channel_id -- String containing the ID of the Slack channel to send the message to
     """
     base_block = [
         {"type": "divider"},
@@ -373,7 +384,7 @@ def return_help(channel_id: str) -> List[str]:
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "To use any of these commands, simply mention me and then provide the command listed below. For example: `@Incident Bot lsai`",
+                "text": f"To use any of these commands, simply mention me and then provide the command listed below. For example: `<@{bot_user_id}> lsai`",
             },
         },
         {"type": "divider"},

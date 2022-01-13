@@ -1,0 +1,27 @@
+{
+  "channel": "{user_var_placeholder}",
+  "blocks": [
+    {
+      "type": "header",
+      "text": {
+        "type": "plain_text",
+        "text": ":wave: You have been elected as the {role_var_placeholder} for an incident."
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "{role_description_var_placeholder}"
+      }
+    },
+    { "type": "divider" },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "Please join the channel here: <#{channel_name_var_placeholder}>"
+      }
+    }
+  ]
+}

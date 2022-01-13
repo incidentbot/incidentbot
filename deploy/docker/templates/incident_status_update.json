@@ -1,0 +1,21 @@
+{
+  "channel": "{channel_id_var_placeholder}",
+  "blocks": [
+    { "type": "divider" },
+    {
+      "type": "header",
+      "text": {
+        "type": "plain_text",
+        "text": ":warning: Status Update"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "The incident status has changed to *{status_var_placeholder}*."
+      }
+    },
+    { "type": "divider" }
+  ]
+}

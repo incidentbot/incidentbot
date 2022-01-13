@@ -1,8 +1,7 @@
 version: '3.9'
 services:
   bot:
-    build:
-      context: .
+    image: eb129/janus:v1.6.0
     depends_on:
       - db
     environment:
@@ -10,7 +9,7 @@ services:
       SLACK_SIGNING_SECRET: ''
       SLACK_BOT_TOKEN: ''
       SLACK_VERIFICATION_TOKEN: ''
-      SLACK_WORKSPACE_ID: 'myslackworkspace'
+      SLACK_WORKSPACE_ID: 'my-slack-workspace'
       DATABASE_HOST: db
       DATABASE_NAME: postgres
       DATABASE_USER: postgres
@@ -18,21 +17,25 @@ services:
       DATABASE_PORT: 5432
       INCIDENT_AUTO_GROUP_INVITE_ENABLED: 'false'
       INCIDENT_AUTO_GROUP_INVITE_GROUP_NAME: ''
-      INCIDENT_EXTERNAL_PROVIDERS_ENABLED: 'false'
-      INCIDENT_EXTERNAL_PROVIDERS_LIST: ''
-      INCIDENT_AUTO_CREATE_FROM_REACT_ENABLED: 'false'
-      INCIDENT_AUTO_CREATE_FROM_REACT_EMOJI_NAME: ''
-      INCIDENT_GUIDE_LINK: ''
-      INCIDENT_POSTMORTEMS_LINK: ''
-      INCIDENT_CHANNEL_TOPIC: ''
+      INCIDENT_EXTERNAL_PROVIDERS_ENABLED: 'true'
+      INCIDENT_EXTERNAL_PROVIDERS_LIST: 'github'
+      INCIDENT_AUTO_CREATE_FROM_REACT_ENABLED: 'true'
+      INCIDENT_AUTO_CREATE_FROM_REACT_EMOJI_NAME: 'create-incident'
+      INCIDENT_GUIDE_LINK: 'https://www.echoboomer.net'
+      INCIDENT_POSTMORTEMS_LINK: 'https://www.echoboomer.net'
+      INCIDENT_CHANNEL_TOPIC: 'Video Meeting: https://www.echoboomer.net'
       STATUSPAGE_INTEGRATION_ENABLED: 'false'
       STATUSPAGE_API_KEY: ''
       STATUSPAGE_PAGE_ID: ''
       STATUSPAGE_URL: ''
+      AUTH0_DOMAIN: ''
+      TEMPLATES_DIRECTORY: 'my-templates/'
     expose:
       - 3000
     links:
       - db
+    volumes:
+      - ./templates:/app/my-templates
   db:
     image: postgres:13
     hostname: db
