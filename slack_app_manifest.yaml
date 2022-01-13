@@ -23,6 +23,7 @@ oauth_config:
       - channels:read
       - chat:write
       - commands
+      - files:write
       - groups:read
       - groups:write
       - im:read

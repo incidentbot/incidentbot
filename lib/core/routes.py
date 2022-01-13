@@ -38,6 +38,9 @@ def actions():
         # Refresh an external provider status message
         elif p["action_id"] == "incident.reload_status_message":
             incident_management.reload_status_message(action_parameters=params)
+        # Export chat logs
+        elif p["action_id"] == "incident.export_chat_logs":
+            incident_management.export_chat_logs(action_parameters=params)
     # Handle statuspage actions
     elif "statuspage" in p["action_id"]:
         # components_select only appears in the initial message and is used to create a statuspage incident

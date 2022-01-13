@@ -6,32 +6,49 @@
       "type": "header",
       "text": {
         "type": "plain_text",
-        "text": ":white_check_mark: Incident Resolved"
+        "text": ":bangbang: New Incident Declared :bangbang:"
+      }
+    },
+    {
+      "block_id": "digest_channel_title",
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "Description:\n *{channel_name_var_placeholder}*"
+      }
+    },
+    {
+      "block_id": "digest_channel_status",
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "Current Status:\n *Investigating*"
+      }
+    },
+    {
+      "block_id": "digest_channel_severity",
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "Severity:\n *SEV4*"
       }
     },
     {
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": "This incident has been marked as resolved - but our work isn't quite over yet! Check out the incident guide to be sure all steps have been followed."
+        "text": "A new incident has been declared. Please use the buttons here to participate."
       }
     },
     {
-      "type": "section",
-      "text": {
-        "type": "mrkdwn",
-        "text": "Please remember to create a postmortem for this incident and add it to the collection linked below. If necessary, schedule a postmortem call to go over the incident and discuss action items.."
-      }
-    },
-    {
-      "block_id": "resolution_buttons",
       "type": "actions",
+      "block_id": "incchannelbuttons",
       "elements": [
         {
           "type": "button",
-          "text": { "type": "plain_text", "text": "Export Chat Logs" },
+          "text": { "type": "plain_text", "text": "Join Incident Channel" },
           "style": "primary",
-          "action_id": "incident.export_chat_logs"
+          "url": "https://{slack_workspace_id_var_placeholder}.slack.com/archives/{channel_name_var_placeholder}"
         },
         {
           "type": "button",

@@ -1,0 +1,21 @@
+{
+  "channel": "{channel_id_var_placeholder}",
+  "blocks": [
+    { "type": "divider" },
+    {
+      "type": "header",
+      "text": {
+        "type": "plain_text",
+        "text": ":raising_hand: Role Update"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "<@{user_var_placeholder}> has been assigned the *{role_var_placeholder}* role."
+      }
+    },
+    { "type": "divider" }
+  ]
+}

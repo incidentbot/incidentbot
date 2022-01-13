@@ -17,16 +17,16 @@ An incident management ChatOps bot for Slack.
         - [Automatically posting information regarding external providers](#automatically-posting-information-regarding-external-providers)
         - [Automatically creating an incident via a react](#automatically-creating-an-incident-via-a-react)
       - [Statuspage Integration](#statuspage-integration)
-  - [Templates](#templates)
+  - [Templates and Interpolation](#templates-and-interpolation)
+    - [Custom Templates](#custom-templates)
+    - [Interpolation Within Templates](#interpolation-within-templates)
   - [Required Variables](#required-variables)
   - [Optional Variables](#optional-variables)
   - [Testing and Development](#testing-and-development)
   - [Deploying](#deploying)
-      - [Docker](#docker)
-        - [Building From Local Code](#building-from-local-code)
-        - [Using eb129/janus](#using-eb129janus)
-      - [Kubernetes](#kubernetes)
-  - [Caveats](#caveats)
+    - [Docker](#docker)
+      - [Building From Local Code](#building-from-local-code)
+      - [Using Docker](#using-docker)
   - [Customizing](#customizing)
 
 ## Incident Management Fundamentals
@@ -58,7 +58,7 @@ If you plan on allowing users to reopen incidents by setting their status back t
 ## Requirements
 
 - [Create a Slack app](https://api.slack.com/apps?new_app=1) for this application. Call it whatever you want.
-- Use the option to create the app from a manifest. Alter the contents of `slack_app_manifest.json` as needed, paste it in, click next. You can change this stuff later, but for now this gets the app up quickly.
+- Use the option to create the app from a manifest. Alter the contents of `slack_app_manifest.json` as needed, paste it in, click next. You can change these settings later as needed.
 - Install the app to your workspace. You'll now have an OAuth token. Provide that as `SLACK_BOT_TOKEN`.
 - Find your `App Credentials` and provide the signing secret as `SLACK_SIGNING_SECRET`.
 - Provide the verification token as `SLACK_VERIFICATION_TOKEN`.
@@ -73,17 +73,17 @@ You can create an `.env` file and provide these locally, or the app will just lo
 - Allows assigning roles for incident management.
   - These roles are currently: `incident commander`, `communications liaison`, and `technical lead`.
   - The first two are based on the first and second tier of roles described by PagerDuty. The last can be thought of as a primary SME contact.
+  - If you'd like to change these definitions within the app, see the section below on customization.
 - A fully functioning digest channel that stays up to date with incident statuses that can be used by others to watch the status of incidents.
-- Optionally sources information from external providers and provides a snapshot of their statuses at the time of incident creation.
+- Optional features documented below.
 
 #### Incident Management Module Requirements
 
 Since this bot mainly helps run incidents, there are a few prerequisites.
 
-- You should have a digest channel that serves as a collection of information for all of your incidents. Provide this as `INCIDENTS_DIGEST_CHANNEL` - this is the channel **name**, not the **ID**. A common sense one is `incidents`. The idea is that all information about ongoing incidents will be sent to this channel and everyone who cares about incident management can go look there. There is only one of these digest channels.
+- You should have a digest channel that serves as a collection of information for all of your incidents. Provide this as `INCIDENTS_DIGEST_CHANNEL` - this is the channel **name**, not the **ID**. A common sense one is `incidents`. The idea is that all information about ongoing incidents will be sent to this channel and everyone who cares about incident management can go look there.
 - Your Slack workspace name (`foobar.slack.com`) minus the domain (`foobar`) should be provided as `SLACK_WORKSPACE_ID`. This is used to format some things related to sending messages to Slack.
-- You should invite your bot user to the aforementioned incidents channel at a minimum or anywhere else you'd like to use it.
-- You should ideally have a perpetual Zoom, Google Meet, etc. link prepared and provide the link via the variable listed below to help with coordinating communication efforts during incidents.
+- You should invite your bot user to the aforementioned incidents digest channel at a minimum as well as anywhere else you'd like to use it. If you'd like to enable the react-to-create feature, the bot will need to be in every channel you plan to use this in. Common places are alert channels, etc.
 
 #### Using Incident Management
 
@@ -150,30 +150,36 @@ If enabling the variable to set the Statuspage integration to enabled (see below
 
 For now, you can kick off a new incident by providing a title, description, impact, and by selecting impacted components. You can then move the Statuspage incident through phases until is resolved. Each time you do this, the message will automatically update in your incident channel.
 
-## Templates
+## Templates and Interpolation
 
-In cases where the bot communicates with Slack, the formatting for the Slack message is stored as a `json` file at whatever the value of the variable `TEMPLATES_DIRECTORY` is set to in relation to the project root - `templates/` is the default directory but can be overridden. Either way, you need a copy of each standard placeholder file located in `templates/` in this repository in whatever folder you choose to use.
+In cases where the bot communicates with Slack, the formatting for the Slack message is stored as a `json` file at whatever the value of the variable `TEMPLATES_DIRECTORY` is set to - `templates/` by default.
  
-The application uses these templates to format message [blocks](https://api.slack.com/block-kit) for Slack. The application will look for the directory at the path provided, either via the variable or at the default location of `templates/`, and it will not start if the directory is not present.
+The application uses these templates to format message [blocks](https://api.slack.com/block-kit) for Slack for specific features. The application will look for the directory at the path provided and will not start if the directory is not present.
 
-You can alter the existing templates as needed to suit your own purposes or add new ones to extend the functionality of the app. There is an interpolation process that will look for certain keywords in these templates and replace them with variables. For example:
+The templates in this repository are included with the Docker image. If you are satisfied with the standard templates, there is no further action to take.
+
+### Custom Templates
+
+You can copy the contents of the `templates/` folder in this repository (you must include all of these files at a minimum) to your own directory, customize the templates, and then volume them in (or provide them however you deploy) - be aware that adding new functionality via buttons, etc. will require other application-level changes.
+
+### Interpolation Within Templates
+
+There is a function called `render_json` that will take a `json` file and interpolate values within `{}` brackets. For example:
 
 ```python
-    variables = {
-        "header_var_placeholder": header,
-        "incident_id_var_placeholder": incident_id,
-        "new_status_placeholder": new_status,
-        "message_var_placeholder": message,
-        "slack_workspace_id_var_placeholder": slack_workspace_id,
-    }
-    return tools.render_json(
-        f"{templates_directory}/incident_digest_notification_update.json", variables
-    )
+variables = {
+    "header_var_placeholder": header,
+    "incident_id_var_placeholder": incident_id,
+    "new_status_placeholder": new_status,
+    "message_var_placeholder": message,
+    "slack_workspace_id_var_placeholder": slack_workspace_id,
+}
+return tools.render_json(
+    f"{templates_directory}/incident_digest_notification_update.json", variables
+)
 ```
 
 Within `{templates_directory}/incident_digest_notification_update.json`, the app will look for `{header_var_placeholder}` and so on and replace these statements with the value of the passed in variable.
-
-Note that `{templates_directory}` is replaced with the value of the `TEMPLATES_DIRECTORY` environment variable which is `templates/` by default. You do not have to provide this variable. See below.
 
 ## Required Variables
 
@@ -193,6 +199,7 @@ Note that `{templates_directory}` is replaced with the value of the `TEMPLATES_D
 
 ## Optional Variables
 
+- `AUTH0_DOMAIN` - If using `auth0` as an entry when enabling status for external providers, you must provide this variable and set it to the name of your Auth0 domain.
 - `INCIDENT_AUTO_GROUP_INVITE_ENABLED` - to enable the automatic invitation of a Slack group to each newly created incident channel (documented above), set this to `true`.
 - `INCIDENT_AUTO_GROUP_INVITE_GROUP_NAME` - if enabling the automatic invitation of a Slack group to each newly created incident channel (documented above), set this to the name of the Slack group. For example: `whatever-group`
 - `INCIDENT_EXTERNAL_PROVIDERS_ENABLED` - if enabling status snapshots for external providers (documented above), set this to `true`.
@@ -204,52 +211,46 @@ Note that `{templates_directory}` is replaced with the value of the `TEMPLATES_D
 - `STATUSPAGE_PAGE_ID` - Statuspage page ID if enabling.
 - `STATUSPAGE_URL` - Link to the public Statuspage for your organization in the form `https://status.foo.com`.
 - `TEMPLATES_DIRECTORY` - set this to the directory your templates will be located in from the project root if you want to override the default of `templates/`. You do not need to provide this otherwise. If you do, you must include the trailing `/` - i.e. `mydirfortemplates/`
-- `VIDEO_CONFERENCING_LINK` - by default, the topic for each incident channel is set to a string containing the video conferencing link. By providing this value, it will automatically set it. If you choose not to provide this value, the topic will simply be blank.
 
 ## Testing and Development
 
-You can run `python3 main.py` from the project root to start the app after adding required vars to `.env` and then use something like [ngrok](https://ngrok.com/) to route to your app for testing. It's handy to have a test Slack workspace for this.
-
-Alternatively, you can use `docker-compose.yml` and provide the environment variables. Doing this method will also run and start the database for you as well as `nginx`.
-
-If you simply wish to start the database for local testing without starting the app, you can run `docker compose up db`. This is useful when running the app via Python directly.
-
-Keep in mind that regardless of environment, the app uses `waitress` as a production-grade WSGI. The default Flask Werkzeug process will never be used.
+The easiest way to test the app is to create your own `docker-compose.dev.yml` file with the necessary environment variables and then run `docker compose -f docker-compose.dev.yml up --build`. This starts the database and `nginx`.
 
 ## Deploying
 
-#### Docker
+### Docker
 
-##### Building From Local Code
+#### Building From Local Code
 
 The Dockerfile can be used to create your own Docker image. All you need to change is the directory for the templates if not using the default location. Otherwise, the file is ready to build after you've made your changes.
 
 If you choose to use a different directory, update the environment variable `TEMPLATES_DIRECTORY` and then change the command in the Dockerfile to copy over the contents of that directory.
 
-##### Using eb129/janus
+#### Using Docker
 
-There is a version of the Dockerfile in this repository available for use according to the latest tags. In order to use this image, you'll need to have a `templates/` directory (or, again, whatever the value of `TEMPLATES_DIRECTORY` is if choosing to override) ready to be volumed in.
+There is a version of the Dockerfile in this repository available for use according to the latest tags. In order to use this image, you'll need to have a `templates/` directory (or, again, whatever the value of `TEMPLATES_DIRECTORY` is if choosing to override) ready to be volumed in. There is a complete example in `deploy/`.
 
-Visit the [Dockerhub page](https://hub.docker.com/repository/docker/eb129/janus) for all available tags.
+Visit the [Dockerhub page](https://hub.docker.com/repository/docker/eb129/janus) for all available tags, or build the image yourself and host it in your own repository.
 
-#### Kubernetes
+For a minimum deployment, you'll also need the `nginx/` directory present in your directory. A proper directory would look like this:
 
-Kubernetes manifests are provided and can be installed using `kustomize`:
-
-`kubectl apply -k=deploy/manifests`
-
-You may tweak the files as needed or optionally remove the database.
-
-## Caveats
-
-You have to have `postgresql` installed locally if attempting to start the app or even install dependencies via `requirements.txt`.
-
-Since the app uses `psycopg2`, it won't install if you don't have `postgresql` installed.
-
-[postgres.app](https://postgresapp.com/) makes this easy.
+```bash
+docker
+├── templates
+│   ├── incident_channel_boilerplate.json
+│   ├── incident_digest_notification.json
+│   ├── incident_digest_notification_update.json
+│   ├── incident_resolution_message.json
+│   ├── incident_role_update.json
+│   ├── incident_severity_update.json
+│   ├── incident_status_update.json
+│   └── incident_user_role_dm.json
+├── docker-compose.yml
+└── nginx
+    ├── Dockerfile
+    └── nginx.conf
+```
 
 ## Customizing
 
-You can add or change any of the templates in the `templates/` directory to suit your needs.
-
-For events-related functionality, the contents of `lib/core/slack_events.py` can be updated to add new features. Check out the documentation [here](https://github.com/slackapi/python-slack-events-api).
+This bot is ready to use out of the box with only environment variables. You can add or change any of the templates in the `templates/` directory to suit your needs if you wish to customize them.

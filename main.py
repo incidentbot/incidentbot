@@ -9,7 +9,7 @@ from flask import Flask
 from lib.db import db
 from waitress import serve
 
-__version__ = "v1.5.0"
+__version__ = "v1.6.0"
 
 # Create the logging object
 # This is used by submodules as well
