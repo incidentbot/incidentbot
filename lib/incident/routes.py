@@ -7,7 +7,7 @@ from slack import errors
 from threading import Thread
 from typing import Dict
 from ..db import db
-from ..external import external
+from ..external import epi
 from ..slack import slack_tools
 from ..statuspage import slack as spslack, statuspage
 from .incident import (
@@ -256,7 +256,7 @@ def handle_incident_optional_features(
     if config.incident_external_providers_enabled == "true":
         providers = str.split(str.lower(config.incident_external_providers_list), ",")
         for p in providers:
-            ext_incidents = external.ExternalProviderIncidents(
+            ext_incidents = epi.ExternalProviderIncidents(
                 provider=p,
                 days_back=5,
                 slack_channel=channel_id,

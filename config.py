@@ -1,6 +1,8 @@
 import logging
 import os
+
 from dotenv import load_dotenv
+from typing import List
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -65,7 +67,6 @@ slack_bot_token = os.getenv("SLACK_BOT_TOKEN")
 slack_signing_secret = os.getenv("SLACK_SIGNING_SECRET")
 slack_verification_token = os.getenv("SLACK_VERIFICATION_TOKEN")
 
-
 """
 Statuspage Module
 """
@@ -82,15 +83,24 @@ External
 """
 auth0_domain = os.getenv("AUTH0_DOMAIN", default="")
 
+"""
+Scheduler
+"""
+scheduler_db_url = f"postgresql://{database_user}:{database_password}@{database_host}:{database_port}/{database_name}"
 
 """
 Helper Methods
 """
 
 
-def env_check(envs):
+def env_check(required_envs: List[str]):
+    """Check for the existence of required env vars
+
+    Keyword arguments:
+    required_envs -- List[str] containing vars to check
+    """
     logger.info("Running env check...")
-    for e in envs:
+    for e in required_envs:
         if os.getenv(e) == "":
             logger.fatal(f"The environment variable {e} cannot be empty.")
             exit(1)
@@ -122,3 +132,30 @@ def env_check(envs):
                     f"If enabling the Statuspage integration, the {var} variable must be set."
                 )
                 exit(1)
+
+
+def slack_template_check(required_templates: List[str]):
+    """Check for the existence of the required Slack message
+    directory and json templates
+
+    Keyword arguments:
+    required_templates -- List[str] containing the names of required
+    json files in the templates_directory
+    """
+    logger.info("Running Slack template check...")
+    if os.path.isdir(templates_directory):
+        logger.info(f"Templates directory found: {templates_directory}")
+    else:
+        logger.fatal(
+            f"Templates directory not found - {templates_directory} was specified as the location."
+        )
+        exit(1)
+    for rt in required_templates:
+        if os.path.isfile(f"{templates_directory}/{rt}"):
+            logger.debug(f"Found {rt}")
+        else:
+            logger.fatal(
+                f"{rt} is a required template and is missing from the templates directory: {templates_directory}"
+            )
+            exit(1)
+    logger.info("All templates found successfully.")

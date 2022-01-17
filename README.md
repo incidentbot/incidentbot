@@ -17,6 +17,7 @@ An incident management ChatOps bot for Slack.
         - [Automatically posting information regarding external providers](#automatically-posting-information-regarding-external-providers)
         - [Automatically creating an incident via a react](#automatically-creating-an-incident-via-a-react)
       - [Statuspage Integration](#statuspage-integration)
+      - [Scheduled Tasks](#scheduled-tasks)
   - [Templates and Interpolation](#templates-and-interpolation)
     - [Custom Templates](#custom-templates)
     - [Interpolation Within Templates](#interpolation-within-templates)
@@ -149,6 +150,10 @@ If setting `INCIDENT_AUTO_CREATE_FROM_REACT_ENABLED` to `true` and `INCIDENT_AUT
 If enabling the variable to set the Statuspage integration to enabled (see below) and providing the API key and page ID for your Statuspage account, the bot will drop in a message after the incident is opened that will allow you to create a corresponding Statuspage incident. In a future update, this process will be automated and tied to stages managed by the bot.
 
 For now, you can kick off a new incident by providing a title, description, impact, and by selecting impacted components. You can then move the Statuspage incident through phases until is resolved. Each time you do this, the message will automatically update in your incident channel.
+
+#### Scheduled Tasks
+
+The application uses `flask_apscheduler` at startup and will schedule tasks defined at `lib/scheduler/tasks.py`. This is currently an advanced feature and will require you to download source and build your own image if scheduling tasks is desired.
 
 ## Templates and Interpolation
 
