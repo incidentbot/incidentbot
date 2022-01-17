@@ -6,6 +6,7 @@ import requests
 from __main__ import config
 from datetime import datetime, timedelta
 from typing import Any, Dict
+from . import stamper
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,6 @@ class ExternalProviderIncidents:
             "heroku": "https://status.heroku.com/api/v4/current-status",
         }
         self.parsed_feed = feedparser.parse(self.provider_urls[self.provider.lower()])
-        self.stamper = datetime.now().astimezone().strftime("%Y-%m-%dT%H:%M:%S %Z")
 
     def matched(self) -> Dict[str, Any]:
         """
@@ -106,7 +106,7 @@ class ExternalProviderIncidents:
                 "elements": [
                     {
                         "type": "mrkdwn",
-                        "text": f":hourglass: Updated at {self.stamper}",
+                        "text": f":hourglass: Updated at {stamper}",
                     },
                 ],
             }

@@ -3,21 +3,46 @@ import logging
 import logging.config
 import os
 import sys
+import tzlocal
 
-from dotenv import load_dotenv
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from flask import Flask
 from lib.db import db
+from lib.scheduler import tasks
+from slackeventsapi import SlackEventAdapter
 from waitress import serve
 
-__version__ = "v1.6.0"
+__version__ = "v1.7.0"
 
 # Create the logging object
 # This is used by submodules as well
 logger = logging.getLogger(__name__)
 logging.basicConfig(stream=sys.stdout, level=config.log_level)
 
+# Flask configuration
+class FlaskConfig:
+    SCHEDULER_API_ENABLED = True
+    SCHEDULER_JOBSTORES = {
+        "default": SQLAlchemyJobStore(
+            url=config.scheduler_db_url, tablename="apscheduler_jobs"
+        )
+    }
+    SCHEDULER_TIMEZONE = str(tzlocal.get_localzone())
+
+
 # App
 app = Flask(__name__)
+## Load Configuration
+app.config.from_object(FlaskConfig())
+## Initialize Task Scheduler
+task_scheduler = tasks.TaskScheduler(app=app)
+## Slack Events Adapter
+slack_events_adapter = SlackEventAdapter(
+    config.slack_signing_secret,
+    "/slack/events",
+    server=app,
+)
+
 # Import routes for Flask
 import lib.core.routes
 import lib.slack.slack_events
@@ -71,21 +96,11 @@ Options:
     print(startup_message)
 
 
-def templates_dir_check():
-    if os.path.isdir(config.templates_directory):
-        logger.info(f"Templates directory found at {config.templates_directory}.")
-    else:
-        logger.fatal(
-            f"Templates directory not found - {config.templates_directory} was specified as the location."
-        )
-        exit(1)
-
-
 if __name__ == "__main__":
     # Pre-flight checks
-    # Check for environment variables
+    ## Check for environment variables
     config.env_check(
-        [
+        required_envs=[
             "INCIDENTS_DIGEST_CHANNEL",
             "INCIDENT_GUIDE_LINK",
             "INCIDENT_POSTMORTEMS_LINK",
@@ -101,10 +116,24 @@ if __name__ == "__main__":
             "DATABASE_PORT",
         ]
     )
-    # Make sure database connection works
+    ## Make sure database connection works
     db_check()
-    # Make sure templates directory exists
-    templates_dir_check()
-    # Startup splash for confirming key options
+    ## Make sure templates directory exists and all templates are present
+    config.slack_template_check(
+        required_templates=[
+            "incident_channel_boilerplate.json",
+            "incident_digest_notification_update.json",
+            "incident_digest_notification.json",
+            "incident_resolution_message.json",
+            "incident_role_update.json",
+            "incident_severity_update.json",
+            "incident_status_update.json",
+            "incident_user_role_dm.json",
+        ]
+    )
+    ## Start scheduler and add scheduled tasks
+    task_scheduler.start()
+    tasks.job_definitions(task_scheduler.scheduler)
+    ## Startup splash for confirming key options
     startup_message()
     serve(app, host="0.0.0.0", port=3000)

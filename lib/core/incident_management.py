@@ -3,7 +3,7 @@ import re
 
 from __main__ import config
 from ..db import db
-from ..external import external
+from ..external import epi
 from ..incident import incident
 from ..shared import tools
 from ..slack import slack_tools
@@ -252,7 +252,7 @@ def reload_status_message(action_parameters: type[ap.ActionParameters]):
     provider = action_parameters.actions()["value"]
 
     # Fetch latest Status to format message
-    ext_incidents = external.ExternalProviderIncidents(
+    ext_incidents = epi.ExternalProviderIncidents(
         provider=provider,
         days_back=5,
         slack_channel=channel_id,
