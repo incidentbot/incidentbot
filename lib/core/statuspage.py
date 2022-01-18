@@ -59,8 +59,8 @@ def components_select(action_parameters: type[ap.ActionParameters]):
             f"Error sending Statuspage starter to incident channel {channel_name}: {error}"
         )
     # Delete the original message after the incident is created
-    database_data = db.db_read_incident(channel_name)
-    sp_initial_message_timestamp = database_data[7]
+    incident_data = db.db_read_incident(incident_id=p["channel_name"])
+    sp_initial_message_timestamp = incident_data.sp_message_ts
     try:
         result = slack_tools.slack_web_client.chat_delete(
             channel=channel_id,
@@ -111,9 +111,9 @@ def update_status(action_parameters: type[ap.ActionParameters]):
     p = action_parameters.parameters()
     channel_id = p["channel_id"]
     channel_name = p["channel_name"]
-    database_data = db.db_read_incident(channel_name)
-    sp_updated_message_timestamp = database_data[7]
-    sp_incident_id = database_data[8]
+    incident_data = db.db_read_incident(incident_id=p["channel_name"])
+    sp_updated_message_timestamp = incident_data.sp_message_ts
+    sp_incident_id = incident_data.sp_incident_id
 
     #
     incoming_status_change = action_parameters.actions()["selected_option"]["value"]
