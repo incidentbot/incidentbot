@@ -28,7 +28,7 @@ database_name = os.getenv("DATABASE_NAME")
 database_password = os.getenv("DATABASE_PASSWORD")
 database_port = os.getenv("DATABASE_PORT")
 database_user = os.getenv("DATABASE_USER")
-
+database_url = f"postgresql://{database_user}:{database_password}@{database_host}:{database_port}/{database_name}"
 
 """
 Incidents Module
@@ -67,6 +67,7 @@ slack_bot_token = os.getenv("SLACK_BOT_TOKEN")
 slack_signing_secret = os.getenv("SLACK_SIGNING_SECRET")
 slack_verification_token = os.getenv("SLACK_VERIFICATION_TOKEN")
 
+
 """
 Statuspage Module
 """
@@ -83,10 +84,6 @@ External
 """
 auth0_domain = os.getenv("AUTH0_DOMAIN", default="")
 
-"""
-Scheduler
-"""
-scheduler_db_url = f"postgresql://{database_user}:{database_password}@{database_host}:{database_port}/{database_name}"
 
 """
 Helper Methods

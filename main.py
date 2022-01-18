@@ -1,7 +1,6 @@
 import config
 import logging
 import logging.config
-import os
 import sys
 import tzlocal
 
@@ -12,7 +11,7 @@ from lib.scheduler import tasks
 from slackeventsapi import SlackEventAdapter
 from waitress import serve
 
-__version__ = "v1.7.0"
+__version__ = "v1.8.0"
 
 # Create the logging object
 # This is used by submodules as well
@@ -24,7 +23,7 @@ class FlaskConfig:
     SCHEDULER_API_ENABLED = True
     SCHEDULER_JOBSTORES = {
         "default": SQLAlchemyJobStore(
-            url=config.scheduler_db_url, tablename="apscheduler_jobs"
+            url=config.database_url, tablename="apscheduler_jobs"
         )
     }
     SCHEDULER_TIMEZONE = str(tzlocal.get_localzone())
@@ -63,11 +62,6 @@ Database name:  {config.database_name}
     if not db.db_verify():
         logger.fatal("Cannot connect to the database - check settings and try again.")
         exit(1)
-    else:
-        logger.info(
-            "Database connection works - checking to see if it needs to be bootstrapped..."
-        )
-        db.db_bootstrap()
 
 
 def startup_message():

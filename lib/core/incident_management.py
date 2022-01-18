@@ -107,20 +107,6 @@ def claim_role(action_parameters: type[ap.ActionParameters]):
     logger.info(f"{user} has claimed {action_value} in {channel_name}")
 
 
-def database_read(action_parameters: type[ap.ActionParameters]) -> Dict[str, str]:
-    """Reads database data regarding an incident so values can be used
-
-    Keyword arguments:
-    action_parameters -- type[ap.ActionParameters] containing Slack actions data
-    """
-    p = action_parameters.parameters()
-    database_data = db.db_read_incident(p["channel_name"])
-    return {
-        "bp_message_ts": database_data[5],
-        "dig_message_ts": database_data[6],
-    }
-
-
 def export_chat_logs(action_parameters: type[ap.ActionParameters]):
     """When an incoming action is incident.export_chat_logs, this method
     fetches channel history, formats it, and returns it to the channel
@@ -162,7 +148,7 @@ def set_incident_status(action_parameters: type[ap.ActionParameters]):
     channel_name = p["channel_name"]
 
     channel_id = p["channel_id"]
-    database_query_values = database_read(action_parameters=action_parameters)
+    incident_data = db.db_read_incident(incident_id=p["channel_name"])
 
     action_value = action_parameters.actions()["selected_option"]["value"]
     message = incident.build_status_update(channel_id, action_value)
@@ -196,7 +182,7 @@ def set_incident_status(action_parameters: type[ap.ActionParameters]):
         result = slack_tools.slack_web_client.conversations_history(
             channel=digest_channel_id,
             inclusive=True,
-            oldest=database_query_values["dig_message_ts"],
+            oldest=incident_data.dig_message_ts,
             limit=1,
         )
         message = result["messages"][0]
@@ -218,7 +204,7 @@ def set_incident_status(action_parameters: type[ap.ActionParameters]):
     try:
         slack_tools.slack_web_client.chat_update(
             channel=digest_channel_id,
-            ts=database_query_values["dig_message_ts"],
+            ts=incident_data.dig_message_ts,
             blocks=new_digest_message["blocks"],
         )
     except errors.SlackApiError as e:
@@ -294,7 +280,7 @@ def set_severity(action_parameters: type[ap.ActionParameters]):
     channel_name = p["channel_name"]
 
     channel_id = p["channel_id"]
-    database_query_values = database_read(action_parameters=action_parameters)
+    incident_data = db.db_read_incident(incident_id=p["channel_name"])
 
     action_value = action_parameters.actions()["selected_option"]["value"]
     message = incident.build_severity_update(
@@ -318,7 +304,7 @@ def set_severity(action_parameters: type[ap.ActionParameters]):
         result = slack_tools.slack_web_client.conversations_history(
             channel=digest_channel_id,
             inclusive=True,
-            oldest=database_query_values["dig_message_ts"],
+            oldest=incident_data.dig_message_ts,
             limit=1,
         )
         message = result["messages"][0]
@@ -338,7 +324,7 @@ def set_severity(action_parameters: type[ap.ActionParameters]):
     try:
         slack_tools.slack_web_client.chat_update(
             channel=digest_channel_id,
-            ts=database_query_values["dig_message_ts"],
+            ts=incident_data.dig_message_ts,
             blocks=new_digest_message["blocks"],
         )
     except errors.SlackApiError as error:

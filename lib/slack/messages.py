@@ -2,7 +2,7 @@ import logging
 
 from . import slack_tools
 from apscheduler.job import Job
-from typing import Any, Dict, List, Tuple
+from typing import Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +88,7 @@ def i_dont_know(channel_id: str, requested: str):
 
 
 def incident_list_message(
-    channel_id: str, incidents: List[Tuple], all: bool = False
+    channel_id: str, incidents: List, all: bool = False
 ) -> Dict[str, str]:
     """Return a message containing details on incidents
 
@@ -124,9 +124,6 @@ def incident_list_message(
         return none_found_block
     else:
         for inc in incidents:
-            channel_id_int = inc[1]
-            status = inc[3]
-            severity = inc[4]
             if all == True:
                 formatted_incidents.append(
                     {
@@ -134,37 +131,37 @@ def incident_list_message(
                         "fields": [
                             {
                                 "type": "mrkdwn",
-                                "text": f"*ID:* <#{channel_id_int}>",
+                                "text": f"*ID:* <#{inc.channel_id}>",
                             },
                             {
                                 "type": "mrkdwn",
-                                "text": f"*Severity:* {severity.upper()}",
+                                "text": f"*Severity:* {inc.severity.upper()}",
                             },
                             {
                                 "type": "mrkdwn",
-                                "text": f"*Status:* {status.title()}",
+                                "text": f"*Status:* {inc.status.title()}",
                             },
                         ],
                     }
                 )
                 formatted_incidents.append({"type": "divider"})
             elif all == False:
-                if status != "resolved":
+                if inc.status != "resolved":
                     formatted_incidents.append(
                         {
                             "type": "section",
                             "fields": [
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*ID:* <#{channel_id_int}>",
+                                    "text": f"*ID:* <#{inc.channel_id}>",
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Severity:* {severity.upper()}",
+                                    "text": f"*Severity:* {inc.severity.upper()}",
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Status:* {status.title()}",
+                                    "text": f"*Status:* {inc.status.title()}",
                                 },
                             ],
                         }
