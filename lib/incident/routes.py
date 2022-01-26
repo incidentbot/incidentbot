@@ -211,7 +211,7 @@ def handle_incident_optional_features(
     channel_id = createdChannelDetails["id"]
     channel_name = createdChannelDetails["name"]
     created_from_web = request_parameters["created_from_web"]
-    if not internal and not created_from_web:
+    if not internal or not created_from_web:
         response_helper(
             response_url=request_parameters["response_url"],
             response=f"I will continue to work on options in the background if any were enabled. I'm here if you need me!",
@@ -266,7 +266,7 @@ def handle_incident_optional_features(
                 logger.error(
                     f"Error sending external provider message to incident channel: {p} is not a valid provider - options are {enabled_providers}"
                 )
-                if not internal and not created_from_web:
+                if not internal or not created_from_web:
                     response_helper(
                         response_url=request_parameters["response_url"],
                         response=f"I was unable to send status updates for the following provider - verify compatibility: {p}",
