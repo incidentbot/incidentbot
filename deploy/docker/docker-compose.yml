@@ -29,13 +29,15 @@ services:
       STATUSPAGE_PAGE_ID: ''
       STATUSPAGE_URL: ''
       AUTH0_DOMAIN: ''
-      TEMPLATES_DIRECTORY: 'my-templates/'
+      TEMPLATES_DIRECTORY: 'my-templates/slack/'
+      WEB_INTERFACE_ENABLED: 'true'
+      FLASK_APP_SECRET_KEY: 'supersecret'
     expose:
       - 3000
     links:
       - db
     volumes:
-      - ./templates:/app/my-templates
+      - ./templates/slack/:/app/my-templates/slack/
   db:
     image: postgres:13
     hostname: db

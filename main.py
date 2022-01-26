@@ -11,7 +11,7 @@ from lib.scheduler import tasks
 from slackeventsapi import SlackEventAdapter
 from waitress import serve
 
-__version__ = "v1.8.0"
+__version__ = "v1.9.0"
 
 # Create the logging object
 # This is used by submodules as well
@@ -46,6 +46,9 @@ slack_events_adapter = SlackEventAdapter(
 import lib.core.routes
 import lib.slack.slack_events
 import lib.incident.routes
+
+if config.web_interface_enabled == "true":
+    import lib.core.webapp
 
 
 def db_check():
@@ -85,6 +88,7 @@ Options:
     Statuspage integration enabled:     {config.statuspage_integration_enabled}
     Statuspage API key:                 {config.statuspage_api_key[-4:].rjust(len(config.statuspage_api_key), "*")}
     Statuspage page ID:                 {config.statuspage_page_id[-4:].rjust(len(config.statuspage_page_id), "*")}
+    Web interface enabled:              {config.web_interface_enabled}
 --------------------------------------------------------------------------------
     """
     print(startup_message)

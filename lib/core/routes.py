@@ -19,6 +19,7 @@ def actions():
     """
     payload = request.form["payload"]
     params = ap.ActionParameters(payload=payload)
+
     """
     Handle requests
     """

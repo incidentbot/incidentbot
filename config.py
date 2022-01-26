@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 """
 Global Variables
 """
-templates_directory = os.getenv("TEMPLATES_DIRECTORY", default="templates/")
+templates_directory = os.getenv("TEMPLATES_DIRECTORY", default="templates/slack/")
 
 
 """
@@ -34,7 +34,6 @@ database_url = f"postgresql://{database_user}:{database_password}@{database_host
 Incidents Module
 """
 incidents_digest_channel = os.getenv("INCIDENTS_DIGEST_CHANNEL")
-slack_workspace_id = os.getenv("SLACK_WORKSPACE_ID")
 
 ## Options
 incident_auto_create_from_react_enabled = os.getenv(
@@ -58,7 +57,10 @@ incident_external_providers_list = os.getenv(
 incident_channel_topic = os.getenv("INCIDENT_CHANNEL_TOPIC")
 incident_guide_link = os.getenv("INCIDENT_GUIDE_LINK")
 incident_postmortems_link = os.getenv("INCIDENT_POSTMORTEMS_LINK")
-
+# These lists get referenced as top-level declarations of available options
+# for incident management status and severity
+statuses = ["investigating", "identified", "monitoring", "resolved"]
+severities = ["sev1", "sev2", "sev3", "sev4"]
 
 """
 Slack
@@ -66,7 +68,7 @@ Slack
 slack_bot_token = os.getenv("SLACK_BOT_TOKEN")
 slack_signing_secret = os.getenv("SLACK_SIGNING_SECRET")
 slack_verification_token = os.getenv("SLACK_VERIFICATION_TOKEN")
-
+slack_workspace_id = os.getenv("SLACK_WORKSPACE_ID")
 
 """
 Statuspage Module
@@ -83,6 +85,13 @@ statuspage_url = os.getenv("STATUSPAGE_URL", default="")
 External
 """
 auth0_domain = os.getenv("AUTH0_DOMAIN", default="")
+
+
+"""
+Web Application
+"""
+flask_app_secret_key = os.getenv("FLASK_APP_SECRET_KEY", default="")
+web_interface_enabled = os.getenv("WEB_INTERFACE_ENABLED", default="false")
 
 
 """
