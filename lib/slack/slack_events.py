@@ -6,6 +6,7 @@ import string
 from __main__ import __version__, config, slack_events_adapter, task_scheduler
 from ..db import db
 from ..incident import routes as inc
+from ..shared import tools
 from ..statuspage import statuspage
 from . import slack_tools, messages
 
@@ -37,13 +38,10 @@ def reaction_added(event_data):
                 message_reacted_to_content = message["text"]
             except slack_tools.errors.SlackApiError as error:
                 logger.error(f"Error when trying to retrieve a message: {error}")
-            suffix = "".join(
-                random.choices(string.ascii_lowercase + string.digits, k=6)
-            )
             request_parameters = {
                 "channel": channel,
-                "channel_description": f"auto-{suffix}",
-                "descriptor": f"auto-{suffix}",
+                "channel_description": f"auto-{tools.random_suffix}",
+                "descriptor": f"auto-{tools.random_suffix}",
                 "user": "internal_auto_create",
                 "token": slack_tools.verification_token,
                 "message_reacted_to_content": message_reacted_to_content,

@@ -2,7 +2,7 @@
 
 <img src="https://github.com/echoboomer/janus/blob/main/assets/janus-icon.png" width="125" height="125">
 
-An incident management ChatOps bot for Slack.
+An incident management ChatOps bot for Slack with a web interface, integrations for services like Statuspage, and handy features to automate discovery of downstream issues.
 
 - [janus](#janus)
   - [Incident Management Fundamentals](#incident-management-fundamentals)
@@ -17,7 +17,8 @@ An incident management ChatOps bot for Slack.
         - [Automatically posting information regarding external providers](#automatically-posting-information-regarding-external-providers)
         - [Automatically creating an incident via a react](#automatically-creating-an-incident-via-a-react)
       - [Statuspage Integration](#statuspage-integration)
-      - [Scheduled Tasks](#scheduled-tasks)
+    - [Scheduled Tasks](#scheduled-tasks)
+    - [Web Interface](#web-interface)
   - [Templates and Interpolation](#templates-and-interpolation)
     - [Custom Templates](#custom-templates)
     - [Interpolation Within Templates](#interpolation-within-templates)
@@ -28,7 +29,6 @@ An incident management ChatOps bot for Slack.
     - [Docker](#docker)
       - [Building From Local Code](#building-from-local-code)
       - [Using Docker](#using-docker)
-  - [Customizing](#customizing)
 
 ## Incident Management Fundamentals
 
@@ -151,13 +151,27 @@ If enabling the variable to set the Statuspage integration to enabled (see below
 
 For now, you can kick off a new incident by providing a title, description, impact, and by selecting impacted components. You can then move the Statuspage incident through phases until is resolved. Each time you do this, the message will automatically update in your incident channel.
 
-#### Scheduled Tasks
+### Scheduled Tasks
 
 The application uses `flask_apscheduler` at startup and will schedule tasks defined at `lib/scheduler/tasks.py`. This is currently an advanced feature and will require you to download source and build your own image if scheduling tasks is desired.
 
+### Web Interface
+
+The application includes a web interface with user management features that can optionally be enabled by setting `WEB_INTERFACE_ENABLED` to `true`. If enabled, the interface is accessible at `/admin`. You also need to set `FLASK_APP_SECRET_KEY` to a secret string of your choosing.
+
+You will most likely want to edit the templates at `templates/webapp` to customize what options you may want available. You can set the bot name and other default parameters for the web interface within `lib/core/webapp.py` using the `@app.context_processor` section.
+
+A default admin account is created with the username `admin@admin.com` and password `admin` when the app is first started. You should login using these credentials, access the admin panel, create your own users, and then disable the admin account. As long as the admin account is disabled, it will not be recreated.
+
+If you wish to allow users to sign up for their own (non-admin) accounts, you can set `signups_enabled=True` in `lib/core/webapp.py` which will enable the route and the sign up button in the UI.
+
+You can customize the HTML templates files to adjust the roles that users can be assigned, etc. This is all up to you.
+
+**Note:** Security within your environment is not the concern of this tool. The web interface is provided as-is, and you should tweak these settings and take other actions in your own environment to secure access to this interface as needed. I have done my best to secure the application, but you should not expose the web interface to the public when possible.
+
 ## Templates and Interpolation
 
-In cases where the bot communicates with Slack, the formatting for the Slack message is stored as a `json` file at whatever the value of the variable `TEMPLATES_DIRECTORY` is set to - `templates/` by default.
+In cases where the bot communicates with Slack, the formatting for the Slack message is stored as a `json` file at whatever the value of the variable `TEMPLATES_DIRECTORY` is set to - `templates/slack/` by default.
  
 The application uses these templates to format message [blocks](https://api.slack.com/block-kit) for Slack for specific features. The application will look for the directory at the path provided and will not start if the directory is not present.
 
@@ -194,8 +208,8 @@ Within `{templates_directory}/incident_digest_notification_update.json`, the app
 - `DATABASE_PASSWORD` - password for the user.
 - `DATABASE_PORT` - the port to use when connecting to the database.
 - `INCIDENTS_DIGEST_CHANNEL` - the **name** of the incidents digest channel as described above.
-- `INCIDENT_GUIDE_LINK` - a link to your internal guide for handling incidents.
-- `INCIDENT_POSTMORTEMS_LINK` - a link to your postmortem process documentation or postmortem collection.
+- `INCIDENT_GUIDE_LINK` - a link to your internal guide for handling incidents. **Note:** This must be a fully formed URL - example: `https://mylink.com`.
+- `INCIDENT_POSTMORTEMS_LINK` - a link to your postmortem process documentation or postmortem collection. **Note:** This must be a fully formed URL - example: `https://mylink.com`.
 - `INCIDENT_CHANNEL_TOPIC` - the topic that will be set for all new incident channels.
 - `SLACK_SIGNING_SECRET` - the signing secret pulled from the OAuth data for your Slack app.
 - `SLACK_BOT_TOKEN` - the API token to be used by your bot once it is deployed to your workspace.
@@ -214,8 +228,9 @@ Within `{templates_directory}/incident_digest_notification_update.json`, the app
 - `STATUSPAGE_INTEGRATION_ENABLED` - set to `true` to enable the Statuspage integration.
 - `STATUSPAGE_API_KEY` - Statuspage API key if enabling.
 - `STATUSPAGE_PAGE_ID` - Statuspage page ID if enabling.
-- `STATUSPAGE_URL` - Link to the public Statuspage for your organization in the form `https://status.foo.com`.
-- `TEMPLATES_DIRECTORY` - set this to the directory your templates will be located in from the project root if you want to override the default of `templates/`. You do not need to provide this otherwise. If you do, you must include the trailing `/` - i.e. `mydirfortemplates/`
+- `STATUSPAGE_URL` - Link to the public Statuspage for your organization. **Note:** This must be a fully formed URL - example: `https://status.foo.com`.
+- `TEMPLATES_DIRECTORY` - set this to the directory your templates will be located in from the project root if you want to override the default of `templates/slack/`. You do not need to provide this otherwise. If you do, you must include the trailing `/` - i.e. `mydirfortemplates/`
+- `WEB_INTERFACE_ENABLED` - set this to `true` to enable the optional web management interface.
 
 ## Testing and Development
 
@@ -233,7 +248,7 @@ If you choose to use a different directory, update the environment variable `TEM
 
 #### Using Docker
 
-There is a version of the Dockerfile in this repository available for use according to the latest tags. In order to use this image, you'll need to have a `templates/` directory (or, again, whatever the value of `TEMPLATES_DIRECTORY` is if choosing to override) ready to be volumed in. There is a complete example in `deploy/`.
+There is a version of the Dockerfile in this repository available for use according to the latest tags. In order to use this image, you'll need to have a `templates/slack/` directory (or, again, whatever the value of `TEMPLATES_DIRECTORY` is if choosing to override) ready to be volumed in. There is a complete example in `deploy/`.
 
 Visit the [Dockerhub page](https://hub.docker.com/repository/docker/eb129/janus) for all available tags, or build the image yourself and host it in your own repository.
 
@@ -241,7 +256,7 @@ For a minimum deployment, you'll also need the `nginx/` directory present in you
 
 ```bash
 docker
-├── templates
+├── templates/slack
 │   ├── incident_channel_boilerplate.json
 │   ├── incident_digest_notification.json
 │   ├── incident_digest_notification_update.json
@@ -255,7 +270,3 @@ docker
     ├── Dockerfile
     └── nginx.conf
 ```
-
-## Customizing
-
-This bot is ready to use out of the box with only environment variables. You can add or change any of the templates in the `templates/` directory to suit your needs if you wish to customize them.

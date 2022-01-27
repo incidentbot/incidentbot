@@ -6,6 +6,7 @@ COPY requirements.txt /app
 COPY config.py /app
 COPY main.py /app
 COPY ./templates /app/templates
+COPY ./static /app/static
 
 # Set the work directory to the app folder.
 WORKDIR /app

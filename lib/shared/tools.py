@@ -1,4 +1,8 @@
 import json
+import random
+import string
+
+random_suffix = "".join(random.choices(string.ascii_lowercase + string.digits, k=6))
 
 
 def find_index_in_list(lst, key, value):

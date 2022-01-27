@@ -9,7 +9,7 @@ from ..shared import tools
 from ..slack import slack_tools
 from . import action_parameters as ap
 from slack import errors
-from typing import Dict
+from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
 log_level = config.log_level
@@ -137,20 +137,32 @@ def export_chat_logs(action_parameters: type[ap.ActionParameters]):
         logger.error(f"Error sending message and attachment to {channel_name}: {error}")
 
 
-def set_incident_status(action_parameters: type[ap.ActionParameters]):
+def set_incident_status(
+    action_parameters: type[ap.ActionParameters] = None,
+    override_dict: Dict[str, Any] = {},
+):
     """When an incoming action is incident.set_incident_status, this method
     updates the status of the incident
 
     Keyword arguments:
     action_parameters -- type[ap.ActionParameters] containing Slack actions data
+    override_dict -- Avoid using action_parameters and manually set data
+
+    This function has two methods of providing data from Slack because we can
+    also use the webapp to update features.
     """
-    p = action_parameters.parameters()
+    if override_dict != {} and action_parameters == None:
+        p = override_dict
+        action_value = p["action_value"]
+    else:
+        p = action_parameters.parameters()
+        action_value = action_parameters.actions()["selected_option"]["value"]
+
     channel_name = p["channel_name"]
 
     channel_id = p["channel_id"]
     incident_data = db.db_read_incident(incident_id=p["channel_name"])
 
-    action_value = action_parameters.actions()["selected_option"]["value"]
     message = incident.build_status_update(channel_id, action_value)
     try:
         result = slack_tools.slack_web_client.chat_postMessage(**message)
@@ -269,20 +281,32 @@ def reload_status_message(action_parameters: type[ap.ActionParameters]):
     )
 
 
-def set_severity(action_parameters: type[ap.ActionParameters]):
+def set_severity(
+    action_parameters: type[ap.ActionParameters] = None,
+    override_dict: Dict[str, Any] = {},
+):
     """When an incoming action is incident.set_severity, this method
     updates the severity of the incident
 
     Keyword arguments:
     action_parameters -- type[ap.ActionParameters] containing Slack actions data
+    override_dict -- Avoid using action_parameters and manually set data
+
+    This function has two methods of providing data from Slack because we can
+    also use the webapp to update features.
     """
-    p = action_parameters.parameters()
+    if override_dict != {} and action_parameters == None:
+        p = override_dict
+        action_value = p["action_value"]
+    else:
+        p = action_parameters.parameters()
+        action_value = action_parameters.actions()["selected_option"]["value"]
+
     channel_name = p["channel_name"]
 
     channel_id = p["channel_id"]
     incident_data = db.db_read_incident(incident_id=p["channel_name"])
 
-    action_value = action_parameters.actions()["selected_option"]["value"]
     message = incident.build_severity_update(
         channel_id, action_value
     )  # build severity update

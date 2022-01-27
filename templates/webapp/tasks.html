@@ -1,0 +1,44 @@
+{% extends '/webapp/base.html' %} {% block content %}
+<div class="box">
+</div>
+
+<p class="title">Scheduled Tasks</p>
+<p class="subtitle">
+  If any scheduled tasks are running, they will be listed here.
+</p>
+<div class="box">
+  <div class="content">
+    <div class="table-container">
+      <table class="table is-bordered is-striped is-hoverable">
+        <thead>
+          <tr>
+            <th scope="col">Task ID</th>
+            <th scope="col">Task Name</th>
+            <th scope="col">Next Run</th>
+            <th scope="col">Options</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if tasks|length < 1 %}<tr>
+            <td>No scheduled tasks found.</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            </tr>{% else %}
+            {% for t in tasks %}
+            <tr>
+              <td>{{ t.id }}</td>
+              <td>{{ t.name }}</td>
+              <td>
+                <span class="tag is-link">{{ t.next_run_time }}</span>
+              </td>
+              <td><a class="button is-danger">Delete</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

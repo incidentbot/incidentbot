@@ -44,6 +44,7 @@ def incident():
         "response_url": request.form.get("response_url"),
         "user": request.form.get("user_name"),
         "token": request.form.get("token"),
+        "created_from_web": request.form.get("created_from_web", default=False),
     }
     # Pass to method to create incident
     resp = create_incident(request_parameters)
@@ -209,8 +210,10 @@ def handle_incident_optional_features(
     """
     channel_id = createdChannelDetails["id"]
     channel_name = createdChannelDetails["name"]
-
-    if not internal:
+    created_from_web = request_parameters["created_from_web"]
+    if internal or created_from_web:
+        pass
+    else:
         response_helper(
             response_url=request_parameters["response_url"],
             response=f"I will continue to work on options in the background if any were enabled. I'm here if you need me!",
@@ -265,7 +268,9 @@ def handle_incident_optional_features(
                 logger.error(
                     f"Error sending external provider message to incident channel: {p} is not a valid provider - options are {enabled_providers}"
                 )
-                if not internal:
+                if internal or created_from_web:
+                    pass
+                else:
                     response_helper(
                         response_url=request_parameters["response_url"],
                         response=f"I was unable to send status updates for the following provider - verify compatibility: {p}",
@@ -319,7 +324,7 @@ def handle_incident_optional_features(
         original_channel = request_parameters["channel"]
         original_message_timestamp = request_parameters["original_message_timestamp"]
         formatted_timestamp = str.replace(original_message_timestamp, ".", "")
-        link_to_message = f"https://developstreet.slack.com/archives/{original_channel}/p{formatted_timestamp}"
+        link_to_message = f"https://${config.slack_workspace_id}.slack.com/archives/{original_channel}/p{formatted_timestamp}"
         try:
             slack_tools.slack_web_client.chat_postMessage(
                 channel=channel_id,

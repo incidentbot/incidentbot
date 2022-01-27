@@ -1,11 +1,12 @@
 import logging
 
 from __main__ import config
-from sqlalchemy import create_engine, insert, select, update
-from sqlalchemy import Column, VARCHAR
+from flask_login import UserMixin
+from sqlalchemy import create_engine
+from sqlalchemy import Boolean, Column, Integer, String, VARCHAR
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from typing import List, Tuple
+from typing import List
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +33,26 @@ class Incident(base):
     sp_incident_id = Column(VARCHAR(50))
 
 
+class User(UserMixin, base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True)
+    email = Column(String(100), unique=True)
+    password = Column(String(100))
+    name = Column(String(100))
+    role = Column(String(20))
+    is_admin = Column(Boolean, default=False)
+    is_disabled = Column(Boolean, default=False)
+
+
 # Create session
 Session = sessionmaker(db)
 session = Session()
 base.metadata.create_all(db)
+
+"""
+Helper Methods
+"""
 
 
 def db_verify():
@@ -48,6 +65,11 @@ def db_verify():
         return True
     except:
         return False
+
+
+"""
+Incident Management
+"""
 
 
 def db_read_all_incidents() -> List:
@@ -152,3 +174,79 @@ def db_write_incident(
         session.commit()
     except Exception as error:
         logger.error(f"Incident row create failed for {incident_id}: {error}")
+
+
+"""
+User Management
+"""
+
+
+def db_user_lookup(email: str = None, id: int = None, all: bool = False):
+    if all:
+        try:
+            logger.debug(f"Attempting to return all users...")
+            user = session.query(User)
+            return user
+        except Exception as error:
+            logger.error(f"User lookup failed: {error}")
+    elif not all and email != None:
+        try:
+            logger.debug(f"Attempting to lookup user {email}...")
+            user = session.query(User).filter(User.email == email).first()
+            return user
+        except Exception as error:
+            logger.error(f"User lookup failed for {email}: {error}")
+    elif not all and id != None:
+        try:
+            logger.debug(f"Attempting to lookup user id {id}...")
+            user = session.query(User).filter(User.id == id).first()
+            return user
+        except Exception as error:
+            logger.error(f"User lookup failed for {email}: {error}")
+
+
+def db_user_create(
+    email: str,
+    name: str,
+    password: str,
+    role: str,
+    is_admin: bool = False,
+):
+    try:
+        new_user = User(
+            email=email,
+            name=name,
+            password=password,
+            role=role,
+            is_admin=is_admin,
+        )
+        session.add(new_user)
+        session.commit()
+    except Exception as error:
+        logger.error(f"User creation failed for {email}: {error}")
+
+
+def db_user_delete(email: str):
+    try:
+        session.query(User).filter(User.email == email).delete()
+        session.commit()
+    except Exception as error:
+        logger.error(f"User deletion failed for {email}: {error}")
+
+
+def db_user_disable(email: str):
+    try:
+        user = session.query(User).filter(User.email == email).one()
+        user.is_disabled = True
+        session.commit()
+    except Exception as error:
+        logger.error(f"User disable failed for {email}: {error}")
+
+
+def db_user_enable(email: str):
+    try:
+        user = session.query(User).filter(User.email == email).one()
+        user.is_disabled = False
+        session.commit()
+    except Exception as error:
+        logger.error(f"User enable failed for {email}: {error}")
