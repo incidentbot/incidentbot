@@ -1,7 +1,7 @@
 version: '3.9'
 services:
   bot:
-    image: eb129/janus:latest
+    image: eb129/incident-bot:latest
     depends_on:
       - db
     environment:

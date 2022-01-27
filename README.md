@@ -1,10 +1,10 @@
-# janus
+# incident-bot
 
-<img src="https://github.com/echoboomer/janus/blob/main/assets/janus-icon.png" width="125" height="125">
+<img src="https://github.com/echoboomer/incident-bot/blob/main/assets/bot.png" width="125" height="125">
 
 An incident management ChatOps bot for Slack with a web interface, integrations for services like Statuspage, and handy features to automate discovery of downstream issues.
 
-- [janus](#janus)
+- [incident-bot](#incident-bot)
   - [Incident Management Fundamentals](#incident-management-fundamentals)
   - [Architecture](#architecture)
   - [Requirements](#requirements)
@@ -250,7 +250,7 @@ If you choose to use a different directory, update the environment variable `TEM
 
 There is a version of the Dockerfile in this repository available for use according to the latest tags. In order to use this image, you'll need to have a `templates/slack/` directory (or, again, whatever the value of `TEMPLATES_DIRECTORY` is if choosing to override) ready to be volumed in. There is a complete example in `deploy/`.
 
-Visit the [Dockerhub page](https://hub.docker.com/repository/docker/eb129/janus) for all available tags, or build the image yourself and host it in your own repository.
+Visit the [Dockerhub page](https://hub.docker.com/repository/docker/eb129/incident-bot) for all available tags, or build the image yourself and host it in your own repository.
 
 For a minimum deployment, you'll also need the `nginx/` directory present in your directory. A proper directory would look like this:
 
