@@ -5,7 +5,7 @@
 </div>
 
 {% with messages = get_flashed_messages() %} {% if messages %}
-<div class="box notification is-danger">
+<div class="box notification is-info">
   {{ messages[0] }}
 </div>
 {% endif %} {% endwith %}
@@ -22,8 +22,7 @@
             <th scope="col">Email</th>
             <th scope="col">Role</th>
             <th scope="col">Admin</th>
-            <th scope="col">Options</th>
-            <th scope="col"></th>
+            <th scope="col" colspan="2">Options</th>
           </tr>
         </thead>
         <tbody>
@@ -35,14 +34,23 @@
             <td>{{ u.role }}</td>
             <td>{{ u.is_admin }}</td>
             <td>
-              {% if not u.is_admin %}
-              <a class="button is-danger is-focused is-hovered">Make Admin</a>
-              {% endif %}
-            <td>
               <form name="deleteUserButton" method="post" action="/admin/backend/delete_user">
                 <input type="hidden" name="user_email" id="user_email" value="{{ u.email }}">
                 <button class="button is-danger is-focused is-hovered">Delete</button>
               </form>
+            </td>
+            <td>
+              {% if u.is_disabled %}
+              <form name="enableUserButton" method="post" action="/admin/backend/enable_user">
+                <input type="hidden" name="user_email" id="user_email" value="{{ u.email }}">
+                <button class="button is-success is-focused is-hovered">Enable</button>
+              </form>
+              {% elif not u.is_disabled %}
+              <form name="disableUserButton" method="post" action="/admin/backend/disable_user">
+                <input type="hidden" name="user_email" id="user_email" value="{{ u.email }}">
+                <button class="button is-danger is-focused is-hovered">Disable</button>
+              </form>
+              {% endif %}
             </td>
           </tr>
           {% endfor %}

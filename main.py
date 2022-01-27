@@ -50,6 +50,8 @@ import lib.incident.routes
 if config.web_interface_enabled == "true":
     import lib.core.webapp
 
+    lib.core.webapp.create_default_admin_account()
+
 
 def db_check():
     logger.info("Testing the database connection...")

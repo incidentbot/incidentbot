@@ -34,9 +34,11 @@
         <div class="navbar-item">
           {% if not current_user.is_authenticated %}
           <div class="buttons">
+            {% if signups_enabled %}
             <a class="button is-primary" href="{{ url_for('signup') }}">
               <strong>Sign up</strong>
             </a>
+            {% endif %}
             <a class="button is-light" href="{{ url_for('login') }}"> Log in </a>
           </div>
           {% endif %}

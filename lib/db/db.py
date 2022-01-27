@@ -42,6 +42,7 @@ class User(UserMixin, base):
     name = Column(String(100))
     role = Column(String(20))
     is_admin = Column(Boolean, default=False)
+    is_disabled = Column(Boolean, default=False)
 
 
 # Create session
@@ -205,7 +206,11 @@ def db_user_lookup(email: str = None, id: int = None, all: bool = False):
 
 
 def db_user_create(
-    email: str, name: str, password: str, role: str, is_admin: bool = False
+    email: str,
+    name: str,
+    password: str,
+    role: str,
+    is_admin: bool = False,
 ):
     try:
         new_user = User(
@@ -227,3 +232,21 @@ def db_user_delete(email: str):
         session.commit()
     except Exception as error:
         logger.error(f"User deletion failed for {email}: {error}")
+
+
+def db_user_disable(email: str):
+    try:
+        user = session.query(User).filter(User.email == email).one()
+        user.is_disabled = True
+        session.commit()
+    except Exception as error:
+        logger.error(f"User disable failed for {email}: {error}")
+
+
+def db_user_enable(email: str):
+    try:
+        user = session.query(User).filter(User.email == email).one()
+        user.is_disabled = False
+        session.commit()
+    except Exception as error:
+        logger.error(f"User enable failed for {email}: {error}")

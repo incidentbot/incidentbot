@@ -42,17 +42,47 @@ def user_loader(user_id):
     return db.db_user_lookup(id=int(user_id))
 
 
+def create_default_admin_account():
+    try:
+        user = db.db_user_lookup(email="admin@admin.com")
+        if not (user):
+            logger.info("Creating default user...")
+            db.db_user_create(
+                email="admin@admin.com",
+                name="admin",
+                password=generate_password_hash("admin", method="sha256"),
+                role="Admin",
+                is_admin=True,
+            )
+        elif user:
+            if user.is_disabled:
+                pass
+            else:
+                logger.info("Default user already exists.")
+    except Exception as error:
+        logger.error(f"Error looking up default user: {error}")
+
+
 """
 Web application routes
 """
+signups_enabled = False
 
-webapp_name = "Incident Bot"
+# Pass vars to all rendered templates. Signups disabled by default, set to True to change.
+# botname here is what is rendered on pages where the bot name is referenced.
+@app.context_processor
+def inject_vars():
+    return dict(
+        user=flask_login.current_user,
+        signups_enabled=signups_enabled,
+        botname="Incident Bot",
+    )
 
 
 @app.route("/admin")
 @flask_login.login_required
 def index():
-    return render_template("/webapp/index.html", botname=webapp_name, config=config)
+    return render_template("/webapp/index.html", config=config)
 
 
 @app.route("/admin/login", methods=["GET"])
@@ -75,7 +105,7 @@ def login_post():
 
     # check if the user actually exists
     # take the user-supplied password, hash it, and compare it to the hashed password in the database
-    if not user or not check_password_hash(user.password, password):
+    if not user or not check_password_hash(user.password, password) or user.is_disabled:
         flash("Please check your login details and try again.")
         return redirect(
             url_for("profile")
@@ -96,12 +126,15 @@ def logout():
 @app.route("/admin/profile")
 @flask_login.login_required
 def profile():
-    return render_template("/webapp/profile.html", user=flask_login.current_user)
+    return render_template("/webapp/profile.html")
 
 
 @app.route("/admin/signup")
 def signup():
-    return render_template("/webapp/signup.html")
+    if signups_enabled:
+        return render_template("/webapp/signup.html")
+    else:
+        return abort(404)
 
 
 @app.route("/admin/signup", methods=["POST"])
@@ -208,7 +241,6 @@ def delete_user_post():
         if not (user):  # if a user is not found, we say so
             flash(f"User {email} doesn't exist.")
             return redirect(url_for("adminpanel"))
-        # create a new user with the form data. Hash the password so the plaintext version isn't saved.
         try:
             db.db_user_delete(
                 email=email,
@@ -216,6 +248,57 @@ def delete_user_post():
             flash(f"User {email} was deleted.")
         except Exception as error:
             logger.error(f"Error deleting user {user}: {error}")
+            flash(f"Error: {error}")
+        return redirect(url_for("adminpanel"))
+    return abort(401)
+
+
+@app.route("/admin/backend/disable_user", methods=["POST"])
+@flask_login.login_required
+def disable_user_post():
+    if flask_login.current_user.is_admin == True:
+        email = request.form.get("user_email")
+        try:
+            user = db.db_user_lookup(email=email)
+        except Exception as error:
+            logger.error(f"Error looking up user for disable: {error}")
+            flash(f"Error: {error}")
+        if not (user):  # if a user is not found, we say so
+            flash(f"User {email} doesn't exist.")
+            return redirect(url_for("adminpanel"))
+        # create a new user with the form data. Hash the password so the plaintext version isn't saved.
+        try:
+            db.db_user_disable(
+                email=email,
+            )
+            flash(f"User {email} was disabled.")
+        except Exception as error:
+            logger.error(f"Error disabling user {user}: {error}")
+            flash(f"Error: {error}")
+        return redirect(url_for("adminpanel"))
+    return abort(401)
+
+
+@app.route("/admin/backend/enable_user", methods=["POST"])
+@flask_login.login_required
+def enable_user_post():
+    if flask_login.current_user.is_admin == True:
+        email = request.form.get("user_email")
+        try:
+            user = db.db_user_lookup(email=email)
+        except Exception as error:
+            logger.error(f"Error looking up user for enable: {error}")
+            flash(f"Error: {error}")
+        if not (user):  # if a user is not found, we say so
+            flash(f"User {email} doesn't exist.")
+            return redirect(url_for("adminpanel"))
+        try:
+            db.db_user_enable(
+                email=email,
+            )
+            flash(f"User {email} was enabled.")
+        except Exception as error:
+            logger.error(f"Error enabling user {user}: {error}")
             flash(f"Error: {error}")
         return redirect(url_for("adminpanel"))
     return abort(401)

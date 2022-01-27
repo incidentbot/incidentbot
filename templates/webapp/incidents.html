@@ -36,6 +36,11 @@
             {% else %}
             {% for inc in incidents %}
             <tr>
+              {% if inc.status == "resolved" %}
+              {% set select_color = "is-success" %}
+              {% else %}
+              {% set select_color = "is-danger" %}
+              {% endif %}
               <td>{{ inc.incident_id }}</td>
               <td><a href="https://{{ slack_workspace_id }}.slack.com/archives/{{ inc.channel_id }}" target="blank">Join
                   Channel</a></td>
@@ -44,7 +49,7 @@
                   <input type="hidden" name="channel_id" id="channel_id" value="{{ inc.channel_id }}">
                   <input type="hidden" name="channel_name" id="channel_name" value="{{ inc.channel_name }}">
                   <input type="hidden" name="ts" id="ts" value="{{ inc.dig_message_ts }}">
-                  <div class="select is-danger">
+                  <div class="select {{ select_color }}">
                     <select name="set_status" class="is-focused" onchange="this.form.submit()">
                       {% for stat in statuses %}
                       {% if inc.status == stat %}
