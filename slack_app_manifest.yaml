@@ -2,12 +2,12 @@ _metadata:
   major_version: 1
   minor_version: 1
 display_information:
-  name: janus
-  description: Janus helps with DevOps stuff.
+  name: incident-bot
+  description: Incident Bot helps teams run incidents.
   background_color: '#000a47'
 features:
   bot_user:
-    display_name: janus
+    display_name: incident-bot
     always_online: false
   slash_commands:
     - command: /incident
