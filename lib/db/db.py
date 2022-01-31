@@ -86,6 +86,8 @@ def db_read_all_incidents() -> List:
         logger.error(
             f"Incident lookup query failed when returning all incidents: {error}"
         )
+    finally:
+        session.close()
 
 
 def db_read_incident(incident_id: str) -> Incident:
@@ -99,6 +101,8 @@ def db_read_incident(incident_id: str) -> Incident:
         return incident
     except Exception as error:
         logger.error(f"Incident lookup query failed for {incident_id}: {error}")
+    finally:
+        session.close()
 
 
 def db_update_incident_severity_col(incident_id: str, severity: str):
@@ -108,6 +112,8 @@ def db_update_incident_severity_col(incident_id: str, severity: str):
         session.commit()
     except Exception as error:
         logger.error(f"Incident update failed for {incident_id}: {error}")
+    finally:
+        session.close()
 
 
 def db_update_incident_sp_id_col(incident_id: str, sp_incident_id: str):
@@ -117,6 +123,8 @@ def db_update_incident_sp_id_col(incident_id: str, sp_incident_id: str):
         session.commit()
     except Exception as error:
         logger.error(f"Incident update failed for {incident_id}: {error}")
+    finally:
+        session.close()
 
 
 def db_update_incident_sp_ts_col(incident_id: str, ts: str):
@@ -126,6 +134,8 @@ def db_update_incident_sp_ts_col(incident_id: str, ts: str):
         session.commit()
     except Exception as error:
         logger.error(f"Incident update failed for {incident_id}: {error}")
+    finally:
+        session.close()
 
 
 def db_update_incident_status_col(incident_id: str, status: str):
@@ -135,6 +145,8 @@ def db_update_incident_status_col(incident_id: str, status: str):
         session.commit()
     except Exception as error:
         logger.error(f"Incident update failed for {incident_id}: {error}")
+    finally:
+        session.close()
 
 
 def db_write_incident(
@@ -174,6 +186,8 @@ def db_write_incident(
         session.commit()
     except Exception as error:
         logger.error(f"Incident row create failed for {incident_id}: {error}")
+    finally:
+        session.close()
 
 
 """
@@ -189,6 +203,8 @@ def db_user_lookup(email: str = None, id: int = None, all: bool = False):
             return user
         except Exception as error:
             logger.error(f"User lookup failed: {error}")
+        finally:
+            session.close()
     elif not all and email != None:
         try:
             logger.debug(f"Attempting to lookup user {email}...")
@@ -196,6 +212,8 @@ def db_user_lookup(email: str = None, id: int = None, all: bool = False):
             return user
         except Exception as error:
             logger.error(f"User lookup failed for {email}: {error}")
+        finally:
+            session.close()
     elif not all and id != None:
         try:
             logger.debug(f"Attempting to lookup user id {id}...")
@@ -203,6 +221,8 @@ def db_user_lookup(email: str = None, id: int = None, all: bool = False):
             return user
         except Exception as error:
             logger.error(f"User lookup failed for {email}: {error}")
+        finally:
+            session.close()
 
 
 def db_user_create(
@@ -224,6 +244,8 @@ def db_user_create(
         session.commit()
     except Exception as error:
         logger.error(f"User creation failed for {email}: {error}")
+    finally:
+        session.close()
 
 
 def db_user_delete(email: str):
@@ -232,6 +254,8 @@ def db_user_delete(email: str):
         session.commit()
     except Exception as error:
         logger.error(f"User deletion failed for {email}: {error}")
+    finally:
+        session.close()
 
 
 def db_user_disable(email: str):
@@ -241,6 +265,8 @@ def db_user_disable(email: str):
         session.commit()
     except Exception as error:
         logger.error(f"User disable failed for {email}: {error}")
+    finally:
+        session.close()
 
 
 def db_user_enable(email: str):
@@ -250,3 +276,5 @@ def db_user_enable(email: str):
         session.commit()
     except Exception as error:
         logger.error(f"User enable failed for {email}: {error}")
+    finally:
+        session.close()
