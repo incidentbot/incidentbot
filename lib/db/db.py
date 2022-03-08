@@ -28,7 +28,6 @@ class Incident(base):
     severity = Column(VARCHAR(50), nullable=False)
     bp_message_ts = Column(VARCHAR(50), nullable=False)
     dig_message_ts = Column(VARCHAR(50), nullable=False)
-    dig_message_ts = Column(VARCHAR(50), nullable=False)
     sp_message_ts = Column(VARCHAR(50))
     sp_incident_id = Column(VARCHAR(50))
 
@@ -107,44 +106,56 @@ def db_read_incident(incident_id: str) -> Incident:
 
 def db_update_incident_severity_col(incident_id: str, severity: str):
     try:
-        incident = db_read_incident(incident_id=incident_id)
+        incident = (
+            session.query(Incident).filter(Incident.incident_id == incident_id).one()
+        )
         incident.severity = severity
         session.commit()
     except Exception as error:
         logger.error(f"Incident update failed for {incident_id}: {error}")
+        session.rollback()
     finally:
         session.close()
 
 
 def db_update_incident_sp_id_col(incident_id: str, sp_incident_id: str):
     try:
-        incident = db_read_incident(incident_id=incident_id)
+        incident = (
+            session.query(Incident).filter(Incident.incident_id == incident_id).one()
+        )
         incident.sp_incident_id = sp_incident_id
         session.commit()
     except Exception as error:
         logger.error(f"Incident update failed for {incident_id}: {error}")
+        session.rollback()
     finally:
         session.close()
 
 
 def db_update_incident_sp_ts_col(incident_id: str, ts: str):
     try:
-        incident = db_read_incident(incident_id=incident_id)
+        incident = (
+            session.query(Incident).filter(Incident.incident_id == incident_id).one()
+        )
         incident.sp_message_ts = ts
         session.commit()
     except Exception as error:
         logger.error(f"Incident update failed for {incident_id}: {error}")
+        session.rollback()
     finally:
         session.close()
 
 
 def db_update_incident_status_col(incident_id: str, status: str):
     try:
-        incident = db_read_incident(incident_id=incident_id)
+        incident = (
+            session.query(Incident).filter(Incident.incident_id == incident_id).one()
+        )
         incident.status = status
         session.commit()
     except Exception as error:
         logger.error(f"Incident update failed for {incident_id}: {error}")
+        session.rollback()
     finally:
         session.close()
 
@@ -166,10 +177,8 @@ def db_write_incident(
         channel_id - ID of the incident channel
         channel_name - Slack channel name
         status - Status of the incident
-        severity - Severeity of the incident
-        bp_message_id - Boilerplate message ID
+        severity - Severity of the incident
         bp_message_ts - Boilerplate message creation timestamp
-        dig_message_id - Digest channel message ID
         dig_message_ts - Digest channel message creation timestamp
     """
     try:
@@ -186,6 +195,7 @@ def db_write_incident(
         session.commit()
     except Exception as error:
         logger.error(f"Incident row create failed for {incident_id}: {error}")
+        session.rollback()
     finally:
         session.close()
 
@@ -244,6 +254,7 @@ def db_user_create(
         session.commit()
     except Exception as error:
         logger.error(f"User creation failed for {email}: {error}")
+        session.rollback()
     finally:
         session.close()
 
@@ -254,6 +265,7 @@ def db_user_delete(email: str):
         session.commit()
     except Exception as error:
         logger.error(f"User deletion failed for {email}: {error}")
+        session.rollback()
     finally:
         session.close()
 
@@ -265,6 +277,7 @@ def db_user_disable(email: str):
         session.commit()
     except Exception as error:
         logger.error(f"User disable failed for {email}: {error}")
+        session.rollback()
     finally:
         session.close()
 
@@ -276,5 +289,6 @@ def db_user_enable(email: str):
         session.commit()
     except Exception as error:
         logger.error(f"User enable failed for {email}: {error}")
+        session.rollback()
     finally:
         session.close()

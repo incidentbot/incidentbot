@@ -1,6 +1,10 @@
+import ipaddress
 import json
+import logging
 import random
 import string
+
+logger = logging.getLogger(__name__)
 
 random_suffix = "".join(random.choices(string.ascii_lowercase + string.digits, k=6))
 
@@ -28,3 +32,12 @@ def render_json(file, variables: dict) -> dict:
         print(f"error when interpolating variables on file {file}: ")
         print(variables)
     return json.loads(json_data)
+
+
+def validate_ip_address(address):
+    try:
+        ipaddress.ip_network(address)
+        return True
+    except ValueError as error:
+        logger.error(error)
+        return False

@@ -167,6 +167,16 @@ If you wish to allow users to sign up for their own (non-admin) accounts, you ca
 
 You can customize the HTML templates files to adjust the roles that users can be assigned, etc. This is all up to you.
 
+Additionally, you should edit `nginx/nginx.conf` to restrict IP addresses that can access the web interface:
+
+```
+  location ~ /admin {
+    ...
+    allow 0.0.0.0/0;
+    deny all;
+  }
+```
+
 **Note:** Security within your environment is not the concern of this tool. The web interface is provided as-is, and you should tweak these settings and take other actions in your own environment to secure access to this interface as needed. I have done my best to secure the application, but you should not expose the web interface to the public when possible.
 
 ## Templates and Interpolation

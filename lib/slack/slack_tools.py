@@ -4,7 +4,6 @@ import logging
 
 from __main__ import config
 from slack import WebClient, errors
-from slackeventsapi import SlackEventAdapter
 from typing import Dict
 
 logger = logging.getLogger(__name__)
