@@ -27,7 +27,7 @@ class Incident:
 
     def return_channel_name(self) -> str:
         # Replace any spaces with dashes
-        descriptor = self.d["descriptor"].replace(" ", "-")
+        descriptor = self.d["descriptor"].replace(" ", "-").lower()
         now = datetime.datetime.now()
         return f"inc-{now.year}{now.month}{now.day}{now.hour}{now.minute}-{descriptor}"
 

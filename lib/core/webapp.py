@@ -241,6 +241,7 @@ def delete_user_post():
         if not (user):  # if a user is not found, we say so
             flash(f"User {email} doesn't exist.")
             return redirect(url_for("adminpanel"))
+        # create a new user with the form data. Hash the password so the plaintext version isn't saved.
         try:
             db.db_user_delete(
                 email=email,

@@ -11,7 +11,7 @@ from lib.scheduler import tasks
 from slackeventsapi import SlackEventAdapter
 from waitress import serve
 
-__version__ = "v1.9.1"
+__version__ = "v1.9.2"
 
 # Create the logging object
 # This is used by submodules as well
