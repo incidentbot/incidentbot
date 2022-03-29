@@ -10,4 +10,4 @@ requests==2.26.0
 slackclient==2.9.3
 slackeventsapi==3.0.0
 sqlalchemy==1.4.29
-waitress==2.0.0
+waitress==2.1.1
