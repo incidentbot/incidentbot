@@ -1,6 +1,6 @@
 apscheduler==3.8.1
 feedparser==6.0.8
-flask==2.0.2
+flask==2.1.0
 flask-apscheduler==1.12.3
 flask-login==0.5.0
 psycopg2==2.9.2
@@ -11,3 +11,4 @@ slackclient==2.9.3
 slackeventsapi==3.0.0
 sqlalchemy==1.4.29
 waitress==2.1.1
+werkzeug~=2.0.0
