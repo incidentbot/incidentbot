@@ -1,6 +1,8 @@
 {
   "blocks": [
-    { "type": "divider" },
+    {
+      "type": "divider"
+    },
     {
       "type": "header",
       "text": {
@@ -45,22 +47,36 @@
       "elements": [
         {
           "type": "button",
-          "text": { "type": "plain_text", "text": "Join Incident Channel" },
+          "text": {
+            "type": "plain_text",
+            "text": "Join Incident Channel"
+          },
           "style": "primary",
-          "url": "https://{slack_workspace_id_var_placeholder}.slack.com/archives/{incident_id_var_placeholder}"
+          "url": "https://{slack_workspace_id_var_placeholder}.slack.com/archives/{incident_id_var_placeholder}",
+          "action_id": "incident.join_incident_channel"
         },
         {
           "type": "button",
-          "text": { "type": "plain_text", "text": "Incident Guide" },
-          "url": "{incident_guide_link_var_placeholder}"
+          "text": {
+            "type": "plain_text",
+            "text": "Incident Guide"
+          },
+          "url": "{incident_guide_link_var_placeholder}",
+          "action_id": "incident.incident_guide_link"
         },
         {
           "type": "button",
-          "text": { "type": "plain_text", "text": "Incident Postmortems" },
-          "url": "{incident_postmortems_link_var_placeholder}"
+          "text": {
+            "type": "plain_text",
+            "text": "Incident Postmortems"
+          },
+          "url": "{incident_postmortems_link_var_placeholder}",
+          "action_id": "incident.incident_postmortem_link"
         }
       ]
     },
-    { "type": "divider" }
+    {
+      "type": "divider"
+    }
   ]
 }

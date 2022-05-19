@@ -1,7 +1,9 @@
 {
   "channel": "{channel_id_var_placeholder}",
   "blocks": [
-    { "type": "divider" },
+    {
+      "type": "divider"
+    },
     {
       "block_id": "header",
       "type": "header",
@@ -34,11 +36,16 @@
         "text": "The incident starts out in *investigating* mode. As the incident progresses, it can be moved through statuses until it is resolved. An explanation of statuses is available in our incident guide linked below."
       }
     },
-    { "type": "divider" },
+    {
+      "type": "divider"
+    },
     {
       "block_id": "status",
       "type": "section",
-      "text": { "type": "mrkdwn", "text": "*Current Status:*" },
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Current Status:*"
+      },
       "accessory": {
         "type": "static_select",
         "action_id": "incident.set_incident_status",
@@ -86,20 +93,23 @@
     {
       "block_id": "severity",
       "type": "section",
-      "text": { "type": "mrkdwn", "text": "*Severity:*" },
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Severity:*"
+      },
       "accessory": {
         "type": "static_select",
         "action_id": "incident.set_severity",
         "placeholder": {
           "type": "plain_text",
-          "text": "SEV-4 - Investigation",
+          "text": "SEV4",
           "emoji": true
         },
         "options": [
           {
             "text": {
               "type": "plain_text",
-              "text": "SEV-1 - Critical",
+              "text": "SEV1",
               "emoji": true
             },
             "value": "sev1"
@@ -107,7 +117,7 @@
           {
             "text": {
               "type": "plain_text",
-              "text": "SEV-2 - Major",
+              "text": "SEV2",
               "emoji": true
             },
             "value": "sev2"
@@ -115,7 +125,7 @@
           {
             "text": {
               "type": "plain_text",
-              "text": "SEV-3 - Minor",
+              "text": "SEV3",
               "emoji": true
             },
             "value": "sev3"
@@ -123,7 +133,7 @@
           {
             "text": {
               "type": "plain_text",
-              "text": "SEV-4 - Investigation",
+              "text": "SEV4",
               "emoji": true
             },
             "value": "sev4"
@@ -131,19 +141,32 @@
         ]
       }
     },
-    { "type": "divider" },
+    {
+      "type": "divider"
+    },
     {
       "block_id": "role_incident_commander",
       "type": "section",
-      "text": { "type": "mrkdwn", "text": "*Incident Commander*:\n _none_" }
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Incident Commander*:\n _none_"
+      }
     },
     {
       "type": "section",
       "block_id": "claim_incident_commander",
-      "text": { "type": "plain_text", "text": "Claim Role", "emoji": true },
+      "text": {
+        "type": "plain_text",
+        "text": "Claim Role",
+        "emoji": true
+      },
       "accessory": {
         "type": "button",
-        "text": { "type": "plain_text", "text": "Claim", "emoji": true },
+        "text": {
+          "type": "plain_text",
+          "text": "Claim",
+          "emoji": true
+        },
         "value": "incident_commander",
         "action_id": "incident.claim_role"
       }
@@ -151,7 +174,11 @@
     {
       "type": "section",
       "block_id": "assign_incident_commander",
-      "text": { "type": "plain_text", "text": "Assign Role", "emoji": true },
+      "text": {
+        "type": "plain_text",
+        "text": "Assign Role",
+        "emoji": true
+      },
       "accessory": {
         "action_id": "incident.assign_role",
         "type": "users_select",
@@ -161,19 +188,32 @@
         }
       }
     },
-    { "type": "divider" },
+    {
+      "type": "divider"
+    },
     {
       "block_id": "role_technical_lead",
       "type": "section",
-      "text": { "type": "mrkdwn", "text": "*Technical Lead*:\n _none_" }
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Technical Lead*:\n _none_"
+      }
     },
     {
       "type": "section",
       "block_id": "claim_technical_lead",
-      "text": { "type": "plain_text", "text": "Claim Role", "emoji": true },
+      "text": {
+        "type": "plain_text",
+        "text": "Claim Role",
+        "emoji": true
+      },
       "accessory": {
         "type": "button",
-        "text": { "type": "plain_text", "text": "Claim", "emoji": true },
+        "text": {
+          "type": "plain_text",
+          "text": "Claim",
+          "emoji": true
+        },
         "value": "technical_lead",
         "action_id": "incident.claim_role"
       }
@@ -181,7 +221,11 @@
     {
       "type": "section",
       "block_id": "assign_technical_lead",
-      "text": { "type": "plain_text", "text": "Assign Role", "emoji": true },
+      "text": {
+        "type": "plain_text",
+        "text": "Assign Role",
+        "emoji": true
+      },
       "accessory": {
         "action_id": "incident.assign_role",
         "type": "users_select",
@@ -191,7 +235,9 @@
         }
       }
     },
-    { "type": "divider" },
+    {
+      "type": "divider"
+    },
     {
       "block_id": "role_communications_liaison",
       "type": "section",
@@ -203,10 +249,18 @@
     {
       "type": "section",
       "block_id": "claim_communications_liaison",
-      "text": { "type": "plain_text", "text": "Claim Role", "emoji": true },
+      "text": {
+        "type": "plain_text",
+        "text": "Claim Role",
+        "emoji": true
+      },
       "accessory": {
         "type": "button",
-        "text": { "type": "plain_text", "text": "Claim", "emoji": true },
+        "text": {
+          "type": "plain_text",
+          "text": "Claim",
+          "emoji": true
+        },
         "value": "communications_liaison",
         "action_id": "incident.claim_role"
       }
@@ -214,7 +268,11 @@
     {
       "type": "section",
       "block_id": "assign_communications_liaison",
-      "text": { "type": "plain_text", "text": "Assign Role", "emoji": true },
+      "text": {
+        "type": "plain_text",
+        "text": "Assign Role",
+        "emoji": true
+      },
       "accessory": {
         "action_id": "incident.assign_role",
         "type": "users_select",
@@ -224,32 +282,46 @@
         }
       }
     },
-    { "type": "divider" },
+    {
+      "type": "divider"
+    },
     {
       "block_id": "help_buttons",
       "type": "actions",
       "elements": [
         {
           "type": "button",
-          "text": { "type": "plain_text", "text": "Incident Guide" },
-          "url": "{incident_guide_link_var_placeholder}"
+          "text": {
+            "type": "plain_text",
+            "text": "Incident Guide"
+          },
+          "url": "{incident_guide_link_var_placeholder}",
+          "action_id": "incident.incident_guide_link"
         },
         {
           "type": "button",
-          "text": { "type": "plain_text", "text": "Incident Postmortems" },
-          "url": "{incident_postmortems_link_var_placeholder}"
+          "text": {
+            "type": "plain_text",
+            "text": "Incident Postmortems"
+          },
+          "url": "{incident_postmortems_link_var_placeholder}",
+          "action_id": "incident.incident_postmortem_link"
         }
       ]
     },
-    { "type": "divider" },
+    {
+      "type": "divider"
+    },
     {
       "block_id": "resources",
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": "*Resources*\n <https://login.newrelic.com/|New Relic>"
+        "text": "*Resources*\n <https://app.datadoghq.com/apm/home|Datadog>"
       }
     },
-    { "type": "divider" }
+    {
+      "type": "divider"
+    }
   ]
 }

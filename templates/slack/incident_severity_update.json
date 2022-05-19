@@ -1,7 +1,9 @@
 {
   "channel": "{channel_id_var_placeholder}",
   "blocks": [
-    { "type": "divider" },
+    {
+      "type": "divider"
+    },
     {
       "type": "header",
       "text": {
@@ -16,6 +18,8 @@
         "text": "The incident severity has changed to *{severity_var_placeholder}*. {severity_description_var_placeholder}"
       }
     },
-    { "type": "divider" }
+    {
+      "type": "divider"
+    }
   ]
 }

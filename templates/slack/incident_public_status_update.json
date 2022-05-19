@@ -1,0 +1,42 @@
+[
+  {
+    "type": "header",
+    "text": {
+      "type": "plain_text",
+      "text": "{header_var_placeholder}"
+    }
+  },
+  {
+    "type": "section",
+    "fields": [
+      {
+        "type": "mrkdwn",
+        "text": "*Incident:*\n <#{incident_id_var_placeholder}>"
+      },
+      {
+        "type": "mrkdwn",
+        "text": "*Posted At:*\n {timestamp_var_placeholder}"
+      },
+      {
+        "type": "mrkdwn",
+        "text": "*Impacted Resources:*\n {impacted_resources_var_placeholder}"
+      }
+    ]
+  },
+  {
+    "type": "section",
+    "text": {
+      "type": "mrkdwn",
+      "text": "*Current Status*\n {message_var_placeholder}"
+    }
+  },
+  {
+    "type": "context",
+    "elements": [
+      {
+        "type": "mrkdwn",
+        "text": "This update was provided by the incident management team in response to an ongoing incident."
+      }
+    ]
+  }
+]
