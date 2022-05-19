@@ -148,3 +148,9 @@ tmp/
 
 # Docker
 docker-compose.dev.yml
+
+# Other
+.vscode/
+slack_app_manifest.yaml
+test.py
+logs/

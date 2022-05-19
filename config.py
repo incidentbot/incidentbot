@@ -4,6 +4,8 @@ import os
 from dotenv import load_dotenv
 from typing import List
 
+__version__ = "v0.5.7"
+
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
 load_dotenv(dotenv_path)
@@ -23,11 +25,11 @@ templates_directory = os.getenv("TEMPLATES_DIRECTORY", default="templates/slack/
 """
 Database Settings
 """
-database_host = os.getenv("DATABASE_HOST")
-database_name = os.getenv("DATABASE_NAME")
-database_password = os.getenv("DATABASE_PASSWORD")
-database_port = os.getenv("DATABASE_PORT")
-database_user = os.getenv("DATABASE_USER")
+database_host = os.getenv("POSTGRES_HOST")
+database_name = os.getenv("POSTGRES_DB")
+database_password = os.getenv("POSTGRES_PASSWORD")
+database_port = os.getenv("POSTGRES_PORT")
+database_user = os.getenv("POSTGRES_USER")
 database_url = f"postgresql://{database_user}:{database_password}@{database_host}:{database_port}/{database_name}"
 
 """
@@ -54,21 +56,22 @@ incident_external_providers_enabled = os.getenv(
 incident_external_providers_list = os.getenv(
     "INCIDENT_EXTERNAL_PROVIDERS_LIST", default="false"
 )
-incident_channel_topic = os.getenv("INCIDENT_CHANNEL_TOPIC")
-incident_guide_link = os.getenv("INCIDENT_GUIDE_LINK")
-incident_postmortems_link = os.getenv("INCIDENT_POSTMORTEMS_LINK")
+incident_channel_topic = os.getenv("INCIDENT_CHANNEL_TOPIC", default="")
+incident_guide_link = os.getenv("INCIDENT_GUIDE_LINK", default="")
+incident_postmortems_link = os.getenv("INCIDENT_POSTMORTEMS_LINK", default="")
 # These lists get referenced as top-level declarations of available options
 # for incident management status and severity
 statuses = ["investigating", "identified", "monitoring", "resolved"]
 severities = ["sev1", "sev2", "sev3", "sev4"]
 
+
 """
 Slack
 """
+slack_app_token = os.getenv("SLACK_APP_TOKEN")
 slack_bot_token = os.getenv("SLACK_BOT_TOKEN")
-slack_signing_secret = os.getenv("SLACK_SIGNING_SECRET")
-slack_verification_token = os.getenv("SLACK_VERIFICATION_TOKEN")
-slack_workspace_id = os.getenv("SLACK_WORKSPACE_ID")
+slack_workspace_id = os.getenv("SLACK_WORKSPACE_ID", default="")
+
 
 """
 Statuspage Module
@@ -80,6 +83,21 @@ statuspage_integration_enabled = os.getenv(
 statuspage_page_id = os.getenv("STATUSPAGE_PAGE_ID", default="")
 statuspage_url = os.getenv("STATUSPAGE_URL", default="")
 
+"""
+Confluence
+"""
+confluence_api_url = os.getenv("CONFLUENCE_API_URL", default="")
+confluence_api_username = os.getenv("CONFLUENCE_API_USERNAME", default="")
+confluence_api_token = os.getenv("CONFLUENCE_API_TOKEN", default="")
+confluence_space = os.getenv("CONFLUENCE_SPACE", default="")
+confluence_parent_page = os.getenv("CONFLUENCE_PARENT_PAGE", default="")
+auto_create_rca = os.getenv("AUTO_CREATE_RCA", default="false")
+
+"""
+PagerDuty
+"""
+pagerduty_api_username = os.getenv("PAGERDUTY_API_USERNAME", default="")
+pagerduty_api_token = os.getenv("PAGERDUTY_API_TOKEN", default="")
 
 """
 External
@@ -112,6 +130,19 @@ def env_check(required_envs: List[str]):
             exit(1)
         else:
             pass
+    if auto_create_rca == "true":
+        for var in [
+            "CONFLUENCE_API_URL",
+            "CONFLUENCE_API_USERNAME",
+            "CONFLUENCE_API_TOKEN",
+            "CONFLUENCE_SPACE",
+            "CONFLUENCE_PARENT_PAGE",
+        ]:
+            if os.getenv(var) == "":
+                logger.fatal(
+                    f"If enabling the Confluence integration to auto create an RCA, the {var} variable must be set."
+                )
+                exit(1)
     if incident_auto_create_from_react_enabled == "true":
         if incident_auto_create_from_react_emoji_name == "":
             logger.fatal(
@@ -165,3 +196,48 @@ def slack_template_check(required_templates: List[str]):
             )
             exit(1)
     logger.info("All templates found successfully.")
+
+
+def startup_message(wrap: bool = False) -> str:
+    """
+    Returns diagnostic info for startup or troubleshooting
+    """
+    msg = f"""
+--------------------------------------------------------------------------------
+                            incident bot {__version__}
+--------------------------------------------------------------------------------
+Core functionality:
+    Database host:                      {database_host}
+    Incidents digest channel:           {incidents_digest_channel}
+    Slack workspace:                    {slack_workspace_id}
+    Logging level:                      {log_level}
+
+Options:
+    Auto create RCA doc:                {auto_create_rca}
+    Auto group invite enabled:          {incident_auto_group_invite_enabled}
+    Auto group invite group name:       {incident_auto_group_invite_group_name}
+    Confluence API token:               {confluence_api_token[-4:].rjust(len(confluence_api_token), "*")}
+    Confluence API address:             {confluence_api_url}
+    Confluence user:                    {confluence_api_username}
+    Confluence space:                   {confluence_space}
+    Confluence parent page:             {confluence_parent_page}
+    External providers enabled:         {incident_external_providers_enabled}
+    External providers list:            {incident_external_providers_list}
+    PagerDuty API token:                {pagerduty_api_token[-4:].rjust(len(pagerduty_api_token), "*")}
+    PagerDuty API user:                 {pagerduty_api_username}
+    React to create incident enabled:   {incident_auto_create_from_react_enabled}
+    React emoji:                        {incident_auto_create_from_react_emoji_name}
+    Statuspage integration enabled:     {statuspage_integration_enabled}
+    Statuspage API key:                 {statuspage_api_key[-4:].rjust(len(statuspage_api_key), "*")}
+    Statuspage page ID:                 {statuspage_page_id[-4:].rjust(len(statuspage_page_id), "*")}
+    Web interface enabled:              {web_interface_enabled}
+--------------------------------------------------------------------------------
+    """
+    if wrap:
+        return f"""
+```
+{msg}
+```
+        """
+    else:
+        return msg

@@ -1,7 +1,7 @@
-FROM python:3.9
+FROM python:3.9 as base
 
 # Copy only the relevant Python files into the container.
-COPY ./lib /app/lib
+COPY ./bot /app/bot
 COPY requirements.txt /app
 COPY config.py /app
 COPY main.py /app
@@ -16,4 +16,6 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 
 EXPOSE 3000
 
-ENTRYPOINT ["python3", "main.py"]
+CMD ["python3", "main.py"]
+
+FROM base as production
