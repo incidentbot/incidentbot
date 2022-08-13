@@ -1,7 +1,7 @@
-Usage
+Setup
 =====
 
-.. _installation:
+.. _setup:
 
 Installation
 ------------
