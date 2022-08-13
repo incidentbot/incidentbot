@@ -6,6 +6,8 @@ Incident management ChatOps bot for Slack to allow your teams to easily and effe
 
 Interacting with the bot is incredibly easy through the use of modals and simplified commands.
 
+[View documentation on readthedocs](https://incident-bot.readthedocs.io/en/latest/)
+
 ## Features at a Glance
 
 - Fully featured web management UI
@@ -21,6 +23,7 @@ Interacting with the bot is incredibly easy through the use of modals and simpli
   - [Features at a Glance](#features-at-a-glance)
   - [Architecture](#architecture)
   - [Requirements](#requirements)
+  - [Documentation](#documentation)
   - [Testing](#testing)
   - [Feedback](#feedback)
 
@@ -38,6 +41,12 @@ Each incident stores unique data referenced by processes throughout the app for 
 - Use the option to create the app from a manifest. Run `make render` to output `slack_app_manifest.yaml` at project root and paste in the contents. You can adjust these settings later as you see fit, but these are the minimum permissions required for the bot to function properly.
 - Install the app to your workspace. You'll now have an OAuth token. Provide that as `SLACK_BOT_TOKEN`.
 - Verify that websocket mode is enabled and provide the generated app token as `SLACK_APP_TOKEN` - you can generate an app token via the `Basic Information` page in your app's configuration.
+
+## Documentation
+
+The documentation covers all setup requirements and features of the app.
+
+[View on readthedocs](https://incident-bot.readthedocs.io/en/latest/)
 
 ## Testing
 
