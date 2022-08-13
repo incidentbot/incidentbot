@@ -5,6 +5,8 @@ An open-source, full-featured incident management framework for Slack to give yo
 
 Check out the :doc:`features` section for further information.
 
+Check out the :doc:`examples` section for a walkthrough on features.
+
 .. note::
 
   This project is under active development.
@@ -16,3 +18,4 @@ Contents
 
   features
   setup
+  examples
