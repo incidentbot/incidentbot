@@ -3,8 +3,9 @@ Welcome to Incident Bot's documentation!
 
 An open-source, full-featured incident management framework for Slack to give your teams their time back.
 
-Check out the :doc:`usage` section for further information, including
-how to :ref:`installation` the project.
+Check out the :doc:`features` section for further information.
+
+Check out the :doc:`examples` section for a walkthrough on features.
 
 .. note::
 
@@ -15,4 +16,6 @@ Contents
 
 .. toctree::
 
-  usage
+  features
+  setup
+  examples
