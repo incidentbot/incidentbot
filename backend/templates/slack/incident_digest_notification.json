@@ -1,0 +1,86 @@
+{
+  "channel": "{channel_id_var_placeholder}",
+  "blocks": [
+    {
+      "type": "header",
+      "text": {
+        "type": "plain_text",
+        "text": ":bangbang: New Incident Declared :bangbang:"
+      }
+    },
+    {
+      "block_id": "digest_channel_title",
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "Description:\n *{channel_name_var_placeholder}*"
+      }
+    },
+    {
+      "block_id": "digest_channel_status",
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "Current Status:\n *Investigating*"
+      }
+    },
+    {
+      "block_id": "digest_channel_severity",
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "Severity:\n *SEV4*"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "A new incident has been declared. Please use the buttons here to participate."
+      }
+    },
+    {
+      "type": "actions",
+      "block_id": "incchannelbuttons",
+      "elements": [
+        {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": "Join Incident Channel"
+          },
+          "style": "primary",
+          "url": "https://{slack_workspace_id_var_placeholder}.slack.com/archives/{channel_name_var_placeholder}",
+          "action_id": "incident.join_incident_channel"
+        },
+        {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": "Zoom"
+          },
+          "url": "{zoom_link_var_placeholder}",
+          "action_id": "incident.click_zoom_link"
+        },
+        {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": "Incident Guide"
+          },
+          "url": "{incident_guide_link_var_placeholder}",
+          "action_id": "incident.incident_guide_link"
+        },
+        {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": "Incident Postmortems"
+          },
+          "url": "{incident_postmortems_link_var_placeholder}",
+          "action_id": "incident.incident_postmortem_link"
+        }
+      ]
+    }
+  ]
+}
