@@ -67,6 +67,23 @@ def db_read_incident(incident_id: str, return_json: bool = False) -> Incident:
         Session.remove()
 
 
+def db_read_incident_channel_id(incident_id: str) -> str:
+    """
+    Read from database and return channel id
+    """
+    try:
+        incident = (
+            Session.query(Incident).filter(Incident.incident_id == incident_id).one()
+        )
+        return incident.channel_id
+    except Exception as error:
+        logger.error(f"Incident lookup query failed for {incident_id}: {error}")
+        raise error
+    finally:
+        Session.close()
+        Session.remove()
+
+
 def db_update_incident_created_at_col(incident_id: str, created_at: str):
     try:
         incident = (

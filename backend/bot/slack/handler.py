@@ -288,7 +288,7 @@ def reaction_added(event, say):
                                 img=res.content,
                                 mimetype=file["mimetype"],
                                 ts=tools.fetch_timestamp(short=True),
-                                user=get_user_name(id=message["user"]),
+                                user=get_user_name(user_id=message["user"]),
                             )
                         else:
                             say(
@@ -300,23 +300,24 @@ def reaction_added(event, say):
                         incident_id=channel_info["channel"]["name"],
                         content=message["text"],
                         ts=tools.fetch_timestamp(short=True),
-                        user=get_user_name(id=message["user"]),
+                        user=get_user_name(user_id=message["user"]),
                     )
             except Exception as error:
                 logger.error(f"Error when trying to retrieve a message: {error}")
-            try:
-                slack_web_client.reactions_add(
-                    channel=channel_id, name="white_check_mark", timestamp=ts
-                )
-            except Exception as error:
-                if "already_reacted" in str(error):
-                    reason = "It looks like I've already pinned that content."
-                else:
-                    reason = "Something went wrong!"
-                say(
-                    channel=channel_id,
-                    text=f":wave: Hey there! I was unable to pin that message. {reason}",
-                )
+            finally:
+                try:
+                    slack_web_client.reactions_add(
+                        channel=channel_id, name="white_check_mark", timestamp=ts
+                    )
+                except Exception as error:
+                    if "already_reacted" in str(error):
+                        reason = "It looks like I've already pinned that content."
+                    else:
+                        reason = f"Something went wrong: {error}"
+                    say(
+                        channel=channel_id,
+                        text=f":wave: Hey there! I was unable to pin that message. {reason}",
+                    )
 
 
 """

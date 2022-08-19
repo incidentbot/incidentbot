@@ -86,22 +86,47 @@ def post_incident():
         )
 
 
-@incidentrt.route("/incident/<incident_id>/audit", methods=["GET"])
+@incidentrt.route("/incident/<incident_id>/audit", methods=["GET", "DELETE"])
 @jwt_required()
 def get_incident_audit_log(incident_id):
-    try:
-        audit_logs = log.read(incident_id)
-        return (
-            jsonify({"data": audit_logs}),
-            200,
-            {"ContentType": "application/json"},
-        )
-    except Exception as error:
-        return (
-            jsonify({"error": str(error)}),
-            500,
-            {"ContentType": "application/json"},
-        )
+    if request.method == "GET":
+        try:
+            audit_logs = log.read(incident_id)
+            return (
+                jsonify({"data": audit_logs}),
+                200,
+                {"ContentType": "application/json"},
+            )
+        except Exception as error:
+            return (
+                jsonify({"error": str(error)}),
+                500,
+                {"ContentType": "application/json"},
+            )
+    elif request.method == "DELETE":
+        request_data = request.json
+        try:
+            success, error = log.delete(
+                incident_id=incident_id, log=request_data["log"], ts=request_data["ts"]
+            )
+            if success:
+                return (
+                    jsonify({"success": True}),
+                    200,
+                    {"ContentType": "application/json"},
+                )
+            else:
+                return (
+                    jsonify({"error": str(error)}),
+                    500,
+                    {"ContentType": "application/json"},
+                )
+        except Exception as error:
+            return (
+                jsonify({"error": str(error)}),
+                500,
+                {"ContentType": "application/json"},
+            )
 
 
 @incidentrt.route("/incident/<incident_id>/pinned", methods=["GET"])
