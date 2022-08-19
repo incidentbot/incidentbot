@@ -1,23 +1,37 @@
-import datetime
 import ipaddress
 import json
 import logging
 import random
 import string
 
+from bot.settings.im import timezone as application_timezone
+from datetime import datetime
+from pytz import timezone
 from typing import Any, List
 
 logger = logging.getLogger(__name__)
 
 random_suffix = "".join(random.choices(string.ascii_lowercase + string.digits, k=6))
 timestamp_fmt = "%Y-%m-%dT%H:%M:%S %Z"
-timestamp_fmt_short = "%d/%m/%Y %H:%M:%S"
+timestamp_fmt_short = "%d/%m/%Y %H:%M:%S %Z"
 
 
 def fetch_timestamp(short: bool = False):
+    """
+    Return a localized, formatted timestamp using datetime.now()
+    """
+    now = datetime.now()
+    localized = timezone(application_timezone).localize(now)
     if short:
-        return datetime.datetime.now().astimezone().strftime(timestamp_fmt_short)
-    return datetime.datetime.now().astimezone().strftime(timestamp_fmt)
+        return localized.strftime(timestamp_fmt_short)
+    return localized.strftime(timestamp_fmt)
+
+
+def fetch_timestamp_from_time_obj(t: datetime):
+    """
+    Return a localized, formatted timestamp using datetime.datetime class
+    """
+    return timezone(application_timezone).localize(t).strftime(timestamp_fmt)
 
 
 def find_index_in_list(lst: List, key: Any, value: Any):

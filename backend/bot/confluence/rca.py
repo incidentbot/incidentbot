@@ -1,9 +1,10 @@
 import config
 
+from bot.audit import log
 from bot.confluence.api import confluence, logger, today
 from bot.models.pg import IncidentLogging, Session
 from bot.shared import tools
-from typing import Any
+from typing import Any, Dict, List
 
 
 def create_rca(
@@ -36,6 +37,7 @@ def create_rca(
         technical_lead=technical_lead,
         severity=severity,
         severity_definition=severity_definition,
+        timeline=generate_timeline(log.read(incident_id=incident_id)),
         attachments=generate_pinned_items(attachments),
     )
     # Create rca doc
@@ -104,11 +106,50 @@ def generate_pinned_items(items: IncidentLogging) -> str:
     return all_items_formatted
 
 
+def generate_timeline(items: List[Dict]) -> str:
+    if len(items) == 0:
+        return """
+<tr>
+    <td>
+        <p>None.</p>
+    </td>
+    <td>
+        <p>No items were added to this incident's timeline.</p>
+    </td>
+</tr>
+"""
+    all_items_formatted = ""
+    for item in items:
+        all_items_formatted += f"""
+<tr>
+    <td>
+        <p>{item["ts"]}</p>
+    </td>
+    <td>
+        <p>{item["log"]}</p>
+    </td>
+</tr>
+"""
+    # Boilerplate
+    all_items_formatted += f"""
+<tr>
+    <td>
+        <p>&hellip;</p>
+    </td>
+    <td>
+        <p>&hellip;</p>
+    </td>
+</tr>
+"""
+    return all_items_formatted
+
+
 def render_rca_html(
     incident_commander: str,
     technical_lead: str,
     severity: str,
     severity_definition: str,
+    timeline: str,
     attachments: str,
 ) -> str:
     """Renders HTML for use in Confluence documents"""
@@ -117,6 +158,7 @@ def render_rca_html(
         "technical_lead": user_mention_format(technical_lead),
         "severity": severity.upper(),
         "severity_definition": severity_definition,
+        "timeline": timeline,
         "attachments": attachments,
     }
     return tools.render_html(f"templates/confluence/rca.html", variables)

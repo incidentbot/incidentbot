@@ -111,6 +111,7 @@ def startup_task_init():
                         "incident_channel_topic": "This is the default incident channel topic. You can edit it in settings.",
                         "incident_guide_link": "https://changeme.com",
                         "incident_postmortems_link": "https://changeme.com",
+                        "timezone": "UTC",
                         "zoom_link": "https://zoom.us",
                     },
                     description="Various settings to control Incident Management functionality.",

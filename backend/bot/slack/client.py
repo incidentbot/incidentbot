@@ -155,7 +155,7 @@ def store_slack_user_list():
         Session.close()
 
 
-def get_user_name(id: str) -> str:
+def get_user_name(user_id: str) -> str:
     """
     Get a single user's real_name from a user ID
 
@@ -164,7 +164,7 @@ def get_user_name(id: str) -> str:
     """
     ulist = Session.query(OperationalData).filter_by(id="slack_users").one()
     for obj in ulist.json_data:
-        if id in obj.values():
+        if user_id in obj.values():
             return obj["real_name"]
         else:
             continue
