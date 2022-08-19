@@ -56,8 +56,8 @@ import useToken from '../hooks/useToken';
 
 import moment from 'moment';
 import AddTagButton from './components/Add-tag.component';
-import AuditLogTable from './components/Audit-log-table.component';
 import TagStack from '../components/Tag-stack.component';
+import Timeline from './components/Timeline.component';
 import WaitingBase from '../components/Waiting-base.component';
 
 const StyledCardHeader = styled(CardHeader)(({ theme }) => ({
@@ -68,7 +68,6 @@ const ViewSingleIncident = () => {
   const { incidentName } = useParams();
 
   const [incident, setIncident] = useState();
-  const [auditLogData, setAuditLogData] = useState([]);
   const [pinnedItemsData, setPinnedItemsData] = useState([]);
   const [users, setUsers] = useState([]);
 
@@ -113,32 +112,6 @@ const ViewSingleIncident = () => {
         } else if (error.request) {
           setFetchStatus('error');
           setFetchMessage(`Error retrieving incidents from backend: ${error}`);
-          setOpenFetchStatus(true);
-        }
-      });
-  }
-
-  async function getIncidentAuditLog() {
-    var url = apiUrl + '/incident/' + incidentName + '/audit';
-    await axios({
-      method: 'GET',
-      responseType: 'json',
-      url: url,
-      headers: {
-        Authorization: 'Bearer ' + token
-      }
-    })
-      .then(function (response) {
-        setAuditLogData(response.data.data);
-      })
-      .catch(function (error) {
-        if (error.response) {
-          setFetchStatus('error');
-          setFetchMessage(`Error retrieving audit log from backend: ${error.response.data.error}`);
-          setOpenFetchStatus(true);
-        } else if (error.request) {
-          setFetchStatus('error');
-          setFetchMessage(`Error retrieving audit log from backend: ${error.response.data.error}`);
           setOpenFetchStatus(true);
         }
       });
@@ -281,7 +254,6 @@ const ViewSingleIncident = () => {
   // Retrieve incidents and users
   useEffect(() => {
     getSingleIncident();
-    getIncidentAuditLog();
     getPinnedItems();
     getSlackUsers();
     setLoadingData(false);
@@ -292,7 +264,6 @@ const ViewSingleIncident = () => {
     setRefreshData(false);
     getSingleIncident();
     getPinnedItems();
-    getIncidentAuditLog();
     getSlackUsers();
     setLoadingData(false);
   }
@@ -630,17 +601,10 @@ const ViewSingleIncident = () => {
                           </Button>
                         ) : (
                           <>
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                displayDirection: 'row',
-                                flexGrow: 1
-                              }}>
-                              <Alert color="info" variant="outlined" size="">
-                                A link to the RCA will appear here once the incident is resolved and
-                                one has been generated.
-                              </Alert>
-                            </Box>
+                            <Alert color="info" variant="outlined" sx={{ width: '100%' }}>
+                              A link to the RCA will appear here once the incident is resolved and
+                              one has been generated.
+                            </Alert>
                           </>
                         )}
                       </ListItem>
@@ -649,7 +613,7 @@ const ViewSingleIncident = () => {
                 </Grid>
               </Grid>
               <Box sx={{ marginTop: 4 }}>
-                <AuditLogTable auditLogData={auditLogData === null ? [] : auditLogData} />
+                <Timeline incidentName={incident.incident_id} />
               </Box>
               <Box sx={{ marginTop: 2 }}>
                 {pinnedItemsData !== null &&
