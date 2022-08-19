@@ -43,7 +43,6 @@ Optional Variables
 - ``STATUSPAGE_API_KEY`` - Statuspage API key if enabling.
 - ``STATUSPAGE_PAGE_ID`` - Statuspage page ID if enabling.
 - ``STATUSPAGE_URL`` - Link to the public Statuspage for your organization. **Note:** This must be a fully formed URL - example: ``https://status.foo.com``.
-- ``WEB_INTERFACE_ENABLED`` - set this to ``true`` to enable the optional web management interface. **Note:** The web interface is deprecated and will be removed in a future version.
 
 It is also possible to automatically create an RCA/postmortem document when an incident is transitioned to resolved.
 
