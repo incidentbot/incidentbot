@@ -31,7 +31,6 @@ Incident Management Requirements
 Since this bot mainly helps run incidents, there are a few prerequisites.
 
 - You should have a digest channel that serves as a collection of information for all of your incidents. Provide this as ``INCIDENTS_DIGEST_CHANNEL`` - this is the channel **name**, not the **ID**. A common sense one is ``incidents``. The idea is that all information about ongoing incidents will be sent to this channel and everyone who cares about incident management can go look there.
-- Your Slack workspace name (``foobar.slack.com``) minus the domain (``foobar``) should be provided as ``SLACK_WORKSPACE_ID``. This is used to format some things related to sending messages to Slack.
 - You should invite your bot user to the aforementioned incidents digest channel at a minimum as well as anywhere else you'd like to use it. If you'd like to enable the react-to-create feature, the bot will need to be in every channel you plan to use this in. Common places are alert channels, etc.
 
 .. _starting-and-running-incidents:

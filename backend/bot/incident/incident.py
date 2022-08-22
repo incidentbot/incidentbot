@@ -19,7 +19,7 @@ from bot.settings.im import (
     zoom_link,
 )
 from bot.shared import tools
-from bot.slack import client
+from bot.slack.client import slack_web_client, slack_workspace_id
 from bot.statuspage import slack as spslack, handler as sp_handler
 from threading import Thread
 from typing import Dict
@@ -103,7 +103,7 @@ def create_incident(
             try:
                 # Call the conversations.create method using the WebClient
                 # conversations_create requires the channels:manage bot scope
-                channel = client.slack_web_client.conversations_create(
+                channel = slack_web_client.conversations_create(
                     # The name of the conversation
                     name=fmt_channel_name
                 )
@@ -122,7 +122,7 @@ def create_incident(
             """
             digest_message_content = build_digest_notification(createdChannelDetails)
             try:
-                digest_message = client.slack_web_client.chat_postMessage(
+                digest_message = slack_web_client.chat_postMessage(
                     **digest_message_content,
                     text="",
                 )
@@ -137,7 +137,7 @@ def create_incident(
             """
             topic_boilerplate = incident_channel_topic
             try:
-                topic = client.slack_web_client.conversations_setTopic(
+                topic = slack_web_client.conversations_setTopic(
                     channel=channel["channel"]["id"],
                     topic=topic_boilerplate,
                 )
@@ -151,7 +151,7 @@ def create_incident(
                 createdChannelDetails
             )
             try:
-                bp_message = client.slack_web_client.chat_postMessage(
+                bp_message = slack_web_client.chat_postMessage(
                     **bp_message_content,
                     text="",
                 )
@@ -159,7 +159,7 @@ def create_incident(
             except slack_sdk.errors.SlackApiError as error:
                 logger.error(f"Error sending message to incident channel: {error}")
             # Pin the boilerplate message to the channel for quick access.
-            client.slack_web_client.pins_add(
+            slack_web_client.pins_add(
                 channel=createdChannelDetails["id"],
                 timestamp=bp_message["ts"],
             )
@@ -167,7 +167,7 @@ def create_incident(
             Post Zoom link in the channel upon creation
             """
             try:
-                client.slack_web_client.chat_postMessage(
+                slack_web_client.chat_postMessage(
                     channel=channel["channel"]["id"],
                     text=zoom_link,
                 )
@@ -250,7 +250,7 @@ def handle_incident_optional_features(
                     g for g in all_groups if g["handle"] == group_to_invite
                 ][0]["id"]
                 required_participants_group_members = (
-                    client.slack_web_client.usergroups_users_list(
+                    slack_web_client.usergroups_users_list(
                         usergroup=required_participants_group,
                     )
                 )["users"]
@@ -259,7 +259,7 @@ def handle_incident_optional_features(
                     f"Error when formatting automatic invitees group name: {error}"
                 )
             try:
-                invite = client.slack_web_client.conversations_invite(
+                invite = slack_web_client.conversations_invite(
                     channel=channel_id,
                     users=",".join(required_participants_group_members),
                 )
@@ -289,7 +289,7 @@ def handle_incident_optional_features(
                 )
             else:
                 try:
-                    pu_message = client.slack_web_client.chat_postMessage(
+                    pu_message = slack_web_client.chat_postMessage(
                         **ext_incidents.slack_message(),
                         text="",
                     )
@@ -309,7 +309,7 @@ def handle_incident_optional_features(
             channel_id, sp_components_list
         )
         try:
-            sp_starter_message = client.slack_web_client.chat_postMessage(
+            sp_starter_message = slack_web_client.chat_postMessage(
                 **sp_starter_message_content,
                 text="",
             )
@@ -337,9 +337,9 @@ def handle_incident_optional_features(
         original_channel = request_parameters["channel"]
         original_message_timestamp = request_parameters["original_message_timestamp"]
         formatted_timestamp = str.replace(original_message_timestamp, ".", "")
-        link_to_message = f"https://{config.slack_workspace_id}.slack.com/archives/{original_channel}/p{formatted_timestamp}"
+        link_to_message = f"https://{slack_workspace_id}.slack.com/archives/{original_channel}/p{formatted_timestamp}"
         try:
-            client.slack_web_client.chat_postMessage(
+            slack_web_client.chat_postMessage(
                 channel=channel_id,
                 text="",
                 blocks=[
@@ -369,7 +369,7 @@ def handle_incident_optional_features(
         # Message the channel where the react request came from to inform
         # regarding incident channel creation
         try:
-            client.slack_web_client.chat_postMessage(
+            slack_web_client.chat_postMessage(
                 channel=original_channel,
                 text="",
                 blocks=[
@@ -432,7 +432,7 @@ def build_digest_notification(createdChannelDetails: Dict[str, str]) -> Dict[str
     variables = {
         "channel_id_var_placeholder": config.incidents_digest_channel,
         "channel_name_var_placeholder": createdChannelDetails["name"],
-        "slack_workspace_id_var_placeholder": config.slack_workspace_id,
+        "slack_workspace_id_var_placeholder": slack_workspace_id,
         "incident_guide_link_var_placeholder": incident_guide_link,
         "incident_postmortems_link_var_placeholder": incident_postmortems_link,
         "zoom_link_var_placeholder": zoom_link,
@@ -563,7 +563,7 @@ def build_updated_digest_message(
         "status_var_placeholder": status.title(),
         "severity_var_placeholder": severity.upper(),
         "message_var_placeholder": message,
-        "slack_workspace_id_var_placeholder": config.slack_workspace_id,
+        "slack_workspace_id_var_placeholder": slack_workspace_id,
         "incident_guide_link_var_placeholder": incident_guide_link,
         "incident_postmortems_link_var_placeholder": incident_postmortems_link,
         "zoom_link_var_placeholder": zoom_link,

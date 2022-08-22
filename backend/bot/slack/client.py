@@ -18,9 +18,24 @@ slack_web_client = WebClient(token=config.slack_bot_token)
 """
 Reusable variables
 """
-all_workspace_groups = slack_web_client.usergroups_list()
-bot_user_id = slack_web_client.auth_test()["user_id"]
-bot_user_name = slack_web_client.auth_test()["user"]
+all_workspace_groups = (
+    slack_web_client.usergroups_list() if config.test_environment == "false" else []
+)
+bot_user_id = (
+    slack_web_client.auth_test()["user_id"]
+    if config.test_environment == "false"
+    else "test"
+)
+bot_user_name = (
+    slack_web_client.auth_test()["user"]
+    if config.test_environment == "false"
+    else "test"
+)
+slack_workspace_id = (
+    slack_web_client.auth_test()["url"].replace("https://", "").split(".")[0]
+    if config.test_environment == "false"
+    else "test"
+)
 
 
 def get_channel_history(channel_id: str) -> str:

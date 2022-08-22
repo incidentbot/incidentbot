@@ -3,7 +3,7 @@ import logging
 
 from bot.models.pg import OperationalData, Session
 from bot.shared import tools
-from bot.slack.client import slack_web_client
+from bot.slack.client import slack_web_client, slack_workspace_id
 from collections import defaultdict
 from pdpyras import APISession, PDClientError
 from sqlalchemy import update
@@ -179,7 +179,7 @@ def page(
             "incident_key": channel_name,
             "body": {
                 "type": "incident_body",
-                "details": f"An incident has been declared in Slack and this team has been paged as a result. You were paged by {paging_user}. Link: https://{config.slack_workspace_id}.slack.com/archives/{channel_id}",
+                "details": f"An incident has been declared in Slack and this team has been paged as a result. You were paged by {paging_user}. Link: https://{slack_workspace_id}.slack.com/archives/{channel_id}",
             },
             "escalation_policy": {"id": ep_id, "type": "escalation_policy_reference"},
         }

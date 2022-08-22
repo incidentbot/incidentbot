@@ -27,7 +27,6 @@ Required Variables
 - ``INCIDENTS_DIGEST_CHANNEL`` - the **name** of the incidents digest channel referenced in the features documentation.
 - ``SLACK_APP_TOKEN`` - the app-level token for enabling websocket communication.
 - ``SLACK_BOT_TOKEN`` - the API token to be used by your bot once it is deployed to your workspace.
-- ``SLACK_WORKSPACE_ID`` - if your Slack workspace is ``mycompany.slack.com``, this should be ``mycompany``.
 
 Optional Variables
 ------------

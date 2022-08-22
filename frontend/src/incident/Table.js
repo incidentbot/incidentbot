@@ -390,7 +390,7 @@ export default function EnhancedTable(props) {
                           <IconButton
                             key={`${row.incident_id}-slack-link`}
                             component="a"
-                            href={`https://${process.env.REACT_APP_SLACK_WORKSPACE_ID}.slack.com/archives/${row.channel_id}`}
+                            href={`https://${props.slackWorkspaceID}.slack.com/archives/${row.channel_id}`}
                             target="new">
                             <Icon icon="bxl:slack" width="20" height="20" />
                           </IconButton>
