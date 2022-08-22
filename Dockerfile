@@ -8,9 +8,6 @@ COPY ./frontend/package-lock.json .
 COPY ./frontend/.eslintrc.json .
 COPY ./frontend/.prettierrc .
 
-ARG SLACK_WORKSPACE_ID
-ENV REACT_APP_SLACK_WORKSPACE_ID=$SLACK_WORKSPACE_ID
-
 RUN npm install &&\
   npm run build
 

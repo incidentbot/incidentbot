@@ -23,6 +23,7 @@ from bot.slack.client import (
     get_message_content,
     invite_user_to_channel,
     return_slack_channel_info,
+    slack_workspace_id,
 )
 from . import action_parameters as ap, incident
 from .incident import invite_user_to_channel
@@ -417,7 +418,7 @@ def set_incident_status(
                                     "type": "plain_text",
                                     "text": "View Incident Channel",
                                 },
-                                "url": f"https://{config.slack_workspace_id}.slack.com/archives/{channel_id}",
+                                "url": f"https://{slack_workspace_id}.slack.com/archives/{channel_id}",
                                 "action_id": "incident.join_incident_channel",
                             },
                         ],
@@ -438,7 +439,7 @@ def set_incident_status(
                                     "type": "plain_text",
                                     "text": "View Incident Channel",
                                 },
-                                "url": f"https://{config.slack_workspace_id}.slack.com/archives/{channel_id}",
+                                "url": f"https://{slack_workspace_id}.slack.com/archives/{channel_id}",
                                 "action_id": "incident.join_incident_channel",
                             },
                         ],

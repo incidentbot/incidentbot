@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 from typing import List
 
-__version__ = "v0.6.1"
+__version__ = "v0.6.2"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -63,7 +63,6 @@ Slack
 """
 slack_app_token = os.getenv("SLACK_APP_TOKEN")
 slack_bot_token = os.getenv("SLACK_BOT_TOKEN")
-slack_workspace_id = os.getenv("SLACK_WORKSPACE_ID", default="")
 
 
 """
@@ -193,7 +192,7 @@ def slack_template_check(required_templates: List[str]):
     logger.info("All templates found successfully.")
 
 
-def startup_message(wrap: bool = False) -> str:
+def startup_message(workspace: str, wrap: bool = False) -> str:
     """
     Returns diagnostic info for startup or troubleshooting
     """
@@ -204,7 +203,7 @@ def startup_message(wrap: bool = False) -> str:
 Core functionality:
     Database host:                      {database_host}
     Incidents digest channel:           {incidents_digest_channel}
-    Slack workspace:                    {slack_workspace_id}
+    Slack workspace:                    {workspace}
     Logging level:                      {log_level}
 
 Options:

@@ -6,6 +6,7 @@ import sys
 from bot.api.flask import app
 from bot.models.pg import db_verify
 from bot.scheduler import scheduler
+from bot.slack.client import slack_workspace_id
 from bot.slack.handler import app as slack_app
 
 from slack_bolt.adapter.socket_mode import SocketModeHandler
@@ -29,7 +30,6 @@ if __name__ == "__main__":
             "INCIDENT_CHANNEL_TOPIC",
             "SLACK_APP_TOKEN",
             "SLACK_BOT_TOKEN",
-            "SLACK_WORKSPACE_ID",
             "POSTGRES_WRITER_HOST",
             "POSTGRES_DB",
             "POSTGRES_USER",
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     db_check()
 
     ## Startup splash for confirming key options
-    startup_message = config.startup_message()
+    startup_message = config.startup_message(workspace=slack_workspace_id)
     print(startup_message)
 
     # Serve Slack Bolt app

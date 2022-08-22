@@ -12,10 +12,11 @@ const Incidents = () => {
   const [incidents, setIncidents] = useState([]);
   const [refreshData, setRefreshData] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
+  const [imSettings, setIMSettings] = useState([]);
 
-  const [fetchIncidentsStatus, setFetchIncidentsStatus] = useState('');
-  const [fetchIncidentsMessage, setFetchIncidentsMessage] = useState('');
-  const [openFetchIncidentsStatus, setOpenFetchIncidentsStatus] = useState(false);
+  const [fetchStatus, setFetchStatus] = useState('');
+  const [fetchMessage, setFetchMessage] = useState('');
+  const [openFetchStatus, setOpenFetchStatus] = useState(false);
 
   const { token } = useToken();
 
@@ -34,15 +35,39 @@ const Incidents = () => {
       })
       .catch(function (error) {
         if (error.response) {
-          setFetchIncidentsStatus('error');
-          setFetchIncidentsMessage(
-            `Error retrieving incidents from backend: ${error.response.data.error}`
-          );
-          setOpenFetchIncidentsStatus(true);
+          setFetchStatus('error');
+          setFetchMessage(`Error retrieving incidents from backend: ${error.response.data.error}`);
+          setOpenFetchStatus(true);
         } else if (error.request) {
-          setFetchIncidentsStatus('error');
-          setFetchIncidentsMessage(`Error retrieving incidents from backend: ${error}`);
-          setOpenFetchIncidentsStatus(true);
+          setFetchStatus('error');
+          setFetchMessage(`Error retrieving incidents from backend: ${error}`);
+          setOpenFetchStatus(true);
+        }
+      });
+  }
+
+  async function getIMSettings() {
+    var url = apiUrl + '/setting/incident_management_configuration';
+    await axios({
+      method: 'GET',
+      responseType: 'json',
+      url: url,
+      headers: {
+        Authorization: 'Bearer ' + token
+      }
+    })
+      .then(function (response) {
+        setIMSettings(response.data.data);
+      })
+      .catch(function (error) {
+        if (error.response) {
+          setFetchStatus('error');
+          setFetchMessage(`Error retrieving settings from backend: ${error.response.data.error}`);
+          setOpenFetchStatus(true);
+        } else if (error.request) {
+          setFetchStatus('error');
+          setFetchMessage(`Error retrieving settings from backend: ${error}`);
+          setOpenFetchStatus(true);
         }
       });
   }
@@ -50,6 +75,7 @@ const Incidents = () => {
   // Retrieve incidents
   useEffect(() => {
     getAllIncidents();
+    getIMSettings();
     setLoadingData(false);
   }, []);
 
@@ -57,31 +83,43 @@ const Incidents = () => {
     setLoadingData(true);
     setRefreshData(false);
     getAllIncidents();
+    getIMSettings();
     setLoadingData(false);
   }
+
+  var slackWorkspaceID;
+  Object.entries(imSettings).forEach((key) => {
+    if (key[0] === 'slack_workspace_id') {
+      slackWorkspaceID = key[1];
+    }
+  });
 
   return (
     <div className="incidents-page">
       <Container maxWidth="" sx={{ width: '70%', paddingTop: '5vh' }}>
-        {!loadingData ? <Table incidents={incidents} /> : <WaitingBase />}
+        {!loadingData ? (
+          <Table incidents={incidents} slackWorkspaceID={slackWorkspaceID} />
+        ) : (
+          <WaitingBase />
+        )}
       </Container>
-      {fetchIncidentsStatus && (
+      {fetchStatus && (
         <Container>
           <Snackbar
-            open={openFetchIncidentsStatus}
+            open={openFetchStatus}
             autoHideDuration={6000}
             anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
             onClose={(event, reason) => {
               if (reason === 'clickaway') {
                 return;
               }
-              setOpenFetchIncidentsStatus(false);
+              setOpenFetchStatus(false);
             }}>
             <Alert
-              severity={fetchIncidentsStatus ? fetchIncidentsStatus : 'info'}
+              severity={fetchStatus ? fetchStatus : 'info'}
               variant="filled"
               sx={{ width: '100%' }}>
-              {fetchIncidentsMessage}
+              {fetchMessage}
             </Alert>
           </Snackbar>
         </Container>

@@ -70,6 +70,7 @@ const ViewSingleIncident = () => {
   const [incident, setIncident] = useState();
   const [pinnedItemsData, setPinnedItemsData] = useState([]);
   const [users, setUsers] = useState([]);
+  const [imSettings, setIMSettings] = useState([]);
 
   const [loadingData, setLoadingData] = useState(true);
   const [refreshData, setRefreshData] = useState(false);
@@ -233,6 +234,32 @@ const ViewSingleIncident = () => {
       });
   }
 
+  async function getIMSettings() {
+    var url = apiUrl + '/setting/incident_management_configuration';
+    await axios({
+      method: 'GET',
+      responseType: 'json',
+      url: url,
+      headers: {
+        Authorization: 'Bearer ' + token
+      }
+    })
+      .then(function (response) {
+        setIMSettings(response.data.data);
+      })
+      .catch(function (error) {
+        if (error.response) {
+          setFetchStatus('error');
+          setFetchMessage(`Error retrieving settings from backend: ${error.response.data.error}`);
+          setOpenFetchStatus(true);
+        } else if (error.request) {
+          setFetchStatus('error');
+          setFetchMessage(`Error retrieving settings from backend: ${error}`);
+          setOpenFetchStatus(true);
+        }
+      });
+  }
+
   // Handlers
   const handleUserAssign = (props) => (event) => {
     values.channel_id = props.channelID;
@@ -256,6 +283,7 @@ const ViewSingleIncident = () => {
     getSingleIncident();
     getPinnedItems();
     getSlackUsers();
+    getIMSettings();
     setLoadingData(false);
   }, []);
 
@@ -265,8 +293,16 @@ const ViewSingleIncident = () => {
     getSingleIncident();
     getPinnedItems();
     getSlackUsers();
+    getIMSettings();
     setLoadingData(false);
   }
+
+  var slackWorkspaceID;
+  Object.entries(imSettings).forEach((key) => {
+    if (key[0] === 'slack_workspace_id') {
+      slackWorkspaceID = key[1];
+    }
+  });
 
   return (
     <div className="view-single-incident-page">
@@ -401,7 +437,7 @@ const ViewSingleIncident = () => {
                           size="small"
                           variant="outlined"
                           key={`${incident.incident_id}-slack-link`}
-                          href={`https://${process.env.REACT_APP_SLACK_WORKSPACE_ID}.slack.com/archives/${incident.channel_id}`}
+                          href={`https://${slackWorkspaceID}.slack.com/archives/${incident.channel_id}`}
                           target="new">
                           Open Slack Channel
                         </Button>
