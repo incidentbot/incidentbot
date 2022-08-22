@@ -139,8 +139,7 @@ class TestBotSlackHandler:
 
         assert_auth_test_count(self, 1)
         time.sleep(1)  # wait a bit after auto ack()
-        assert result["call_count"] == len(calls)
-        assert mentions == calls
+        assert result["call_count"] == len(calls) and len(mentions) == len(calls)
 
     # The mock API doesn't like reaction_added for some reason?
     # def test_reaction_added(self):
