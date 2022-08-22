@@ -23,6 +23,8 @@ bot_user_id = slack_web_client.auth_test()["user_id"]
 bot_user_name = slack_web_client.auth_test()["user"]
 slack_workspace_id = (
     slack_web_client.auth_test()["url"].replace("https://", "").split(".")[0]
+    if config.test_environment == "false"
+    else "test"
 )
 
 
