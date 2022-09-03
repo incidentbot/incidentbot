@@ -125,7 +125,8 @@ class TestIncidentManagement:
 
     def test_incident_build_digest_notification(self):
         assert build_digest_notification(
-            createdChannelDetails={"id": "CBR2V3XEX", "name": "mock"}
+            createdChannelDetails={"id": "CBR2V3XEX", "name": "mock"},
+            severity="sev4",
         ) == {
             "blocks": [
                 {
@@ -206,7 +207,8 @@ class TestIncidentManagement:
 
     def test_build_incident_channel_boilerplate(self):
         assert build_incident_channel_boilerplate(
-            createdChannelDetails={"id": "CBR2V3XEX", "name": "mock"}
+            createdChannelDetails={"id": "CBR2V3XEX", "name": "mock"},
+            severity="sev4",
         ) == {
             "blocks": [
                 {"type": "divider"},
