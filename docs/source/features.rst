@@ -130,3 +130,12 @@ If the Statuspage integration is enabled, the application can do the following:
 - Resolve Statuspage incidents when incidents are resolved in Slack
 
 You must set the required environment variables detailed in the setup guide to enable the integration.
+
+.. _automated-helpers:
+
+Automated Helpers
+------------
+
+The following features are implemented to assist with managing incidents:
+
+- If the bot sees messages being sent in the incidents digest channel, it will drop in a message encouraging users to open an incident. This helps to prevent hesitation in declaring and running incidents.
