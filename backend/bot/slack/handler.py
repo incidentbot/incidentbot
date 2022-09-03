@@ -2,6 +2,8 @@ import config
 import logging
 import pyjokes
 import requests
+import slack_sdk
+import variables
 
 from slack_bolt import App
 from typing import Any, Dict
@@ -18,9 +20,9 @@ from bot.models.incident import db_read_all_incidents
 from bot.scheduler import scheduler
 from bot.shared import tools
 from bot.slack.client import get_user_name
+from bot.slack.helpers import DigestMessageTracking
 from bot.slack.incident_logging import write as write_content
 from bot.statuspage import actions as sp_actions, handler as sp_handler
-
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +38,7 @@ def custom_error_handler(error, body, logger):
 
 from . import modals
 
+tracking = DigestMessageTracking()
 
 """
 Handle Mentions
@@ -321,13 +324,111 @@ def reaction_added(event, say):
 
 
 """
-Logs for request handling various other requests
+Helper Functions
 """
 
 
 @app.event("message")
 def handle_message_events(body, logger):
     logger.debug(body)
+    """
+    Handle monitoring digest channel
+    """
+    if (
+        # The presence of subtype indicates events like message updates, etc.
+        # We don't want to act on these.
+        body["event"]["channel"] == variables.digest_channel_id
+        and not "subtype" in body["event"].keys()
+    ):
+        tracking.incr()
+        print(tracking.calls)
+        if tracking.calls > 5:
+            try:
+                result = slack_web_client.chat_postMessage(
+                    channel=body["event"]["channel"],
+                    blocks=[
+                        {
+                            "block_id": "chatter_help_message",
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": ":wave: Hey there! I've noticed there's some conversation happening in this channel and that there are no active incidents. "
+                                + "You can always start an incident and use it to investigate. In fact, all incidents start off as investigations! "
+                                + "You can always mark things as resolved if there are no actual issues.",
+                            },
+                        },
+                        {"type": "divider"},
+                        {
+                            "type": "actions",
+                            "block_id": "chat_help_message_buttons",
+                            "elements": [
+                                {
+                                    "type": "button",
+                                    "text": {
+                                        "type": "plain_text",
+                                        "text": "Start New Incident",
+                                        "emoji": True,
+                                    },
+                                    "value": "show_incident_modal",
+                                    "action_id": "open_incident_modal",
+                                    "style": "danger",
+                                },
+                                {
+                                    "type": "button",
+                                    "text": {
+                                        "type": "plain_text",
+                                        "text": "Dismiss",
+                                        "emoji": True,
+                                    },
+                                    "value": "placeholder",
+                                    "action_id": "dismiss_message",
+                                },
+                            ],
+                        },
+                    ],
+                )
+                tracking.reset()
+                tracking.set_message_ts(message_ts=result["message"]["ts"])
+                # Retrieve the sent message
+                sent_message = slack_web_client.conversations_history(
+                    channel=body["event"]["channel"],
+                    inclusive=True,
+                    oldest=result["message"]["ts"],
+                    limit=1,
+                )
+                # Update the sent message with its own timestamp
+                existing_blocks = sent_message["messages"][0]["blocks"]
+                existing_blocks[2]["elements"][1]["value"] = result["message"]["ts"]
+                try:
+                    slack_web_client.chat_update(
+                        channel=body["event"]["channel"],
+                        ts=result["message"]["ts"],
+                        blocks=existing_blocks,
+                        text="",
+                    )
+                except slack_sdk.errors.SlackApiError as error:
+                    logger.error(f"Error updating message: {error}")
+            except slack_sdk.errors.SlackApiError as error:
+                logger.error(
+                    f"Error sending help message to incident channel during increased chatter: {error}"
+                )
+
+
+"""
+Logs for request handling various other requests
+"""
+
+
+@app.action("dismiss_message")
+def handle_dismiss_message(ack, body):
+    logger.debug(body)
+    try:
+        ack()
+        slack_web_client.chat_delete(
+            channel=body["channel"]["id"], ts=body["actions"][0]["value"]
+        )
+    except slack_sdk.errors.SlackApiError as error:
+        logger.error(f"Error deleting message: {error}")
 
 
 @app.action("incident.incident_postmortem_link")
@@ -373,6 +474,12 @@ def handle_some_action(ack, body, logger):
 
 
 @app.action("open_rca")
+def handle_some_action(ack, body, logger):
+    logger.debug(body)
+    ack()
+
+
+@app.action("open_incident_modal_severity")
 def handle_some_action(ack, body, logger):
     logger.debug(body)
     ack()

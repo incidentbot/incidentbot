@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 from typing import List
 
-__version__ = "v0.6.2"
+__version__ = "v0.7.0"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -104,7 +104,6 @@ Web Application
 """
 jwt_secret_key = os.getenv("JWT_SECRET_KEY")
 default_admin_password = os.getenv("DEFAULT_WEB_ADMIN_PASSWORD")
-web_interface_enabled = os.getenv("WEB_INTERFACE_ENABLED", default="false")
 
 """
 Helper Methods
@@ -225,7 +224,6 @@ Options:
     Statuspage integration enabled:     {statuspage_integration_enabled}
     Statuspage API key:                 {statuspage_api_key[-4:].rjust(len(statuspage_api_key), "*")}
     Statuspage page ID:                 {statuspage_page_id[-4:].rjust(len(statuspage_page_id), "*")}
-    Web interface enabled:              {web_interface_enabled}
 --------------------------------------------------------------------------------
     """
     if wrap:

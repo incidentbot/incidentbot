@@ -1,7 +1,9 @@
 import config
 import datetime
 import logging
+import slack_sdk
 import tzlocal
+import variables
 
 from apscheduler.job import Job
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -91,15 +93,71 @@ def scheduled_reminder_message(channel_name: str, channel_id: str, severity: str
         been_30_minutes = datetime.timedelta(minutes=1) < time_open
         if been_30_minutes:
             try:
-                slack_web_client.chat_postMessage(
+                result = slack_web_client.chat_postMessage(
                     channel=channel_id,
-                    text=f"<!channel> :wave: It has been 30 minutes since this incident was opened and no updates have been sent out regarding this ticket. "
-                    + f"Since this is a *{severity.upper()}* incident, updates must be provided every half hour. Please use the 'provide incident update' shortcut. "
-                    + "If you're unsure how to do that, simply search for 'provide incident update' in the search bar at the top of your Slack window."
-                    + "For additional information about my features, check out my app's home page."
-                    + "I'll remind this channel every 30 minutes to either send out an initial update or provide a new one.",
+                    blocks=[
+                        {
+                            "block_id": "update_help_message",
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": f"<!channel> :wave: It has been 30 minutes since this incident was opened and no updates have been sent out regarding this ticket. "
+                                + f"Since this is a *{severity.upper()}* incident, updates must be provided every half hour. Please use the 'provide incident update' shortcut. "
+                                + "If you're unsure how to do that, simply search for 'provide incident update' in the search bar at the top of your Slack window."
+                                + "For additional information about my features, check out my app's home page."
+                                + "I'll remind this channel every 30 minutes to either send out an initial update or provide a new one.",
+                            },
+                        },
+                        {"type": "divider"},
+                        {
+                            "type": "actions",
+                            "block_id": "update_help_message_buttons",
+                            "elements": [
+                                {
+                                    "type": "button",
+                                    "text": {
+                                        "type": "plain_text",
+                                        "text": "Send Out Update",
+                                        "emoji": True,
+                                    },
+                                    "value": "show_update_modal",
+                                    "action_id": "open_incident_general_update_modal",
+                                    "style": "primary",
+                                },
+                                {
+                                    "type": "button",
+                                    "text": {
+                                        "type": "plain_text",
+                                        "text": "Dismiss",
+                                        "emoji": True,
+                                    },
+                                    "value": "placeholder",
+                                    "action_id": "dismiss_message",
+                                },
+                            ],
+                        },
+                    ],
                 )
-            except Exception as error:
+                # Retrieve the sent message
+                sent_message = slack_web_client.conversations_history(
+                    channel=channel_id,
+                    inclusive=True,
+                    oldest=result["message"]["ts"],
+                    limit=1,
+                )
+                # Update the sent message with its own timestamp
+                existing_blocks = sent_message["messages"][0]["blocks"]
+                existing_blocks[2]["elements"][1]["value"] = result["message"]["ts"]
+                try:
+                    slack_web_client.chat_update(
+                        channel=channel_id,
+                        ts=result["message"]["ts"],
+                        blocks=existing_blocks,
+                        text="",
+                    )
+                except slack_sdk.errors.SlackApiError as error:
+                    logger.error(f"Error updating message: {error}")
+            except slack_sdk.errors.SlackApiError as error:
                 logger.error(
                     f"Error sending scheduled reminder about incident {channel_name}: {error}"
                 )
@@ -138,10 +196,6 @@ def scrape_for_aging_incidents():
     """
     # Max age, in days, of a channel before it's considered stale
     max_age = 7
-    # Get channel id of the incidents digest channel to send updates to
-    channels = return_slack_channel_info()
-    index = tools.find_index_in_list(channels, "name", config.incidents_digest_channel)
-    digest_channel_id = channels[index]["id"]
     # Base block to build message on
     base_block = [
         {
@@ -199,7 +253,7 @@ def scrape_for_aging_incidents():
             base_block.append(inc)
         try:
             slack_web_client.chat_postMessage(
-                channel=digest_channel_id, blocks=base_block
+                channel=variables.digest_channel_id, blocks=base_block
             )
         except Exception as error:
             logger.error(error)

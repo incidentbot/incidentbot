@@ -2,6 +2,7 @@ import config
 import logging
 import re
 import slack_sdk.errors
+import variables
 
 from bot.audit import log
 from bot.confluence import rca
@@ -272,15 +273,9 @@ def set_incident_status(
     channel_id = p["channel_id"]
     incident_data = db_read_incident(incident_id=p["channel_name"])
     user = action_parameters.user_details()["id"]
-    # We need this for later
-    all_channels = return_slack_channel_info()
-    digest_channel_index = tools.find_index_in_list(
-        all_channels, "name", config.incidents_digest_channel
-    )
-    digest_channel_id = all_channels[digest_channel_index]["id"]
     formatted_severity = extract_attribute(
         attribute="severity",
-        channel=digest_channel_id,
+        channel=variables.digest_channel_id,
         oldest=incident_data.dig_message_ts,
     )
 
@@ -477,7 +472,7 @@ def set_incident_status(
     )
     try:
         slack_web_client.chat_update(
-            channel=digest_channel_id,
+            channel=variables.digest_channel_id,
             ts=incident_data.dig_message_ts,
             blocks=new_digest_message["blocks"],
             text="",
@@ -662,13 +657,10 @@ def set_severity(
     )
 
     # Also updates digest message
-    channels = return_slack_channel_info()
-    index = tools.find_index_in_list(channels, "name", config.incidents_digest_channel)
-    digest_channel_id = channels[index]["id"]
     # Retrieve the existing value of status since we need to put that back
     formatted_status = extract_attribute(
         attribute="status",
-        channel=digest_channel_id,
+        channel=variables.digest_channel_id,
         oldest=incident_data.dig_message_ts,
     )
     new_digest_message = incident.build_updated_digest_message(
@@ -676,7 +668,7 @@ def set_severity(
     )
     try:
         slack_web_client.chat_update(
-            channel=digest_channel_id,
+            channel=variables.digest_channel_id,
             ts=incident_data.dig_message_ts,
             blocks=new_digest_message["blocks"],
         )

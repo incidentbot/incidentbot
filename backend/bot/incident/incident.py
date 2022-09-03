@@ -87,6 +87,7 @@ def create_incident(
     channel_description = request_parameters["channel_description"]
     channel = request_parameters["channel"]
     user = request_parameters["user"]
+    severity = request_parameters["severity"] or "sev4"
     if channel_description != "":
         if len(channel_description) < channel_description_max_length:
             incident = Incident(
@@ -120,7 +121,9 @@ def create_incident(
             """
             Notify incidents digest channel (#incidents)
             """
-            digest_message_content = build_digest_notification(createdChannelDetails)
+            digest_message_content = build_digest_notification(
+                createdChannelDetails, severity
+            )
             try:
                 digest_message = slack_web_client.chat_postMessage(
                     **digest_message_content,
@@ -148,7 +151,7 @@ def create_incident(
             Send boilerplate info to incident channel
             """
             bp_message_content = build_incident_channel_boilerplate(
-                createdChannelDetails
+                createdChannelDetails, severity
             )
             try:
                 bp_message = slack_web_client.chat_postMessage(
@@ -183,7 +186,7 @@ def create_incident(
                     channel["channel"]["id"],
                     channel["channel"]["name"],
                     "investigating",
-                    "sev4",
+                    severity,
                     bp_message["ts"],
                     digest_message["ts"],
                 )
@@ -418,7 +421,9 @@ Messaging Helpers
 """
 
 
-def build_digest_notification(createdChannelDetails: Dict[str, str]) -> Dict[str, str]:
+def build_digest_notification(
+    createdChannelDetails: Dict[str, str], severity: str
+) -> Dict[str, str]:
     """Formats the notification that will be
     sent to the digest channel
 
@@ -433,6 +438,7 @@ def build_digest_notification(createdChannelDetails: Dict[str, str]) -> Dict[str
         "channel_id_var_placeholder": config.incidents_digest_channel,
         "channel_name_var_placeholder": createdChannelDetails["name"],
         "slack_workspace_id_var_placeholder": slack_workspace_id,
+        "severity_var_placeholder": severity.upper(),
         "incident_guide_link_var_placeholder": incident_guide_link,
         "incident_postmortems_link_var_placeholder": incident_postmortems_link,
         "zoom_link_var_placeholder": zoom_link,
@@ -443,13 +449,14 @@ def build_digest_notification(createdChannelDetails: Dict[str, str]) -> Dict[str
 
 
 def build_incident_channel_boilerplate(
-    createdChannelDetails: Dict[str, str]
+    createdChannelDetails: Dict[str, str], severity: str
 ) -> Dict[str, str]:
     """Formats the boilerplate messaging that will
     be added to all newly created incident channels.
     """
     variables = {
         "channel_id_var_placeholder": createdChannelDetails["id"],
+        "severity_var_placeholder": severity.upper(),
         "incident_guide_link_var_placeholder": incident_guide_link,
         "incident_postmortems_link_var_placeholder": incident_postmortems_link,
     }

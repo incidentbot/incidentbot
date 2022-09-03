@@ -1,5 +1,6 @@
 import config
 import logging
+import variables
 
 from .handler import app
 from .handler import help_menu
@@ -177,6 +178,34 @@ def open_modal(ack, body, client):
             },
             "label": {"type": "plain_text", "text": "Description"},
         },
+        {
+            "block_id": "severity",
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": "*Severity*"},
+            "accessory": {
+                "type": "static_select",
+                "action_id": "open_incident_modal_severity",
+                "placeholder": {"type": "plain_text", "text": "SEV4", "emoji": True},
+                "options": [
+                    {
+                        "text": {"type": "plain_text", "text": "SEV1", "emoji": True},
+                        "value": "sev1",
+                    },
+                    {
+                        "text": {"type": "plain_text", "text": "SEV2", "emoji": True},
+                        "value": "sev2",
+                    },
+                    {
+                        "text": {"type": "plain_text", "text": "SEV3", "emoji": True},
+                        "value": "sev3",
+                    },
+                    {
+                        "text": {"type": "plain_text", "text": "SEV4", "emoji": True},
+                        "value": "sev4",
+                    },
+                ],
+            },
+        },
     ]
     """
     If there are teams that will be auto paged, mention that
@@ -232,16 +261,21 @@ def handle_submission(ack, body, client, view):
         "value"
     ]
     user = body["user"]["id"]
+    severity = view["state"]["values"]["severity"]["open_incident_modal_severity"][
+        "selected_option"
+    ]["value"]
     request_parameters = {
         "channel": "modal",
         "channel_description": description,
         "user": user,
+        "severity": severity,
         "created_from_web": False,
     }
     resp = incident.create_incident(request_parameters)
     client.chat_postMessage(channel=user, text=resp)
 
 
+@app.action("open_incident_general_update_modal")
 @app.shortcut("open_incident_general_update_modal")
 def open_modal(ack, body, client):
     """
@@ -369,10 +403,6 @@ def handle_submission(ack, client, view):
     Handles open_incident_general_update_modal
     """
     ack()
-    # Get channel id of the incidents digest channel to send updates to
-    channels = return_slack_channel_info()
-    index = tools.find_index_in_list(channels, "name", config.incidents_digest_channel)
-    digest_channel_id = channels[index]["id"]
 
     # Format message to be sent as an update
     channel_id = view["state"]["values"][
@@ -391,7 +421,9 @@ def handle_submission(ack, client, view):
                 "open_incident_general_update_modal_update_msg"
             ]["message"]["value"],
         )
-        client.chat_postMessage(channel=digest_channel_id, blocks=update, text="")
+        client.chat_postMessage(
+            channel=variables.digest_channel_id, blocks=update, text=""
+        )
     except Exception as error:
         logger.error(f"Error sending update out for {channel_id}: {error}")
     finally:
