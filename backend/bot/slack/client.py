@@ -53,6 +53,13 @@ def get_channel_history(channel_id: str) -> str:
     return json.dumps(history_dict_reversed)
 
 
+def get_digest_channel_id() -> str:
+    # Get channel id of the incidents digest channel to send updates to
+    channels = return_slack_channel_info()
+    index = tools.find_index_in_list(channels, "name", config.incidents_digest_channel)
+    return channels[index]["id"]
+
+
 def get_formatted_channel_history(channel_id: str, channel_name: str) -> str:
     """Return the history of a Slack channel as a formatted string
 
@@ -92,6 +99,21 @@ def get_message_content(conversation_id: str, ts: str):
         return result["messages"][0]
     except SlackApiError as error:
         logger.error(f"Error retrieving Slack message: {error}")
+
+
+def get_user_name(user_id: str) -> str:
+    """
+    Get a single user's real_name from a user ID
+
+    This is done against the local database so it won't work unless the job to store
+    slack user data has been run
+    """
+    ulist = Session.query(OperationalData).filter_by(id="slack_users").one()
+    for obj in ulist.json_data:
+        if user_id in obj.values():
+            return obj["real_name"]
+        else:
+            continue
 
 
 def invite_user_to_channel(channel_id: str, user: str):
@@ -168,18 +190,3 @@ def store_slack_user_list():
         Session.rollback()
     finally:
         Session.close()
-
-
-def get_user_name(user_id: str) -> str:
-    """
-    Get a single user's real_name from a user ID
-
-    This is done against the local database so it won't work unless the job to store
-    slack user data has been run
-    """
-    ulist = Session.query(OperationalData).filter_by(id="slack_users").one()
-    for obj in ulist.json_data:
-        if user_id in obj.values():
-            return obj["real_name"]
-        else:
-            continue

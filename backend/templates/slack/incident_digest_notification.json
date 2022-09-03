@@ -29,7 +29,7 @@
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": "Severity:\n *SEV4*"
+        "text": "Severity:\n *{severity_var_placeholder}*"
       }
     },
     {

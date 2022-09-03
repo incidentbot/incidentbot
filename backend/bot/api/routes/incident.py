@@ -54,11 +54,13 @@ def post_incident():
         data = request.json
         description = data["description"]
         user = data["user"]
+        severity = data["severity"]
         request_parameters = {
             "channel": "web",
             "channel_description": description,
             "descriptor": description,
             "user": user,
+            "severity": severity,
             "created_from_web": True,
         }
         # Create an incident based on the message using the internal path

@@ -102,7 +102,7 @@
         "action_id": "incident.set_severity",
         "placeholder": {
           "type": "plain_text",
-          "text": "SEV4",
+          "text": "{severity_var_placeholder}",
           "emoji": true
         },
         "options": [

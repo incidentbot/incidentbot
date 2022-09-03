@@ -18,6 +18,7 @@ COPY --from=frontend /app/build /incident-bot/app
 COPY ./backend/bot /incident-bot/bot
 COPY ./backend/requirements.txt /incident-bot
 COPY ./backend/config.py /incident-bot
+COPY ./backend/variables.py /incident-bot
 COPY ./backend/main.py /incident-bot
 COPY ./backend/templates /incident-bot/templates
 COPY ./scripts/wait-for-it.sh /incident-bot/wait-for-it.sh
