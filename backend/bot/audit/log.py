@@ -4,12 +4,12 @@ from bot.models.pg import AuditLog, Session
 from bot.shared import tools
 from bot.slack.client import get_user_name
 from sqlalchemy import update
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 logger = logging.getLogger(__name__)
 
 
-def delete(incident_id: str, log: str, ts: str) -> tuple[bool, str]:
+def delete(incident_id: str, log: str, ts: str) -> Tuple[bool, str]:
     """
     Delete from audit log
     """

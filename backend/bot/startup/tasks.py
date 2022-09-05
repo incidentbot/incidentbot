@@ -3,6 +3,10 @@ import logging
 
 from bot.models.pg import OperationalData, Session, Setting
 from bot.scheduler.scheduler import update_slack_user_list
+from bot.settings.im import (
+    defaults as application_settings_defaults,
+    read_single_setting_value,
+)
 from bot.shared import tools
 from bot.slack.client import slack_workspace_id
 from sqlalchemy import exc, update
@@ -150,14 +154,7 @@ def startup_task_init():
                 ):
                     default_im_settings = Setting(
                         name="incident_management_configuration",
-                        value={
-                            "incident_channel_topic": "This is the default incident channel topic. You can edit it in settings.",
-                            "incident_guide_link": "https://changeme.com",
-                            "incident_postmortems_link": "https://changeme.com",
-                            "slack_workspace_id": slack_workspace_id,
-                            "timezone": "UTC",
-                            "zoom_link": "https://zoom.us",
-                        },
+                        value=application_settings_defaults,
                         description="Various settings to control Incident Management functionality.",
                         deletable=False,
                     )
@@ -178,6 +175,11 @@ def startup_task_init():
             except Exception as error:
                 logger.error(f"Error storing incident management settings: {error}")
             finally:
+                # Parse settings from database for initial startup
+                init_settings = read_single_setting_value(
+                    "incident_management_configuration"
+                )
+                print(f"Parsed initial app settings for startup:\n{init_settings}")
                 Session.close()
                 Session.remove()
 
