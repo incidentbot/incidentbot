@@ -45,6 +45,9 @@ Optional Variables
 
 .. _access:
 
+Access
+------------
+
 It is recommended to deploy this application in a private network or at least behind a private load balancer. There is no need to expose the application to the public Internet.
 
 The web UI should only be accessible internally, and websocket mode eliminates the need to expose any endpoints to Slack.
