@@ -8,7 +8,11 @@ Installation
 
 The app can be installed one of two ways - from Docker or from source.
 
-The image can be built using the provided Dockerfile. There is also a public image available based on latest primary build. TBD
+The image can be built using the provided Dockerfile. There is also a public image available based on latest primary build. The image is available `here <https://hub.docker.com/r/eb129/incident-bot>`_.
+
+To run the application using the public Docker image, simply create a Docker compose file based on the provided example and reference the public image.
+
+Alternatively, you may use sample manifests provided here. TBD
 
 .. _docker-compose:
 
@@ -38,6 +42,14 @@ Optional Variables
 - ``INCIDENT_EXTERNAL_PROVIDERS_LIST`` - if enabling status snapshots for external providers (documented above), set this to a comma-separated list of providers to enable. For example: ``auth0,github,heroku``
 - ``INCIDENT_AUTO_CREATE_FROM_REACT_ENABLED`` - if enabling auto incident channel create based on react, set this to ``true``.
 - ``INCIDENT_AUTO_CREATE_FROM_REACT_EMOJI_NAME`` - the name of the emoji that will trigger automatic incident creation.
+
+.. _access:
+
+It is recommended to deploy this application in a private network or at least behind a private load balancer. There is no need to expose the application to the public Internet.
+
+The web UI should only be accessible internally, and websocket mode eliminates the need to expose any endpoints to Slack.
+
+Please exercise good judgment and caution when deploying this application.
 
 .. _confluence-settings:
 
