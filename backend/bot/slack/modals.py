@@ -210,33 +210,34 @@ def open_modal(ack, body, client):
     """
     If there are teams that will be auto paged, mention that
     """
-    auto_page_targets = read_pager_auto_page_targets()
-    if len(auto_page_targets) != 0:
-        base_blocks.extend(
-            [
-                {"type": "divider"},
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": ":point_right: *The following teams will be automatically paged when this incident is created:*",
-                    },
-                },
-            ]
-        )
-        for i in auto_page_targets:
-            for k, v in i.items():
-                base_blocks.extend(
-                    [
-                        {
-                            "type": "section",
-                            "text": {
-                                "type": "mrkdwn",
-                                "text": f"_{k}_",
-                            },
+    if config.pagerduty_integration_enabled != "false":
+        auto_page_targets = read_pager_auto_page_targets()
+        if len(auto_page_targets) != 0:
+            base_blocks.extend(
+                [
+                    {"type": "divider"},
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": ":point_right: *The following teams will be automatically paged when this incident is created:*",
                         },
-                    ]
-                )
+                    },
+                ]
+            )
+            for i in auto_page_targets:
+                for k, v in i.items():
+                    base_blocks.extend(
+                        [
+                            {
+                                "type": "section",
+                                "text": {
+                                    "type": "mrkdwn",
+                                    "text": f"_{k}_",
+                                },
+                            },
+                        ]
+                    )
     ack()
     client.views_open(
         trigger_id=body["trigger_id"],

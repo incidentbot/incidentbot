@@ -170,9 +170,30 @@ def create_incident(
             Post Zoom link in the channel upon creation
             """
             try:
-                slack_web_client.chat_postMessage(
+                zoom_link_message = slack_web_client.chat_postMessage(
                     channel=channel["channel"]["id"],
-                    text=zoom_link,
+                    text="",
+                    blocks=[
+                        {
+                            "type": "header",
+                            "text": {
+                                "type": "plain_text",
+                                "text": ":busts_in_silhouette: Please join the Zoom conference here.",
+                            },
+                        },
+                        {"type": "divider"},
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": f"{zoom_link}",
+                            },
+                        },
+                    ],
+                )
+                slack_web_client.pins_add(
+                    channel=createdChannelDetails["id"],
+                    timestamp=zoom_link_message["message"]["ts"],
                 )
             except slack_sdk.errors.SlackApiError as error:
                 logger.error(f"Error sending Zoom link to channel: {error}")
@@ -346,7 +367,6 @@ def handle_incident_optional_features(
                 channel=channel_id,
                 text="",
                 blocks=[
-                    {"type": "divider"},
                     {
                         "type": "header",
                         "text": {

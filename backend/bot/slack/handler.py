@@ -19,7 +19,7 @@ from bot.incident import actions as inc_actions, action_parameters, incident
 from bot.models.incident import db_read_all_incidents
 from bot.scheduler import scheduler
 from bot.shared import tools
-from bot.slack.client import get_user_name
+from bot.slack.client import get_user_name, slack_workspace_id
 from bot.slack.helpers import DigestMessageTracking
 from bot.slack.incident_logging import write as write_content
 from bot.statuspage import actions as sp_actions, handler as sp_handler
@@ -64,7 +64,9 @@ def handle_mention(body, say, logger):
         resp = incident.create_incident(request_parameters)
         say(f"<@{user}> {resp}")
     elif "diag" in message:
-        startup_message = config.startup_message(wrap=True)
+        startup_message = config.startup_message(
+            workspace=slack_workspace_id, wrap=True
+        )
         say(channel=user, text=startup_message)
     elif "lsoi" in message:
         database_data = db_read_all_incidents()
@@ -235,7 +237,6 @@ def reaction_added(event, say):
     emoji = event["reaction"]
     channel_id = event["item"]["channel"]
     ts = event["item"]["ts"]
-
     # Automatically create incident based on reaction with specific emoji
     if (
         emoji == config.incident_auto_create_from_react_emoji_name
@@ -255,6 +256,7 @@ def reaction_added(event, say):
             "channel_description": f"auto-{tools.random_suffix}",
             "descriptor": f"auto-{tools.random_suffix}",
             "user": "internal_auto_create",
+            "severity": "sev4",
             "message_reacted_to_content": message_reacted_to_content,
             "original_message_timestamp": ts,
         }
@@ -265,7 +267,6 @@ def reaction_added(event, say):
             )
         except Exception as error:
             logger.error(f"Error when trying to create an incident: {error}")
-
     # Pinned content for incidents
     if emoji == "pushpin":
         channel_info = slack_web_client.conversations_info(channel=channel_id)
@@ -341,8 +342,7 @@ def handle_message_events(body, logger):
         and not "subtype" in body["event"].keys()
     ):
         tracking.incr()
-        print(tracking.calls)
-        if tracking.calls > 5:
+        if tracking.calls > 3:
             try:
                 result = slack_web_client.chat_postMessage(
                     channel=body["event"]["channel"],
