@@ -60,9 +60,9 @@ Scheduled Actions
 
 By default, the app will look for incidents that are not resolved that are older than 7 days. You may adjust this behavior via the scheduler module if you wish.
 
-When an incident is promoted to SEV2 or SEV1, a scheduled job will kick off that will look for whether or not the ``last_update_sent`` field has been updated in the last `30` minutes. If not, it will ping the channel to encourage you to send out an incident update as good practice.
+When an incident is promoted to SEV2 or SEV1, a scheduled job will kick off that will look for whether or not the ``last_update_sent`` field has been updated in the last ``30`` minutes. If not, it will ping the channel to encourage you to send out an incident update as good practice.
 
-From then on, a reminder is sent out every `25` minutes to encourage you to send out another update. You may change these timers if you wish. This establishes a pattern that critical incidents will update your internal teams using half-hour cadences.
+From then on, a reminder is sent out every ``25`` minutes to encourage you to send out another update. You may change these timers if you wish. This establishes a pattern that critical incidents will update your internal teams using half-hour cadences.
 
 .. _customization:
 
