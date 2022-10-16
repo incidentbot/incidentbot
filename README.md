@@ -8,6 +8,8 @@ Interacting with the bot is incredibly easy through the use of modals and simpli
 
 [View documentation on readthedocs](https://incident-bot.readthedocs.io/en/latest/)
 
+<img src="https://github.com/echoboomer/incident-bot/blob/main/assets/incident-bot-demo-1.gif" width="700" height="500" />
+
 ## Features at a Glance
 
 - Fully featured web management UI
