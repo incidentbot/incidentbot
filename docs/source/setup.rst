@@ -27,7 +27,7 @@ To apply the resources, run: ``kubectl apply -k .``
 
 .. warning::
 
-  You will want to adjust the settings within the manifests to suit your needs before deploying. Specifically, ``application.properties`` is used to generate a `ConfigMap` for non-sensitive values and ``secrets.txt`` is used to generate a `Secret` containing sensitive values.
+  You will want to adjust the settings within the manifests to suit your needs before deploying. Specifically, ``.env`` in the overlay folder is used to generate a `Secret` containing sensitive values. Non-sensitive values are provided as literals in the overlay-level ``kustomization.yaml`` file.
 
   In production, you should use a secret management tool that integrates with Kubernetes. You should not hardcode sensitive values. This setup is provided for convenience.
 
