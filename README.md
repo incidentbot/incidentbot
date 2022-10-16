@@ -2,6 +2,9 @@
 
 <img src="https://github.com/echoboomer/incident-bot/blob/main/assets/bot.png" width="125" height="125">
 
+![tests](https://github.com/echoboomer/incident-bot/actions/workflows/tests.yml/badge.svg)
+![version](https://img.shields.io/github/v/release/echoboomer/incident-bot)
+
 Incident management ChatOps bot for Slack to allow your teams to easily and effectively identify and manage technical incidents impacting your cloud infrastructure, your products, or your customers' ability to use your applications and services.
 
 Interacting with the bot is incredibly easy through the use of modals and simplified commands.
@@ -9,6 +12,14 @@ Interacting with the bot is incredibly easy through the use of modals and simpli
 [View documentation on readthedocs](https://incident-bot.readthedocs.io/en/latest/)
 
 <img src="https://github.com/echoboomer/incident-bot/blob/main/assets/incident-bot-demo-1.gif" width="700" height="500" />
+
+- [incident-bot](#incident-bot)
+  - [Features at a Glance](#features-at-a-glance)
+  - [Architecture](#architecture)
+  - [Requirements](#requirements)
+  - [Documentation](#documentation)
+  - [Testing](#testing)
+  - [Feedback](#feedback)
 
 ## Features at a Glance
 
@@ -20,14 +31,6 @@ Interacting with the bot is incredibly easy through the use of modals and simpli
 - Automatically create an RCA channel and an RCA document (if Confluence integration is enabled)
 - Optional integration to manage Statuspage incidents directly from the Slack channel
 - Optional integration to automatically fetch the status of upstream providers
-
-- [incident-bot](#incident-bot)
-  - [Features at a Glance](#features-at-a-glance)
-  - [Architecture](#architecture)
-  - [Requirements](#requirements)
-  - [Documentation](#documentation)
-  - [Testing](#testing)
-  - [Feedback](#feedback)
 
 ## Architecture
 
