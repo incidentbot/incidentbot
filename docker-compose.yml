@@ -11,7 +11,7 @@ services:
       INCIDENTS_DIGEST_CHANNEL: 'incidents'
       SLACK_APP_TOKEN: 'xapp-1-...'
       SLACK_BOT_TOKEN: 'xoxb-...'
-      POSTGRES_WRITER_HOST: db
+      POSTGRES_HOST: db
       POSTGRES_DB: incident_bot
       POSTGRES_USER: incident_bot
       POSTGRES_PASSWORD: somepassword

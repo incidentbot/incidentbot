@@ -1,0 +1,33 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: incident-bot
+
+bases:
+  - ../../base/
+
+images:
+  - name: eb129/incident-bot
+    newTag: v0.8.0
+
+configMapGenerator:
+  - name: incident-bot
+    literals:
+      - INCIDENTS_DIGEST_CHANNEL=incidents
+      - INCIDENT_AUTO_GROUP_INVITE_ENABLED=false
+      - INCIDENT_AUTO_GROUP_INVITE_GROUP_NAME=mygroup
+      - INCIDENT_EXTERNAL_PROVIDERS_ENABLED=false
+      - INCIDENT_EXTERNAL_PROVIDERS_LIST=github
+      - INCIDENT_AUTO_CREATE_FROM_REACT_ENABLED=true
+      - INCIDENT_AUTO_CREATE_FROM_REACT_EMOJI_NAME=create-incident
+      - STATUSPAGE_INTEGRATION_ENABLED=true
+      - AUTH0_DOMAIN=mydomain
+      - AUTO_CREATE_RCA=false
+      - PAGERDUTY_INTEGRATION_ENABLED=false
+
+secretGenerator:
+  - name: incident-bot
+    envs:
+      - .env
+
+generatorOptions:
+  disableNameSuffixHash: true

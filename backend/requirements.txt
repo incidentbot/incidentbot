@@ -13,7 +13,7 @@ flask-marshmallow>=0.14.0
 marshmallow>=3.17.0
 marshmallow_sqlalchemy>=0.28.1
 pdpyras>=4.5.0
-psycopg2>=2.9.3
+psycopg2-binary>=2.9.4
 pyjokes>=0.6.0
 python-dotenv>=0.20.0
 pytz>-2022.2.1
