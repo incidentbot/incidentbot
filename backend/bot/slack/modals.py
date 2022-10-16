@@ -185,7 +185,11 @@ def open_modal(ack, body, client):
             "accessory": {
                 "type": "static_select",
                 "action_id": "open_incident_modal_severity",
-                "placeholder": {"type": "plain_text", "text": "SEV4", "emoji": True},
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Select a severity...",
+                    "emoji": True,
+                },
                 "options": [
                     {
                         "text": {"type": "plain_text", "text": "SEV1", "emoji": True},

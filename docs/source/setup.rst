@@ -10,20 +10,43 @@ The app can be installed one of two ways - from Docker or from source.
 
 The image can be built using the provided Dockerfile. There is also a public image available based on latest primary build. The image is available `here <https://hub.docker.com/r/eb129/incident-bot>`_.
 
-To run the application using the public Docker image, simply create a Docker compose file based on the provided example and reference the public image.
+To run the application using the public Docker image, simply create a Docker compose file based on the provided example and reference the public image. Alternatively, Kubernetes manifests are provided via the ``deploy/`` directory.
 
-Alternatively, you may use sample manifests provided here. TBD
+.. _kubernetes:
+
+Kubernetes
+------------
+
+``kustomize`` manifests are provided for convenience and are the recommended way to deploy the application in Kubernetes.
+
+The manifests are located at: ``deploy/kubernetes/incident-bot``
+
+To preview generated manifests, run: ``kubectl kustomize .``
+
+To apply the resources, run: ``kubectl apply -k .``
+
+.. warning::
+
+  You will want to adjust the settings within the manifests to suit your needs before deploying. Specifically, ``application.properties`` is used to generate a `ConfigMap` for non-sensitive values and ``secrets.txt`` is used to generate a `Secret` containing sensitive values.
+
+  In production, you should use a secret management tool that integrates with Kubernetes. You should not hardcode sensitive values. This setup is provided for convenience.
 
 .. _docker-compose:
 
-A sample compose file is provided with sample variables. This is useful for running the application locally or in environment that can leverage compose logic.
+A sample compose file is provided with sample variables. This is useful for running the application locally or in environment that can leverage compose logic. In this scenario, the database runs as a container. This is not recommended for production usage.
+
+.. warning::
+
+  Management of a database is outside of the scope of this application. Setup for a containerized database is provided for convenience when using Docker Compose.
+
+  You should use a Postgres provider of your choice and provide the parameters in the variables mentioned below. At a minimum, the ``user``, ``password``, and ``database`` should already exist.
 
 .. _variables:
 
 Required Variables
 ------------
 
-- ``POSTGRES_WRITER_HOST`` - the hostname of the database.
+- ``POSTGRES_HOST`` - the hostname of the database.
 - ``POSTGRES_DB`` - database name to use.
 - ``POSTGRES_USER`` - database user to use.
 - ``POSTGRES_PASSWORD`` - password for the user.

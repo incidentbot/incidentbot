@@ -57,6 +57,10 @@ def components_select(action_parameters: type[action_parameters.ActionParameters
     try:
         og_result = client.slack_web_client.chat_postMessage(**message, text="")
         logger.debug(f"\n{og_result}\n")
+        client.slack_web_client.pins_add(
+            channel=channel_id,
+            timestamp=og_result["ts"],
+        )
         # Timestamp of original message is needed to delete it later
     except slack_sdk.errors.SlackApiError as error:
         logger.error(
@@ -172,6 +176,10 @@ def update_status(action_parameters: type[action_parameters.ActionParameters]):
     try:
         result = client.slack_web_client.chat_postMessage(**slack_message, text="")
         logger.debug(f"\n{result}\n")
+        client.slack_web_client.pins_add(
+            channel=channel_id,
+            timestamp=result["ts"],
+        )
         # Timestamp of original message is needed to delete it later
     except slack_sdk.errors.SlackApiError as error:
         logger.error(

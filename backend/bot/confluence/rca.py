@@ -4,7 +4,7 @@ from bot.audit import log
 from bot.confluence.api import confluence, logger, today
 from bot.models.pg import IncidentLogging, Session
 from bot.shared import tools
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 
 def create_rca(
@@ -81,7 +81,7 @@ def create_rca(
         logger.error("Couldn't create RCA page, does the parent page exist?")
 
 
-def find_user_id(user: str) -> tuple[bool, Any]:
+def find_user_id(user: str) -> Tuple[bool, Any]:
     """
     Accepts the publicName of a user in Atlassian Cloud and returns the ID if it exists
     """

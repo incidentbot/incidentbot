@@ -20,7 +20,7 @@ from bot.settings.im import (
 )
 from bot.shared import tools
 from bot.slack.client import slack_web_client, slack_workspace_id
-from bot.statuspage import slack as spslack, handler as sp_handler
+from bot.statuspage import slack as sp_slack, handler as sp_handler
 from threading import Thread
 from typing import Dict
 
@@ -329,13 +329,17 @@ def handle_incident_optional_features(
     if config.statuspage_integration_enabled == "true":
         sp_components = sp_handler.StatuspageComponents()
         sp_components_list = sp_components.list_of_names()
-        sp_starter_message_content = spslack.return_new_incident_message(
+        sp_starter_message_content = sp_slack.return_new_incident_message(
             channel_id, sp_components_list
         )
         try:
             sp_starter_message = slack_web_client.chat_postMessage(
                 **sp_starter_message_content,
                 text="",
+            )
+            slack_web_client.pins_add(
+                channel=channel_id,
+                timestamp=sp_starter_message["ts"],
             )
         except slack_sdk.errors.SlackApiError as error:
             logger.error(

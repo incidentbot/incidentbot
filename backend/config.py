@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 from typing import List
 
-__version__ = "v0.7.1"
+__version__ = "v0.8.0"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -25,7 +25,7 @@ test_environment = os.getenv("TEST_ENVIRONMENT", default="false")
 """
 Database Settings
 """
-database_host = os.getenv("POSTGRES_WRITER_HOST")
+database_host = os.getenv("POSTGRES_HOST")
 database_name = os.getenv("POSTGRES_DB")
 database_password = os.getenv("POSTGRES_PASSWORD")
 database_port = os.getenv("POSTGRES_PORT")
