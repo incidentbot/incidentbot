@@ -1,5 +1,7 @@
 import config
 import logging
+import ssl
+import os
 
 from sqlalchemy import create_engine, inspect
 from sqlalchemy import (
@@ -18,11 +20,25 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 
 logger = logging.getLogger(__name__)
 
+connect_args = {}
+
+if os.environ.get("DB_ROOT_CERT"):
+    db_root_cert = os.environ["DB_ROOT_CERT"]  # e.g. '/path/to/my/server-ca.pem'
+    db_cert = os.environ["DB_CERT"]  # e.g. '/path/to/my/client-cert.pem'
+    db_key = os.environ["DB_KEY"]  # e.g. '/path/to/my/client-key.pem'
+
+    ssl_context = ssl.SSLContext()
+    ssl_context.verify_mode = ssl.CERT_REQUIRED
+    ssl_context.load_verify_locations(db_root_cert)
+    ssl_context.load_cert_chain(db_cert, db_key)
+    connect_args["ssl_context"] = ssl_context
+
 engine = create_engine(
     config.database_url,
     isolation_level="REPEATABLE READ",
     echo_pool=True,
     pool_pre_ping=True,
+    connect_args=connect_args
 )
 
 Base = declarative_base()

@@ -30,6 +30,7 @@ database_name = os.getenv("POSTGRES_DB")
 database_password = os.getenv("POSTGRES_PASSWORD")
 database_port = os.getenv("POSTGRES_PORT")
 database_user = os.getenv("POSTGRES_USER")
+
 database_url = f"postgresql://{database_user}:{database_password}@{database_host}:{database_port}/{database_name}"
 
 """
