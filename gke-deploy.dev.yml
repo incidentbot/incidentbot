@@ -1,0 +1,15 @@
+steps:
+  # build the container image
+- name: "gcr.io/cloud-builders/docker"
+  args: ["build", "-t", "us-docker.pkg.dev/brightside-dev-363022/gcp-dev-slackbots-docker/incident-bot:latest", "."]
+  # push container image
+- name: "gcr.io/cloud-builders/docker"
+  args: ["push", "us-docker.pkg.dev/brightside-dev-363022/gcp-dev-slackbots-docker/incident-bot:latest"]
+  # deploy container image to GKE
+- name: "gcr.io/cloud-builders/gke-deploy"
+  args:
+  - run
+  - --image=us-docker.pkg.dev/brightside-dev-363022/gcp-dev-slackbots-docker/incident-bot:latest
+  - --filename=deploy/kubernetes/incident-bot
+  - --location=us-central1
+  - --cluster=gke-slackbots-1
