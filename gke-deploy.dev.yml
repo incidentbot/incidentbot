@@ -10,6 +10,6 @@ steps:
   args:
   - run
   - --image=us-docker.pkg.dev/brightside-dev-363022/gcp-dev-slackbots-docker/incident-bot:latest
-  - --filename=deploy/kubernetes/incident-bot
+  - --filename=deploy/kubernetes/incident-bot/base
   - --location=us-central1
   - --cluster=gke-slackbots-1
