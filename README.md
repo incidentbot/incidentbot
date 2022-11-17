@@ -1,3 +1,12 @@
+## Brightside deployment notes
+This application is deployed on a GKE Cluster (Google K8s Engine) with a supporting Cloud SQL PG instance.
+
+Building and publishing the artifiact locally (and later on CI) is done via:
+
+Dev: `gcloud builds submit --project=brightside-dev-363022 --config gke-deploy.dev.yml`
+
+[TBD] Prod: `gcloud builds submit --project=brightside-dev-363022 --config gke-deploy.prod.yml`
+
 # incident-bot
 
 <img src="https://github.com/echoboomer/incident-bot/blob/main/assets/bot.png" width="125" height="125">
