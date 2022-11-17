@@ -14,3 +14,5 @@ logs/
 
 .DS_Store
 deploy/kubernetes/incident-bot/base/db.yaml
+
+cfg-secrets.yml
