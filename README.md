@@ -9,6 +9,18 @@ Prod: `gcloud builds submit --project=brightside-prod --config cloudbuild.prod.y
 
 For now this is accomplished by auth'ing and executing through the `gcloud cli`. To auth, `gcloud auth login`.
 
+
+Workflow:
+```
+gcloud auth login
+gcloud config set project brightside-prod # or brightside-dev-363022 for dev
+gcloud container clusters get-credentials gke-slackbots-1-prod # or gke-slackbots-1 for dev
+```
+
+Be sure to create the appropriate db user for the incident-bot PG databse in Cloud SQL and create the secrets in GKE.
+```
+kubectl create secret generic incident-bot --from-env-file cfg-secrets.yml --namespace=slackbots
+```
 # incident-bot
 
 <img src="https://github.com/echoboomer/incident-bot/blob/main/assets/bot.png" width="125" height="125">
