@@ -3,9 +3,11 @@ This application is deployed on a GKE Cluster (Google K8s Engine) with a support
 
 Building and publishing the artifiact locally (and later on CI) is done via:
 
-Dev: `gcloud builds submit --project=brightside-dev-363022 --config gke-deploy.dev.yml --region=us-central1`
+Dev: `gcloud builds submit --project=brightside-dev-363022 --config cloudbuild.dev.yml --region=us-central1`
 
-[TBD] Prod: `gcloud builds submit --project=brightside-dev-363022 --config gke-deploy.prod.yml --region=us-central1`
+Prod: `gcloud builds submit --project=brightside-prod --config cloudbuild.prod.yml --region=us-central1`
+
+For now this is accomplished by auth'ing and executing through the `gcloud cli`. To auth, `gcloud auth login`.
 
 # incident-bot
 
