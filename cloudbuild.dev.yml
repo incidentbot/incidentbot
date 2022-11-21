@@ -1,0 +1,27 @@
+steps:
+  # build the container image
+- name: "gcr.io/cloud-builders/docker"
+  args: ["build", "-t", "us-docker.pkg.dev/brightside-dev-363022/gcp-dev-slackbots-docker/incident-bot:latest", "."]
+  # push container image
+- name: "gcr.io/cloud-builders/docker"
+  args: ["push", "us-docker.pkg.dev/brightside-dev-363022/gcp-dev-slackbots-docker/incident-bot:latest"]
+  # deploy container image to GKE
+# - name: "gcr.io/cloud-builders/gke-deploy"
+#   args:
+#   - run
+#   - --image=us-docker.pkg.dev/brightside-dev-363022/gcp-dev-slackbots-docker/incident-bot:latest
+#   - --filename=deploy/kubernetes/incident-bot/base
+#   - --location=us-central1
+#   - --cluster=gke-slackbots-1
+- id: deploy
+  name: 'gcr.io/cloud-builders/gke-deploy'
+  entrypoint: bash
+  args:
+  - '-c'
+  - |
+    gcloud container clusters get-credentials --zone "$$CLOUDSDK_COMPUTE_ZONE" "$$CLOUDSDK_CONTAINER_CLUSTER"
+    kustomize build "deploy/kubernetes/incident-bot/base" | kubectl apply -f -
+  env:
+    - 'CLOUDSDK_COMPUTE_ZONE=us-central1'
+    - 'CLOUDSDK_CONTAINER_CLUSTER=gke-slackbots-1'
+    - 'GCLOUD_PROJECT=brightside-dev-363022'

@@ -21,14 +21,15 @@ spec:
     spec:
       containers:
         - name: incident-bot
-          image: eb129/incident-bot
-          command: ['./wait-for-it.sh']
-          args: ['db:5432', '--', 'python3', 'main.py']
+          image: us-docker.pkg.dev/brightside-dev-363022/gcp-dev-slackbots-docker/incident-bot:latest
+          imagePullPolicy: Always
+          command: ['python3']
+          args: ['main.py']
           envFrom:
             - secretRef:
                 name: incident-bot
-            - configMapRef:
-                name: incident-bot
+            # - configMapRef:
+            #     name: incident-bot
           ports:
             - name: api
               containerPort: 3000
@@ -51,7 +52,7 @@ spec:
             timeoutSeconds: 1
           resources:
             limits:
-              cpu: "1000m"
+              cpu: 500m
               memory: 512M
             requests:
               cpu: 250m
@@ -59,7 +60,7 @@ spec:
         - name: cloud-sql-proxy
           # It is recommended to use the latest version of the Cloud SQL proxy
           # Make sure to update on a regular schedule!
-          image: gcr.io/cloudsql-docker/gce-proxy:1.28.0 # make sure the use the latest version
+          image: gcr.io/cloudsql-docker/gce-proxy:1.33.1 # make sure the use the latest version
           command:
             - "/cloud_sql_proxy"
 
@@ -90,9 +91,11 @@ spec:
               # The proxy's memory use scales linearly with the number of active
               # connections. Fewer open connections will use less memory. Adjust
               # this value based on your application's requirements.
-              memory: "2Gi"
+              memory: "1Gi"
               # The proxy's CPU use scales linearly with the amount of IO between
               # the database and the application. Adjust this value based on your
               # application's requirements.
-              cpu:    "1"
+              cpu:    500m
       serviceAccountName: incident-bot
+      nodeSelector:
+        iam.gke.io/gke-metadata-server-enabled: "true"

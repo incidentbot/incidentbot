@@ -2,6 +2,7 @@ import config
 import logging
 import logging.config
 import sys
+import os
 
 from bot.api.flask import app
 from bot.models.pg import db_verify
@@ -22,6 +23,9 @@ Check for required environment variables first
 if __name__ == "__main__":
     # Pre-flight checks
     ## Check for environment variables
+    logger.info('Checking environment variables...')
+    logger.info(f'DB HOST IS {os.environ.get("POSTGRES_HOST")}')
+    print(f'DB HOST IS {os.environ.get("POSTGRES_HOST")}')
     config.env_check(
         required_envs=[
             "INCIDENTS_DIGEST_CHANNEL",

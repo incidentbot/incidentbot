@@ -1,14 +1,14 @@
-apiVersion: autoscaling/v2
+apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: incident-bot
+  name: cpu
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
     name: incident-bot
   minReplicas: 1
-  maxReplicas: 1
+  maxReplicas: 2
   metrics:
     - type: Resource
       resource:
