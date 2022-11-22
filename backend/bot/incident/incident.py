@@ -63,7 +63,7 @@ class Incident:
     def return_channel_name(self) -> str:
         # Replace any spaces with dashes
         channel_description = self.d["channel_description"].replace(" ", "-").lower()
-        channel_description = channel_description.replace(("!@#$%^&*()[]{};:,./<>?\|`~-=_+", ""))
+        channel_description = channel_description.replace("!@#$%^&*()[]{};:,./<>?\|`~-=_+", "")
         now = datetime.datetime.now()
         return f"inc-{now.year}{now.month}{now.day}{now.hour}{now.minute}-{channel_description}"
 
