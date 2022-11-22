@@ -27,6 +27,7 @@ Prod: `gcloud builds submit --project=brightside-prod --config cloudbuild.prod.y
 #### CI/CD Flow [To-Do]
 
 - Figure out [Rolling Update](https://cloud.google.com/kubernetes-engine/docs/how-to/updating-apps) for containers in GKE pods (we have two - Cloud SQL Auth Proxy + incident-bot)
+- [Hint](https://stackoverflow.com/a/40368520/5842023)
 
 ### Restarting the App
 
