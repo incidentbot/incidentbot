@@ -24,6 +24,9 @@ Dev: `gcloud builds submit --project=brightside-dev-363022 --config cloudbuild.d
 
 Prod: `gcloud builds submit --project=brightside-prod --config cloudbuild.prod.yml --region=us-central1`
 
+#### CI/CD Flow [To-Do]
+
+- Figure out Rolling Update for containers in GKE pods (we have two - Cloud SQL Auth Proxy + incident-bot)
 
 ### Restarting the App
 
