@@ -1,16 +1,12 @@
 ## Brightside deployment notes
 This application is deployed on a GKE Cluster (Google K8s Engine) with a supporting Cloud SQL PG instance.
 
-Building and publishing the artifiact locally (and later on CI) is done via:
-
-Dev: `gcloud builds submit --project=brightside-dev-363022 --config cloudbuild.dev.yml --region=us-central1`
-
-Prod: `gcloud builds submit --project=brightside-prod --config cloudbuild.prod.yml --region=us-central1`
-
 For now this is accomplished by auth'ing and executing through the `gcloud cli`. To auth, `gcloud auth login`.
+This will eventually be handled in Circle CI.
 
+### Deployment (from local CLI)
 
-Workflow:
+#### Auth
 ```
 gcloud auth login
 gcloud config set project brightside-prod # or brightside-dev-363022 for dev
@@ -21,6 +17,26 @@ Be sure to create the appropriate db user for the incident-bot PG databse in Clo
 ```
 kubectl create secret generic incident-bot --from-env-file cfg-secrets.yml --namespace=slackbots
 ```
+
+#### Build & Deploy
+
+Dev: `gcloud builds submit --project=brightside-dev-363022 --config cloudbuild.dev.yml --region=us-central1`
+
+Prod: `gcloud builds submit --project=brightside-prod --config cloudbuild.prod.yml --region=us-central1`
+
+
+### Restarting the App
+
+Since we have multiple containers in our pod (incident-bot and the CloudSQL Auth Proxy container), we have to use a scale event to essentially "restart" the application. The app is stateless as far as our deployments are concerned, so just scale down and up.
+
+
+```
+# down
+kubectl scale deployment incident-bot --replicas=0 -n slackbots
+# up
+kubectl scale deployment incident-bot --replicas=2 -n slackbots
+```
+
 # incident-bot
 
 <img src="https://github.com/echoboomer/incident-bot/blob/main/assets/bot.png" width="125" height="125">
