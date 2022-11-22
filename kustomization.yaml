@@ -1,2 +1,0 @@
-resources:
-- ./deploy/kubernetes/incident-bot/base
