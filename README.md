@@ -13,6 +13,12 @@ gcloud config set project brightside-prod # or brightside-dev-363022 for dev
 gcloud container clusters get-credentials gke-slackbots-1-prod # or gke-slackbots-1 for dev
 ```
 
+Get cluster credentials:
+
+```
+gcloud container clusters get-credentials gke-slackbots-1 --region=us-central1
+```
+
 Be sure to create the appropriate db user for the incident-bot PG databse in Cloud SQL and create the secrets in GKE.
 ```
 kubectl create secret generic incident-bot --from-env-file cfg-secrets.yml --namespace=slackbots
@@ -32,7 +38,6 @@ Prod: `gcloud builds submit --project=brightside-prod --config cloudbuild.prod.y
 ### Restarting the App
 
 Since we have multiple containers in our pod (incident-bot and the CloudSQL Auth Proxy container), we have to use a scale event to essentially "restart" the application. The app is stateless as far as our deployments are concerned, so just scale down and up.
-
 
 ```
 # down
