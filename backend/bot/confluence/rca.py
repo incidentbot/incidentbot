@@ -41,7 +41,7 @@ def create_rca(
         attachments=generate_pinned_items(attachments),
     )
     # Create rca doc
-    if confluence.page_exists(space=space, title="RCAs"):
+    if confluence.page_exists(space=space, title=parent_page):
         try:
             confluence.create_page(
                 space,
