@@ -65,7 +65,7 @@ class Incident:
         # Remove all special
         channel_description = re.sub("[^A-Za-z0-9\s]", "", self.d["channel_description"])
         # Replace any spaces with dashes
-        channel_description = channel_description .replace(" ", "-").lower()
+        channel_description = channel_description.replace(" ", "-").lower()
         now = datetime.datetime.now()
         return f"inc-{now.year}{now.month}{now.day}{now.hour}{now.minute}-{channel_description}"
 
