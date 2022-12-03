@@ -109,7 +109,9 @@ def get_incident_audit_log(incident_id):
         request_data = request.json
         try:
             success, error = log.delete(
-                incident_id=incident_id, log=request_data["log"], ts=request_data["ts"]
+                incident_id=incident_id,
+                log=request_data["log"],
+                ts=request_data["ts"],
             )
             if success:
                 return (
@@ -145,7 +147,9 @@ def get_incident_pinned_items(incident_id):
         )
 
 
-@incidentrt.route("/incident/<incident_id>/pinned/<id>", methods=["GET", "DELETE"])
+@incidentrt.route(
+    "/incident/<incident_id>/pinned/<id>", methods=["GET", "DELETE"]
+)
 @jwt_required()
 def get_delete_item_by_id(incident_id, id):
     try:
@@ -211,7 +215,9 @@ def patch_update_incident(incident_id):
         field = request_data["field"]
         action = request_data["action"]
         value = request_data["value"]
-        incident = Session.query(Incident).filter_by(incident_id=incident_id).one()
+        incident = (
+            Session.query(Incident).filter_by(incident_id=incident_id).one()
+        )
         if field == "tags":
             existing_tags = incident.tags
             if action == "update":

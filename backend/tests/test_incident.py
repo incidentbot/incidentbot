@@ -56,7 +56,11 @@ class TestIncidentManagement:
                     {
                         "action_id": "sample-action",
                         "block_id": "=qXel",
-                        "text": {"type": "plain_text", "text": "View", "emoji": True},
+                        "text": {
+                            "type": "plain_text",
+                            "text": "View",
+                            "emoji": True,
+                        },
                         "value": "click_me_123",
                         "type": "button",
                         "action_ts": "1548426417.840180",
@@ -108,7 +112,9 @@ class TestIncidentManagement:
             }
         )
 
-        assert re.search("^inc.*something-has-broken$", inc.return_channel_name())
+        assert re.search(
+            "^inc.*something-has-broken$", inc.return_channel_name()
+        )
 
     def test_incident_channel_name_create(self):
         inc = Incident(
@@ -119,7 +125,9 @@ class TestIncidentManagement:
             }
         )
 
-        assert re.search("^inc.*unallowed-chracter-check$", inc.return_channel_name())
+        assert re.search(
+            "^inc.*unallowed-chracter-check$", inc.return_channel_name()
+        )
 
     # This needs to mock the client.
     # def test_incident_create(self):
@@ -149,7 +157,10 @@ class TestIncidentManagement:
                 },
                 {
                     "block_id": "digest_channel_title",
-                    "text": {"text": "Description:\n *mock*", "type": "mrkdwn"},
+                    "text": {
+                        "text": "Description:\n *mock*",
+                        "type": "mrkdwn",
+                    },
                     "type": "section",
                 },
                 {
@@ -196,7 +207,10 @@ class TestIncidentManagement:
                         },
                         {
                             "action_id": "incident.incident_guide_link",
-                            "text": {"text": "Incident Guide", "type": "plain_text"},
+                            "text": {
+                                "text": "Incident Guide",
+                                "type": "plain_text",
+                            },
                             "type": "button",
                             "url": "https://changeme.com",
                         },
@@ -372,12 +386,20 @@ class TestIncidentManagement:
                 {
                     "accessory": {
                         "action_id": "incident.claim_role",
-                        "text": {"emoji": True, "text": "Claim", "type": "plain_text"},
+                        "text": {
+                            "emoji": True,
+                            "text": "Claim",
+                            "type": "plain_text",
+                        },
                         "type": "button",
                         "value": "incident_commander",
                     },
                     "block_id": "claim_incident_commander",
-                    "text": {"emoji": True, "text": "Claim Role", "type": "plain_text"},
+                    "text": {
+                        "emoji": True,
+                        "text": "Claim Role",
+                        "type": "plain_text",
+                    },
                     "type": "section",
                 },
                 {
@@ -400,18 +422,29 @@ class TestIncidentManagement:
                 {"type": "divider"},
                 {
                     "block_id": "role_technical_lead",
-                    "text": {"text": "*Technical Lead*:\n" " _none_", "type": "mrkdwn"},
+                    "text": {
+                        "text": "*Technical Lead*:\n" " _none_",
+                        "type": "mrkdwn",
+                    },
                     "type": "section",
                 },
                 {
                     "accessory": {
                         "action_id": "incident.claim_role",
-                        "text": {"emoji": True, "text": "Claim", "type": "plain_text"},
+                        "text": {
+                            "emoji": True,
+                            "text": "Claim",
+                            "type": "plain_text",
+                        },
                         "type": "button",
                         "value": "technical_lead",
                     },
                     "block_id": "claim_technical_lead",
-                    "text": {"emoji": True, "text": "Claim Role", "type": "plain_text"},
+                    "text": {
+                        "emoji": True,
+                        "text": "Claim Role",
+                        "type": "plain_text",
+                    },
                     "type": "section",
                 },
                 {
@@ -443,12 +476,20 @@ class TestIncidentManagement:
                 {
                     "accessory": {
                         "action_id": "incident.claim_role",
-                        "text": {"emoji": True, "text": "Claim", "type": "plain_text"},
+                        "text": {
+                            "emoji": True,
+                            "text": "Claim",
+                            "type": "plain_text",
+                        },
                         "type": "button",
                         "value": "communications_liaison",
                     },
                     "block_id": "claim_communications_liaison",
-                    "text": {"emoji": True, "text": "Claim Role", "type": "plain_text"},
+                    "text": {
+                        "emoji": True,
+                        "text": "Claim Role",
+                        "type": "plain_text",
+                    },
                     "type": "section",
                 },
                 {
@@ -474,7 +515,10 @@ class TestIncidentManagement:
                     "elements": [
                         {
                             "action_id": "incident.incident_guide_link",
-                            "text": {"text": "Incident Guide", "type": "plain_text"},
+                            "text": {
+                                "text": "Incident Guide",
+                                "type": "plain_text",
+                            },
                             "type": "button",
                             "url": "https://changeme.com",
                         },
@@ -506,7 +550,9 @@ class TestIncidentManagement:
         }
 
     def test_build_post_resolution_message(self):
-        assert build_post_resolution_message(channel="mock", status="resolved") == {
+        assert build_post_resolution_message(
+            channel="mock", status="resolved"
+        ) == {
             "blocks": [
                 {"type": "divider"},
                 {
@@ -535,11 +581,17 @@ class TestIncidentManagement:
                         {
                             "action_id": "incident.export_chat_logs",
                             "style": "primary",
-                            "text": {"text": "Export Chat Logs", "type": "plain_text"},
+                            "text": {
+                                "text": "Export Chat Logs",
+                                "type": "plain_text",
+                            },
                             "type": "button",
                         },
                         {
-                            "text": {"text": "Incident Guide", "type": "plain_text"},
+                            "text": {
+                                "text": "Incident Guide",
+                                "type": "plain_text",
+                            },
                             "type": "button",
                             "url": "https://changeme.com",
                         },
@@ -561,7 +613,9 @@ class TestIncidentManagement:
 
     def test_build_role_update(self):
         role = "Incident Commander"
-        assert build_role_update(channel="mock", role=role, user="sample-user") == {
+        assert build_role_update(
+            channel="mock", role=role, user="sample-user"
+        ) == {
             "blocks": [
                 {"type": "divider"},
                 {
@@ -615,7 +669,10 @@ class TestIncidentManagement:
             "blocks": [
                 {"type": "divider"},
                 {
-                    "text": {"text": ":warning: Status Update", "type": "plain_text"},
+                    "text": {
+                        "text": ":warning: Status Update",
+                        "type": "plain_text",
+                    },
                     "type": "header",
                 },
                 {
@@ -646,7 +703,10 @@ class TestIncidentManagement:
                 },
                 {
                     "block_id": "digest_channel_title",
-                    "text": {"text": "Description:\n *mock*", "type": "mrkdwn"},
+                    "text": {
+                        "text": "Description:\n *mock*",
+                        "type": "mrkdwn",
+                    },
                     "type": "section",
                 },
                 {
@@ -696,7 +756,10 @@ class TestIncidentManagement:
                         },
                         {
                             "action_id": "incident.incident_guide_link",
-                            "text": {"text": "Incident Guide", "type": "plain_text"},
+                            "text": {
+                                "text": "Incident Guide",
+                                "type": "plain_text",
+                            },
                             "type": "button",
                             "url": "https://changeme.com",
                         },
@@ -781,7 +844,10 @@ class TestIncidentManagement:
             timestamp=timestamp,
         ) == [
             {
-                "text": {"text": ":warning: Incident Update", "type": "plain_text"},
+                "text": {
+                    "text": ":warning: Incident Update",
+                    "type": "plain_text",
+                },
                 "type": "header",
             },
             {
@@ -796,7 +862,10 @@ class TestIncidentManagement:
                 "type": "section",
             },
             {
-                "text": {"text": "*Current Status*\n foobar", "type": "mrkdwn"},
+                "text": {
+                    "text": "*Current Status*\n foobar",
+                    "type": "mrkdwn",
+                },
                 "type": "section",
             },
             {

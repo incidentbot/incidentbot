@@ -11,7 +11,7 @@ COPY ./frontend/.prettierrc .
 RUN npm install &&\
   npm run build
 
-FROM python:3.9 as base
+FROM python:3.10 as base
 
 # Copy only the relevant Python files into the container.
 COPY --from=frontend /app/build /incident-bot/app

@@ -17,7 +17,9 @@ def delete(incident_id: str, log: str, ts: str) -> Tuple[bool, str]:
         if Session.query(AuditLog).filter_by(incident_id=incident_id).all():
             try:
                 existing_row = (
-                    Session.query(AuditLog).filter_by(incident_id=incident_id).one()
+                    Session.query(AuditLog)
+                    .filter_by(incident_id=incident_id)
+                    .one()
                 )
                 for log_obj in existing_row.data:
                     if log in log_obj.values() and ts in log_obj.values():
@@ -49,7 +51,9 @@ def delete(incident_id: str, log: str, ts: str) -> Tuple[bool, str]:
             logger.warning(f"No audit log record for {incident_id}")
             return False, "no incident found with that id"
     except Exception as error:
-        logger.error(f"Audit log row lookup failed for incident {incident_id}: {error}")
+        logger.error(
+            f"Audit log row lookup failed for incident {incident_id}: {error}"
+        )
         return False, error
     finally:
         Session.close()
@@ -64,7 +68,9 @@ def read(incident_id: str) -> List[Dict]:
         if Session.query(AuditLog).filter_by(incident_id=incident_id).all():
             try:
                 existing_row = (
-                    Session.query(AuditLog).filter_by(incident_id=incident_id).one()
+                    Session.query(AuditLog)
+                    .filter_by(incident_id=incident_id)
+                    .one()
                 )
                 return existing_row.data
             except Exception as error:
@@ -74,14 +80,20 @@ def read(incident_id: str) -> List[Dict]:
         else:
             logger.warning(f"No audit log record for {incident_id}")
     except Exception as error:
-        logger.error(f"Audit log row lookup failed for incident {incident_id}: {error}")
+        logger.error(
+            f"Audit log row lookup failed for incident {incident_id}: {error}"
+        )
     finally:
         Session.close()
         Session.remove()
 
 
 def write(
-    incident_id: str, event: str, content: str = "", user: str = "", ts: str = ""
+    incident_id: str,
+    event: str,
+    content: str = "",
+    user: str = "",
+    ts: str = "",
 ):
     """
     Write an audit log for an incident
@@ -90,7 +102,11 @@ def write(
     """
     try:
         # Create the row if it doesn't exist
-        if not Session.query(AuditLog).filter_by(incident_id=incident_id).all():
+        if (
+            not Session.query(AuditLog)
+            .filter_by(incident_id=incident_id)
+            .all()
+        ):
             try:
                 row = AuditLog(incident_id=incident_id, data=[])
                 Session.add(row)
@@ -99,7 +115,9 @@ def write(
                 logger.error(
                     f"Audit log row create failed for incident {incident_id}: {error}"
                 )
-        existing_row = Session.query(AuditLog).filter_by(incident_id=incident_id).one()
+        existing_row = (
+            Session.query(AuditLog).filter_by(incident_id=incident_id).one()
+        )
         data = existing_row.data
         data.append(
             {
@@ -116,7 +134,9 @@ def write(
         )
         Session.commit()
     except Exception as error:
-        logger.error(f"Audit log row create failed for incident {incident_id}: {error}")
+        logger.error(
+            f"Audit log row create failed for incident {incident_id}: {error}"
+        )
         Session.rollback()
     finally:
         Session.close()

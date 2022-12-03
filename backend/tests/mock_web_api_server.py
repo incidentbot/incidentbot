@@ -93,7 +93,9 @@ class MockHandler(SimpleHTTPRequestHandler):
 """
 
     def _handle(self):
-        self.received_requests[self.path] = self.received_requests.get(self.path, 0) + 1
+        self.received_requests[self.path] = (
+            self.received_requests.get(self.path, 0) + 1
+        )
         try:
             if self.path == "/webhook":
                 self.send_response(200)
@@ -104,7 +106,9 @@ class MockHandler(SimpleHTTPRequestHandler):
             if self.path == "/received_requests.json":
                 self.send_response(200)
                 self.set_common_headers()
-                self.wfile.write(json.dumps(self.received_requests).encode("utf-8"))
+                self.wfile.write(
+                    json.dumps(self.received_requests).encode("utf-8")
+                )
                 return
 
             body = {"ok": True}
@@ -118,7 +122,9 @@ class MockHandler(SimpleHTTPRequestHandler):
                 if self.path == "/auth.test":
                     self.send_response(200)
                     self.set_common_headers()
-                    self.wfile.write(self.user_auth_test_response.encode("utf-8"))
+                    self.wfile.write(
+                        self.user_auth_test_response.encode("utf-8")
+                    )
                     return
 
             if self.is_valid_token():
@@ -127,7 +133,9 @@ class MockHandler(SimpleHTTPRequestHandler):
                 if self.path == "/auth.test":
                     self.send_response(200)
                     self.set_common_headers()
-                    self.wfile.write(self.bot_auth_test_response.encode("utf-8"))
+                    self.wfile.write(
+                        self.bot_auth_test_response.encode("utf-8")
+                    )
                     return
 
                 len_header = self.headers.get("Content-Length") or 0
@@ -148,7 +156,8 @@ class MockHandler(SimpleHTTPRequestHandler):
                 else:
                     if parsed_path and parsed_path.query:
                         request_body = {
-                            k: v[0] for k, v in parse_qs(parsed_path.query).items()
+                            k: v[0]
+                            for k, v in parse_qs(parsed_path.query).items()
                         }
 
                 self.logger.info(f"request body: {request_body}")
@@ -204,7 +213,9 @@ class MockServerProcessTarget:
 
 class MonitorThread(threading.Thread):
     def __init__(
-        self, test: TestCase, handler: Type[SimpleHTTPRequestHandler] = MockHandler
+        self,
+        test: TestCase,
+        handler: Type[SimpleHTTPRequestHandler] = MockHandler,
     ):
         threading.Thread.__init__(self, daemon=True)
         self.handler = handler
@@ -238,7 +249,9 @@ class MonitorThread(threading.Thread):
 
 class MockServerThread(threading.Thread):
     def __init__(
-        self, test: TestCase, handler: Type[SimpleHTTPRequestHandler] = MockHandler
+        self,
+        test: TestCase,
+        handler: Type[SimpleHTTPRequestHandler] = MockHandler,
     ):
         threading.Thread.__init__(self)
         self.handler = handler

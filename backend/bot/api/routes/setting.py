@@ -17,7 +17,8 @@ setting = Blueprint("setting", __name__)
 def handle_settings():
     try:
         settings = [
-            s.serialize() for s in Session.query(Setting).order_by(Setting.name.asc())
+            s.serialize()
+            for s in Session.query(Setting).order_by(Setting.name.asc())
         ]
         return (
             jsonify({"data": settings}),
@@ -85,14 +86,18 @@ def handle_setting(name):
         except sqlalchemy.exc.IntegrityError:
             Session.rollback()
             return (
-                jsonify({"error": "Setting already exists, use PATCH to update it"}),
+                jsonify(
+                    {"error": "Setting already exists, use PATCH to update it"}
+                ),
                 500,
                 {"ContentType": "application/json"},
             )
         except psycopg2.errors.UniqueViolation:
             Session.rollback()
             return (
-                jsonify({"error": "Setting already exists, use PATCH to update it"}),
+                jsonify(
+                    {"error": "Setting already exists, use PATCH to update it"}
+                ),
                 500,
                 {"ContentType": "application/json"},
             )

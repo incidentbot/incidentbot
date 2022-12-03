@@ -41,7 +41,9 @@ Functions for handling inbound actions
 
 
 def assign_role(
-    action_parameters: type[ap.ActionParameters] = ap.ActionParameters(payload={}),
+    action_parameters: type[ap.ActionParameters] = ap.ActionParameters(
+        payload={}
+    ),
     web_data: Dict = {},
     request_origin: str = "slack",
 ):
@@ -68,12 +70,16 @@ def assign_role(
             # Find the index of the block that contains info on
             # the role we want to update and format it with the new user later
             blocks = action_parameters.message_details()["blocks"]
-            index = tools.find_index_in_list(blocks, "block_id", f"role_{action_value}")
+            index = tools.find_index_in_list(
+                blocks, "block_id", f"role_{action_value}"
+            )
             temp_new_role_name = action_value.replace("_", " ")
             target_role = action_value
             ts = p["timestamp"]
         except Exception as error:
-            logger.error(f"Error processing incident user update from Slack: {error}")
+            logger.error(
+                f"Error processing incident user update from Slack: {error}"
+            )
     # Handle request from web
     elif request_origin == "web":
         logger.info("Handling request from web for user update.")
@@ -85,7 +91,8 @@ def assign_role(
             # Find the index of the block that contains info on
             # the role we want to update and format it with the new user later
             blocks = get_message_content(
-                conversation_id=web_data["channel_id"], ts=web_data["bp_message_ts"]
+                conversation_id=web_data["channel_id"],
+                ts=web_data["bp_message_ts"],
             )["blocks"]
             index = tools.find_index_in_list(
                 blocks, "block_id", "role_{}".format(web_data["role"])
@@ -94,7 +101,9 @@ def assign_role(
             target_role = web_data["role"]
             ts = web_data["bp_message_ts"]
         except Exception as error:
-            logger.error(f"Error processing incident user update from web: {error}")
+            logger.error(
+                f"Error processing incident user update from web: {error}"
+            )
 
     new_role_name = temp_new_role_name.title()
     blocks[index]["text"]["text"] = f"*{new_role_name}*:\n <@{user_id}>"
@@ -117,19 +126,27 @@ def assign_role(
             text="",
         )
     except Exception as error:
-        logger.error(f"Error updating channel message during user update: {error}")
+        logger.error(
+            f"Error updating channel message during user update: {error}"
+        )
 
     # Send update notification message to incident channel
-    message = incident.build_role_update(target_channel, new_role_name, user_id)
+    message = incident.build_role_update(
+        target_channel, new_role_name, user_id
+    )
     try:
         result = slack_web_client.chat_postMessage(**message, text="")
         if log_level == "DEBUG":
             logger.debug(f"\n{result}\n")
     except slack_sdk.errors.SlackApiError as error:
-        logger.error(f"Error sending role update to the incident channel: {error}")
+        logger.error(
+            f"Error sending role update to the incident channel: {error}"
+        )
 
     # Let the user know they've been assigned the role and what to do
-    dm = incident.build_user_role_notification(target_channel, target_role, user_id)
+    dm = incident.build_user_role_notification(
+        target_channel, target_role, user_id
+    )
     try:
         result = slack_web_client.chat_postMessage(**dm, text="")
         if log_level == "DEBUG":
@@ -142,7 +159,9 @@ def assign_role(
     invite_user_to_channel(target_channel, user_id)
 
     # Update the row to indicate who owns the role.
-    db_update_incident_role(incident_id=channel_name, role=target_role, user=user_name)
+    db_update_incident_role(
+        incident_id=channel_name, role=target_role, user=user_name
+    )
 
     # Write audit log
     log.write(
@@ -167,7 +186,9 @@ def claim_role(action_parameters: type[ap.ActionParameters]):
     # Find the index of the block that contains info on
     # the role we want to update
     blocks = action_parameters.message_details()["blocks"]
-    index = tools.find_index_in_list(blocks, "block_id", f"role_{action_value}")
+    index = tools.find_index_in_list(
+        blocks, "block_id", f"role_{action_value}"
+    )
     # Replace the "_none_" value in the given block
     temp_new_role_name = action_value.replace("_", " ")
     new_role_name = temp_new_role_name.title()
@@ -200,11 +221,14 @@ def claim_role(action_parameters: type[ap.ActionParameters]):
         logger.error(f"Error sending role description to user: {error}")
     logger.info(f"{user} has claimed {action_value} in {channel_name}")
     # Update the row to indicate who owns the role.
-    db_update_incident_role(incident_id=channel_name, role=action_value, user=user)
+    db_update_incident_role(
+        incident_id=channel_name, role=action_value, user=user
+    )
 
     # Write audit log
     log.write(
-        incident_id=channel_name, event=f"User {user} claimed role {action_value}."
+        incident_id=channel_name,
+        event=f"User {user} claimed role {action_value}.",
     )
     # Finally, updated the updated_at column
     update_incident_db_entry_ts(channel_name)
@@ -237,7 +261,9 @@ def export_chat_logs(action_parameters: type[ap.ActionParameters]):
         )
         logger.debug(f"\n{result}\n")
     except slack_sdk.errors.SlackApiError as error:
-        logger.error(f"Error sending message and attachment to {channel_name}: {error}")
+        logger.error(
+            f"Error sending message and attachment to {channel_name}: {error}"
+        )
     finally:
         # Write audit log
         log.write(
@@ -293,7 +319,9 @@ def set_incident_status(
         incident_commander = extract_role_owner(
             message_blocks, "role_incident_commander"
         )
-        technical_lead = extract_role_owner(message_blocks, "role_technical_lead")
+        technical_lead = extract_role_owner(
+            message_blocks, "role_technical_lead"
+        )
         # Error out if both roles aren't claimed
         for role, person in {
             "incident commander": incident_commander,
@@ -313,7 +341,9 @@ def set_incident_status(
         # Create rca channel
         rca_channel_name = f"{channel_name}-rca"
         try:
-            rca_channel = slack_web_client.conversations_create(name=rca_channel_name)
+            rca_channel = slack_web_client.conversations_create(
+                name=rca_channel_name
+            )
             # Log the result which includes information like the ID of the conversation
             logger.debug(f"\n{rca_channel_name}\n")
             logger.info(f"Creating rca channel: {rca_channel_name}")
@@ -374,9 +404,9 @@ def set_incident_status(
                 incident_commander=actual_user_names[0],
                 technical_lead=actual_user_names[1],
                 severity=formatted_severity,
-                severity_definition=read_single_setting_value("severity_levels")[
-                    formatted_severity
-                ],
+                severity_definition=read_single_setting_value(
+                    "severity_levels"
+                )[formatted_severity],
             )
             db_update_incident_rca_col(incident_id=channel_name, rca=rca_link)
             # Write audit log
@@ -455,7 +485,9 @@ def set_incident_status(
             logger.error(f"Error sending RCA update to RCA channel: {error}")
 
         # Send message to incident channel
-        message = incident.build_post_resolution_message(channel_id, action_value)
+        message = incident.build_post_resolution_message(
+            channel_id, action_value
+        )
         try:
             result = slack_web_client.chat_postMessage(**message, text="")
             logger.debug(f"\n{result}\n")
@@ -546,7 +578,9 @@ def set_incident_status(
             limit=1,
         )
         blocks = result["messages"][0]["blocks"]
-        status_block_index = tools.find_index_in_list(blocks, "block_id", "status")
+        status_block_index = tools.find_index_in_list(
+            blocks, "block_id", "status"
+        )
         blocks[status_block_index]["accessory"]["confirm"] = {
             "title": {
                 "type": "plain_text",
@@ -566,7 +600,9 @@ def set_incident_status(
             blocks=blocks,
         )
     # Log
-    logger.info(f"Updated incident status for {channel_name} to {action_value}.")
+    logger.info(
+        f"Updated incident status for {channel_name} to {action_value}."
+    )
     message = incident.build_status_update(channel_id, action_value)
     try:
         result = slack_web_client.chat_postMessage(**message, text="")
@@ -738,7 +774,9 @@ def set_severity(
             f"Error sending severity update to incident channel {channel_name}: {error}"
         )
     # Log
-    logger.info(f"Updated incident severity for {channel_name} to {action_value}.")
+    logger.info(
+        f"Updated incident severity for {channel_name} to {action_value}."
+    )
     # Finally, updated the updated_at column
     update_incident_db_entry_ts(channel_name)
 
@@ -754,7 +792,9 @@ def extract_role_owner(message_blocks: Dict[Any, Any], block_id: str) -> str:
     to one of the role blocks
     """
     index = tools.find_index_in_list(message_blocks, "block_id", block_id)
-    return message_blocks[index]["text"]["text"].split("\n")[1].replace(" ", "")
+    return (
+        message_blocks[index]["text"]["text"].split("\n")[1].replace(" ", "")
+    )
 
 
 def extract_attribute(
@@ -795,4 +835,6 @@ def update_incident_db_entry_ts(channel_id: str):
             updated_at=tools.fetch_timestamp(),
         )
     except Exception as error:
-        logger.fatal(f"Error updating incident entry with update timestamp: {error}")
+        logger.fatal(
+            f"Error updating incident entry with update timestamp: {error}"
+        )

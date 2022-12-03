@@ -55,10 +55,14 @@ def run_migrations_online():
     and associate a connection with the context.
 
     """
-    connectable = create_engine(application_config.database_url, pool_pre_ping=True)
+    connectable = create_engine(
+        application_config.database_url, pool_pre_ping=True
+    )
 
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(
+            connection=connection, target_metadata=target_metadata
+        )
 
         with context.begin_transaction():
             context.run_migrations()

@@ -29,7 +29,11 @@ def startup_task_init():
         has_run = False
     finally:
         # pending_changes
-        if not Session.query(Setting).filter(Setting.name == "application_state").all():
+        if (
+            not Session.query(Setting)
+            .filter(Setting.name == "application_state")
+            .all()
+        ):
             pc = Setting(
                 name="application_state",
                 value={"pending_changes": False},
@@ -149,7 +153,9 @@ def startup_task_init():
             try:
                 if (
                     not Session.query(Setting)
-                    .filter(Setting.name == "incident_management_configuration")
+                    .filter(
+                        Setting.name == "incident_management_configuration"
+                    )
                     .all()
                 ):
                     default_im_settings = Setting(
@@ -163,29 +169,42 @@ def startup_task_init():
                 else:
                     Session.execute(
                         update(Setting)
-                        .where(Setting.name == "incident_management_configuration")
+                        .where(
+                            Setting.name == "incident_management_configuration"
+                        )
                         .values(
                             value=Session.query(Setting)
-                            .filter(Setting.name == "incident_management_configuration")
+                            .filter(
+                                Setting.name
+                                == "incident_management_configuration"
+                            )
                             .one()
                             .value
                         )
                     )
                     Session.commit()
             except Exception as error:
-                logger.error(f"Error storing incident management settings: {error}")
+                logger.error(
+                    f"Error storing incident management settings: {error}"
+                )
             finally:
                 # Parse settings from database for initial startup
                 init_settings = read_single_setting_value(
                     "incident_management_configuration"
                 )
-                print(f"Parsed initial app settings for startup:\n{init_settings}")
+                print(
+                    f"Parsed initial app settings for startup:\n{init_settings}"
+                )
                 Session.close()
                 Session.remove()
 
             # Update init_job has_run value
             try:
-                row = Session.query(Setting).filter(Setting.name == "init_job").one()
+                row = (
+                    Session.query(Setting)
+                    .filter(Setting.name == "init_job")
+                    .one()
+                )
                 row.value = {"has_run": True}
                 Session.commit()
             except exc.NoResultFound:

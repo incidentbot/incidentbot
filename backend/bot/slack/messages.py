@@ -56,7 +56,9 @@ def help_menu(include_header: bool = True) -> List:
     return blocks
 
 
-def incident_list_message(incidents: List, all: bool = False) -> List[Dict[str, str]]:
+def incident_list_message(
+    incidents: List, all: bool = False
+) -> List[Dict[str, str]]:
     """Return a message containing details on incidents
 
     Keyword arguments:
@@ -66,7 +68,10 @@ def incident_list_message(incidents: List, all: bool = False) -> List[Dict[str, 
     base_block = [
         {
             "type": "header",
-            "text": {"type": "plain_text", "text": ":open_file_folder: Open Incidents"},
+            "text": {
+                "type": "plain_text",
+                "text": ":open_file_folder: Open Incidents",
+            },
         },
         {"type": "divider"},
     ]
@@ -157,7 +162,10 @@ def job_list_message(jobs: List[Job]) -> Dict[str, str]:
     base_block = [
         {
             "type": "header",
-            "text": {"type": "plain_text", "text": ":timer_clock: Scheduled Jobs"},
+            "text": {
+                "type": "plain_text",
+                "text": ":timer_clock: Scheduled Jobs",
+            },
         },
         {"type": "divider"},
     ]
@@ -219,7 +227,10 @@ def pd_on_call_message(data: Dict) -> List:
     base_block = [
         {
             "type": "header",
-            "text": {"type": "plain_text", "text": ":pager: Who is on call right now?"},
+            "text": {
+                "type": "plain_text",
+                "text": ":pager: Who is on call right now?",
+            },
         },
         {"type": "divider"},
     ]
@@ -235,7 +246,9 @@ def pd_on_call_message(data: Dict) -> List:
                     {
                         "text": {
                             "type": "plain_text",
-                            "text": "{} {}".format(v["escalation_level"], v["user"]),
+                            "text": "{} {}".format(
+                                v["escalation_level"], v["user"]
+                            ),
                         },
                         "value": user_mention,
                     },
@@ -287,7 +300,9 @@ def pd_on_call_message(data: Dict) -> List:
     return base_block
 
 
-def sp_incident_list_message(incidents: List[Dict[str, str]]) -> List[Dict[str, str]]:
+def sp_incident_list_message(
+    incidents: List[Dict[str, str]]
+) -> List[Dict[str, str]]:
     """Return a message containing details on Statuspage incidents
 
     Keyword arguments:

@@ -48,7 +48,9 @@ def handle_postmortem(name):
                 {"ContentType": "application/json"},
             )
         except Exception as error:
-            logger.error(f"postmortem setting lookup failed for {name}: {error}")
+            logger.error(
+                f"postmortem setting lookup failed for {name}: {error}"
+            )
             Session.rollback()
             return (
                 jsonify({"error": str(error)}),
@@ -136,7 +138,9 @@ def handle_postmortem(name):
             #     {"ContentType": "application/json"},
             # )
         except Exception as error:
-            logger.error(f"postmortem setting update failed for {name}: {error}")
+            logger.error(
+                f"postmortem setting update failed for {name}: {error}"
+            )
             return (
                 jsonify({"error": str(error)}),
                 500,
@@ -160,7 +164,9 @@ def handle_postmortem(name):
                 {"ContentType": "application/json"},
             )
         except Exception as error:
-            logger.error(f"postmortem setting update failed for {name}: {error}")
+            logger.error(
+                f"postmortem setting update failed for {name}: {error}"
+            )
             return (
                 jsonify({"error": str(error)}),
                 500,

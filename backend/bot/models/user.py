@@ -9,7 +9,9 @@ logger = logging.getLogger(__name__)
 def db_user_token_revoke(jti, ttype, user_id, created_at):
     try:
         Session.add(
-            TokenBlocklist(jti=jti, type=ttype, user_id=user_id, created_at=created_at)
+            TokenBlocklist(
+                jti=jti, type=ttype, user_id=user_id, created_at=created_at
+            )
         )
         Session.commit()
     except Exception as error:

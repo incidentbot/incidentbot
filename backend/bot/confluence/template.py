@@ -16,7 +16,10 @@ def update_template(new_body: str) -> tuple[bool, str]:
     body = {"storage": {"value": new_body, "representation": "storage"}}
     try:
         confluence.create_or_update_template(
-            name=name, body=body, template_id=tplid, space=config.confluence_space
+            name=name,
+            body=body,
+            template_id=tplid,
+            space=config.confluence_space,
         )
         return True, "success"
     except Exception as error:

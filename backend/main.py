@@ -77,7 +77,9 @@ Database name:  {config.database_name}
     """
     print(db_info)
     if not db_verify():
-        logger.fatal("Cannot connect to the database - check settings and try again.")
+        logger.fatal(
+            "Cannot connect to the database - check settings and try again."
+        )
         exit(1)
 
 
