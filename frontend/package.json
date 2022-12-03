@@ -18,17 +18,17 @@
     "framer-motion": "^6.5.1",
     "moment": "^2.29.4",
     "react": "^18.2.0",
-    "react-bootstrap": "^2.0.0-rc.1",
+    "react-bootstrap": "^2.6.0",
     "react-code-blocks": "^0.0.9-0",
     "react-dom": "^18.2.0",
-    "react-flow-renderer": "^10.3.12",
+    "react-flow-renderer": "^10.3.17",
     "react-router-dom": "^6.3.0",
     "react-scripts": "^5.0.1",
-    "react-select": "^5.3.0",
+    "react-select": "^5.6.1",
     "react-spring": "^9.4.5",
     "react-syntax-highlighter": "^15.5.0",
     "recharts": "^2.1.12",
-    "styled-components": "^5.3.5",
+    "styled-components": "^5.3.6",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
@@ -66,7 +66,7 @@
     "eslint": "^8.18.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-prettier": "^4.1.0",
-    "eslint-plugin-react": "^7.30.1",
+    "eslint-plugin-react": "^7.31.11",
     "prettier": "^2.7.1"
   }
 }
