@@ -29,8 +29,8 @@ If using ``sealed-secrets``, you could create your sensitive environment variabl
 
 .. code-block:: bash
   kubectl create secret generic incident-bot-secret --from-env-file=.env --dry-run='client' -ojson --namespace incident-bot >incident-bot-secret.json &&
-    kubeseal --controller-name sealed-secrets <incident-bot-secret.json >incident-bot-secret-sealed.json &&
-    kubectl create -f incident-bot-secret-sealed.json
+  kubeseal --controller-name sealed-secrets <incident-bot-secret.json >incident-bot-secret-sealed.json &&
+  kubectl create -f incident-bot-secret-sealed.json
 
 Contained with ``.env``, you'd want to include the sensitive values for this application. For example:
 
@@ -56,7 +56,7 @@ Contained with ``.env``, you'd want to include the sensitive values for this app
 
 This will create the required ``Secret`` in the ``Namespace`` ``incident-bot``. You may need to create the ``Namespace`` if it doesn't exist.
 
-You can now install the application. As an example::
+You can now install the application. As an example:
 
 ``helm install echoboomer-charts/incident-bot --version 0.1.1 --values incident-bot-values.yaml --namespace incident-bot``
 
