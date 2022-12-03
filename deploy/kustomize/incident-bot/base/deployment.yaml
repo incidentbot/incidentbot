@@ -30,7 +30,7 @@ spec:
             - configMapRef:
                 name: incident-bot
           ports:
-            - name: api
+            - name: http
               containerPort: 3000
               protocol: TCP
           livenessProbe:
