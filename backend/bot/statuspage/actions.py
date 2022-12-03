@@ -15,7 +15,9 @@ logger = logging.getLogger(__name__)
 log_level = config.log_level
 
 
-def components_select(action_parameters: type[action_parameters.ActionParameters]):
+def components_select(
+    action_parameters: type[action_parameters.ActionParameters],
+):
     """When an incoming action is statuspage.components_select, this method
     creates a Statuspage incident and sends an updated message to the channel
     """
@@ -30,11 +32,15 @@ def components_select(action_parameters: type[action_parameters.ActionParameters
     # Find the index in the original components map
     for a in action_parameters.actions()["selected_options"]:
         selected_components.append(a["text"]["text"])
-    body = state["values"]["statuspage_body_input"]["statuspage.body_input"]["value"]
-    impact = state["values"]["statuspage_impact_select"]["statuspage.impact_select"][
-        "selected_option"
-    ]["value"]
-    name = state["values"]["statuspage_name_input"]["statuspage.name_input"]["value"]
+    body = state["values"]["statuspage_body_input"]["statuspage.body_input"][
+        "value"
+    ]
+    impact = state["values"]["statuspage_impact_select"][
+        "statuspage.impact_select"
+    ]["selected_option"]["value"]
+    name = state["values"]["statuspage_name_input"]["statuspage.name_input"][
+        "value"
+    ]
     status = state["values"]["statuspage_components_status"][
         "statuspage.components_status_select"
     ]["selected_option"]["value"]
@@ -53,9 +59,13 @@ def components_select(action_parameters: type[action_parameters.ActionParameters
             "components": sp_formatted,
         }
     )
-    message = spslack.new_statuspage_incident_created_message(channel_id, sp_inc.info)
+    message = spslack.new_statuspage_incident_created_message(
+        channel_id, sp_inc.info
+    )
     try:
-        og_result = client.slack_web_client.chat_postMessage(**message, text="")
+        og_result = client.slack_web_client.chat_postMessage(
+            **message, text=""
+        )
         logger.debug(f"\n{og_result}\n")
         client.slack_web_client.pins_add(
             channel=channel_id,
@@ -124,7 +134,9 @@ def update_status(action_parameters: type[action_parameters.ActionParameters]):
     sp_incident_id = incident_data.sp_incident_id
 
     #
-    incoming_status_change = action_parameters.actions()["selected_option"]["value"]
+    incoming_status_change = action_parameters.actions()["selected_option"][
+        "value"
+    ]
 
     # Send the update, delete the message, repost the message after each update
     new_body = state["values"]["statuspage_update_message_input"][
@@ -174,7 +186,9 @@ def update_status(action_parameters: type[action_parameters.ActionParameters]):
         )
     # Post new message
     try:
-        result = client.slack_web_client.chat_postMessage(**slack_message, text="")
+        result = client.slack_web_client.chat_postMessage(
+            **slack_message, text=""
+        )
         logger.debug(f"\n{result}\n")
         client.slack_web_client.pins_add(
             channel=channel_id,

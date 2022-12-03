@@ -84,7 +84,9 @@ def get_patch_pager_automapping():
                     .serialize()
                 )
                 return (
-                    jsonify({"data": data["json_data"], "ts": data["updated_at"]}),
+                    jsonify(
+                        {"data": data["json_data"], "ts": data["updated_at"]}
+                    ),
                     200,
                     {"ContentType": "application/json"},
                 )

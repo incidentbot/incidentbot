@@ -230,7 +230,8 @@ def adjust_user(user_id):
                 )
         elif toggle == "add_admin" or toggle == "remove_admin":
             success, error = db_user_adj_admin(
-                email=user.email, state=True if toggle == "add_admin" else False
+                email=user.email,
+                state=True if toggle == "add_admin" else False,
             )
             if success:
                 return (
@@ -298,7 +299,9 @@ admin_user = db_user_lookup(email=default_account_email)
 if not admin_user:
     success, error = db_user_create(
         email=default_account_email,
-        password=generate_password_hash(config.default_admin_password, method="sha256"),
+        password=generate_password_hash(
+            config.default_admin_password, method="sha256"
+        ),
         name="administrator",
         role="administrator",
         is_admin=True,

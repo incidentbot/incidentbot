@@ -58,7 +58,9 @@ class TaskScheduler:
 process = TaskScheduler()
 
 
-def add_incident_scheduled_reminder(channel_name: str, channel_id: str, severity: str):
+def add_incident_scheduled_reminder(
+    channel_name: str, channel_id: str, severity: str
+):
     """
     Adds a ~25 minute scheduled reminder for sev1/sev2 incidents that will
     determine when the last update was sent out and remind the channel if it was
@@ -76,7 +78,9 @@ def add_incident_scheduled_reminder(channel_name: str, channel_id: str, severity
     )
 
 
-def scheduled_reminder_message(channel_name: str, channel_id: str, severity: str):
+def scheduled_reminder_message(
+    channel_name: str, channel_id: str, severity: str
+):
     """
     Formatting for the message sent for scheduled reminders for ongoing incidents
     """
@@ -147,7 +151,9 @@ def scheduled_reminder_message(channel_name: str, channel_id: str, severity: str
                 )
                 # Update the sent message with its own timestamp
                 existing_blocks = sent_message["messages"][0]["blocks"]
-                existing_blocks[2]["elements"][1]["value"] = result["message"]["ts"]
+                existing_blocks[2]["elements"][1]["value"] = result["message"][
+                    "ts"
+                ]
                 try:
                     slack_web_client.chat_update(
                         channel=channel_id,
@@ -212,7 +218,9 @@ def scrape_for_aging_incidents():
     open_incidents = db_read_open_incidents()
     formatted_incidents = []
     for inc in open_incidents:
-        created_at = datetime.datetime.strptime(inc.created_at, tools.timestamp_fmt)
+        created_at = datetime.datetime.strptime(
+            inc.created_at, tools.timestamp_fmt
+        )
         now = datetime.datetime.now()
         time_open = now - created_at
         old = datetime.timedelta(days=max_age) < time_open

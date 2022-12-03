@@ -11,7 +11,11 @@ def read(incident_id: str) -> List[Dict]:
     Read pinned items
     """
     try:
-        if Session.query(IncidentLogging).filter_by(incident_id=incident_id).all():
+        if (
+            Session.query(IncidentLogging)
+            .filter_by(incident_id=incident_id)
+            .all()
+        ):
             try:
                 all_objs = (
                     Session.query(IncidentLogging)
@@ -48,7 +52,9 @@ def read(incident_id: str) -> List[Dict]:
         else:
             logger.warning(f"No audit log record for {incident_id}")
     except Exception as error:
-        logger.error(f"Audit log row lookup failed for incident {incident_id}: {error}")
+        logger.error(
+            f"Audit log row lookup failed for incident {incident_id}: {error}"
+        )
     finally:
         Session.close()
         Session.remove()
@@ -79,7 +85,9 @@ def write(
         Session.add(obj)
         Session.commit()
     except Exception as error:
-        logger.error(f"Audit log row create failed for incident {incident_id}: {error}")
+        logger.error(
+            f"Audit log row create failed for incident {incident_id}: {error}"
+        )
         Session.rollback()
     finally:
         Session.close()

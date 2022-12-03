@@ -53,7 +53,9 @@ def find_who_is_on_call(short: bool = False) -> Dict:
                     ],
                 }
             )
-            auto_mapping[oc["schedule"]["summary"]] = oc["escalation_policy"]["summary"]
+            auto_mapping[oc["schedule"]["summary"]] = oc["escalation_policy"][
+                "summary"
+            ]
     # Sort values by name, sort dict by escalation_level
     result = {}
     if short:
@@ -81,7 +83,9 @@ def store_on_call_data():
                 Session.add(row)
                 Session.commit()
             except Exception as error:
-                logger.error(f"Opdata row create failed for {record_name}: {error}")
+                logger.error(
+                    f"Opdata row create failed for {record_name}: {error}"
+                )
         Session.execute(
             update(OperationalData)
             .where(OperationalData.id == record_name)
@@ -107,7 +111,9 @@ def store_on_call_data():
                 Session.add(row)
                 Session.commit()
             except Exception as error:
-                logger.error(f"Opdata row create failed for {record_name}: {error}")
+                logger.error(
+                    f"Opdata row create failed for {record_name}: {error}"
+                )
         Session.execute(
             update(OperationalData)
             .where(OperationalData.id == record_name)
@@ -181,7 +187,10 @@ def page(
                 "type": "incident_body",
                 "details": f"An incident has been declared in Slack and this team has been paged as a result. You were paged by {paging_user}. Link: https://{slack_workspace_id}.slack.com/archives/{channel_id}",
             },
-            "escalation_policy": {"id": ep_id, "type": "escalation_policy_reference"},
+            "escalation_policy": {
+                "id": ep_id,
+                "type": "escalation_policy_reference",
+            },
         }
     }
     try:

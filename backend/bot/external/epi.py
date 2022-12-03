@@ -32,7 +32,9 @@ class ExternalProviderIncidents:
             "github": "https://www.githubstatus.com/history.atom",
             "heroku": "https://status.heroku.com/api/v4/current-status",
         }
-        self.parsed_feed = feedparser.parse(self.provider_urls[self.provider.lower()])
+        self.parsed_feed = feedparser.parse(
+            self.provider_urls[self.provider.lower()]
+        )
 
     def matched(self) -> Dict[str, Any]:
         """
@@ -129,7 +131,10 @@ class ExternalProviderIncidents:
                     {
                         "type": "button",
                         "action_id": "external.view_status_page",
-                        "text": {"type": "plain_text", "text": "Provider Status"},
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Provider Status",
+                        },
                         "url": f"https://status.{self.provider}.com",
                     },
                 ],

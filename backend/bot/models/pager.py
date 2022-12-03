@@ -9,7 +9,11 @@ logger = logging.getLogger(__name__)
 def read_pager_auto_page_targets():
     name = "auto_page_teams"
     try:
-        res = Session.query(OperationalData).filter(OperationalData.id == name).one()
+        res = (
+            Session.query(OperationalData)
+            .filter(OperationalData.id == name)
+            .one()
+        )
         targets = res.json_data["teams"]
         mappings = (
             Session.query(OperationalData)

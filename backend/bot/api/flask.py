@@ -25,11 +25,15 @@ startup_task_init()
 
 live_api_route = "/api/v1"
 
-app = Flask(__name__, static_folder="../../app/static", template_folder="../../app")
+app = Flask(
+    __name__, static_folder="../../app/static", template_folder="../../app"
+)
 ma = Marshmallow(app)
 swagger = Swagger(app)
 
-cors = CORS(app, supports_credentials=True, resources={r"/api/*": {"origins": "*"}})
+cors = CORS(
+    app, supports_credentials=True, resources={r"/api/*": {"origins": "*"}}
+)
 
 app.config["CORS_HEADERS"] = "Content-Type"
 app.config["JWT_SECRET_KEY"] = config.jwt_secret_key
@@ -100,7 +104,10 @@ def not_found_handler(e):
 def ratelimit_handler(e):
     return (
         json.dumps(
-            {"success": False, "error": "ratelimit exceeded: {}".format(e.description)}
+            {
+                "success": False,
+                "error": "ratelimit exceeded: {}".format(e.description),
+            }
         ),
         429,
         {"ContentType": "application/json"},

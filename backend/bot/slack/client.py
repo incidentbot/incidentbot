@@ -19,7 +19,9 @@ slack_web_client = WebClient(token=config.slack_bot_token)
 Reusable variables
 """
 all_workspace_groups = (
-    slack_web_client.usergroups_list() if config.test_environment == "false" else []
+    slack_web_client.usergroups_list()
+    if config.test_environment == "false"
+    else []
 )
 bot_user_id = (
     slack_web_client.auth_test()["user_id"]
@@ -56,7 +58,9 @@ def get_channel_history(channel_id: str) -> str:
 def get_digest_channel_id() -> str:
     # Get channel id of the incidents digest channel to send updates to
     channels = return_slack_channel_info()
-    index = tools.find_index_in_list(channels, "name", config.incidents_digest_channel)
+    index = tools.find_index_in_list(
+        channels, "name", config.incidents_digest_channel
+    )
     return channels[index]["id"]
 
 
@@ -68,16 +72,24 @@ def get_formatted_channel_history(channel_id: str, channel_name: str) -> str:
     channel_name -- The name of the Slack channel to retrieve history from
     """
     users = slack_web_client.users_list()["members"]
-    replaced_messages_string = replace_user_ids(get_channel_history(channel_id), users)
+    replaced_messages_string = replace_user_ids(
+        get_channel_history(channel_id), users
+    )
     formatted_channel_history = str()
-    formatted_channel_history += f"Slack channel history for incident {channel_name}\n"
+    formatted_channel_history += (
+        f"Slack channel history for incident {channel_name}\n"
+    )
     for message in replaced_messages_string:
         user = message["user"]
         text = message["text"]
-        timestamp = datetime.datetime.fromtimestamp(int(message["ts"].split(".")[0]))
+        timestamp = datetime.datetime.fromtimestamp(
+            int(message["ts"].split(".")[0])
+        )
         prefix = f"* {timestamp}"
         if "has joined the channel" in text:
-            formatted_channel_history += f"{prefix} {user} joined the channel\n"
+            formatted_channel_history += (
+                f"{prefix} {user} joined the channel\n"
+            )
         elif "set the channel topic" in text:
             formatted_channel_history += f"{prefix} {user} {text}\n"
         elif "This content can't be displayed." in text:
@@ -124,7 +136,9 @@ def invite_user_to_channel(channel_id: str, user: str):
     try:
         if (
             not user
-            in slack_web_client.conversations_members(channel=channel_id)["members"]
+            in slack_web_client.conversations_members(channel=channel_id)[
+                "members"
+            ]
         ):
             invite = slack_web_client.conversations_invite(
                 channel=channel_id,
@@ -148,11 +162,13 @@ def replace_user_ids(json_string: str, user_list: Dict[str, str]) -> str:
 def return_slack_channel_info() -> Dict[str, str]:
     """Return a list of Slack channels"""
     try:
-        return slack_web_client.conversations_list(exclude_archived=True, limit=500)[
-            "channels"
-        ]
+        return slack_web_client.conversations_list(
+            exclude_archived=True, limit=500
+        )["channels"]
     except Exception as error:
-        logger.error(f"Error getting channel list from Slack workspace: {error}")
+        logger.error(
+            f"Error getting channel list from Slack workspace: {error}"
+        )
 
 
 def store_slack_user_list():
@@ -174,7 +190,11 @@ def store_slack_user_list():
         jdata = sorted(users_array, key=lambda d: d["name"])
         # Delete if exists
         if Session.query(OperationalData).filter_by(id="slack_users").all():
-            existing = Session.query(OperationalData).filter_by(id="slack_users").one()
+            existing = (
+                Session.query(OperationalData)
+                .filter_by(id="slack_users")
+                .one()
+            )
             Session.delete(existing)
             Session.commit()
         # Store

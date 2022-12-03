@@ -192,19 +192,35 @@ def open_modal(ack, body, client):
                 },
                 "options": [
                     {
-                        "text": {"type": "plain_text", "text": "SEV1", "emoji": True},
+                        "text": {
+                            "type": "plain_text",
+                            "text": "SEV1",
+                            "emoji": True,
+                        },
                         "value": "sev1",
                     },
                     {
-                        "text": {"type": "plain_text", "text": "SEV2", "emoji": True},
+                        "text": {
+                            "type": "plain_text",
+                            "text": "SEV2",
+                            "emoji": True,
+                        },
                         "value": "sev2",
                     },
                     {
-                        "text": {"type": "plain_text", "text": "SEV3", "emoji": True},
+                        "text": {
+                            "type": "plain_text",
+                            "text": "SEV3",
+                            "emoji": True,
+                        },
                         "value": "sev3",
                     },
                     {
-                        "text": {"type": "plain_text", "text": "SEV4", "emoji": True},
+                        "text": {
+                            "type": "plain_text",
+                            "text": "SEV4",
+                            "emoji": True,
+                        },
                         "value": "sev4",
                     },
                 ],
@@ -262,13 +278,13 @@ def handle_submission(ack, body, client, view):
     Handles open_incident_modal
     """
     ack()
-    description = view["state"]["values"]["open_incident_modal_desc"]["description"][
-        "value"
-    ]
-    user = body["user"]["id"]
-    severity = view["state"]["values"]["severity"]["open_incident_modal_severity"][
-        "selected_option"
+    description = view["state"]["values"]["open_incident_modal_desc"][
+        "description"
     ]["value"]
+    user = body["user"]["id"]
+    severity = view["state"]["values"]["severity"][
+        "open_incident_modal_severity"
+    ]["selected_option"]["value"]
     request_parameters = {
         "channel": "modal",
         "channel_description": description,
@@ -378,7 +394,10 @@ def open_modal(ack, body, client):
                             "text": "e.g. API, Authentication, Dashboards",
                         },
                     },
-                    "label": {"type": "plain_text", "text": "Impacted Resources:"},
+                    "label": {
+                        "type": "plain_text",
+                        "text": "Impacted Resources:",
+                    },
                 },
                 {
                     "type": "input",
@@ -391,7 +410,10 @@ def open_modal(ack, body, client):
                             "text": "A brief message to include with this update.",
                         },
                     },
-                    "label": {"type": "plain_text", "text": "Message to Include:"},
+                    "label": {
+                        "type": "plain_text",
+                        "text": "Message to Include:",
+                    },
                 },
             ],
         }
@@ -486,7 +508,10 @@ def open_modal(ack, body, client):
             view={
                 "type": "modal",
                 "callback_id": "incident_bot_pager_modal",
-                "title": {"type": "plain_text", "text": "Page a team in PagerDuty"},
+                "title": {
+                    "type": "plain_text",
+                    "text": "Page a team in PagerDuty",
+                },
                 "blocks": [
                     {
                         "type": "section",
@@ -574,7 +599,10 @@ def open_modal(ack, body, client):
             view={
                 "type": "modal",
                 "callback_id": "incident_bot_pager_modal",
-                "title": {"type": "plain_text", "text": "Page a team in PagerDuty"},
+                "title": {
+                    "type": "plain_text",
+                    "text": "Page a team in PagerDuty",
+                },
                 "blocks": [
                     {
                         "type": "section",
@@ -598,13 +626,17 @@ def update_modal(ack, body, client):
         "update_incident_bot_pager_selected_team"
     ]["selected_option"]["value"]
 
-    priority = body["view"]["state"]["values"]["incident_bot_pager_priority_select"][
-        "update_incident_bot_pager_selected_priority"
-    ]["selected_option"]["value"]
+    priority = body["view"]["state"]["values"][
+        "incident_bot_pager_priority_select"
+    ]["update_incident_bot_pager_selected_priority"]["selected_option"][
+        "value"
+    ]
 
     incident_channel_name = body["view"]["state"]["values"][
         "incident_bot_pager_incident_select"
-    ]["update_incident_bot_pager_selected_incident"]["selected_option"]["value"].split(
+    ]["update_incident_bot_pager_selected_incident"]["selected_option"][
+        "value"
+    ].split(
         "/"
     )[
         0
@@ -612,7 +644,9 @@ def update_modal(ack, body, client):
 
     incident_channel_id = body["view"]["state"]["values"][
         "incident_bot_pager_incident_select"
-    ]["update_incident_bot_pager_selected_incident"]["selected_option"]["value"].split(
+    ]["update_incident_bot_pager_selected_incident"]["selected_option"][
+        "value"
+    ].split(
         "/"
     )[
         1
@@ -628,7 +662,10 @@ def update_modal(ack, body, client):
         view={
             "type": "modal",
             "callback_id": "incident_bot_pager_modal",
-            "title": {"type": "plain_text", "text": "Page a team in PagerDuty"},
+            "title": {
+                "type": "plain_text",
+                "text": "Page a team in PagerDuty",
+            },
             "submit": {"type": "plain_text", "text": "Page"},
             "blocks": [
                 {
@@ -977,15 +1014,15 @@ def handle_submission(ack, body, say, view):
     ack()
 
     incident_id = view["blocks"][0]["text"]["text"]
-    event_date = view["state"]["values"]["date"]["update_incident_bot_timeline_date"][
-        "selected_date"
-    ]
-    event_time = view["state"]["values"]["time"]["update_incident_bot_timeline_time"][
-        "selected_time"
-    ]
-    event_text = view["state"]["values"]["text"]["update_incident_bot_timeline_text"][
-        "value"
-    ]
+    event_date = view["state"]["values"]["date"][
+        "update_incident_bot_timeline_date"
+    ]["selected_date"]
+    event_time = view["state"]["values"]["time"][
+        "update_incident_bot_timeline_time"
+    ]["selected_time"]
+    event_text = view["state"]["values"]["text"][
+        "update_incident_bot_timeline_text"
+    ]["value"]
     ts = tools.fetch_timestamp_from_time_obj(
         datetime.strptime(f"{event_date} {event_time}", "%Y-%m-%d %H:%M")
     )

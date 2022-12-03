@@ -53,7 +53,9 @@ def create_rca(
                 editor="v2",
             )
             created_page_id = confluence.get_page_id(space, title)
-            created_page_info = confluence.get_page_by_id(page_id=created_page_id)
+            created_page_info = confluence.get_page_by_id(
+                page_id=created_page_id
+            )
             url = (
                 created_page_info["_links"]["base"]
                 + created_page_info["_links"]["webui"]
@@ -73,7 +75,9 @@ def create_rca(
                                 comment=f"This item was pinned to the incident by {item.user} at {item.ts}.",
                             )
                         except Exception as error:
-                            logger.error(f"Error attaching file to {title}: {error}")
+                            logger.error(
+                                f"Error attaching file to {title}: {error}"
+                            )
             return url
         except Exception as error:
             logger.error(error)
@@ -87,7 +91,9 @@ def find_user_id(user: str) -> Tuple[bool, Any]:
     """
     groups = confluence.get_all_groups(start=0, limit=50)
     for g in groups:
-        users = confluence.get_group_members(group_name=g["name"], start=0, limit=1000)
+        users = confluence.get_group_members(
+            group_name=g["name"], start=0, limit=1000
+        )
         for u in users:
             if user in u["publicName"]:
                 return True, u["accountId"]

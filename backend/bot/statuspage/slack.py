@@ -161,11 +161,17 @@ def return_new_incident_message(
             {
                 "type": "section",
                 "block_id": "statuspage_components_select",
-                "text": {"type": "mrkdwn", "text": "Select impacted components"},
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "Select impacted components",
+                },
                 "accessory": {
                     "action_id": "statuspage.components_select",
                     "type": "multi_static_select",
-                    "placeholder": {"type": "plain_text", "text": "Select components"},
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": "Select components",
+                    },
                     "options": formatted_components,
                 },
             },
@@ -176,7 +182,10 @@ def return_new_incident_message(
                     {
                         "type": "button",
                         "style": "primary",
-                        "text": {"type": "plain_text", "text": "Open Statuspage"},
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Open Statuspage",
+                        },
                         "url": config.statuspage_url,
                     },
                 ],
@@ -302,7 +311,10 @@ def new_statuspage_incident_created_message(
                     {
                         "type": "button",
                         "style": "primary",
-                        "text": {"type": "plain_text", "text": "View Incident"},
+                        "text": {
+                            "type": "plain_text",
+                            "text": "View Incident",
+                        },
                         "url": sp_url,
                     },
                 ],
@@ -410,7 +422,10 @@ def statuspage_incident_update_message(
                     {
                         "type": "button",
                         "style": "primary",
-                        "text": {"type": "plain_text", "text": "View Incident"},
+                        "text": {
+                            "type": "plain_text",
+                            "text": "View Incident",
+                        },
                         "url": sp_url,
                     },
                 ],
@@ -464,7 +479,10 @@ def statuspage_incident_update_message_resolved(
                     {
                         "type": "button",
                         "style": "primary",
-                        "text": {"type": "plain_text", "text": "View Incident"},
+                        "text": {
+                            "type": "plain_text",
+                            "text": "View Incident",
+                        },
                         "url": sp_url,
                     },
                 ],

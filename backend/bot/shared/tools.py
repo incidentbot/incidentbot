@@ -11,7 +11,9 @@ from typing import Any, List
 
 logger = logging.getLogger(__name__)
 
-random_suffix = "".join(random.choices(string.ascii_lowercase + string.digits, k=6))
+random_suffix = "".join(
+    random.choices(string.ascii_lowercase + string.digits, k=6)
+)
 timestamp_fmt = "%Y-%m-%dT%H:%M:%S %Z"
 timestamp_fmt_short = "%d/%m/%Y %H:%M:%S %Z"
 

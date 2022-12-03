@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 from typing import List
 
-__version__ = "v0.8.1"
+__version__ = "v0.8.2"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -19,7 +19,9 @@ logger = logging.getLogger(__name__)
 """
 Global Variables
 """
-templates_directory = os.getenv("TEMPLATES_DIRECTORY", default="templates/slack/")
+templates_directory = os.getenv(
+    "TEMPLATES_DIRECTORY", default="templates/slack/"
+)
 test_environment = os.getenv("TEST_ENVIRONMENT", default="false")
 
 """
@@ -156,7 +158,11 @@ def env_check(required_envs: List[str]):
                 )
                 exit(1)
     if statuspage_integration_enabled == "true":
-        for var in ["STATUSPAGE_API_KEY", "STATUSPAGE_PAGE_ID", "STATUSPAGE_URL"]:
+        for var in [
+            "STATUSPAGE_API_KEY",
+            "STATUSPAGE_PAGE_ID",
+            "STATUSPAGE_URL",
+        ]:
             if os.getenv(var) == "":
                 logger.fatal(
                     f"If enabling the Statuspage integration, the {var} variable must be set."
