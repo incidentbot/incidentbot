@@ -62,7 +62,7 @@ class Incident:
         )
 
     def return_channel_name(self) -> str:
-        # Remove all special
+        # Remove any special characters (allow only alphanumeric)
         channel_description = re.sub("[^A-Za-z0-9\s]", "", self.d["channel_description"])
         # Replace any spaces with dashes
         channel_description = channel_description.replace(" ", "-").lower()
