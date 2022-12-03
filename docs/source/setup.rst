@@ -6,9 +6,7 @@ Setup
 Installation
 ------------
 
-For those who wish to get started quickly without customizing core behavior:
-
-There is a public image available based on latest primary build. The image is available `here <https://hub.docker.com/r/eb129/incident-bot>`_.
+For those who wish to get started quickly without customizing core behavior, there is a public image available based on the latest primary build. The image is available `here <https://hub.docker.com/r/eb129/incident-bot>`_.
 
 You can run the image however you choose. A Docker Compose file is provided for guidance. It is recommended to use the Helm chart if running in Kubernetes.
 
@@ -19,6 +17,9 @@ Kubernetes
 
 .. _helm:
 
+Helm
+------------
+
 You can get started quickly by using the Helm chart:
 
 ``helm repo add echoboomer-charts https://charts.echoboomer.net``
@@ -28,13 +29,15 @@ Sensitive data should come from Kubernetes ``Secret`` objects at a minimum. Secr
 If using ``sealed-secrets``, you could create your sensitive environment variables in a ``.env`` file and create the ``Secret`` like this:
 
 .. code-block:: bash
+
   kubectl create secret generic incident-bot-secret --from-env-file=.env --dry-run='client' -ojson --namespace incident-bot >incident-bot-secret.json &&
-  kubeseal --controller-name sealed-secrets <incident-bot-secret.json >incident-bot-secret-sealed.json &&
-  kubectl create -f incident-bot-secret-sealed.json
+    kubeseal --controller-name sealed-secrets <incident-bot-secret.json >incident-bot-secret-sealed.json &&
+    kubectl create -f incident-bot-secret-sealed.json
 
 Contained with ``.env``, you'd want to include the sensitive values for this application. For example:
 
 .. code-block:: bash
+
   CONFLUENCE_API_URL=https://my-confluence-tenant.atlassian.net
   CONFLUENCE_API_USERNAME=me@acme.com
   CONFLUENCE_API_TOKEN=mytoken
@@ -63,6 +66,7 @@ You can now install the application. As an example:
 In this scenario, you'd want to provide the values using the file ``incident-bot-values.yaml``. Here's an example:
 
 .. code-block:: yaml
+
   database:
     # Only if enabling for development of testing
     # Don't do this in production
@@ -130,6 +134,9 @@ If you'd like to clean everything up:
 ``helm uninstall incident-bot --namespace incident-bot``
 
 .. _kustomize:
+
+Kustomize
+------------
 
 ``kustomize`` manifests are provided for convenience.
 
