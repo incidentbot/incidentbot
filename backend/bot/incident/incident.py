@@ -1,6 +1,7 @@
 import config
 import datetime
 import logging
+import re
 import slack_sdk.errors
 
 from bot.audit import log
@@ -61,8 +62,10 @@ class Incident:
         )
 
     def return_channel_name(self) -> str:
+        # Remove any special characters (allow only alphanumeric)
+        channel_description = re.sub("[^A-Za-z0-9\s]", "", self.d["channel_description"])
         # Replace any spaces with dashes
-        channel_description = self.d["channel_description"].replace(" ", "-").lower()
+        channel_description = channel_description.replace(" ", "-").lower()
         now = datetime.datetime.now()
         return f"inc-{now.year}{now.month}{now.day}{now.hour}{now.minute}-{channel_description}"
 

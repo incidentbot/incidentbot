@@ -110,6 +110,17 @@ class TestIncidentManagement:
 
         assert re.search("^inc.*something-has-broken$", inc.return_channel_name())
 
+    def test_incident_channel_name_create(self):
+        inc = Incident(
+            request_data={
+                "channel_description": "unallowed ch@racter check!",
+                "channel": "CBR2V3XEX",
+                "user": "sample-incident-creator-user",
+            }
+        )
+
+        assert re.search("^inc.*unallowed-chracter-check$", inc.return_channel_name())
+
     # This needs to mock the client.
     # def test_incident_create(self):
     #     request_parameters = {

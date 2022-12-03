@@ -1,6 +1,6 @@
 alembic==1.7.7
 apscheduler==3.8.1
-atlassian-python-api==3.22.0
+atlassian-python-api==3.31.0
 feedparser==6.0.8
 flask==2.1.0
 flask-login==0.5.0
