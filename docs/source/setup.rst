@@ -6,20 +6,141 @@ Setup
 Installation
 ------------
 
-The app can be installed one of two ways - from Docker or from source.
+For those who wish to get started quickly without customizing core behavior, there is a public image available based on the latest primary build. The image is available `here <https://hub.docker.com/r/eb129/incident-bot>`_.
 
-The image can be built using the provided Dockerfile. There is also a public image available based on latest primary build. The image is available `here <https://hub.docker.com/r/eb129/incident-bot>`_.
-
-To run the application using the public Docker image, simply create a Docker compose file based on the provided example and reference the public image. Alternatively, Kubernetes manifests are provided via the ``deploy/`` directory.
+You can run the image however you choose. A Docker Compose file is provided for guidance. It is recommended to use the Helm chart if running in Kubernetes.
 
 .. _kubernetes:
 
 Kubernetes
 ------------
 
-``kustomize`` manifests are provided for convenience and are the recommended way to deploy the application in Kubernetes.
+.. _helm:
 
-The manifests are located at: ``deploy/kubernetes/incident-bot``
+Helm
+------------
+
+You can get started quickly by using the Helm chart:
+
+``helm repo add echoboomer-charts https://charts.echoboomer.net``
+
+Sensitive data should come from Kubernetes ``Secret`` objects at a minimum. Secret management is outside of the scope of this application. One method is to used something like `sealed secrets <https://github.com/bitnami-labs/sealed-secrets>`_.
+
+If using ``sealed-secrets``, you could create your sensitive environment variables in a ``.env`` file and create the ``Secret`` like this:
+
+.. code-block:: bash
+
+  kubectl create secret generic incident-bot-secret --from-env-file=.env --dry-run='client' -ojson --namespace incident-bot >incident-bot-secret.json &&
+    kubeseal --controller-name sealed-secrets <incident-bot-secret.json >incident-bot-secret-sealed.json &&
+    kubectl create -f incident-bot-secret-sealed.json
+
+Contained with ``.env``, you'd want to include the sensitive values for this application. For example:
+
+.. code-block:: bash
+
+  CONFLUENCE_API_URL=https://my-confluence-tenant.atlassian.net
+  CONFLUENCE_API_USERNAME=me@acme.com
+  CONFLUENCE_API_TOKEN=mytoken
+  CONFLUENCE_SPACE=SPACENAME
+  CONFLUENCE_PARENT_PAGE=ParentPageName
+  STATUSPAGE_API_KEY=populatemeifusing
+  STATUSPAGE_PAGE_ID=none
+  STATUSPAGE_URL=none
+  PAGERDUTY_API_USERNAME=me@acme.com
+  POSTGRES_HOST=db
+  POSTGRES_DB=incident_bot
+  POSTGRES_USER=incident_bot
+  POSTGRES_PASSWORD=somepassword
+  POSTGRES_PORT=5432
+  SLACK_APP_TOKEN=xapp-1-...
+  SLACK_BOT_TOKEN=xoxb-...
+  DEFAULT_WEB_ADMIN_PASSWORD=somepassword
+  JWT_SECRET_KEY=mysecretkey
+
+This will create the required ``Secret`` in the ``Namespace`` ``incident-bot``. You may need to create the ``Namespace`` if it doesn't exist.
+
+You can now install the application. As an example:
+
+``helm install echoboomer-charts/incident-bot --version 0.1.1 --values incident-bot-values.yaml --namespace incident-bot``
+
+In this scenario, you'd want to provide the values using the file ``incident-bot-values.yaml``. Here's an example:
+
+.. code-block:: yaml
+
+  database:
+    # Only if enabling for development of testing
+    # Don't do this in production
+    enabled: true
+    password: somepassword
+  # This is what gets created via the steps below
+  envFromSecret:
+    enabled: true
+    secretName: incident-bot-secret
+  envVars:
+    AUTH0_DOMAIN:
+    AUTO_CREATE_RCA: false
+    INCIDENTS_DIGEST_CHANNEL: incidents
+    INCIDENT_AUTO_GROUP_INVITE_ENABLED: false
+    INCIDENT_AUTO_GROUP_INVITE_GROUP_NAME: mygroup
+    INCIDENT_EXTERNAL_PROVIDERS_ENABLED: true
+    INCIDENT_EXTERNAL_PROVIDERS_LIST: github
+    INCIDENT_AUTO_CREATE_FROM_REACT_ENABLED: true
+    INCIDENT_AUTO_CREATE_FROM_REACT_EMOJI_NAME: create-incident
+    PAGERDUTY_INTEGRATION_ENABLED: false
+    STATUSPAGE_INTEGRATION_ENABLED: false
+  healthCheck:
+    enabled: true
+    path: /api/v1/health
+    port: 3000
+    scheme: HTTP
+    initialDelaySeconds: 30
+    periodSeconds: 30
+    timeoutSeconds: 1
+  image:
+    repository: eb129/incident-bot
+    pullPolicy: Always
+  ingress:
+    enabled: true
+    className: ''
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    hosts:
+      - host: incident-bot.mydomain.com
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+    tls:
+      - secretName: incident-bot-tls
+        hosts:
+          - incident-bot.mydomain.com
+  podDisruptionBudget:
+    enabled: false
+    minAvailable: 1
+  replicaCount: 1
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 512M
+    requests:
+      cpu: 250m
+      memory: 256M
+  service:
+    type: ClusterIP
+    port: 3000
+
+If you'd like to clean everything up:
+
+``helm uninstall incident-bot --namespace incident-bot``
+
+.. _kustomize:
+
+Kustomize
+------------
+
+``kustomize`` manifests are provided for convenience.
+
+The manifests are located at: ``deploy/kustomize/incident-bot``
 
 To preview generated manifests, run: ``kubectl kustomize .``
 
