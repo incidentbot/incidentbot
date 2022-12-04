@@ -4,7 +4,7 @@ jobs:
     environment:
       IMAGE_NAME: eb129/incident-bot
     docker:
-      - image: circleci/buildpack-deps:stretch
+      - image: cimg/base:current
     steps:
       - checkout
       - setup_remote_docker
@@ -18,8 +18,9 @@ jobs:
     environment:
       IMAGE_NAME: eb129/incident-bot
     docker:
-      - image: circleci/buildpack-deps:stretch
+      - image: cimg/base:current
     steps:
+      - checkout
       - setup_remote_docker
       - run:
           name: Publish Docker Image to Docker Hub
@@ -33,9 +34,6 @@ workflows:
   build-main:
     jobs:
       - build:
-          filters:
-            branches:
-              only: main
       - publish:
           requires:
             - build
