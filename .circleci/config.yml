@@ -21,8 +21,6 @@ workflows:
   build-main:
     jobs:
       - publish:
-          requires:
-            - build
           filters:
             branches:
               only: main
