@@ -1,0 +1,44 @@
+version: 2
+jobs:
+  build:
+    environment:
+      IMAGE_NAME: eb129/incident-bot
+    docker:
+      - image: circleci/buildpack-deps:stretch
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Build Docker image
+          command: |
+            echo 'export IMAGE_TAG=$(cat version)' >> "$BASH_ENV"
+            source "$BASH_ENV"
+            docker build -t $IMAGE_NAME:$IMAGE_TAG .
+  publish:
+    environment:
+      IMAGE_NAME: eb129/incident-bot
+    docker:
+      - image: circleci/buildpack-deps:stretch
+    steps:
+      - setup_remote_docker
+      - run:
+          name: Publish Docker Image to Docker Hub
+          command: |
+            echo 'export IMAGE_TAG=$(cat version)' >> "$BASH_ENV"
+            source "$BASH_ENV"
+            echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            docker push $IMAGE_NAME:$IMAGE_TAG
+workflows:
+  version: 2
+  build-main:
+    jobs:
+      - build:
+          filters:
+            branches:
+              only: main
+      - publish:
+          requires:
+            - build
+          filters:
+            branches:
+              only: main
