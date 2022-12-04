@@ -33,7 +33,7 @@ workflows:
   version: 2
   build-main:
     jobs:
-      - build:
+      - build
       - publish:
           requires:
             - build
