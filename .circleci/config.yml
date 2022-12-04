@@ -10,7 +10,10 @@ jobs:
       - setup_remote_docker
       - run:
           name: Build Docker image
-          command: docker build -t $IMAGE_NAME:$CIRCLE_BRANCH .
+          command: |
+            echo 'export IMAGE_TAG=$(cat version)' >> "$BASH_ENV"
+            source "$BASH_ENV"
+            docker build -t $IMAGE_NAME:$IMAGE_TAG .
   publish:
     environment:
       IMAGE_NAME: eb129/incident-bot
@@ -21,8 +24,10 @@ jobs:
       - run:
           name: Publish Docker Image to Docker Hub
           command: |
+            echo 'export IMAGE_TAG=$(cat version)' >> "$BASH_ENV"
+            source "$BASH_ENV"
             echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-            docker push $IMAGE_NAME:$CIRCLE_BRANCH
+            docker push $IMAGE_NAME:$IMAGE_TAG
 workflows:
   version: 2
   build-main:
