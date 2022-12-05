@@ -1,7 +1,7 @@
 alembic==1.8.1
 apispec==6.0.2
 apscheduler==3.9.1.post1
-atlassian-python-api==3.31.1
+atlassian-python-api==3.32.0
 feedparser==6.0.10
 flasgger==0.9.5
 flask==2.1.3
