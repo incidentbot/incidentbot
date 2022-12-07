@@ -197,9 +197,9 @@ class TestIncidentManagement:
                             "url": "https://test.slack.com/archives/mock",
                         },
                         {
-                            "action_id": "incident.click_zoom_link",
+                            "action_id": "incident.click_conference_bridge_link",
                             "text": {
-                                "text": "Zoom",
+                                "text": "Conference",
                                 "type": "plain_text",
                             },
                             "type": "button",
@@ -746,9 +746,9 @@ class TestIncidentManagement:
                             "url": "https://test.slack.com/archives/mock",
                         },
                         {
-                            "action_id": "incident.click_zoom_link",
+                            "action_id": "incident.click_conference_bridge_link",
                             "text": {
-                                "text": "Zoom",
+                                "text": "Conference",
                                 "type": "plain_text",
                             },
                             "type": "button",
