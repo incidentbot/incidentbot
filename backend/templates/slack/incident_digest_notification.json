@@ -57,10 +57,10 @@
           "type": "button",
           "text": {
             "type": "plain_text",
-            "text": "Zoom"
+            "text": "Conference"
           },
-          "url": "{zoom_link_var_placeholder}",
-          "action_id": "incident.click_zoom_link"
+          "url": "{conference_bridge_link_var_placeholder}",
+          "action_id": "incident.click_conference_bridge_link"
         },
         {
           "type": "button",

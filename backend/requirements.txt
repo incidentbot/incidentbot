@@ -15,6 +15,7 @@ marshmallow_sqlalchemy==0.28.1
 pdpyras==4.5.2
 psycopg2-binary==2.9.5
 pyjokes==0.6.0
+pytest==7.2.0
 python-dotenv==0.21.0
 pytz==2022.6
 requests==2.28.1

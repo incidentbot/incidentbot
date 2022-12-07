@@ -14,7 +14,7 @@ defaults = {
     if config.test_environment == "false"
     else "test",
     "timezone": "UTC",
-    "zoom_link": "https://zoom.us",
+    "conference_bridge_link": "https://zoom.us",
 }
 
 settings_from_db = (
@@ -33,4 +33,6 @@ incident_postmortems_link = settings_from_db.get(
     "incident_postmortems_link", defaults["incident_postmortems_link"]
 )
 timezone = settings_from_db.get("timezone", defaults["timezone"])
-zoom_link = settings_from_db.get("zoom_link", defaults["zoom_link"])
+conference_bridge_link = settings_from_db.get(
+    "conference_bridge_link", defaults["conference_bridge_link"]
+)

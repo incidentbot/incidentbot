@@ -77,7 +77,7 @@ This can be accomplished in the web UI under the settings section. Specifically,
 - Incident documentation
 - Incident postmortems/RCA link
 - Timezone
-- Zoom Link
+- Conference Bridge Link
 
 .. _pagerduty-integration:
 

@@ -445,7 +445,7 @@ def handle_some_action(ack, body, logger):
     ack()
 
 
-@app.action("incident.click_zoom_link")
+@app.action("incident.click_conference_bridge_link")
 def handle_some_action(ack, body, logger):
     logger.debug(body)
     ack()

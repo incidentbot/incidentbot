@@ -13,7 +13,7 @@ run: venv
 
 stage_migration: venv
 ifndef DESCRIPTION
-	@echo "DESCRIPTION is required, example: make DESCRIPTION=Do something stage_migration"
+	@echo "DESCRIPTION is required, example: make DESCRIPTION='Do something' stage_migration"
 else
 	./$(VENV)/bin/alembic revision -m "$(DESCRIPTION)"
 endif
@@ -26,9 +26,9 @@ clean:
 	find . -type f -name '*.pyc' -delete
 
 render:
-	./scripts/render_app_manifest.sh
+	../scripts/render_app_manifest.sh
 
-run-tests:
-	pytest -vv tests/
+run-tests: venv
+	TEST_ENVIRONMENT=true ./$(VENV)/bin/python -m pytest -vv tests/
 
-.PHONY: all venv run clean render
+.PHONY: all venv run stage_migration run_migrations clean render run-tests

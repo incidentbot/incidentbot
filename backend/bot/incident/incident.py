@@ -17,7 +17,7 @@ from bot.settings.im import (
     incident_channel_topic,
     incident_guide_link,
     incident_postmortems_link,
-    zoom_link,
+    conference_bridge_link,
 )
 from bot.shared import tools
 from bot.slack.client import slack_web_client, slack_workspace_id
@@ -178,10 +178,10 @@ def create_incident(
                 timestamp=bp_message["ts"],
             )
             """
-            Post Zoom link in the channel upon creation
+            Post conference_bridge_link in the channel upon creation
             """
             try:
-                zoom_link_message = slack_web_client.chat_postMessage(
+                conference_bridge_message = slack_web_client.chat_postMessage(
                     channel=channel["channel"]["id"],
                     text="",
                     blocks=[
@@ -189,7 +189,7 @@ def create_incident(
                             "type": "header",
                             "text": {
                                 "type": "plain_text",
-                                "text": ":busts_in_silhouette: Please join the Zoom conference here.",
+                                "text": ":busts_in_silhouette: Please join the conference here.",
                             },
                         },
                         {"type": "divider"},
@@ -197,17 +197,19 @@ def create_incident(
                             "type": "section",
                             "text": {
                                 "type": "mrkdwn",
-                                "text": f"{zoom_link}",
+                                "text": f"{conference_bridge_link}",
                             },
                         },
                     ],
                 )
                 slack_web_client.pins_add(
                     channel=createdChannelDetails["id"],
-                    timestamp=zoom_link_message["message"]["ts"],
+                    timestamp=conference_bridge_message["message"]["ts"],
                 )
             except slack_sdk.errors.SlackApiError as error:
-                logger.error(f"Error sending Zoom link to channel: {error}")
+                logger.error(
+                    f"Error sending conference_bridge_link to channel: {error}"
+                )
             """
             Write incident entry to database
             """
@@ -482,7 +484,7 @@ def build_digest_notification(
         "severity_var_placeholder": severity.upper(),
         "incident_guide_link_var_placeholder": incident_guide_link,
         "incident_postmortems_link_var_placeholder": incident_postmortems_link,
-        "zoom_link_var_placeholder": zoom_link,
+        "conference_bridge_link_var_placeholder": conference_bridge_link,
     }
     return tools.render_json(
         f"{config.templates_directory}incident_digest_notification.json",
@@ -619,7 +621,7 @@ def build_updated_digest_message(
         "slack_workspace_id_var_placeholder": slack_workspace_id,
         "incident_guide_link_var_placeholder": incident_guide_link,
         "incident_postmortems_link_var_placeholder": incident_postmortems_link,
-        "zoom_link_var_placeholder": zoom_link,
+        "conference_bridge_link_var_placeholder": conference_bridge_link,
     }
     return tools.render_json(
         f"{config.templates_directory}incident_digest_notification_update.json",
