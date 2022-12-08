@@ -13,6 +13,10 @@ Interacting with the bot is incredibly easy through the use of modals and simpli
 
 <img src="https://github.com/echoboomer/incident-bot/blob/main/assets/incident-bot-demo-1.gif" width="700" height="500" />
 
+Featuring a rich web management UI:
+
+<img src="https://github.com/echoboomer/incident-bot/blob/main/assets/incident-bot-demo-2.gif" width="700" height="500" />
+
 - [incident-bot](#incident-bot)
   - [Features at a Glance](#features-at-a-glance)
   - [Architecture](#architecture)
