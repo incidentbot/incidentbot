@@ -210,3 +210,25 @@ def store_slack_user_list():
         Session.rollback()
     finally:
         Session.close()
+
+
+def check_bot_user_in_digest_channel():
+    """
+    Adds bot user to digest channel if not already present
+    """
+    digest_channel_id = get_digest_channel_id()
+    if (
+        bot_user_id
+        not in slack_web_client.conversations_members(
+            channel=digest_channel_id
+        )["members"]
+    ):
+        try:
+            slack_web_client.conversations_join(channel=digest_channel_id)
+            logger.info("Added bot user to digest channel")
+        except SlackApiError as error:
+            logger.error(
+                f"Error auto joining bot user to digest channel: {error}"
+            )
+    else:
+        logger.info("Bot user is present in digest channel")

@@ -6,7 +6,10 @@ import sys
 from bot.api.flask import app
 from bot.models.pg import db_verify
 from bot.scheduler import scheduler
-from bot.slack.client import slack_workspace_id
+from bot.slack.client import (
+    slack_workspace_id,
+    check_bot_user_in_digest_channel,
+)
 from bot.slack.handler import app as slack_app
 
 from slack_bolt.adapter.socket_mode import SocketModeHandler
@@ -94,6 +97,9 @@ if __name__ == "__main__":
     # Serve Slack Bolt app
     handler = SocketModeHandler(slack_app, config.slack_app_token)
     handler.connect()
+
+    # Make sure bot user is always present in incident digest channel
+    check_bot_user_in_digest_channel()
 
     # Serve Flask app
     serve(app, host="0.0.0.0", port=3000)

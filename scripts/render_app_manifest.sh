@@ -38,6 +38,7 @@ function renderManifest {
     "    bot:" \
     "      - app_mentions:read" \
     "      - channels:history" \
+    "      - channels:join" \
     "      - channels:manage" \
     "      - channels:read" \
     "      - chat:write" \
