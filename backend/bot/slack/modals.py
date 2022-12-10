@@ -2,12 +2,12 @@ import config
 import logging
 import variables
 
-from .handler import app
-from .handler import help_menu
-from .client import return_slack_channel_info
-from .messages import incident_list_message, pd_on_call_message
+from bot.slack.handler import app, help_menu
+from bot.slack.client import return_slack_channel_info
+from bot.slack.messages import incident_list_message, pd_on_call_message
 from bot.audit.log import read as read_logs, write as write_log
 from bot.incident import incident
+from bot.incident.templates import build_public_status_update
 from bot.models.incident import (
     db_read_all_incidents,
     db_read_incident_channel_id,
@@ -166,6 +166,38 @@ def open_modal(ack, body, client):
             },
         },
         {
+            "type": "section",
+            "block_id": "is_security_incident",
+            "text": {
+                "type": "mrkdwn",
+                "text": "*Is this a security incident?*",
+            },
+            "accessory": {
+                "action_id": "open_incident_modal_set_security_type",
+                "type": "static_select",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Select...",
+                },
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Yes",
+                        },
+                        "value": "true",
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "No",
+                        },
+                        "value": "false",
+                    },
+                ],
+            },
+        },
+        {
             "type": "input",
             "block_id": "open_incident_modal_desc",
             "element": {
@@ -278,6 +310,9 @@ def handle_submission(ack, body, client, view):
     Handles open_incident_modal
     """
     ack()
+    is_security_incident = view["state"]["values"]["is_security_incident"][
+        "open_incident_modal_set_security_type"
+    ]["selected_option"]["value"]
     description = view["state"]["values"]["open_incident_modal_desc"][
         "description"
     ]["value"]
@@ -287,10 +322,11 @@ def handle_submission(ack, body, client, view):
     ]["selected_option"]["value"]
     request_parameters = {
         "channel": "modal",
-        "channel_description": description,
+        "incident_description": description,
         "user": user,
         "severity": severity,
         "created_from_web": False,
+        "is_security_incident": is_security_incident,
     }
     resp = incident.create_incident(request_parameters)
     client.chat_postMessage(channel=user, text=resp)
@@ -439,7 +475,7 @@ def handle_submission(ack, client, view):
     for character in "#<>":
         channel_id = channel_id.replace(character, "")
     try:
-        update = incident.build_public_status_update(
+        update = build_public_status_update(
             incident_id=channel_id,
             impacted_resources=view["state"]["values"][
                 "open_incident_general_update_modal_impacted_resources"

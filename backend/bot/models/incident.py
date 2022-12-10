@@ -271,6 +271,8 @@ def db_write_incident(
     severity,
     bp_message_ts,
     dig_message_ts,
+    is_security_incident,
+    channel_description,
 ):
     """
     Write incident entry to database
@@ -283,6 +285,8 @@ def db_write_incident(
         severity - Severity of the incident
         bp_message_ts - Boilerplate message creation timestamp
         dig_message_ts - Digest channel message creation timestamp
+        is_security_incident - Whether or not the incident is security-focused
+        channel_description - Unformatted original description
     """
     try:
         incident = Incident(
@@ -294,6 +298,8 @@ def db_write_incident(
             bp_message_ts=bp_message_ts,
             dig_message_ts=dig_message_ts,
             tags=[],
+            is_security_incident=is_security_incident,
+            channel_description=channel_description,
         )
         Session.add(incident)
         Session.commit()

@@ -6,17 +6,18 @@ import slack_sdk.errors
 
 from bot.audit import log
 from bot.external import epi
+from bot.incident.templates import (
+    build_digest_notification,
+    build_incident_channel_boilerplate,
+)
 from bot.models.incident import (
     db_update_incident_created_at_col,
     db_update_incident_sp_ts_col,
     db_write_incident,
 )
 from bot.models.pager import read_pager_auto_page_targets
-from bot.models.setting import read_single_setting_value
 from bot.settings.im import (
     incident_channel_topic,
-    incident_guide_link,
-    incident_postmortems_link,
     conference_bridge_link,
 )
 from bot.shared import tools
@@ -32,7 +33,7 @@ channel_name_length_cap = 80
 # How many characters does the incident prefix take up?
 channel_name_prefix_length = len("inc-20211116-")
 # How long can the provided description be?
-channel_description_max_length = (
+incident_description_max_length = (
     channel_name_length_cap - channel_name_prefix_length
 )
 # Which external providers are supported? Ones not in this list will error.
@@ -49,29 +50,79 @@ if config.test_environment == "false":
 class Incident:
     """Instantiates an incident"""
 
-    def __init__(self, request_data: Dict[str, str]):
-        self.d = request_data
+    def __init__(self, request_parameters: Dict[str, str]):
+        self.request_parameters = request_parameters
+        # Log transaction
         self.log()
+        # Set instance variables
+        self.incident_description = self.request_parameters[
+            "incident_description"
+        ]
+        self.channel_name = self.__format_channel_name()
+        if config.test_environment == "false":
+            self.channel = self.__create_incident_channel()
+            self.channel_details = self.channel.get("channel")
+            self.created_channel_details = {
+                "incident_description": self.request_parameters[
+                    "incident_description"
+                ],
+                "id": self.channel_details.get("id"),
+                "name": self.channel_details.get("name"),
+                "is_security_incident": self.request_parameters[
+                    "is_security_incident"
+                ]
+                in ("True", "true", True),
+            }
+        else:
+            self.channel_details = {}
+            self.created_channel_details = {
+                "name": self.channel_details.get("name"),
+                "is_security_incident": False,
+            }
 
     def log(self):
         request_log = {
-            "user": self.d["user"],
-            "channel": self.d["channel"],
-            "channel_description": self.d["channel_description"],
+            "user": self.request_parameters["user"],
+            "channel": self.request_parameters["channel"],
+            "incident_description": self.request_parameters[
+                "incident_description"
+            ],
         }
         logger.info(
             f"Request received from Slack to start a new incident: {request_log}"
         )
 
-    def return_channel_name(self) -> str:
+    def __create_incident_channel(self):
+        """
+        Create incident channel in Slack for an incident
+        """
+        try:
+            # Call the conversations.create method using the WebClient
+            # conversations_create requires the channels:manage bot scope
+            channel = slack_web_client.conversations_create(
+                # The name of the conversation
+                name=self.channel_name
+            )
+            # Log the result which includes information like the ID of the conversation
+            logger.debug(f"\n{channel}\n")
+            logger.info(f"Creating incident channel: {self.channel_name}")
+        except slack_sdk.errors.SlackApiError as error:
+            logger.error(f"Error creating incident channel: {error}")
+        return channel
+
+    def __format_channel_name(self) -> str:
         # Remove any special characters (allow only alphanumeric)
-        channel_description = re.sub(
-            "[^A-Za-z0-9\s]", "", self.d["channel_description"]
+        formatted_channel_name_suffix = re.sub(
+            "[^A-Za-z0-9\s]",
+            "",
+            self.incident_description,
         )
         # Replace any spaces with dashes
-        channel_description = channel_description.replace(" ", "-").lower()
+        formatted_channel_name_suffix = formatted_channel_name_suffix.replace(
+            " ", "-"
+        ).lower()
         now = datetime.datetime.now()
-        return f"inc-{now.year}{now.month}{now.day}{now.hour}{now.minute}-{channel_description}"
+        return f"inc-{now.year}{now.month}{now.day}{now.hour}{now.minute}-{formatted_channel_name_suffix}"
 
 
 """
@@ -91,45 +142,18 @@ def create_incident(
     Return formatted incident channel name
     Typically inc-datefmt-topic
     """
-    channel_description = request_parameters["channel_description"]
-    channel = request_parameters["channel"]
+    incident_description = request_parameters["incident_description"]
     user = request_parameters["user"]
     severity = request_parameters["severity"] or "sev4"
-    if channel_description != "":
-        if len(channel_description) < channel_description_max_length:
-            incident = Incident(
-                request_data={
-                    "channel_description": channel_description,
-                    "channel": channel,
-                    "user": user,
-                }
-            )
-            fmt_channel_name = incident.return_channel_name()
-            """
-            Create incident channel
-            """
-            try:
-                # Call the conversations.create method using the WebClient
-                # conversations_create requires the channels:manage bot scope
-                channel = slack_web_client.conversations_create(
-                    # The name of the conversation
-                    name=fmt_channel_name
-                )
-                # Log the result which includes information like the ID of the conversation
-                logger.debug(f"\n{channel}\n")
-                logger.info(f"Creating incident channel: {fmt_channel_name}")
-            except slack_sdk.errors.SlackApiError as error:
-                logger.error(f"Error creating incident channel: {error}")
-            # Used by subsequent actions.
-            createdChannelDetails = {
-                "id": channel["channel"]["id"],
-                "name": channel["channel"]["name"],
-            }
+    if incident_description != "":
+        if len(incident_description) < incident_description_max_length:
+            incident = Incident(request_parameters)
+            created_channel_details = incident.created_channel_details
             """
             Notify incidents digest channel (#incidents)
             """
             digest_message_content = build_digest_notification(
-                createdChannelDetails, severity
+                created_channel_details, severity
             )
             try:
                 digest_message = slack_web_client.chat_postMessage(
@@ -142,7 +166,9 @@ def create_incident(
                     f"Error sending message to incident digest channel: {error}"
                 )
             logger.info(
-                f"Sending message to digest channel for: {fmt_channel_name}"
+                "Sending message to digest channel for: {}".format(
+                    created_channel_details["name"]
+                )
             )
             """
             Set incident channel topic
@@ -150,7 +176,7 @@ def create_incident(
             topic_boilerplate = incident_channel_topic
             try:
                 topic = slack_web_client.conversations_setTopic(
-                    channel=channel["channel"]["id"],
+                    channel=created_channel_details["id"],
                     topic=topic_boilerplate,
                 )
                 logger.debug(f"\n{topic}\n")
@@ -160,7 +186,7 @@ def create_incident(
             Send boilerplate info to incident channel
             """
             bp_message_content = build_incident_channel_boilerplate(
-                createdChannelDetails, severity
+                created_channel_details, severity
             )
             try:
                 bp_message = slack_web_client.chat_postMessage(
@@ -174,7 +200,7 @@ def create_incident(
                 )
             # Pin the boilerplate message to the channel for quick access.
             slack_web_client.pins_add(
-                channel=createdChannelDetails["id"],
+                channel=created_channel_details["id"],
                 timestamp=bp_message["ts"],
             )
             """
@@ -182,7 +208,7 @@ def create_incident(
             """
             try:
                 conference_bridge_message = slack_web_client.chat_postMessage(
-                    channel=channel["channel"]["id"],
+                    channel=created_channel_details["id"],
                     text="",
                     blocks=[
                         {
@@ -203,7 +229,7 @@ def create_incident(
                     ],
                 )
                 slack_web_client.pins_add(
-                    channel=createdChannelDetails["id"],
+                    channel=created_channel_details["id"],
                     timestamp=conference_bridge_message["message"]["ts"],
                 )
             except slack_sdk.errors.SlackApiError as error:
@@ -214,24 +240,32 @@ def create_incident(
             Write incident entry to database
             """
             logger.info(
-                f"Writing incident entry to database for {fmt_channel_name}..."
+                "Writing incident entry to database for {}...".format(
+                    created_channel_details["name"]
+                )
             )
             try:
                 db_write_incident(
-                    fmt_channel_name,
-                    channel["channel"]["id"],
-                    channel["channel"]["name"],
-                    "investigating",
-                    severity,
-                    bp_message["ts"],
-                    digest_message["ts"],
+                    incident_id=created_channel_details["name"],
+                    channel_id=created_channel_details["id"],
+                    channel_name=created_channel_details["name"],
+                    status="investigating",
+                    severity=severity,
+                    bp_message_ts=bp_message["ts"],
+                    dig_message_ts=digest_message["ts"],
+                    is_security_incident=created_channel_details[
+                        "is_security_incident"
+                    ],
+                    channel_description=created_channel_details[
+                        "incident_description"
+                    ],
                 )
             except Exception as error:
                 logger.fatal(f"Error writing entry to database: {error}")
             # Tag the incident with initial creation timestamp in human readable format
             try:
                 db_update_incident_created_at_col(
-                    incident_id=fmt_channel_name,
+                    incident_id=created_channel_details["name"],
                     created_at=tools.fetch_timestamp(),
                 )
             except Exception as error:
@@ -241,37 +275,37 @@ def create_incident(
             # Handle optionals in a thread to avoid breaking the 3000ms limit for Slack slash commands
             thr = Thread(
                 target=handle_incident_optional_features,
-                args=[request_parameters, createdChannelDetails, internal],
+                args=[request_parameters, created_channel_details, internal],
             )
             thr.start()
             # Invite the user who opened the channel to the channel.
-            invite_user_to_channel(createdChannelDetails["id"], user)
+            invite_user_to_channel(created_channel_details["id"], user)
             # Return for view method
-            temp_channel_id = createdChannelDetails["id"]
+            temp_channel_id = created_channel_details["id"]
 
             # Write audit log
             log.write(
-                incident_id=createdChannelDetails["name"],
+                incident_id=created_channel_details["name"],
                 event="Incident created.",
                 user=user,
             )
             return f"I've created the incident channel: <#{temp_channel_id}>"
         else:
-            return f"Total channel length cannot exceed 80 characters. Please use a short description less than {channel_description_max_length} characters. You used {len(channel_description)}."
+            return f"Total channel length cannot exceed 80 characters. Please use a short description less than {incident_description_max_length} characters. You used {len(incident_description)}."
     else:
         return "Please provide a description for the channel."
 
 
 def handle_incident_optional_features(
     request_parameters: Dict[str, str],
-    createdChannelDetails: Dict[str, str],
+    created_channel_details: Dict[str, str],
     internal: bool = False,
 ):
     """
     For new incidents, handle optional features
     """
-    channel_id = createdChannelDetails["id"]
-    channel_name = createdChannelDetails["name"]
+    channel_id = created_channel_details["id"]
+    channel_name = created_channel_details["name"]
 
     """
     Invite required participants (optional)
@@ -305,7 +339,7 @@ def handle_incident_optional_features(
                 logger.debug(f"\n{invite}\n")
                 # Write audit log
                 log.write(
-                    incident_id=createdChannelDetails["name"],
+                    incident_id=created_channel_details["name"],
                     event=f"Group {required_participants_group} invited to the incident channel automatically.",
                 )
             except slack_sdk.errors.SlackApiError as error:
@@ -447,224 +481,13 @@ def handle_incident_optional_features(
                     )
                     # Write audit log
                     log.write(
-                        incident_id=createdChannelDetails["name"],
+                        incident_id=created_channel_details["name"],
                         event=f"Created PagerDuty incident for team {k}.",
                     )
                     pd_api.page(
                         ep_name=v,
                         priority="low",
-                        channel_name=createdChannelDetails["name"],
-                        channel_id=createdChannelDetails["id"],
+                        channel_name=created_channel_details["name"],
+                        channel_id=created_channel_details["id"],
                         paging_user="auto",
                     )
-
-
-"""
-Messaging Helpers
-"""
-
-
-def build_digest_notification(
-    createdChannelDetails: Dict[str, str], severity: str
-) -> Dict[str, str]:
-    """Formats the notification that will be
-    sent to the digest channel
-
-    Args:
-        createdChannelDetails: dict[str, str]
-        Expects: id, name
-
-    Returns dict[str, str] containing the formatted message
-    to be sent to Slack
-    """
-    variables = {
-        "channel_id_var_placeholder": config.incidents_digest_channel,
-        "channel_name_var_placeholder": createdChannelDetails["name"],
-        "slack_workspace_id_var_placeholder": slack_workspace_id,
-        "severity_var_placeholder": severity.upper(),
-        "incident_guide_link_var_placeholder": incident_guide_link,
-        "incident_postmortems_link_var_placeholder": incident_postmortems_link,
-        "conference_bridge_link_var_placeholder": conference_bridge_link,
-    }
-    return tools.render_json(
-        f"{config.templates_directory}incident_digest_notification.json",
-        variables,
-    )
-
-
-def build_incident_channel_boilerplate(
-    createdChannelDetails: Dict[str, str], severity: str
-) -> Dict[str, str]:
-    """Formats the boilerplate messaging that will
-    be added to all newly created incident channels.
-    """
-    variables = {
-        "channel_id_var_placeholder": createdChannelDetails["id"],
-        "severity_var_placeholder": severity.upper(),
-        "incident_guide_link_var_placeholder": incident_guide_link,
-        "incident_postmortems_link_var_placeholder": incident_postmortems_link,
-    }
-    return tools.render_json(
-        f"{config.templates_directory}incident_channel_boilerplate.json",
-        variables,
-    )
-
-
-def build_post_resolution_message(channel: str, status: str) -> Dict[str, str]:
-    """Formats the notification that will be
-    sent when the incident is resolved
-
-    Args:
-        channel: str
-        status: str
-
-    Returns dict[str, str] containing the formatted message
-    to be sent to Slack
-    """
-    variables = {
-        "channel_id_var_placeholder": channel,
-        "incident_guide_link_var_placeholder": incident_guide_link,
-        "incident_postmortems_link_var_placeholder": incident_postmortems_link,
-    }
-    return tools.render_json(
-        f"{config.templates_directory}incident_resolution_message.json",
-        variables,
-    )
-
-
-def build_role_update(channel: str, role: str, user: str) -> Dict[str, str]:
-    """Formats the notification that will be
-    sent when a role is claimed
-
-    Args:
-        channel: str
-        role: str
-        user: str
-
-    Returns dict[str, str] containing the formatted message
-    to be sent to Slack
-    """
-    variables = {
-        "channel_id_var_placeholder": channel,
-        "user_var_placeholder": user,
-        "role_var_placeholder": role,
-    }
-    return tools.render_json(
-        f"{config.templates_directory}incident_role_update.json", variables
-    )
-
-
-def build_severity_update(channel: str, severity: str) -> Dict[str, str]:
-    """Formats the notification that will be
-    sent when severity changes
-
-    Args:
-        channel: str
-        severity: str
-
-    Returns dict[str, str] containing the formatted message
-    to be sent to Slack
-    """
-    severity_descriptions = read_single_setting_value("severity_levels")
-    variables = {
-        "channel_id_var_placeholder": channel,
-        "severity_var_placeholder": severity.upper(),
-        "severity_description_var_placeholder": severity_descriptions[
-            severity
-        ],
-    }
-    return tools.render_json(
-        f"{config.templates_directory}incident_severity_update.json", variables
-    )
-
-
-def build_status_update(channel: str, status: str) -> Dict[str, str]:
-    """Formats the notification that will be
-    sent when status changes
-
-    Args:
-        channel: str
-        status: str
-
-    Returns dict[str, str] containing the formatted message
-    to be sent to Slack
-    """
-    variables = {
-        "channel_id_var_placeholder": channel,
-        "status_var_placeholder": status.title(),
-    }
-    return tools.render_json(
-        f"{config.templates_directory}incident_status_update.json", variables
-    )
-
-
-def build_updated_digest_message(
-    incident_id: str, status: str, severity: str
-) -> Dict[str, list]:
-    """Returns the blocks required for the initial incidents
-    digest message with edits so we can update it when the status
-    changes
-    """
-    if status == "resolved":
-        header = ":white_check_mark: Resolved Incident :white_check_mark:"
-        message = "This incident has been resolved. You can still check out the archived channel for context."
-    else:
-        header = ":bangbang: Ongoing Incident :bangbang:"
-        message = "This incident is in progress. Current status is listed here. Join the channel for more information."
-
-    variables = {
-        "header_var_placeholder": header,
-        "incident_id_var_placeholder": incident_id,
-        "status_var_placeholder": status.title(),
-        "severity_var_placeholder": severity.upper(),
-        "message_var_placeholder": message,
-        "slack_workspace_id_var_placeholder": slack_workspace_id,
-        "incident_guide_link_var_placeholder": incident_guide_link,
-        "incident_postmortems_link_var_placeholder": incident_postmortems_link,
-        "conference_bridge_link_var_placeholder": conference_bridge_link,
-    }
-    return tools.render_json(
-        f"{config.templates_directory}incident_digest_notification_update.json",
-        variables,
-    )
-
-
-def build_user_role_notification(channel_id: str, role: str, user: str):
-    """Returns the blocks required for messaging a user w/r/t
-    details about their role when they are assigned a role
-    during an incident
-    """
-    role_descriptions = read_single_setting_value("role_definitions")
-    variables = {
-        "channel_name_var_placeholder": channel_id,
-        "role_description_var_placeholder": role_descriptions[role],
-        "role_var_placeholder": role.replace("_", " ").title(),
-        "user_var_placeholder": user,
-    }
-    return tools.render_json(
-        f"{config.templates_directory}incident_user_role_dm.json", variables
-    )
-
-
-def build_public_status_update(
-    incident_id: str,
-    impacted_resources: str,
-    message: str,
-    timestamp: str = tools.fetch_timestamp(),
-):
-    """Returns the blocks required for a public status update for a
-    given incident
-    """
-    header = ":warning: Incident Update"
-
-    variables = {
-        "header_var_placeholder": header,
-        "timestamp_var_placeholder": timestamp,
-        "incident_id_var_placeholder": incident_id,
-        "impacted_resources_var_placeholder": impacted_resources,
-        "message_var_placeholder": message,
-    }
-    return tools.render_json(
-        f"{config.templates_directory}incident_public_status_update.json",
-        variables,
-    )

@@ -48,21 +48,11 @@ Handle Mentions
 @app.event("app_mention")
 def handle_mention(body, say, logger):
     message = body["event"]["text"].split(" ")
-    channel = body["event"]["channel"]
     user = body["event"]["user"]
     logger.debug(body)
 
     if "help" in message:
         say(blocks=help_menu(), text="")
-    elif "new" in message:
-        request_parameters = {
-            "channel": channel,
-            "channel_description": " ".join(message[2:]),
-            "user": user,
-            "created_from_web": False,
-        }
-        resp = incident.create_incident(request_parameters)
-        say(f"<@{user}> {resp}")
     elif "diag" in message:
         startup_message = config.startup_message(
             workspace=slack_workspace_id, wrap=True
@@ -209,7 +199,7 @@ def handle_incident_components_select(ack, body):
 
 
 @app.action("statuspage.components_status_select")
-def handle_some_action(ack, body, logger):
+def handle_static_action(ack, body, logger):
     logger.debug(body)
     ack()
 
@@ -253,12 +243,12 @@ def reaction_added(event, say):
             logger.error(f"Error when trying to retrieve a message: {error}")
         request_parameters = {
             "channel": channel_id,
-            "channel_description": f"auto-{tools.random_suffix}",
-            "descriptor": f"auto-{tools.random_suffix}",
+            "incident_description": f"auto-{tools.random_suffix}",
             "user": "internal_auto_create",
             "severity": "sev4",
             "message_reacted_to_content": message_reacted_to_content,
             "original_message_timestamp": ts,
+            "is_security_incident": False,
         }
         # Create an incident based on the message using the internal path
         try:
@@ -440,54 +430,60 @@ def handle_dismiss_message(ack, body):
 
 
 @app.action("incident.incident_postmortem_link")
-def handle_some_action(ack, body, logger):
+def handle_static_action(ack, body, logger):
     logger.debug(body)
     ack()
 
 
 @app.action("incident.click_conference_bridge_link")
-def handle_some_action(ack, body, logger):
+def handle_static_action(ack, body, logger):
     logger.debug(body)
     ack()
 
 
 @app.action("incident.incident_guide_link")
-def handle_some_action(ack, body, logger):
+def handle_static_action(ack, body, logger):
     logger.debug(body)
     ack()
 
 
 @app.action("incident.join_incident_channel")
-def handle_some_action(ack, body, logger):
+def handle_static_action(ack, body, logger):
     logger.debug(body)
     ack()
 
 
 @app.action("external.reload")
-def handle_some_action(ack, body, logger):
+def handle_static_action(ack, body, logger):
     logger.debug(body)
     ack()
 
 
 @app.action("external.view_status_page")
-def handle_some_action(ack, body, logger):
+def handle_static_action(ack, body, logger):
     logger.debug(body)
     ack()
 
 
 @app.action("incident_update_modal_select_incident")
-def handle_some_action(ack, body, logger):
+def handle_static_action(ack, body, logger):
     logger.debug(body)
     ack()
 
 
 @app.action("open_rca")
-def handle_some_action(ack, body, logger):
+def handle_static_action(ack, body, logger):
     logger.debug(body)
     ack()
 
 
 @app.action("open_incident_modal_severity")
-def handle_some_action(ack, body, logger):
+def handle_static_action(ack, body, logger):
+    logger.debug(body)
+    ack()
+
+
+@app.action("open_incident_modal_set_security_type")
+def handle_static_action(ack, body, logger):
     logger.debug(body)
     ack()

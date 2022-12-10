@@ -11,9 +11,13 @@ import {
   DialogContent,
   DialogTitle,
   FormControl,
+  FormControlLabel,
+  FormLabel,
   Input,
   InputLabel,
   MenuItem,
+  Radio,
+  RadioGroup,
   Select,
   Snackbar
 } from '@mui/material';
@@ -39,7 +43,8 @@ export default function IncidentCreateModal(props) {
   const [values, setValues] = useState({
     description: '',
     user: '',
-    severity: ''
+    severity: '',
+    security: ''
   });
 
   const { token } = useToken();
@@ -76,7 +81,8 @@ export default function IncidentCreateModal(props) {
     const incident = await createIncident({
       description: `${values.description}`,
       user: `${values.user}`,
-      severity: `${values.severity}`
+      severity: `${values.severity}`,
+      security: `${values.security}`
     });
     if (!incident.success) {
       setCreateIncidentStatus('error');
@@ -192,6 +198,20 @@ export default function IncidentCreateModal(props) {
                     </MenuItem>
                   ])}
                 </Select>
+              </FormControl>
+            </Box>
+            <Box display="flex" justifyContent="center" alignItem="center">
+              <FormControl sx={{ margin: 1, width: '80%' }} variant="standard">
+                <FormLabel id="set-security">Security Related Incident</FormLabel>
+                <RadioGroup
+                  row
+                  aria-labelledby="set-security"
+                  defaultValue="false"
+                  name="radio-buttons-group"
+                  onChange={handleChange('security')}>
+                  <FormControlLabel value="false" control={<Radio />} label="False" />
+                  <FormControlLabel value="true" control={<Radio />} label="True" />
+                </RadioGroup>
               </FormControl>
             </Box>
             <DialogActions sx={{ marginTop: 2 }}>

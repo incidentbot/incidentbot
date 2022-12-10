@@ -34,7 +34,6 @@ def help_menu(include_header: bool = True) -> List:
     )
     commands = {
         "help": "This command that explains help options.",
-        "new <description>": "Start a new incident.",
         "lsai": "List *all* incidents regardless of status.",
         "lsoi": "List only incidents that are still *open* - as in non-resolved.",
         "ls-sp-inc": "List *open* Statuspage incidents.",

@@ -345,6 +345,11 @@ const ViewSingleIncident = () => {
                   {incident.incident_id}
                 </Typography>
               </Breadcrumbs>
+              {incident.is_security_incident && (
+                <Alert severity="error" sx={{ marginBottom: 2 }}>
+                  This incident has been flagged as a security incident.
+                </Alert>
+              )}
               {incident.status === 'resolved' && (
                 <Alert severity="warning" sx={{ marginBottom: 2 }}>
                   This incident has been marked as resolved and it cannot be reopened. If there is a

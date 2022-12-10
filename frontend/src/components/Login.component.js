@@ -19,6 +19,7 @@ import { styled } from '@mui/material/styles';
 import { lightBlue } from '@mui/material/colors';
 //import HiveRoundedIcon from '@mui/icons-material/HiveRounded';
 import LoginIcon from '@mui/icons-material/Login';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { apiUrl } from '../shared/Variables';
@@ -171,8 +172,9 @@ const LoginPage = () => {
                           scale={1.2}
                           springConfig={{ tension: 150, friction: 20 }}>
                           <SignupButton
+                            disabled
                             size="large"
-                            endIcon={<LoginIcon />}
+                            endIcon={<PersonAddIcon />}
                             onClick={() => console.log('sign up')}
                             sx={{ margin: 2 }}>
                             SIGN UP

@@ -12,7 +12,7 @@
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": "Description:\n *{incident_id_var_placeholder}*"
+        "text": ":mag_right: Description:\n *{incident_description_var_placeholder}*"
       }
     },
     {
@@ -20,7 +20,7 @@
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": "Current Status:\n *{status_var_placeholder}*"
+        "text": ":grey_question: Current Status:\n *{status_var_placeholder}*"
       }
     },
     {
@@ -28,7 +28,7 @@
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": "Severity:\n *{severity_var_placeholder}*"
+        "text": ":grey_exclamation: Severity:\n *{severity_var_placeholder}*"
       }
     },
     {

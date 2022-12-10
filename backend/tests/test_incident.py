@@ -1,17 +1,17 @@
 import re
 
 from bot.incident.action_parameters import ActionParameters
-from bot.incident.incident import (
-    Incident,
+from bot.incident.incident import Incident
+from bot.incident.templates import (
     build_digest_notification,
     build_incident_channel_boilerplate,
     build_post_resolution_message,
+    build_public_status_update,
     build_role_update,
     build_severity_update,
     build_status_update,
     build_updated_digest_message,
     build_user_role_notification,
-    build_public_status_update,
 )
 from bot.shared import tools
 
@@ -105,35 +105,37 @@ class TestIncidentManagement:
 
     def test_incident_instantiate(self):
         inc = Incident(
-            request_data={
-                "channel_description": "something has broken",
+            request_parameters={
                 "channel": "CBR2V3XEX",
+                "incident_description": "something has broken",
                 "user": "sample-incident-creator-user",
+                "severity": "sev4",
+                "created_from_web": False,
+                "is_security_incident": False,
             }
         )
 
-        assert re.search(
-            "^inc.*something-has-broken$", inc.return_channel_name()
-        )
+        assert re.search("^inc.*something-has-broken$", inc.channel_name)
 
     def test_incident_channel_name_create(self):
         inc = Incident(
-            request_data={
-                "channel_description": "unallowed ch@racter check!",
+            request_parameters={
                 "channel": "CBR2V3XEX",
+                "incident_description": "unallowed ch@racter check!",
                 "user": "sample-incident-creator-user",
+                "severity": "sev4",
+                "created_from_web": False,
+                "is_security_incident": False,
             }
         )
 
-        assert re.search(
-            "^inc.*unallowed-chracter-check$", inc.return_channel_name()
-        )
+        assert re.search("^inc.*unallowed-chracter-check$", inc.channel_name)
 
     # This needs to mock the client.
     # def test_incident_create(self):
     #     request_parameters = {
     #         "channel": "mock",
-    #         "channel_description": "test incident",
+    #         "incident_description": "test incident",
     #         "user": "sample-user",
     #         "token": placeholder_token,
     #         "created_from_web": False,
@@ -144,95 +146,103 @@ class TestIncidentManagement:
 
     def test_incident_build_digest_notification(self):
         assert build_digest_notification(
-            createdChannelDetails={"id": "CBR2V3XEX", "name": "mock"},
+            created_channel_details={
+                "incident_description": "mock",
+                "id": "CBR2V3XEX",
+                "name": "mock",
+                "is_security_incident": False,
+            },
             severity="sev4",
         ) == {
+            "channel": "incidents",
             "blocks": [
                 {
-                    "text": {
-                        "text": ":bangbang: New Incident Declared :bangbang:",
-                        "type": "plain_text",
-                    },
                     "type": "header",
+                    "text": {
+                        "type": "plain_text",
+                        "text": ":fire::fire_engine: New Incident",
+                    },
                 },
                 {
                     "block_id": "digest_channel_title",
-                    "text": {
-                        "text": "Description:\n *mock*",
-                        "type": "mrkdwn",
-                    },
                     "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": ":mag_right: Description:\n *mock*",
+                    },
                 },
                 {
                     "block_id": "digest_channel_status",
-                    "text": {
-                        "text": "Current Status:\n *Investigating*",
-                        "type": "mrkdwn",
-                    },
                     "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": ":grey_question: Current Status:\n *Investigating*",
+                    },
                 },
                 {
                     "block_id": "digest_channel_severity",
-                    "text": {"text": "Severity:\n *SEV4*", "type": "mrkdwn"},
                     "type": "section",
-                },
-                {
                     "text": {
-                        "text": "A new incident has been declared. Please use the buttons here to participate.",
                         "type": "mrkdwn",
+                        "text": ":grey_exclamation: Severity:\n *SEV4*",
                     },
-                    "type": "section",
                 },
                 {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "A new incident has been declared. Please use the buttons here to participate.",
+                    },
+                },
+                {
+                    "type": "actions",
                     "block_id": "incchannelbuttons",
                     "elements": [
                         {
-                            "action_id": "incident.join_incident_channel",
-                            "style": "primary",
+                            "type": "button",
                             "text": {
+                                "type": "plain_text",
                                 "text": "Join Incident Channel",
-                                "type": "plain_text",
                             },
-                            "type": "button",
+                            "style": "primary",
                             "url": "https://test.slack.com/archives/mock",
+                            "action_id": "incident.join_incident_channel",
                         },
                         {
-                            "action_id": "incident.click_conference_bridge_link",
+                            "type": "button",
                             "text": {
+                                "type": "plain_text",
                                 "text": "Conference",
-                                "type": "plain_text",
                             },
-                            "type": "button",
                             "url": "https://zoom.us",
+                            "action_id": "incident.click_conference_bridge_link",
                         },
                         {
-                            "action_id": "incident.incident_guide_link",
+                            "type": "button",
                             "text": {
+                                "type": "plain_text",
                                 "text": "Incident Guide",
-                                "type": "plain_text",
                             },
-                            "type": "button",
                             "url": "https://changeme.com",
+                            "action_id": "incident.incident_guide_link",
                         },
                         {
-                            "action_id": "incident.incident_postmortem_link",
-                            "text": {
-                                "text": "Incident Postmortems",
-                                "type": "plain_text",
-                            },
                             "type": "button",
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Incident Postmortems",
+                            },
                             "url": "https://changeme.com",
+                            "action_id": "incident.incident_postmortem_link",
                         },
                     ],
-                    "type": "actions",
                 },
             ],
-            "channel": "incidents",
         }
 
     def test_build_incident_channel_boilerplate(self):
         assert build_incident_channel_boilerplate(
-            createdChannelDetails={"id": "CBR2V3XEX", "name": "mock"},
+            created_channel_details={"id": "CBR2V3XEX", "name": "mock"},
             severity="sev4",
         ) == {
             "blocks": [
@@ -690,92 +700,97 @@ class TestIncidentManagement:
     def test_build_updated_digest_message(self):
         status = "identified"
         severity = "sev2"
+        is_security_incident = False
         assert build_updated_digest_message(
-            incident_id="mock", status=status, severity=severity
+            incident_id="mock",
+            incident_description="mock",
+            status=status,
+            severity=severity,
+            is_security_incident=is_security_incident,
         ) == {
             "blocks": [
                 {
-                    "text": {
-                        "text": ":bangbang: Ongoing Incident :bangbang:",
-                        "type": "plain_text",
-                    },
                     "type": "header",
+                    "text": {
+                        "type": "plain_text",
+                        "text": ":fire::fire_engine: Ongoing Incident",
+                    },
                 },
                 {
                     "block_id": "digest_channel_title",
-                    "text": {
-                        "text": "Description:\n *mock*",
-                        "type": "mrkdwn",
-                    },
                     "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": ":mag_right: Description:\n *mock*",
+                    },
                 },
                 {
                     "block_id": "digest_channel_status",
-                    "text": {
-                        "text": f"Current Status:\n *{status.title()}*",
-                        "type": "mrkdwn",
-                    },
                     "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": ":grey_question: Current Status:\n *Identified*",
+                    },
                 },
                 {
                     "block_id": "digest_channel_severity",
-                    "text": {
-                        "text": f"Severity:\n *{severity.upper()}*",
-                        "type": "mrkdwn",
-                    },
                     "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": ":grey_exclamation: Severity:\n *SEV2*",
+                    },
                 },
                 {
+                    "type": "section",
                     "text": {
+                        "type": "mrkdwn",
                         "text": "This incident is in progress. Current status is listed here. Join the channel for more information.",
-                        "type": "mrkdwn",
                     },
-                    "type": "section",
                 },
                 {
+                    "type": "actions",
                     "block_id": "incchannelbuttons",
                     "elements": [
                         {
-                            "action_id": "incident.join_incident_channel",
-                            "style": "primary",
+                            "type": "button",
                             "text": {
+                                "type": "plain_text",
                                 "text": "Join Incident Channel",
-                                "type": "plain_text",
                             },
-                            "type": "button",
+                            "style": "primary",
                             "url": "https://test.slack.com/archives/mock",
+                            "action_id": "incident.join_incident_channel",
                         },
                         {
-                            "action_id": "incident.click_conference_bridge_link",
+                            "type": "button",
                             "text": {
+                                "type": "plain_text",
                                 "text": "Conference",
-                                "type": "plain_text",
                             },
-                            "type": "button",
                             "url": "https://zoom.us",
+                            "action_id": "incident.click_conference_bridge_link",
                         },
                         {
-                            "action_id": "incident.incident_guide_link",
+                            "type": "button",
                             "text": {
+                                "type": "plain_text",
                                 "text": "Incident Guide",
-                                "type": "plain_text",
                             },
-                            "type": "button",
                             "url": "https://changeme.com",
+                            "action_id": "incident.incident_guide_link",
                         },
                         {
-                            "action_id": "incident.incident_postmortem_link",
-                            "text": {
-                                "text": "Incident Postmortems",
-                                "type": "plain_text",
-                            },
                             "type": "button",
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Incident Postmortems",
+                            },
                             "url": "https://changeme.com",
+                            "action_id": "incident.incident_postmortem_link",
                         },
                     ],
-                    "type": "actions",
                 },
-            ],
+            ]
         }
 
     # def test_build_user_role_notification(self):

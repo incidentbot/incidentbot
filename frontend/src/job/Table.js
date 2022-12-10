@@ -96,6 +96,12 @@ const headCells = [
     numeric: false,
     disablePadding: false,
     label: 'Run'
+  },
+  {
+    id: 'delete',
+    numeric: false,
+    disablePadding: false,
+    label: 'Delete'
   }
 ];
 
@@ -239,6 +245,37 @@ export default function EnhancedTable(props) {
       });
   }
 
+  function deleteJob(jobID) {
+    var url = apiUrl + '/job/run/' + jobID;
+    setWaitingForSomething(true);
+    axios({
+      method: 'DELETE',
+      url: url,
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }
+    })
+      .then(function () {
+        setJobRunMessage(`Deleted job ${jobID}.`);
+        setJobRunStatus(`success`);
+        setOpenJobRunStatus(true);
+        setWaitingForSomething(false);
+        props.setRefreshData(true);
+      })
+      .catch(function (error) {
+        if (error.response) {
+          setJobRunMessage(`Error deleting job ${jobID}: ${error.response.data.error}`);
+          setJobRunStatus('error');
+          setOpenJobRunStatus(true);
+          setWaitingForSomething(false);
+        } else if (error.request) {
+          setJobRunMessage(`Error deleting job ${jobID}: ${error.response.data.error}`);
+          setJobRunStatus('error');
+          setOpenJobRunStatus(true);
+          setWaitingForSomething(false);
+        }
+        props.setRefreshData(true);
+      });
+  }
+
   // Table functions
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -320,6 +357,13 @@ export default function EnhancedTable(props) {
                         <Tooltip title="Run Now">
                           <IconButton onClick={() => runJob(row.id)}>
                             <PowerSettingsNewIcon fontSize="medium" />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                      <TableCell align="left" padding="normal">
+                        <Tooltip title="Delete">
+                          <IconButton onClick={() => deleteJob(row.id)}>
+                            <DeleteIcon fontSize="medium" />
                           </IconButton>
                         </Tooltip>
                       </TableCell>
