@@ -168,7 +168,7 @@ class TestIncidentManagement:
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "*Description:* :mag_right: mock",
+                        "text": ":mag_right: Description:\n *mock*",
                     },
                 },
                 {
@@ -176,7 +176,7 @@ class TestIncidentManagement:
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "*Current Status:* :grey_question: Investigating",
+                        "text": ":grey_question: Current Status:\n *Investigating*",
                     },
                 },
                 {
@@ -184,7 +184,7 @@ class TestIncidentManagement:
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "*Severity:* :grey_exclamation: SEV4",
+                        "text": ":grey_exclamation: Severity:\n *SEV4*",
                     },
                 },
                 {
@@ -721,7 +721,7 @@ class TestIncidentManagement:
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "*Description:* :mag_right: mock",
+                        "text": ":mag_right: Description:\n *mock*",
                     },
                 },
                 {
@@ -729,7 +729,7 @@ class TestIncidentManagement:
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "*Current Status:* :grey_question: Investigating",
+                        "text": ":grey_question: Current Status:\n *Identified*",
                     },
                 },
                 {
@@ -737,7 +737,7 @@ class TestIncidentManagement:
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "*Severity:* :grey_exclamation: SEV2",
+                        "text": ":grey_exclamation: Severity:\n *SEV2*",
                     },
                 },
                 {
