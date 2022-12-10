@@ -7,6 +7,16 @@ import variables
 from bot.audit import log
 from bot.confluence import rca
 from bot.external import epi
+from bot.incident import action_parameters as ap
+from bot.incident.incident import invite_user_to_channel
+from bot.incident.templates import (
+    build_post_resolution_message,
+    build_role_update,
+    build_severity_update,
+    build_status_update,
+    build_updated_digest_message,
+    build_user_role_notification,
+)
 from bot.models.incident import (
     db_read_incident,
     db_update_incident_rca_col,
@@ -26,10 +36,7 @@ from bot.slack.client import (
     return_slack_channel_info,
     slack_workspace_id,
 )
-from . import action_parameters as ap, incident
-from .incident import invite_user_to_channel
 from typing import Any, Dict
-
 
 logger = logging.getLogger(__name__)
 log_level = config.log_level
@@ -131,9 +138,7 @@ def assign_role(
         )
 
     # Send update notification message to incident channel
-    message = incident.build_role_update(
-        target_channel, new_role_name, user_id
-    )
+    message = build_role_update(target_channel, new_role_name, user_id)
     try:
         result = slack_web_client.chat_postMessage(**message, text="")
         if log_level == "DEBUG":
@@ -144,9 +149,7 @@ def assign_role(
         )
 
     # Let the user know they've been assigned the role and what to do
-    dm = incident.build_user_role_notification(
-        target_channel, target_role, user_id
-    )
+    dm = build_user_role_notification(target_channel, target_role, user_id)
     try:
         result = slack_web_client.chat_postMessage(**dm, text="")
         if log_level == "DEBUG":
@@ -202,14 +205,14 @@ def claim_role(action_parameters: type[ap.ActionParameters]):
         text="",
     )
     # Send update notification message to incident channel
-    message = incident.build_role_update(p["channel_id"], new_role_name, user)
+    message = build_role_update(p["channel_id"], new_role_name, user)
     try:
         result = slack_web_client.chat_postMessage(**message, text="")
         logger.debug(f"\n{result}\n")
     except slack_sdk.errors.SlackApiError as error:
         logger.error(f"Error sending role update to incident channel: {error}")
     # Let the user know they've been assigned the role and what to do
-    dm = incident.build_user_role_notification(
+    dm = build_user_role_notification(
         p["channel_id"],
         action_value,
         action_parameters.user_details()["id"],
@@ -485,9 +488,7 @@ def set_incident_status(
             logger.error(f"Error sending RCA update to RCA channel: {error}")
 
         # Send message to incident channel
-        message = incident.build_post_resolution_message(
-            channel_id, action_value
-        )
+        message = build_post_resolution_message(channel_id, action_value)
         try:
             result = slack_web_client.chat_postMessage(**message, text="")
             logger.debug(f"\n{result}\n")
@@ -499,8 +500,12 @@ def set_incident_status(
         logger.info(f"Sent resolution info to {channel_name}.")
 
     # Also updates digest message
-    new_digest_message = incident.build_updated_digest_message(
-        p["channel_name"], action_value, formatted_severity
+    new_digest_message = build_updated_digest_message(
+        incident_id=p["channel_name"],
+        incident_description=incident_data.description,
+        status=action_value,
+        severity=formatted_severity,
+        is_security_incident=incident_data.is_security_incident,
     )
     try:
         slack_web_client.chat_update(
@@ -603,7 +608,7 @@ def set_incident_status(
     logger.info(
         f"Updated incident status for {channel_name} to {action_value}."
     )
-    message = incident.build_status_update(channel_id, action_value)
+    message = build_status_update(channel_id, action_value)
     try:
         result = slack_web_client.chat_postMessage(**message, text="")
         logger.debug(f"\n{result}\n")
@@ -699,8 +704,12 @@ def set_severity(
         channel=variables.digest_channel_id,
         oldest=incident_data.dig_message_ts,
     )
-    new_digest_message = incident.build_updated_digest_message(
-        p["channel_name"], formatted_status, action_value
+    new_digest_message = build_updated_digest_message(
+        incident_id=p["channel_name"],
+        incident_description=incident_data.description,
+        status=formatted_status,
+        severity=action_value,
+        is_security_incident=incident_data.is_security_incident,
     )
     try:
         slack_web_client.chat_update(
@@ -763,7 +772,7 @@ def set_severity(
         )
 
     # Final notification
-    message = incident.build_severity_update(
+    message = build_severity_update(
         channel_id, action_value
     )  # build severity update
     try:

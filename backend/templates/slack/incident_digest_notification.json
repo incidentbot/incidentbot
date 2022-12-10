@@ -5,7 +5,7 @@
       "type": "header",
       "text": {
         "type": "plain_text",
-        "text": ":bangbang: New Incident Declared :bangbang:"
+        "text": "{header_var_placeholder}"
       }
     },
     {
@@ -13,7 +13,7 @@
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": "Description:\n *{channel_name_var_placeholder}*"
+        "text": "*Description:* :mag_right: {channel_description_var_placeholder}"
       }
     },
     {
@@ -21,7 +21,7 @@
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": "Current Status:\n *Investigating*"
+        "text": "*Current Status:* :grey_question: Investigating"
       }
     },
     {
@@ -29,7 +29,7 @@
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": "Severity:\n *{severity_var_placeholder}*"
+        "text": "*Severity:* :grey_exclamation: {severity_var_placeholder}"
       }
     },
     {
