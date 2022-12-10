@@ -13,7 +13,7 @@
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": "*Description:* :mag_right: {channel_description_var_placeholder}"
+        "text": ":mag_right: Description:\n *{channel_description_var_placeholder}*"
       }
     },
     {
@@ -21,7 +21,7 @@
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": "*Current Status:* :grey_question: Investigating"
+        "text": ":grey_question: Current Status:\n *Investigating*"
       }
     },
     {
@@ -29,7 +29,7 @@
       "type": "section",
       "text": {
         "type": "mrkdwn",
-        "text": "*Severity:* :grey_exclamation: {severity_var_placeholder}"
+        "text": ":grey_exclamation: Severity:\n *{severity_var_placeholder}*"
       }
     },
     {

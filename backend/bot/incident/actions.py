@@ -502,7 +502,7 @@ def set_incident_status(
     # Also updates digest message
     new_digest_message = build_updated_digest_message(
         incident_id=p["channel_name"],
-        incident_description=incident_data.description,
+        incident_description=incident_data.channel_description,
         status=action_value,
         severity=formatted_severity,
         is_security_incident=incident_data.is_security_incident,
@@ -706,7 +706,7 @@ def set_severity(
     )
     new_digest_message = build_updated_digest_message(
         incident_id=p["channel_name"],
-        incident_description=incident_data.description,
+        incident_description=incident_data.channel_description,
         status=formatted_status,
         severity=action_value,
         is_security_incident=incident_data.is_security_incident,
