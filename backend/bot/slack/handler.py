@@ -3,18 +3,17 @@ import logging
 import pyjokes
 import requests
 import slack_sdk
+import time
 import variables
 
-from slack_bolt import App
-from typing import Any, Dict
-from .messages import (
+from bot.slack.messages import (
+    help_menu,
     incident_list_message,
     job_list_message,
     pd_on_call_message,
     sp_incident_list_message,
 )
-from .client import slack_web_client
-from .messages import help_menu
+from bot.slack.client import slack_web_client
 from bot.incident import actions as inc_actions, action_parameters, incident
 from bot.models.incident import db_read_all_incidents
 from bot.scheduler import scheduler
@@ -23,6 +22,9 @@ from bot.slack.client import get_user_name, slack_workspace_id
 from bot.slack.helpers import DigestMessageTracking
 from bot.slack.incident_logging import write as write_content
 from bot.statuspage import actions as sp_actions, handler as sp_handler
+from slack_bolt import App
+from slack_sdk.errors import SlackApiError
+from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
 
@@ -271,11 +273,25 @@ def reaction_added(event, say):
                 if "files" in message:
                     for file in message["files"]:
                         if "image" in file["mimetype"]:
+                            if not file["public_url_shared"]:
+                                # Make the attachment public temporarily
+                                try:
+                                    slack_web_client.files_sharedPublicURL(
+                                        file=file["id"],
+                                        token=config.slack_user_token,
+                                    )
+                                except SlackApiError as error:
+                                    logger.error(
+                                        f"Error preparing pinned file for copy: {error}"
+                                    )
+                            # Copy the attachment into the database
+                            pub_secret = file["permalink_public"].split("-")[3]
                             res = requests.get(
                                 file["url_private"],
                                 headers={
                                     "Authorization": f"Bearer {config.slack_bot_token}"
                                 },
+                                params={"pub_secret": pub_secret},
                             )
                             write_content(
                                 incident_id=channel_info["channel"]["name"],
@@ -285,6 +301,16 @@ def reaction_added(event, say):
                                 ts=tools.fetch_timestamp(short=True),
                                 user=get_user_name(user_id=message["user"]),
                             )
+                            # Revoke public access
+                            try:
+                                slack_web_client.files_revokePublicURL(
+                                    file=file["id"],
+                                    token=config.slack_user_token,
+                                )
+                            except SlackApiError as error:
+                                logger.error(
+                                    f"Error preparing pinned file for copy: {error}"
+                                )
                         else:
                             say(
                                 channel=channel_id,

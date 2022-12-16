@@ -35,6 +35,8 @@ function renderManifest {
     "        description: Allows you to page a team in PagerDuty when running incidents via Incident Bot." \
     "oauth_config:" \
     "  scopes:" \
+    "    user:" \
+    "      - files:write" \
     "    bot:" \
     "      - app_mentions:read" \
     "      - channels:history" \

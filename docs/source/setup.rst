@@ -54,6 +54,7 @@ Contained with ``.env``, you'd want to include the sensitive values for this app
   POSTGRES_PORT=5432
   SLACK_APP_TOKEN=xapp-1-...
   SLACK_BOT_TOKEN=xoxb-...
+  SLACK_USER_TOKEN=xoxp-...
   DEFAULT_WEB_ADMIN_PASSWORD=somepassword
   JWT_SECRET_KEY=mysecretkey
 
@@ -174,7 +175,8 @@ Required Variables
 - ``POSTGRES_PORT`` - the port to use when connecting to the database.
 - ``INCIDENTS_DIGEST_CHANNEL`` - the **name** of the incidents digest channel referenced in the features documentation.
 - ``SLACK_APP_TOKEN`` - the app-level token for enabling websocket communication.
-- ``SLACK_BOT_TOKEN`` - the API token to be used by your bot once it is deployed to your workspace.
+- ``SLACK_BOT_TOKEN`` - the API token to be used by your bot once it is deployed to your workspace for ``bot``-scoped pemissions.
+- ``SLACK_USER_TOKEN`` - the API token to be used by your bot for ``user``-scoped permissions.
 - ``DEFAULT_WEB_ADMIN_PASSWORD`` - the default password for the default admin account. See section on user management for more details.
 - ``JWT_SECRET_KEY`` - this must be provided for user management. Set to a secure string.
 - ``FLASK_APP_SECRET_KEY`` - this must be provided for the API.

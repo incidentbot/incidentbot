@@ -33,6 +33,7 @@ if __name__ == "__main__":
             "INCIDENT_CHANNEL_TOPIC",
             "SLACK_APP_TOKEN",
             "SLACK_BOT_TOKEN",
+            "SLACK_USER_TOKEN",
             "POSTGRES_HOST",
             "POSTGRES_DB",
             "POSTGRES_USER",

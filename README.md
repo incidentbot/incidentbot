@@ -48,7 +48,7 @@ Each incident stores unique data referenced by processes throughout the app for 
 
 - [Create a Slack app](https://api.slack.com/apps?new_app=1) for this application. You can name it whatever you'd like, but `incident-bot` seems to make the most sense.
 - Use the option to create the app from a manifest. Run `make render` to output `slack_app_manifest.yaml` at project root and paste in the contents. You can adjust these settings later as you see fit, but these are the minimum permissions required for the bot to function properly.
-- Install the app to your workspace. You'll now have an OAuth token. Provide that as `SLACK_BOT_TOKEN`.
+- Install the app to your workspace. You'll now have OAuth tokens. Provide the bot token as `SLACK_BOT_TOKEN` and the user token as `SLACK_USER_TOKEN`.
 - Verify that websocket mode is enabled and provide the generated app token as `SLACK_APP_TOKEN` - you can generate an app token via the `Basic Information` page in your app's configuration.
 
 ## Documentation
