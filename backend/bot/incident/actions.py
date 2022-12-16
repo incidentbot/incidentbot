@@ -8,7 +8,6 @@ from bot.audit import log
 from bot.confluence import rca
 from bot.external import epi
 from bot.incident import action_parameters as ap
-from bot.incident.incident import invite_user_to_channel
 from bot.incident.templates import (
     build_post_resolution_message,
     build_role_update,
@@ -399,7 +398,7 @@ def set_incident_status(
         ]
         # Generate rca template and create rca if enabled
         # Get normalized description as rca title
-        if config.auto_create_rca == "true":
+        if config.auto_create_rca in ("True", "true", True):
             rca_title = " ".join(channel_name.split("-")[2:])
             rca_link = rca.create_rca(
                 incident_id=channel_name,
@@ -506,6 +505,7 @@ def set_incident_status(
         status=action_value,
         severity=formatted_severity,
         is_security_incident=incident_data.is_security_incident,
+        conference_bridge=incident_data.conference_bridge,
     )
     try:
         slack_web_client.chat_update(
@@ -710,6 +710,7 @@ def set_severity(
         status=formatted_status,
         severity=action_value,
         is_security_incident=incident_data.is_security_incident,
+        conference_bridge=incident_data.conference_bridge,
     )
     try:
         slack_web_client.chat_update(

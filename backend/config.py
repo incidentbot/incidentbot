@@ -1,10 +1,11 @@
+import json
 import logging
 import os
 
 from dotenv import load_dotenv
 from typing import List
 
-__version__ = "v0.9.0"
+__version__ = "v0.10.0"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -19,10 +20,14 @@ logger = logging.getLogger(__name__)
 """
 Global Variables
 """
+is_test_environment = os.getenv("TEST_ENVIRONMENT", default="false") in (
+    "True",
+    "true",
+    True,
+)
 templates_directory = os.getenv(
     "TEMPLATES_DIRECTORY", default="templates/slack/"
 )
-test_environment = os.getenv("TEST_ENVIRONMENT", default="false")
 
 """
 Database Settings
@@ -55,8 +60,8 @@ incident_auto_group_invite_group_name = os.getenv(
 incident_external_providers_enabled = os.getenv(
     "INCIDENT_EXTERNAL_PROVIDERS_ENABLED", default="false"
 )
-incident_external_providers_list = os.getenv(
-    "INCIDENT_EXTERNAL_PROVIDERS_LIST", default="false"
+incident_external_providers_list = json.loads(
+    os.getenv("INCIDENT_EXTERNAL_PROVIDERS_LIST", default=[])
 )
 
 
@@ -100,6 +105,10 @@ pagerduty_api_token = os.getenv("PAGERDUTY_API_TOKEN", default="")
 External
 """
 auth0_domain = os.getenv("AUTH0_DOMAIN", default="")
+auto_create_zoom_meeting = os.getenv("ZOOM_AUTO_CREATE", default="false")
+zoom_account_id = os.getenv("ZOOM_ACCOUNT_ID", default="")
+zoom_client_id = os.getenv("ZOOM_CLIENT_ID", default="")
+zoom_client_secret = os.getenv("ZOOM_CLIENT_SECRET", default="")
 
 """
 Web Application
@@ -125,7 +134,18 @@ def env_check(required_envs: List[str]):
             exit(1)
         else:
             pass
-    if auto_create_rca == "true":
+    if auto_create_zoom_meeting in ("True", "true", True):
+        for var in [
+            "ZOOM_ACCOUNT_ID",
+            "ZOOM_CLIENT_ID",
+            "ZOOM_CLIENT_SECRET",
+        ]:
+            if os.getenv(var) == "":
+                logger.fatal(
+                    f"If enabling Zoom meeting auto-create, the {var} variable must be set."
+                )
+                exit(1)
+    if auto_create_rca in ("True", "true", True):
         for var in [
             "CONFLUENCE_API_URL",
             "CONFLUENCE_API_USERNAME",
@@ -138,26 +158,36 @@ def env_check(required_envs: List[str]):
                     f"If enabling the Confluence integration to auto create an RCA, the {var} variable must be set."
                 )
                 exit(1)
-    if incident_auto_create_from_react_enabled == "true":
+    if incident_auto_create_from_react_enabled in ("True", "true", True):
         if incident_auto_create_from_react_emoji_name == "":
             logger.fatal(
                 f"If enabling auto create via react, the INCIDENT_AUTO_CREATE_FROM_REACT_EMOJI_NAME variable must be set."
             )
             exit(1)
-    if incident_auto_group_invite_enabled == "true":
+    if incident_auto_group_invite_enabled in ("True", "true", True):
         if incident_auto_group_invite_group_name == "":
             logger.fatal(
                 f"If enabling auto group invite, the INCIDENT_AUTO_GROUP_INVITE_GROUP_NAME variable must be set."
             )
             exit(1)
-    if incident_external_providers_enabled == "true":
+    if incident_external_providers_enabled in ("True", "true", True):
         if "auth0" in incident_external_providers_list:
             if auth0_domain == "":
                 logger.fatal(
                     f"If enabling Auth0 status updates via external providers, you must set AUTH0_DOMAIN."
                 )
                 exit(1)
-    if statuspage_integration_enabled == "true":
+    if pagerduty_integration_enabled in ("True", "true", True):
+        for var in [
+            "PAGERDUTY_API_USERNAME",
+            "PAGERDUTY_API_TOKEN",
+        ]:
+            if os.getenv(var) == "":
+                logger.fatal(
+                    f"If enabling the PagerDuty integration, the {var} variable must be set."
+                )
+                exit(1)
+    if statuspage_integration_enabled in ("True", "true", True):
         for var in [
             "STATUSPAGE_API_KEY",
             "STATUSPAGE_PAGE_ID",

@@ -4,6 +4,7 @@ import logging
 import sys
 import threading
 import time
+
 from http import HTTPStatus
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from typing import Type

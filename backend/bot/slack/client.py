@@ -20,22 +20,22 @@ Reusable variables
 """
 all_workspace_groups = (
     slack_web_client.usergroups_list()
-    if config.test_environment == "false"
+    if not config.is_test_environment
     else []
 )
 bot_user_id = (
     slack_web_client.auth_test()["user_id"]
-    if config.test_environment == "false"
+    if not config.is_test_environment
     else "test"
 )
 bot_user_name = (
     slack_web_client.auth_test()["user"]
-    if config.test_environment == "false"
+    if not config.is_test_environment
     else "test"
 )
 slack_workspace_id = (
     slack_web_client.auth_test()["url"].replace("https://", "").split(".")[0]
-    if config.test_environment == "false"
+    if not config.is_test_environment
     else "test"
 )
 

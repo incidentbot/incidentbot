@@ -25,10 +25,7 @@ clean:
 	rm -rf $(VENV)
 	find . -type f -name '*.pyc' -delete
 
-render:
-	../scripts/render_app_manifest.sh
-
 run-tests: venv
-	TEST_ENVIRONMENT=true ./$(VENV)/bin/python -m pytest -vv tests/
+	./$(VENV)/bin/python -m pytest -vv tests/
 
-.PHONY: all venv run stage_migration run_migrations clean render run-tests
+.PHONY: all venv run stage_migration run_migrations clean run-tests

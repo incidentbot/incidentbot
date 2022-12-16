@@ -67,7 +67,7 @@ def handle_mention(body, say, logger):
         resp = incident_list_message(database_data, all=True)
         say(blocks=resp, text="")
     elif "ls-sp-inc" in " ".join(message):
-        if config.statuspage_integration_enabled == "true":
+        if config.statuspage_integration_enabled in ("True", "true", True):
             sp_objects = sp_handler.StatuspageObjects()
             sp_incidents = sp_objects.open_incidents
             resp = sp_incident_list_message(sp_incidents)
@@ -230,7 +230,8 @@ def reaction_added(event, say):
     # Automatically create incident based on reaction with specific emoji
     if (
         emoji == config.incident_auto_create_from_react_emoji_name
-        and config.incident_auto_create_from_react_enabled == "true"
+        and config.incident_auto_create_from_react_enabled
+        in ("True", "true", True)
     ):
         # Retrieve the content of the message that was reacted to
         try:

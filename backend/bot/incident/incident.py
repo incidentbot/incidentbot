@@ -5,7 +5,7 @@ import re
 import slack_sdk.errors
 
 from bot.audit import log
-from bot.external import epi
+from bot.external import epi, meetings
 from bot.incident.templates import (
     build_digest_notification,
     build_incident_channel_boilerplate,
@@ -17,8 +17,8 @@ from bot.models.incident import (
 )
 from bot.models.pager import read_pager_auto_page_targets
 from bot.settings.im import (
-    incident_channel_topic,
     conference_bridge_link,
+    incident_channel_topic,
 )
 from bot.shared import tools
 from bot.slack.client import slack_web_client, slack_workspace_id
@@ -43,7 +43,7 @@ enabled_providers = [
     "heroku",
 ]
 
-if config.test_environment == "false":
+if not config.is_test_environment:
     from bot.slack.client import invite_user_to_channel
 
 
@@ -59,7 +59,8 @@ class Incident:
             "incident_description"
         ]
         self.channel_name = self.__format_channel_name()
-        if config.test_environment == "false":
+        self.conference_bridge = self.__generate_conference_link()
+        if not config.is_test_environment:
             self.channel = self.__create_incident_channel()
             self.channel_details = self.channel.get("channel")
             self.created_channel_details = {
@@ -124,6 +125,12 @@ class Incident:
         now = datetime.datetime.now()
         return f"inc-{now.year}{now.month}{now.day}{now.hour}{now.minute}-{formatted_channel_name_suffix}"
 
+    def __generate_conference_link(self):
+        if config.auto_create_zoom_meeting in ("True", "true", True):
+            return meetings.ZoomMeeting().url
+        else:
+            return conference_bridge_link
+
 
 """
 Core Functionality
@@ -153,7 +160,7 @@ def create_incident(
             Notify incidents digest channel (#incidents)
             """
             digest_message_content = build_digest_notification(
-                created_channel_details, severity
+                created_channel_details, severity, incident.conference_bridge
             )
             try:
                 digest_message = slack_web_client.chat_postMessage(
@@ -204,7 +211,7 @@ def create_incident(
                 timestamp=bp_message["ts"],
             )
             """
-            Post conference_bridge_link in the channel upon creation
+            Post conference link in the channel upon creation
             """
             try:
                 conference_bridge_message = slack_web_client.chat_postMessage(
@@ -223,7 +230,7 @@ def create_incident(
                             "type": "section",
                             "text": {
                                 "type": "mrkdwn",
-                                "text": f"{conference_bridge_link}",
+                                "text": f"{incident.conference_bridge}",
                             },
                         },
                     ],
@@ -234,7 +241,7 @@ def create_incident(
                 )
             except slack_sdk.errors.SlackApiError as error:
                 logger.error(
-                    f"Error sending conference_bridge_link to channel: {error}"
+                    f"Error sending conference bridge link to channel: {error}"
                 )
             """
             Write incident entry to database
@@ -259,6 +266,7 @@ def create_incident(
                     channel_description=created_channel_details[
                         "incident_description"
                     ],
+                    conference_bridge=incident.conference_bridge,
                 )
             except Exception as error:
                 logger.fatal(f"Error writing entry to database: {error}")
@@ -310,7 +318,7 @@ def handle_incident_optional_features(
     """
     Invite required participants (optional)
     """
-    if config.incident_auto_group_invite_enabled == "true":
+    if config.incident_auto_group_invite_enabled in ("True", "true", True):
         all_groups = client.all_workspace_groups["usergroups"]
         group_to_invite = config.incident_auto_group_invite_group_name
         if len(all_groups) == 0:
@@ -348,11 +356,8 @@ def handle_incident_optional_features(
     """
     External provider statuses (optional)
     """
-    if config.incident_external_providers_enabled == "true":
-        providers = str.split(
-            str.lower(config.incident_external_providers_list), ","
-        )
-        for p in providers:
+    if config.incident_external_providers_enabled in ("True", "true", True):
+        for p in config.incident_external_providers_list:
             ext_incidents = epi.ExternalProviderIncidents(
                 provider=p,
                 days_back=5,
@@ -377,7 +382,7 @@ def handle_incident_optional_features(
     """
     Post prompt for creating Statuspage incident (optional)
     """
-    if config.statuspage_integration_enabled == "true":
+    if config.statuspage_integration_enabled in ("True", "true", True):
         sp_components = sp_handler.StatuspageComponents()
         sp_components_list = sp_components.list_of_names()
         sp_starter_message_content = sp_slack.return_new_incident_message(
@@ -412,7 +417,11 @@ def handle_incident_optional_features(
     """
     If this is an internal incident, parse additional values
     """
-    if internal and config.incident_auto_create_from_react_enabled == "true":
+    if internal and config.incident_auto_create_from_react_enabled in (
+        "True",
+        "true",
+        True,
+    ):
         original_channel = request_parameters["channel"]
         original_message_timestamp = request_parameters[
             "original_message_timestamp"
@@ -469,7 +478,7 @@ def handle_incident_optional_features(
     """
     Page groups that are required to be automatically paged (optional)
     """
-    if config.pagerduty_integration_enabled == "true":
+    if config.pagerduty_integration_enabled in ("True", "true", True):
         from bot.pagerduty import api as pd_api
 
         auto_page_targets = read_pager_auto_page_targets()

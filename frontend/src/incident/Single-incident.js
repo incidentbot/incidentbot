@@ -41,6 +41,7 @@ import DeveloperBoardIcon from '@mui/icons-material/DeveloperBoard';
 import FindReplaceIcon from '@mui/icons-material/FindReplace';
 import ForumIcon from '@mui/icons-material/Forum';
 import LabelIcon from '@mui/icons-material/Label';
+import MeetingRoomRoundedIcon from '@mui/icons-material/MeetingRoomRounded';
 import MilitaryTechIcon from '@mui/icons-material/MilitaryTech';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import PeopleIcon from '@mui/icons-material/People';
@@ -445,6 +446,20 @@ const ViewSingleIncident = () => {
                           href={`https://${slackWorkspaceID}.slack.com/archives/${incident.channel_id}`}
                           target="new">
                           Open Slack Channel
+                        </Button>
+                      </ListItem>
+                      <Divider component="li" />
+                      <ListItem dense key="slack-channel">
+                        <ListItemIcon>
+                          <MeetingRoomRoundedIcon fontSize="large" />
+                        </ListItemIcon>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          key={`${incident.incident_id}-conference-link`}
+                          href={`${incident.conference_bridge}`}
+                          target="new">
+                          Join Meeting
                         </Button>
                       </ListItem>
                     </List>

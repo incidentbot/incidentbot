@@ -114,8 +114,11 @@ class TestIncidentManagement:
                 "is_security_incident": False,
             }
         )
+        assert isinstance(inc, Incident)
 
         assert re.search("^inc.*something-has-broken$", inc.channel_name)
+
+        assert inc.conference_bridge == "https://zoom.us"
 
     def test_incident_channel_name_create(self):
         inc = Incident(
@@ -131,19 +134,6 @@ class TestIncidentManagement:
 
         assert re.search("^inc.*unallowed-chracter-check$", inc.channel_name)
 
-    # This needs to mock the client.
-    # def test_incident_create(self):
-    #     request_parameters = {
-    #         "channel": "mock",
-    #         "incident_description": "test incident",
-    #         "user": "sample-user",
-    #         "token": placeholder_token,
-    #         "created_from_web": False,
-    #     }
-    #     resp = create_incident(request_parameters, internal=True)
-    #
-    #     assert resp == "ok"
-
     def test_incident_build_digest_notification(self):
         assert build_digest_notification(
             created_channel_details={
@@ -153,6 +143,7 @@ class TestIncidentManagement:
                 "is_security_incident": False,
             },
             severity="sev4",
+            conference_bridge="mock",
         ) == {
             "channel": "incidents",
             "blocks": [
@@ -214,7 +205,7 @@ class TestIncidentManagement:
                                 "type": "plain_text",
                                 "text": "Conference",
                             },
-                            "url": "https://zoom.us",
+                            "url": "mock",
                             "action_id": "incident.click_conference_bridge_link",
                         },
                         {
@@ -647,32 +638,6 @@ class TestIncidentManagement:
             "channel": "mock",
         }
 
-    # def test_build_severity_update(self):
-    #     severity = "sev1"
-    #     assert build_severity_update(channel="mock", severity=severity) == {
-    #         "blocks": [
-    #             {"type": "divider"},
-    #             {
-    #                 "text": {"text": ":warning: Severity Update", "type": "plain_text"},
-    #                 "type": "header",
-    #             },
-    #             {
-    #                 "text": {
-    #                     "text": f"The incident severity has changed to *{severity.upper()}*. "
-    #                     "This signifies a critical production scenario "
-    #                     "that impacts most or all users with a major "
-    #                     "impact on SLAs. This is an all-hands-on-deck "
-    #                     "scenario that requires swift action to restore "
-    #                     "operation. Customers must be notified.",
-    #                     "type": "mrkdwn",
-    #                 },
-    #                 "type": "section",
-    #             },
-    #             {"type": "divider"},
-    #         ],
-    #         "channel": "mock",
-    #     }
-
     def test_build_status_update(self):
         status = "monitoring"
         assert build_status_update(channel="mock", status=status) == {
@@ -707,6 +672,7 @@ class TestIncidentManagement:
             status=status,
             severity=severity,
             is_security_incident=is_security_incident,
+            conference_bridge="mock",
         ) == {
             "blocks": [
                 {
@@ -767,7 +733,7 @@ class TestIncidentManagement:
                                 "type": "plain_text",
                                 "text": "Conference",
                             },
-                            "url": "https://zoom.us",
+                            "url": "mock",
                             "action_id": "incident.click_conference_bridge_link",
                         },
                         {
@@ -792,63 +758,6 @@ class TestIncidentManagement:
                 },
             ]
         }
-
-    # def test_build_user_role_notification(self):
-    #     role = "incident_commander"
-    #     assert build_user_role_notification(
-    #         channel_id="mock", role=role, user="sample-user"
-    #     ) == {
-    #         "blocks": [
-    #             {
-    #                 "text": {
-    #                     "text": ":wave: You have been elected as the Incident Commander for an incident.",
-    #                     "type": "plain_text",
-    #                 },
-    #                 "type": "header",
-    #             },
-    #             {
-    #                 "text": {
-    #                     "text": "The Incident Commander is the decision maker "
-    #                     "during a major incident, delegating tasks and "
-    #                     "listening to input from subject matter experts "
-    #                     "in order to bring the incident to resolution. "
-    #                     "They become the highest ranking individual on "
-    #                     "any major incident call, regardless of their "
-    #                     "day-to-day rank. Their decisions made as "
-    #                     "commander are final.\n"
-    #                     "\n"
-    #                     "Your job as an Incident Commander is to listen "
-    #                     "to the call and to watch the incident Slack "
-    #                     "room in order to provide clear coordination, "
-    #                     "recruiting others to gather context and "
-    #                     "details. You should not be performing any "
-    #                     "actions or remediations, checking graphs, or "
-    #                     "investigating logs. Those tasks should be "
-    #                     "delegated.\n"
-    #                     "\n"
-    #                     "An IC should also be considering next steps and "
-    #                     "backup plans at every opportunity, in an effort "
-    #                     "to avoid getting stuck without any clear "
-    #                     "options to proceed and to keep things moving "
-    #                     "towards resolution.\n"
-    #                     "\n"
-    #                     "More information: "
-    #                     "https://response.pagerduty.com/training/incident_commander/",
-    #                     "type": "mrkdwn",
-    #                 },
-    #                 "type": "section",
-    #             },
-    #             {"type": "divider"},
-    #             {
-    #                 "text": {
-    #                     "text": "Please join the channel here: <#mock>",
-    #                     "type": "mrkdwn",
-    #                 },
-    #                 "type": "section",
-    #             },
-    #         ],
-    #         "channel": "sample-user",
-    #     }
 
     def test_build_public_status_update(self):
         timestamp = tools.fetch_timestamp()
@@ -893,3 +802,16 @@ class TestIncidentManagement:
                 "type": "context",
             },
         ]
+
+    # This needs to mock the client.
+    # def test_incident_create(self):
+    #     request_parameters = {
+    #         "channel": "mock",
+    #         "incident_description": "test incident",
+    #         "user": "sample-user",
+    #         "token": placeholder_token,
+    #         "created_from_web": False,
+    #     }
+    #     resp = create_incident(request_parameters, internal=True)
+    #
+    #     assert resp == "ok"

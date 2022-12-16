@@ -11,7 +11,7 @@ defaults = {
     "incident_guide_link": "https://changeme.com",
     "incident_postmortems_link": "https://changeme.com",
     "slack_workspace_id": slack_workspace_id
-    if config.test_environment == "false"
+    if not config.is_test_environment
     else "test",
     "timezone": "UTC",
     "conference_bridge_link": "https://zoom.us",
@@ -19,7 +19,7 @@ defaults = {
 
 settings_from_db = (
     read_single_setting_value("incident_management_configuration")
-    if config.test_environment == "false"
+    if not config.is_test_environment
     else defaults
 )
 
@@ -33,6 +33,7 @@ incident_postmortems_link = settings_from_db.get(
     "incident_postmortems_link", defaults["incident_postmortems_link"]
 )
 timezone = settings_from_db.get("timezone", defaults["timezone"])
+
 conference_bridge_link = settings_from_db.get(
     "conference_bridge_link", defaults["conference_bridge_link"]
 )
