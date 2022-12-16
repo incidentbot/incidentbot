@@ -255,7 +255,7 @@ You can integrate with Statuspage to automatically prompt for Statuspage inciden
 - ``STATUSPAGE_PAGE_ID`` - Statuspage page ID if enabling.
 - ``STATUSPAGE_URL`` - Link to the public Statuspage for your organization. **Note:** This must be a fully formed URL - example: ``https://status.foo.com``.
 
-.. _zoom-ettings:
+.. _zoom-settings:
 
 Zoom Settings
 ------------
