@@ -34,7 +34,7 @@ If using ``sealed-secrets``, you could create your sensitive environment variabl
     kubeseal --controller-name sealed-secrets <incident-bot-secret.json >incident-bot-secret-sealed.json &&
     kubectl create -f incident-bot-secret-sealed.json
 
-Contained with ``.env``, you'd want to include the sensitive values for this application. For example:
+Contained with ``.env``, you'd want to include the sensitive values for this application. For example (this is not a comprehensive collection of all options):
 
 .. code-block:: bash
 
@@ -83,7 +83,7 @@ In this scenario, you'd want to provide the values using the file ``incident-bot
     INCIDENT_AUTO_GROUP_INVITE_ENABLED: false
     INCIDENT_AUTO_GROUP_INVITE_GROUP_NAME: mygroup
     INCIDENT_EXTERNAL_PROVIDERS_ENABLED: true
-    INCIDENT_EXTERNAL_PROVIDERS_LIST: github
+    INCIDENT_EXTERNAL_PROVIDERS_LIST: ["github"]
     INCIDENT_AUTO_CREATE_FROM_REACT_ENABLED: true
     INCIDENT_AUTO_CREATE_FROM_REACT_EMOJI_NAME: create-incident
     PAGERDUTY_INTEGRATION_ENABLED: false
@@ -177,6 +177,7 @@ Required Variables
 - ``SLACK_BOT_TOKEN`` - the API token to be used by your bot once it is deployed to your workspace.
 - ``DEFAULT_WEB_ADMIN_PASSWORD`` - the default password for the default admin account. See section on user management for more details.
 - ``JWT_SECRET_KEY`` - this must be provided for user management. Set to a secure string.
+- ``FLASK_APP_SECRET_KEY`` - this must be provided for the API.
 
 Optional Variables
 ------------
@@ -185,9 +186,11 @@ Optional Variables
 - ``INCIDENT_AUTO_GROUP_INVITE_ENABLED`` - to enable the automatic invitation of a Slack group to each newly created incident channel (documented above), set this to ``true``.
 - ``INCIDENT_AUTO_GROUP_INVITE_GROUP_NAME`` - if enabling the automatic invitation of a Slack group to each newly created incident channel (documented above), set this to the name of the Slack group.
 - ``INCIDENT_EXTERNAL_PROVIDERS_ENABLED`` - if enabling status snapshots for external providers (documented above), set this to ``true``.
-- ``INCIDENT_EXTERNAL_PROVIDERS_LIST`` - if enabling status snapshots for external providers (documented above), set this to a comma-separated list of providers to enable. For example: ``auth0,github,heroku``
+- ``INCIDENT_EXTERNAL_PROVIDERS_LIST`` - if enabling status snapshots for external providers (documented above), set this to a list of providers to enable. For example: ``["auth0", "github", "heroku"]``
 - ``INCIDENT_AUTO_CREATE_FROM_REACT_ENABLED`` - if enabling auto incident channel create based on react, set this to ``true``.
 - ``INCIDENT_AUTO_CREATE_FROM_REACT_EMOJI_NAME`` - the name of the emoji that will trigger automatic incident creation.
+
+Other variables are covered in the sections below documenting additional integrations.
 
 .. _access:
 
@@ -251,3 +254,28 @@ You can integrate with Statuspage to automatically prompt for Statuspage inciden
 - ``STATUSPAGE_API_KEY`` - Statuspage API key if enabling.
 - ``STATUSPAGE_PAGE_ID`` - Statuspage page ID if enabling.
 - ``STATUSPAGE_URL`` - Link to the public Statuspage for your organization. **Note:** This must be a fully formed URL - example: ``https://status.foo.com``.
+
+.. _zoom-ettings:
+
+Zoom Settings
+------------
+
+At this time, the bot can automatically create a Zoom meeting for each new incident. In the future, other platforms may be supported.
+
+If you want to automatically create an instant Zoom meeting for each incident, use the following steps to create a Zoom app and enable the integration.
+
+#. Visit https://marketplace.zoom.us/develop/create
+#. Create a Server-to-Server OAuth app.
+#. Fill out the required generic information.
+#. Add scope for View and manage all user meetings.
+#. Activate app.
+#. Add account ID, client ID, and client secret to env vars below.
+
+.. warning::
+
+  The account ID can be viewed on the app's page in the Zoom Marketplace developer app after it has been activated.
+
+- ``ZOOM_AUTO_CREATE`` - set to ``true`` to enable the integration.
+- ``ZOOM_ACCOUNT_ID`` - Account ID from the step above.
+- ``ZOOM_CLIENT_ID`` - The OAuth app client ID from the step above.
+- ``ZOOM_CLIENT_SECRET`` - The OAuth app client secret from the step above.

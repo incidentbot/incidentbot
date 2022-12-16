@@ -89,6 +89,7 @@ class Incident(Base, Serializer):
     rca = Column(VARCHAR)
     is_security_incident = Column(Boolean)
     channel_description = Column(String())
+    conference_bridge = Column(String())
 
     def serialize(self):
         d = Serializer.serialize(self)

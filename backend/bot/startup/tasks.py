@@ -58,7 +58,7 @@ def startup_task_init():
             update_slack_user_list()
 
             # Optionally populate PagerDuty on-call data and sete auto-page option if integration is enabled
-            if config.pagerduty_integration_enabled != "false":
+            if config.pagerduty_integration_enabled in ("True", "true", True):
                 from bot.scheduler.scheduler import update_pagerduty_oc_data
 
                 update_pagerduty_oc_data()

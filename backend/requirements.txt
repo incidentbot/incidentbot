@@ -15,10 +15,14 @@ marshmallow_sqlalchemy==0.28.1
 pdpyras==4.5.2
 psycopg2-binary==2.9.5
 pyjokes==0.6.0
+pyjwt==2.6.0
 pytest==7.2.0
+pytest-env==0.8.1
+pytest-mock==3.10.0
 python-dotenv==0.21.0
 pytz==2022.6
 requests==2.28.1
+requests-mock==1.10.0
 slack_bolt==1.15.5
 slack_sdk==3.19.5
 sqlalchemy==1.4.44

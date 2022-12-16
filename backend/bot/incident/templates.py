@@ -6,7 +6,6 @@ from bot.models.setting import read_single_setting_value
 from bot.settings.im import (
     incident_guide_link,
     incident_postmortems_link,
-    conference_bridge_link,
 )
 from bot.shared import tools
 from bot.slack.client import slack_workspace_id
@@ -16,14 +15,12 @@ logger = logging.getLogger(__name__)
 
 
 def build_digest_notification(
-    created_channel_details: Dict[str, Any], severity: str
+    created_channel_details: Dict[str, Any],
+    severity: str,
+    conference_bridge: str,
 ) -> Dict[str, str]:
     """Formats the notification that will be
     sent to the digest channel
-
-    Args:
-        created_channel_details: Dict[str, Any]
-        Expects: id, name
 
     Returns dict[str, str] containing the formatted message
     to be sent to Slack
@@ -43,7 +40,7 @@ def build_digest_notification(
         "severity_var_placeholder": severity.upper(),
         "incident_guide_link_var_placeholder": incident_guide_link,
         "incident_postmortems_link_var_placeholder": incident_postmortems_link,
-        "conference_bridge_link_var_placeholder": conference_bridge_link,
+        "conference_bridge_link_var_placeholder": conference_bridge,
     }
     return tools.render_json(
         f"{config.templates_directory}incident_digest_notification.json",
@@ -187,6 +184,7 @@ def build_updated_digest_message(
     status: str,
     severity: str,
     is_security_incident: bool,
+    conference_bridge: str,
 ) -> Dict[str, list]:
     """Returns the blocks required for the initial incidents
     digest message with edits so we can update it when the status
@@ -216,7 +214,7 @@ def build_updated_digest_message(
         "slack_workspace_id_var_placeholder": slack_workspace_id,
         "incident_guide_link_var_placeholder": incident_guide_link,
         "incident_postmortems_link_var_placeholder": incident_postmortems_link,
-        "conference_bridge_link_var_placeholder": conference_bridge_link,
+        "conference_bridge_link_var_placeholder": conference_bridge,
     }
     return tools.render_json(
         f"{config.templates_directory}incident_digest_notification_update.json",

@@ -273,6 +273,7 @@ def db_write_incident(
     dig_message_ts,
     is_security_incident,
     channel_description,
+    conference_bridge,
 ):
     """
     Write incident entry to database
@@ -287,6 +288,7 @@ def db_write_incident(
         dig_message_ts - Digest channel message creation timestamp
         is_security_incident - Whether or not the incident is security-focused
         channel_description - Unformatted original description
+        conference_bridge - Link to conference bridge
     """
     try:
         incident = Incident(
@@ -300,6 +302,7 @@ def db_write_incident(
             tags=[],
             is_security_incident=is_security_incident,
             channel_description=channel_description,
+            conference_bridge=conference_bridge,
         )
         Session.add(incident)
         Session.commit()
