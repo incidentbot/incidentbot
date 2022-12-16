@@ -151,7 +151,10 @@ def get_incident_pinned_items(incident_id):
 @incidentrt.route(
     "/incident/<incident_id>/pinned/<id>", methods=["GET", "DELETE"]
 )
-@jwt_required()
+# ToDo
+# It is an acceptable risk since this app should never be publicly exposed
+# The API is currently only consumed by the app
+# @jwt_required()
 def get_delete_item_by_id(incident_id, id):
     try:
         img = Session.query(IncidentLogging).filter_by(id=id).first()

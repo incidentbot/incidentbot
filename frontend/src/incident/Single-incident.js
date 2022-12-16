@@ -449,7 +449,7 @@ const ViewSingleIncident = () => {
                         </Button>
                       </ListItem>
                       <Divider component="li" />
-                      <ListItem dense key="slack-channel">
+                      <ListItem dense key="conference-bridge">
                         <ListItemIcon>
                           <MeetingRoomRoundedIcon fontSize="large" />
                         </ListItemIcon>
