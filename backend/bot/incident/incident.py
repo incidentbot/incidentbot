@@ -319,7 +319,7 @@ def handle_incident_optional_features(
     Invite required participants (optional)
     """
     if config.incident_auto_group_invite_enabled in ("True", "true", True):
-        all_groups = client.all_workspace_groups["usergroups"]
+        all_groups = slack_web_client.all_workspace_groups["usergroups"]
         group_to_invite = config.incident_auto_group_invite_group_name
         if len(all_groups) == 0:
             logger.error(

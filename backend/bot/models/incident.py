@@ -303,6 +303,7 @@ def db_write_incident(
             is_security_incident=is_security_incident,
             channel_description=channel_description,
             conference_bridge=conference_bridge,
+            pagerduty_incidents=[],
         )
         Session.add(incident)
         Session.commit()

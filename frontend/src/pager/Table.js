@@ -26,6 +26,7 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { visuallyHidden } from '@mui/utils';
 
+import useToken from '../hooks/useToken';
 import { apiUrl } from '../shared/Variables';
 
 //import moment from 'moment';
@@ -171,6 +172,8 @@ export default function OnCallTable(props) {
   const [openJobRunStatus, setOpenJobRunStatus] = useState(false);
   const [waitingForSomething, setWaitingForSomething] = useState(false);
 
+  const { token } = useToken();
+
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === 'asc';
     setOrder(isAsc ? 'desc' : 'asc');
@@ -198,7 +201,7 @@ export default function OnCallTable(props) {
     axios({
       method: 'POST',
       url: url,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }
     })
       .then(function () {
         setJobRunMessage(`Successfully refreshed on-call data.`);

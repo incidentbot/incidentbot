@@ -19,3 +19,4 @@ Contents
   features
   setup
   examples
+  troubleshooting

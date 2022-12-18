@@ -74,7 +74,7 @@ def get_pager_automapping():
 @pager.route("/pager/auto_map/store", methods=["GET", "PATCH"])
 @jwt_required()
 def get_patch_pager_automapping():
-    if config.pagerduty_integration_enabled != "false":
+    if config.pagerduty_integration_enabled in ("True", "true", True):
         if request.method == "GET":
             try:
                 data = (

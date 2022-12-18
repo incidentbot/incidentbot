@@ -10,6 +10,12 @@ For those who wish to get started quickly without customizing core behavior, the
 
 You can run the image however you choose. A Docker Compose file is provided for guidance. It is recommended to use the Helm chart if running in Kubernetes.
 
+.. warning::
+
+  There are several features configurable via the bot's UI. Don't sleep on the bot's UI as you'll miss a lot of customization options.
+
+  The UI is available once the bot is running at ``/app``.
+
 .. _kubernetes:
 
 Kubernetes

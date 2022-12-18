@@ -262,7 +262,7 @@ def open_modal(ack, body, client):
     """
     If there are teams that will be auto paged, mention that
     """
-    if config.pagerduty_integration_enabled != "false":
+    if config.pagerduty_integration_enabled in ("True", "true", True):
         auto_page_targets = read_pager_auto_page_targets()
         if len(auto_page_targets) != 0:
             base_blocks.extend(
