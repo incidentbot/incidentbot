@@ -90,6 +90,7 @@ class Incident(Base, Serializer):
     is_security_incident = Column(Boolean)
     channel_description = Column(String())
     conference_bridge = Column(String())
+    pagerduty_incidents = Column(JSON)
 
     def serialize(self):
         d = Serializer.serialize(self)

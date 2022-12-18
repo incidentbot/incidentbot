@@ -89,6 +89,7 @@ If the PagerDuty integration is enabled, the application can do the following:
 - Show on-call information in the web UI
 - Issue pages to teams using the ``Incident Bot Pager`` shortcut
 - Automatically page teams on incident creation, configurable from the UI if the integration is enabled
+- Automatically resolve PagerDuty incidents issued during incident creation when the incident is resolved in Slack
 
 You must set the required environment variables detailed in the setup guide to enable the integration.
 
