@@ -5,7 +5,6 @@ import slack_sdk.errors
 import variables
 
 from bot.audit import log
-from bot.confluence import rca
 from bot.external import epi
 from bot.incident import action_parameters as ap
 from bot.incident.templates import (
@@ -369,7 +368,7 @@ def set_incident_status(
         }
         # We want real user names to tag in the rca doc
         actual_user_names = []
-        for person in [incident_commander]:
+        for person in [incident_commander, technical_lead]:
             if person != "_none_":
                 str = person.replace("<", "").replace(">", "").replace("@", "")
                 invite_user_to_channel(rcaChannelDetails["id"], str)
@@ -380,9 +379,7 @@ def set_incident_status(
                     ]
                 )
             else:
-                logger.error(
-                    f"Cannot invite {person} to rca channel because the role was not claimed."
-                )
+                actual_user_names.append("Unassigned")
         # Format boilerplate message to rca channel
         rca_boilerplate_message_blocks = [
             {"type": "divider"},
@@ -407,8 +404,10 @@ def set_incident_status(
         # Generate rca template and create rca if enabled
         # Get normalized description as rca title
         if config.auto_create_rca in ("True", "true", True):
+            from bot.confluence.rca import IncidentRootCauseAnalysis
+
             rca_title = " ".join(channel_name.split("-")[2:])
-            rca_link = rca.create_rca(
+            rca = IncidentRootCauseAnalysis(
                 incident_id=channel_name,
                 rca_title=rca_title,
                 incident_commander=actual_user_names[0],
@@ -418,6 +417,7 @@ def set_incident_status(
                     "severity_levels"
                 )[formatted_severity],
             )
+            rca_link = rca.create()
             db_update_incident_rca_col(incident_id=channel_name, rca=rca_link)
             # Write audit log
             log.write(
