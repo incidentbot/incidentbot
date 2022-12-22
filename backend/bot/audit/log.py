@@ -4,20 +4,30 @@ from bot.models.pg import AuditLog, Session
 from bot.shared import tools
 from bot.slack.client import get_user_name
 from sqlalchemy import update
+from sqlalchemy.orm import scoped_session
 from typing import Dict, List, Tuple
 
 logger = logging.getLogger(__name__)
 
 
-def delete(incident_id: str, log: str, ts: str) -> Tuple[bool, str]:
+def delete(
+    incident_id: str,
+    log: str,
+    ts: str,
+    database_session: scoped_session = Session,
+) -> Tuple[bool, str]:
     """
     Delete from audit log
     """
     try:
-        if Session.query(AuditLog).filter_by(incident_id=incident_id).all():
+        if (
+            database_session.query(AuditLog)
+            .filter_by(incident_id=incident_id)
+            .all()
+        ):
             try:
                 existing_row = (
-                    Session.query(AuditLog)
+                    database_session.query(AuditLog)
                     .filter_by(incident_id=incident_id)
                     .one()
                 )
@@ -28,7 +38,7 @@ def delete(incident_id: str, log: str, ts: str) -> Tuple[bool, str]:
                     else:
                         found = False
                 if found:
-                    Session.execute(
+                    database_session.execute(
                         update(AuditLog)
                         .where(AuditLog.incident_id == incident_id)
                         .values(
@@ -39,7 +49,7 @@ def delete(incident_id: str, log: str, ts: str) -> Tuple[bool, str]:
                             ]
                         )
                     )
-                    Session.commit()
+                    database_session.commit()
                     return True, "removed log entry"
                 else:
                     return False, "log entry not found"
@@ -56,19 +66,25 @@ def delete(incident_id: str, log: str, ts: str) -> Tuple[bool, str]:
         )
         return False, error
     finally:
-        Session.close()
-        Session.remove()
+        database_session.close()
+        database_session.remove()
 
 
-def read(incident_id: str) -> List[Dict]:
+def read(
+    incident_id: str, database_session: scoped_session = Session
+) -> List[Dict]:
     """
     Read audit log
     """
     try:
-        if Session.query(AuditLog).filter_by(incident_id=incident_id).all():
+        if (
+            database_session.query(AuditLog)
+            .filter_by(incident_id=incident_id)
+            .all()
+        ):
             try:
                 existing_row = (
-                    Session.query(AuditLog)
+                    database_session.query(AuditLog)
                     .filter_by(incident_id=incident_id)
                     .one()
                 )
@@ -84,8 +100,8 @@ def read(incident_id: str) -> List[Dict]:
             f"Audit log row lookup failed for incident {incident_id}: {error}"
         )
     finally:
-        Session.close()
-        Session.remove()
+        database_session.close()
+        database_session.remove()
 
 
 def write(
@@ -94,6 +110,7 @@ def write(
     content: str = "",
     user: str = "",
     ts: str = "",
+    database_session: scoped_session = Session,
 ):
     """
     Write an audit log for an incident
@@ -103,20 +120,22 @@ def write(
     try:
         # Create the row if it doesn't exist
         if (
-            not Session.query(AuditLog)
+            not database_session.query(AuditLog)
             .filter_by(incident_id=incident_id)
             .all()
         ):
             try:
                 row = AuditLog(incident_id=incident_id, data=[])
-                Session.add(row)
-                Session.commit()
+                database_session.add(row)
+                database_session.commit()
             except Exception as error:
                 logger.error(
                     f"Audit log row create failed for incident {incident_id}: {error}"
                 )
         existing_row = (
-            Session.query(AuditLog).filter_by(incident_id=incident_id).one()
+            database_session.query(AuditLog)
+            .filter_by(incident_id=incident_id)
+            .one()
         )
         data = existing_row.data
         data.append(
@@ -127,17 +146,17 @@ def write(
                 "ts": ts if ts != "" else tools.fetch_timestamp(),
             }
         )
-        Session.execute(
+        database_session.execute(
             update(AuditLog)
             .where(AuditLog.incident_id == incident_id)
             .values(data=data)
         )
-        Session.commit()
+        database_session.commit()
     except Exception as error:
         logger.error(
             f"Audit log row create failed for incident {incident_id}: {error}"
         )
-        Session.rollback()
+        database_session.rollback()
     finally:
-        Session.close()
-        Session.remove()
+        database_session.close()
+        database_session.remove()

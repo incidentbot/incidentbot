@@ -1,50 +1,31 @@
 import logging
 
 from bot.models.pg import IncidentLogging, Session
+from sqlalchemy.orm import scoped_session
 from typing import Dict, List
 
 logger = logging.getLogger(__name__)
 
 
-def read(incident_id: str) -> List[Dict]:
+def read(
+    incident_id: str, database_session: scoped_session = Session
+) -> List[IncidentLogging]:
     """
     Read pinned items
     """
     try:
         if (
-            Session.query(IncidentLogging)
+            database_session.query(IncidentLogging)
             .filter_by(incident_id=incident_id)
             .all()
         ):
             try:
                 all_objs = (
-                    Session.query(IncidentLogging)
+                    database_session.query(IncidentLogging)
                     .filter_by(incident_id=incident_id)
                     .all()
                 )
-                all_objs_list = []
-                for obj in all_objs:
-                    if obj.img:
-                        all_objs_list.append(
-                            {
-                                "id": obj.id,
-                                "is_image": True,
-                                "title": obj.title,
-                                "ts": obj.ts,
-                                "user": obj.user,
-                            }
-                        )
-                    else:
-                        all_objs_list.append(
-                            {
-                                "id": obj.id,
-                                "is_image": False,
-                                "content": obj.content,
-                                "ts": obj.ts,
-                                "user": obj.user,
-                            }
-                        )
-                return all_objs_list
+                return all_objs
             except Exception as error:
                 logger.error(
                     f"Audit log row lookup failed for incident {incident_id}: {error}"
@@ -56,8 +37,8 @@ def read(incident_id: str) -> List[Dict]:
             f"Audit log row lookup failed for incident {incident_id}: {error}"
         )
     finally:
-        Session.close()
-        Session.remove()
+        database_session.close()
+        database_session.remove()
 
 
 def write(
@@ -68,6 +49,7 @@ def write(
     content: str = "",
     img: bytes = b"",
     mimetype: str = "",
+    database_session: scoped_session = Session,
 ):
     """
     Write a pinned item
@@ -82,13 +64,13 @@ def write(
             ts=ts,
             user=user,
         )
-        Session.add(obj)
-        Session.commit()
+        database_session.add(obj)
+        database_session.commit()
     except Exception as error:
         logger.error(
             f"Audit log row create failed for incident {incident_id}: {error}"
         )
-        Session.rollback()
+        database_session.rollback()
     finally:
-        Session.close()
-        Session.remove()
+        database_session.close()
+        database_session.remove()

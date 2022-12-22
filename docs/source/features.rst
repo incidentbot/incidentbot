@@ -53,6 +53,10 @@ This feature only works with Confluence Cloud and requires an API token and user
 
 You must set the required environment variables detailed in the setup guide to enable the integration.
 
+You will need to create an API key and add it to the variable ``CONFLUENCE_API_TOKEN`` along with the email address of the creator via ``CONFLUENCE_API_USERNAME``.
+
+The token can be created `here <https://id.atlassian.com/manage-profile/security/api-tokens>`_.
+
 .. _scheduled-actions:
 
 Scheduled Actions

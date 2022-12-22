@@ -5,7 +5,6 @@ import slack_sdk.errors
 import variables
 
 from bot.audit import log
-from bot.confluence import rca
 from bot.external import epi
 from bot.incident import action_parameters as ap
 from bot.incident.templates import (
@@ -36,9 +35,11 @@ from bot.slack.client import (
     return_slack_channel_info,
     slack_workspace_id,
 )
+from bot.slack.incident_logging import read as read_incident_pinned_items
 from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
+
 log_level = config.log_level
 
 
@@ -259,7 +260,9 @@ def export_chat_logs(action_parameters: type[ap.ActionParameters]):
             content=history,
             filename=f"{channel_name} Chat Transcript",
             filetype="txt",
-            initial_comment="As requested, here is the chat transcript. Remember - while this is useful, it will likely need cultivation before being added to a postmortem.",
+            initial_comment="As requested, here is the chat transcript. Remember"
+            + " - while this is useful, it will likely need cultivation before "
+            + "being added to a postmortem.",
             title=f"{channel_name} Chat Transcript",
         )
         logger.debug(f"\n{result}\n")
@@ -325,16 +328,17 @@ def set_incident_status(
         technical_lead = extract_role_owner(
             message_blocks, "role_technical_lead"
         )
-        # Error out if both roles aren't claimed
+        # Error out if incident commander hasn't been claimed
         for role, person in {
             "incident commander": incident_commander,
-            "technical lead": technical_lead,
         }.items():
             if person == "_none_":
                 try:
                     result = slack_web_client.chat_postMessage(
                         channel=channel_id,
-                        text=f":red_circle: <@{user}> Before this incident can be marked as resolved, the *{role}* role must be assigned. Please assign it and try again.",
+                        text=f":red_circle: <@{user}> Before this incident can"
+                        + f" be marked as resolved, the *{role}* role must be "
+                        + "assigned. Please assign it and try again.",
                     )
                 except slack_sdk.errors.SlackApiError as error:
                     logger.error(
@@ -376,9 +380,7 @@ def set_incident_status(
                     ]
                 )
             else:
-                logger.error(
-                    f"Cannot invite {person} to rca channel because the role was not claimed."
-                )
+                actual_user_names.append("Unassigned")
         # Format boilerplate message to rca channel
         rca_boilerplate_message_blocks = [
             {"type": "divider"},
@@ -393,15 +395,20 @@ def set_incident_status(
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": f"You have been invited to this channel to assist with planning the RCA for <#{channel_id}>. The Incident Commander should invite anyone who can help contribute to the RCA and then use this channel to plan the meeting to go over the incident.",
+                    "text": "You have been invited to this channel to assist "
+                    + f"with planning the RCA for <#{channel_id}>. The Incident Commander "
+                    + "should invite anyone who can help contribute to the RCA"
+                    + " and then use this channel to plan the meeting to go over the incident.",
                 },
             },
         ]
         # Generate rca template and create rca if enabled
         # Get normalized description as rca title
         if config.auto_create_rca in ("True", "true", True):
+            from bot.confluence.rca import IncidentRootCauseAnalysis
+
             rca_title = " ".join(channel_name.split("-")[2:])
-            rca_link = rca.create_rca(
+            rca = IncidentRootCauseAnalysis(
                 incident_id=channel_name,
                 rca_title=rca_title,
                 incident_commander=actual_user_names[0],
@@ -410,7 +417,12 @@ def set_incident_status(
                 severity_definition=read_single_setting_value(
                     "severity_levels"
                 )[formatted_severity],
+                pinned_items=read_incident_pinned_items(
+                    incident_id=channel_name
+                ),
+                timeline=log.read(incident_id=channel_name),
             )
+            rca_link = rca.create()
             db_update_incident_rca_col(incident_id=channel_name, rca=rca_link)
             # Write audit log
             log.write(
@@ -423,7 +435,8 @@ def set_incident_status(
                         "type": "section",
                         "text": {
                             "type": "mrkdwn",
-                            "text": f"*I have created a base RCA document that you can build on. You can open it using the button below.*",
+                            "text": "*I have created a base RCA document that"
+                            " you can build on. You can open it using the button below.*",
                         },
                     },
                     {
@@ -602,7 +615,8 @@ def set_incident_status(
             },
             "text": {
                 "type": "mrkdwn",
-                "text": "Since this incident has already been resolved, it shouldn't be reopened. A new incident should be started instead.",
+                "text": "Since this incident has already been resolved, it "
+                + "shouldn't be reopened. A new incident should be started instead.",
             },
             "confirm": {"type": "plain_text", "text": "Reopen Anyway"},
             "deny": {"type": "plain_text", "text": "Go Back"},

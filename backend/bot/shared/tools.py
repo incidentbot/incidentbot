@@ -7,7 +7,7 @@ import string
 from bot.settings.im import timezone as application_timezone
 from datetime import datetime
 from pytz import timezone
-from typing import Any, List
+from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +16,14 @@ random_suffix = "".join(
 )
 timestamp_fmt = "%Y-%m-%dT%H:%M:%S %Z"
 timestamp_fmt_short = "%d/%m/%Y %H:%M:%S %Z"
+
+
+class dotdict(Dict):
+    """dot.notation access to dictionary attributes"""
+
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
 
 
 def fetch_timestamp(short: bool = False):

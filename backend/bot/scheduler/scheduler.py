@@ -12,7 +12,6 @@ from bot.models.incident import db_read_incident, db_read_open_incidents
 from bot.shared import tools
 from bot.slack.client import (
     slack_web_client,
-    return_slack_channel_info,
     store_slack_user_list,
 )
 from typing import List
@@ -105,11 +104,19 @@ def scheduled_reminder_message(
                             "type": "section",
                             "text": {
                                 "type": "mrkdwn",
-                                "text": f"<!channel> :wave: It has been 30 minutes since this incident was opened and no updates have been sent out regarding this ticket. "
-                                + f"Since this is a *{severity.upper()}* incident, updates must be provided every half hour. Please use the 'provide incident update' shortcut. "
-                                + "If you're unsure how to do that, simply search for 'provide incident update' in the search bar at the top of your Slack window."
-                                + "For additional information about my features, check out my app's home page."
-                                + "I'll remind this channel every 30 minutes to either send out an initial update or provide a new one.",
+                                "text": f"<!channel> :wave: It has been 30 minutes "
+                                + "since this incident was opened and no updates "
+                                + "have been sent out regarding this ticket. "
+                                + f"Since this is a *{severity.upper()}* incident, "
+                                + "updates must be provided every half hour. "
+                                + "Please use the 'provide incident update' shortcut. "
+                                + "If you're unsure how to do that, simply search "
+                                + "for 'provide incident update' in the search bar "
+                                + "at the top of your Slack window. "
+                                + "For additional information about my features, "
+                                + "check out my app's home page. "
+                                + "I'll remind this channel every 30 minutes to "
+                                + "either send out an initial update or provide a new one.",
                             },
                         },
                         {"type": "divider"},
@@ -178,11 +185,17 @@ def scheduled_reminder_message(
             try:
                 slack_web_client.chat_postMessage(
                     channel=channel_id,
-                    text=f"<!channel> :wave: It has been approximately {max_age} minutes since the last update was sent out regarding this incident. "
-                    + f"Since this is a *{severity.upper()}* incident, updates must be provided every half hour. Please use the 'provide incident update' shortcut. "
-                    + "If you're unsure how to do that, simply search for 'provide incident update' in the search bar at the top of your Slack window."
-                    + "For additional information about my features, check out my app's home page."
-                    + "I'll remind again in 30 minutes. Once this incident is resolved, this reminder will disappear.",
+                    text="<!channel> :wave: It has been approximately "
+                    + f"{max_age} minutes since the last update was sent out "
+                    + f"regarding this incident. Since this is a *{severity.upper()}*"
+                    + " incident, updates must be provided every half hour. "
+                    + "Please use the 'provide incident update' shortcut. "
+                    + "If you're unsure how to do that, simply search for "
+                    + "'provide incident update' in the search bar at the top "
+                    + "of your Slack window. For additional information about "
+                    + "my features, check out my app's home page. I'll remind "
+                    + "again in 30 minutes. Once this incident is resolved, "
+                    + "this reminder will disappear.",
                 )
             except Exception as error:
                 logger.error(
@@ -208,7 +221,9 @@ def scrape_for_aging_incidents():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f":wave: Hi there! The following incidents have been open for {max_age} days. Lets double check them and make sure their statuses are up to date. :hourglass_flowing_sand:",
+                "text": ":wave: Hi there! The following incidents have been "
+                + f"open for {max_age} days. Lets double check them and make "
+                "sure their statuses are up to date. :hourglass_flowing_sand:",
             },
         },
         {"type": "divider"},
@@ -226,7 +241,8 @@ def scrape_for_aging_incidents():
         old = datetime.timedelta(days=max_age) < time_open
         if old:
             logger.info(
-                f"{inc.channel_id} is older than {max_age} days and will be added to the weekly reminder"
+                f"{inc.channel_id} is older than {max_age} days and will be "
+                + "added to the weekly reminder"
             )
             formatted_incidents.append(
                 {
@@ -267,7 +283,8 @@ def scrape_for_aging_incidents():
             logger.error(error)
     else:
         logger.info(
-            f"Checked for incidents older than {max_age} days and did not find any. No alert will be sent."
+            f"Checked for incidents older than {max_age} days and did not find"
+            + " any. No alert will be sent."
         )
 
 
