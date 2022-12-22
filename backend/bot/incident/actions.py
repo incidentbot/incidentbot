@@ -35,6 +35,7 @@ from bot.slack.client import (
     return_slack_channel_info,
     slack_workspace_id,
 )
+from bot.slack.incident_logging import read as read_incident_pinned_items
 from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
@@ -416,6 +417,10 @@ def set_incident_status(
                 severity_definition=read_single_setting_value(
                     "severity_levels"
                 )[formatted_severity],
+                pinned_items=read_incident_pinned_items(
+                    incident_id=channel_name
+                ),
+                timeline=log.read(incident_id=channel_name),
             )
             rca_link = rca.create()
             db_update_incident_rca_col(incident_id=channel_name, rca=rca_link)

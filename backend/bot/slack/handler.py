@@ -3,7 +3,6 @@ import logging
 import pyjokes
 import requests
 import slack_sdk
-import time
 import variables
 
 from bot.slack.messages import (
