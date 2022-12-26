@@ -1,4 +1,4 @@
-alembic==1.8.1
+alembic==1.9.1
 apispec==6.0.2
 apscheduler==3.9.1.post1
 atlassian-python-api==3.32.1
