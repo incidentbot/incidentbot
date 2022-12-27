@@ -1,6 +1,9 @@
 import re
 
-from bot.incident.action_parameters import ActionParameters
+from bot.incident.action_parameters import (
+    ActionParametersSlack,
+    ActionParametersWeb,
+)
 from bot.incident.incident import Incident
 from bot.incident.templates import (
     build_digest_notification,
@@ -22,8 +25,8 @@ placeholder_app_id = "A111"
 
 
 class TestIncidentManagement:
-    def test_action_parameters(self):
-        ap = ActionParameters(
+    def test_action_parameters_slack(self):
+        ap = ActionParametersSlack(
             payload={
                 "type": "block_actions",
                 "team": {"id": "T9TK3CUKW", "domain": "example"},
@@ -69,7 +72,7 @@ class TestIncidentManagement:
             }
         )
 
-        assert ap.actions() == {
+        assert ap.actions == {
             "action_id": "sample-action",
             "block_id": "=qXel",
             "text": {"type": "plain_text", "text": "View", "emoji": True},
@@ -78,9 +81,9 @@ class TestIncidentManagement:
             "action_ts": "1548426417.840180",
         }
 
-        assert ap.channel_details() == {"id": "CBR2V3XEX", "name": "mock"}
+        assert ap.channel_details == {"id": "CBR2V3XEX", "name": "mock"}
 
-        assert ap.message_details() == {
+        assert ap.message_details == {
             "bot_id": "BAH5CA16Z",
             "type": "message",
             "text": "This content can't be displayed.",
@@ -88,13 +91,13 @@ class TestIncidentManagement:
             "ts": "1548261231.000200",
         }
 
-        assert ap.user_details() == {
+        assert ap.user_details == {
             "id": "UA8RXUSPL",
             "name": "sample",
             "team_id": "T9TK3CUKW",
         }
 
-        assert ap.parameters() == {
+        assert ap.parameters == {
             "action_id": "sample-action",
             "channel_id": "CBR2V3XEX",
             "channel_name": "mock",
@@ -102,6 +105,25 @@ class TestIncidentManagement:
             "user": "sample",
             "user_id": "UA8RXUSPL",
         }
+
+    def test_action_parameters_web(self):
+        ap = ActionParametersWeb(
+            incident_id="mock_incident_id",
+            channel_id="mock_channel_id",
+            role="mock_role",
+            bp_message_ts="mock_ts",
+            user="mock_user",
+        )
+
+        assert ap.incident_id == "mock_incident_id"
+
+        assert ap.channel_id == "mock_channel_id"
+
+        assert ap.role == "mock_role"
+
+        assert ap.bp_message_ts == "mock_ts"
+
+        assert ap.user == "mock_user"
 
     def test_incident_instantiate(self):
         inc = Incident(

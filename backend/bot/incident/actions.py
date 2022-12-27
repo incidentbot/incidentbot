@@ -6,7 +6,10 @@ import variables
 
 from bot.audit import log
 from bot.external import epi
-from bot.incident import action_parameters as ap
+from bot.incident.action_parameters import (
+    ActionParametersSlack,
+    ActionParametersWeb,
+)
 from bot.incident.templates import (
     build_post_resolution_message,
     build_role_update,
@@ -32,7 +35,6 @@ from bot.slack.client import (
     get_formatted_channel_history,
     get_message_content,
     invite_user_to_channel,
-    return_slack_channel_info,
     slack_workspace_id,
 )
 from bot.slack.incident_logging import read as read_incident_pinned_items
@@ -49,17 +51,15 @@ Functions for handling inbound actions
 
 
 def assign_role(
-    action_parameters: type[ap.ActionParameters] = ap.ActionParameters(
-        payload={}
-    ),
-    web_data: Dict = {},
+    action_parameters: type[ActionParametersSlack] = ActionParametersSlack,
+    web_data: type[ActionParametersWeb] = ActionParametersWeb,
     request_origin: str = "slack",
 ):
     """When an incoming action is incident.assign_role, this method
     assigns the role to the user provided in the input
 
     Keyword arguments:
-    action_parameters -- type[ap.ActionParameters] containing Slack actions data
+    action_parameters -- type[ActionParametersSlack] containing Slack actions data
     web_data -- Dict - if executing from "web", this data must be passed
     request_origin -- str - can either be "slack" or "web"
     """
@@ -68,22 +68,21 @@ def assign_role(
         logger.info("Handling request from Slack for user update.")
         try:
             # Target incident channel
-            p = action_parameters.parameters()
-            target_channel = p["channel_id"]
-            channel_name = p["channel_name"]
-            user_id = action_parameters.actions()["selected_user"]
+            target_channel = action_parameters.channel_details["id"]
+            channel_name = action_parameters.channel_details["name"]
+            user_id = action_parameters.actions["selected_user"]
             action_value = "_".join(
-                action_parameters.actions()["block_id"].split("_")[1:3]
+                action_parameters.actions["block_id"].split("_")[1:3]
             )
             # Find the index of the block that contains info on
             # the role we want to update and format it with the new user later
-            blocks = action_parameters.message_details()["blocks"]
+            blocks = action_parameters.message_details["blocks"]
             index = tools.find_index_in_list(
                 blocks, "block_id", f"role_{action_value}"
             )
             temp_new_role_name = action_value.replace("_", " ")
             target_role = action_value
-            ts = p["timestamp"]
+            ts = action_parameters.message_details["ts"]
         except Exception as error:
             logger.error(
                 f"Error processing incident user update from Slack: {error}"
@@ -93,21 +92,21 @@ def assign_role(
         logger.info("Handling request from web for user update.")
         try:
             # Target incident channel
-            target_channel = web_data["channel_id"]
-            channel_name = web_data["incident_id"]
-            user_id = web_data["user"]
+            target_channel = web_data.channel_id
+            channel_name = web_data.incident_id
+            user_id = web_data.user
             # Find the index of the block that contains info on
             # the role we want to update and format it with the new user later
             blocks = get_message_content(
-                conversation_id=web_data["channel_id"],
-                ts=web_data["bp_message_ts"],
+                conversation_id=web_data.channel_id,
+                ts=web_data.bp_message_ts,
             )["blocks"]
             index = tools.find_index_in_list(
-                blocks, "block_id", "role_{}".format(web_data["role"])
+                blocks, "block_id", "role_{}".format(web_data.role)
             )
-            temp_new_role_name = web_data["role"].replace("_", " ")
-            target_role = web_data["role"]
-            ts = web_data["bp_message_ts"]
+            temp_new_role_name = web_data.role.replace("_", " ")
+            target_role = web_data.role
+            ts = web_data.bp_message_ts
         except Exception as error:
             logger.error(
                 f"Error processing incident user update from web: {error}"
@@ -176,37 +175,37 @@ def assign_role(
     update_incident_db_entry_ts(channel_name)
 
 
-def claim_role(action_parameters: type[ap.ActionParameters]):
+def claim_role(action_parameters: type[ActionParametersSlack]):
     """When an incoming action is incident.claim_role, this method
     assigns the role to the user that hit the claim button
 
     Keyword arguments:
-    action_parameters -- type[ap.ActionParameters] containing Slack actions data
+    action_parameters -- type[ActionParametersSlack] containing Slack actions data
     """
-    p = action_parameters.parameters()
-    channel_name = p["channel_name"]
-
-    action_value = action_parameters.actions()["value"]
+    channel_name = action_parameters.channel_details["name"]
+    action_value = action_parameters.actions["value"]
     # Find the index of the block that contains info on
     # the role we want to update
-    blocks = action_parameters.message_details()["blocks"]
+    blocks = action_parameters.message_details["blocks"]
     index = tools.find_index_in_list(
         blocks, "block_id", f"role_{action_value}"
     )
     # Replace the "_none_" value in the given block
     temp_new_role_name = action_value.replace("_", " ")
     new_role_name = temp_new_role_name.title()
-    user = p["user"]
+    user = action_parameters.user_details["name"]
     blocks[index]["text"]["text"] = f"*{new_role_name}*:\n <@{user}>"
     # Update the message
     slack_web_client.chat_update(
-        channel=p["channel_id"],
-        ts=p["timestamp"],
+        channel=action_parameters.channel_details["id"],
+        ts=action_parameters.message_details["ts"],
         blocks=blocks,
         text="",
     )
     # Send update notification message to incident channel
-    message = build_role_update(p["channel_id"], new_role_name, user)
+    message = build_role_update(
+        action_parameters.channel_details["id"], new_role_name, user
+    )
     try:
         result = slack_web_client.chat_postMessage(**message, text="")
         logger.debug(f"\n{result}\n")
@@ -214,9 +213,9 @@ def claim_role(action_parameters: type[ap.ActionParameters]):
         logger.error(f"Error sending role update to incident channel: {error}")
     # Let the user know they've been assigned the role and what to do
     dm = build_user_role_notification(
-        p["channel_id"],
+        action_parameters.channel_details["id"],
         action_value,
-        action_parameters.user_details()["id"],
+        action_parameters.user_details["id"],
     )
     try:
         result = slack_web_client.chat_postMessage(**dm, text="")
@@ -238,73 +237,75 @@ def claim_role(action_parameters: type[ap.ActionParameters]):
     update_incident_db_entry_ts(channel_name)
 
 
-def export_chat_logs(action_parameters: type[ap.ActionParameters]):
+def export_chat_logs(action_parameters: type[ActionParametersSlack]):
     """When an incoming action is incident.export_chat_logs, this method
     fetches channel history, formats it, and returns it to the channel
 
     Keyword arguments:
-    action_parameters -- type[ap.ActionParameters] containing Slack actions data
+    action_parameters -- type[ActionParametersSlack] containing Slack actions data
     """
-    p = action_parameters.parameters()
-    channel_id = p["channel_id"]
-    channel_name = p["channel_name"]
-
     # Retrieve channel history and post as text attachment
     history = get_formatted_channel_history(
-        channel_id=channel_id, channel_name=channel_name
+        channel_id=action_parameters.channel_details["id"],
+        channel_name=action_parameters.channel_details["name"],
     )
     try:
-        logger.info(f"Sending chat transcript to {channel_name}.")
+        logger.info(
+            "Sending chat transcript to {}.".format(
+                action_parameters.channel_details["name"]
+            )
+        )
         result = slack_web_client.files_upload(
-            channels=channel_id,
+            channels=action_parameters.channel_details["id"],
             content=history,
-            filename=f"{channel_name} Chat Transcript",
+            filename="{} Chat Transcript".format(
+                action_parameters.channel_details["name"]
+            ),
             filetype="txt",
             initial_comment="As requested, here is the chat transcript. Remember"
             + " - while this is useful, it will likely need cultivation before "
             + "being added to a postmortem.",
-            title=f"{channel_name} Chat Transcript",
+            title="{} Chat Transcript".format(
+                action_parameters.channel_details["name"]
+            ),
         )
         logger.debug(f"\n{result}\n")
     except slack_sdk.errors.SlackApiError as error:
         logger.error(
-            f"Error sending message and attachment to {channel_name}: {error}"
+            "Error sending message and attachment to {}: {}".format(
+                action_parameters.channel_details["name"], error
+            )
         )
     finally:
         # Write audit log
         log.write(
-            incident_id=channel_name,
+            incident_id=action_parameters.channel_details["name"],
             event="Incident chat log was exported by {}.".format(
-                action_parameters.user_details()
+                action_parameters.user_details
             ),
         )
 
 
 def set_incident_status(
-    action_parameters: type[ap.ActionParameters] = None,
-    override_dict: Dict[str, Any] = {},
+    action_parameters: type[ActionParametersSlack] = ActionParametersSlack,
 ):
     """When an incoming action is incident.set_incident_status, this method
     updates the status of the incident
 
     Keyword arguments:
-    action_parameters -- type[ap.ActionParameters] containing Slack actions data
-    override_dict -- Avoid using action_parameters and manually set data
+    action_parameters -- type[ActionParametersSlack] containing Slack actions data
+    web_data -- Dict - if executing from "web", this data must be passed
+    request_origin -- str - can either be "slack" or "web"
 
     This function has two methods of providing data from Slack because we can
     also use the webapp to update features.
     """
-    if override_dict != {} and action_parameters == None:
-        p = override_dict
-        action_value = p["action_value"]
-    else:
-        p = action_parameters.parameters()
-        action_value = action_parameters.actions()["selected_option"]["value"]
+    action_value = action_parameters.actions["selected_option"]["value"]
 
-    channel_name = p["channel_name"]
-    channel_id = p["channel_id"]
-    incident_data = db_read_incident(incident_id=p["channel_name"])
-    user = action_parameters.user_details()["id"]
+    incident_data = db_read_incident(
+        incident_id=action_parameters.channel_details["name"]
+    )
+    user = action_parameters.user_details["id"]
     formatted_severity = extract_attribute(
         attribute="severity",
         channel=variables.digest_channel_id,
@@ -313,14 +314,14 @@ def set_incident_status(
 
     # Write audit log
     log.write(
-        incident_id=channel_name,
+        incident_id=action_parameters.channel_details["name"],
         event=f"Status was changed to {action_value}.",
     )
 
     # If set to resolved, send additional information.
     if action_value == "resolved":
         # Set up steps for RCA channel
-        message_blocks = action_parameters.message_details()["blocks"]
+        message_blocks = action_parameters.message_details["blocks"]
         # Extract names of required roles
         incident_commander = extract_role_owner(
             message_blocks, "role_incident_commander"
@@ -335,18 +336,22 @@ def set_incident_status(
             if person == "_none_":
                 try:
                     result = slack_web_client.chat_postMessage(
-                        channel=channel_id,
+                        channel=action_parameters.channel_details["id"],
                         text=f":red_circle: <@{user}> Before this incident can"
                         + f" be marked as resolved, the *{role}* role must be "
                         + "assigned. Please assign it and try again.",
                     )
                 except slack_sdk.errors.SlackApiError as error:
                     logger.error(
-                        f"Error sending note to {channel_name} regarding missing role claim: {error}"
+                        "Error sending note to {} regarding missing role claim: {}".format(
+                            action_parameters.channel_details["name"], error
+                        )
                     )
                 return
         # Create rca channel
-        rca_channel_name = f"{channel_name}-rca"
+        rca_channel_name = "{}-rca".format(
+            action_parameters.channel_details["name"]
+        )
         try:
             rca_channel = slack_web_client.conversations_create(
                 name=rca_channel_name
@@ -356,7 +361,7 @@ def set_incident_status(
             logger.info(f"Creating rca channel: {rca_channel_name}")
             # Write audit log
             log.write(
-                incident_id=channel_name,
+                incident_id=action_parameters.channel_details["name"],
                 event=f"RCA channel was created.",
                 content=rca_channel["channel"]["id"],
             )
@@ -396,7 +401,9 @@ def set_incident_status(
                 "text": {
                     "type": "mrkdwn",
                     "text": "You have been invited to this channel to assist "
-                    + f"with planning the RCA for <#{channel_id}>. The Incident Commander "
+                    + "with planning the RCA for <#{}>. The Incident Commander ".format(
+                        action_parameters.channel_details["id"]
+                    )
                     + "should invite anyone who can help contribute to the RCA"
                     + " and then use this channel to plan the meeting to go over the incident.",
                 },
@@ -407,9 +414,11 @@ def set_incident_status(
         if config.auto_create_rca in ("True", "true", True):
             from bot.confluence.rca import IncidentRootCauseAnalysis
 
-            rca_title = " ".join(channel_name.split("-")[2:])
+            rca_title = " ".join(
+                action_parameters.channel_details["name"].split("-")[2:]
+            )
             rca = IncidentRootCauseAnalysis(
-                incident_id=channel_name,
+                incident_id=action_parameters.channel_details["name"],
                 rca_title=rca_title,
                 incident_commander=actual_user_names[0],
                 technical_lead=actual_user_names[1],
@@ -418,15 +427,20 @@ def set_incident_status(
                     "severity_levels"
                 )[formatted_severity],
                 pinned_items=read_incident_pinned_items(
-                    incident_id=channel_name
+                    incident_id=action_parameters.channel_details["name"]
                 ),
-                timeline=log.read(incident_id=channel_name),
+                timeline=log.read(
+                    incident_id=action_parameters.channel_details["name"]
+                ),
             )
             rca_link = rca.create()
-            db_update_incident_rca_col(incident_id=channel_name, rca=rca_link)
+            db_update_incident_rca_col(
+                incident_id=action_parameters.channel_details["name"],
+                rca=rca_link,
+            )
             # Write audit log
             log.write(
-                incident_id=channel_name,
+                incident_id=action_parameters.channel_details["name"],
                 event=f"RCA was automatically created: {rca_link}",
             ),
             rca_boilerplate_message_blocks.extend(
@@ -459,7 +473,10 @@ def set_incident_status(
                                     "type": "plain_text",
                                     "text": "View Incident Channel",
                                 },
-                                "url": f"https://{slack_workspace_id}.slack.com/archives/{channel_id}",
+                                "url": "https://{}.slack.com/archives/{}".format(
+                                    slack_workspace_id,
+                                    action_parameters.channel_details["id"],
+                                ),
                                 "action_id": "incident.join_incident_channel",
                             },
                         ],
@@ -480,7 +497,10 @@ def set_incident_status(
                                     "type": "plain_text",
                                     "text": "View Incident Channel",
                                 },
-                                "url": f"https://{slack_workspace_id}.slack.com/archives/{channel_id}",
+                                "url": "https://{}.slack.com/archives/{}".format(
+                                    slack_workspace_id,
+                                    action_parameters.channel_details["id"],
+                                ),
                                 "action_id": "incident.join_incident_channel",
                             },
                         ],
@@ -501,17 +521,25 @@ def set_incident_status(
             logger.error(f"Error sending RCA update to RCA channel: {error}")
 
         # Send message to incident channel
-        message = build_post_resolution_message(channel_id, action_value)
+        message = build_post_resolution_message(
+            action_parameters.channel_details["id"], action_value
+        )
         try:
             result = slack_web_client.chat_postMessage(**message, text="")
             logger.debug(f"\n{result}\n")
         except slack_sdk.errors.SlackApiError as error:
             logger.error(
-                f"Error sending resolution update to incident channel {channel_name}: {error}"
+                "Error sending resolution update to incident channel {}: {}".format(
+                    action_parameters.channel_details["name"], error
+                )
             )
 
         # Log
-        logger.info(f"Sent resolution info to {channel_name}.")
+        logger.info(
+            "Sent resolution info to {}.".format(
+                action_parameters.channel_details["name"]
+            )
+        )
 
         # If PagerDuty incident(s) exist, attempt to resolve them
         if config.pagerduty_integration_enabled in ("True", "true", True):
@@ -522,7 +550,7 @@ def set_incident_status(
 
     # Also updates digest message
     new_digest_message = build_updated_digest_message(
-        incident_id=p["channel_name"],
+        incident_id=action_parameters.channel_details["name"],
         incident_description=incident_data.channel_description,
         status=action_value,
         severity=formatted_severity,
@@ -538,12 +566,14 @@ def set_incident_status(
         )
     except slack_sdk.errors.SlackApiError as e:
         logger.error(
-            f"Error sending status update to incident channel {channel_name}: {error}"
+            "Error sending status update to incident channel {}: {}".format(
+                action_parameters.channel_details["name"], error
+            )
         )
 
     # Change placeholder for select to match current status in boilerplate message
     result = slack_web_client.conversations_history(
-        channel=channel_id,
+        channel=action_parameters.channel_details["id"],
         inclusive=True,
         oldest=incident_data.bp_message_ts,
         limit=1,
@@ -559,18 +589,20 @@ def set_incident_status(
         "value": action_value,
     }
     slack_web_client.chat_update(
-        channel=p["channel_id"],
-        ts=p["timestamp"],
+        channel=action_parameters.channel_details["id"],
+        ts=action_parameters.message_details["ts"],
         blocks=blocks,
     )
 
     # Update incident record with the status
     logger.info(
-        f"Updating incident record in database with new status for {channel_name}"
+        "Updating incident record in database with new status for {}".format(
+            action_parameters.channel_details["name"]
+        )
     )
     try:
         db_update_incident_status_col(
-            channel_name,
+            action_parameters.channel_details["name"],
             action_value,
         )
     except Exception as error:
@@ -581,7 +613,9 @@ def set_incident_status(
         jobs = scheduler.process.list_jobs()
         if len(jobs) > 0:
             for job in jobs:
-                job_title = f"{channel_name}_updates_reminder"
+                job_title = "{}_updates_reminder".format(
+                    action_parameters.channel_details["name"]
+                )
                 if job.id == job_title:
                     delete_job = scheduler.process.delete_job(job_title)
                     if delete_job != None:
@@ -592,14 +626,16 @@ def set_incident_status(
                         logger.info(f"Deleted job: {job_title}")
                         # Write audit log
                         log.write(
-                            incident_id=channel_name,
+                            incident_id=action_parameters.channel_details[
+                                "name"
+                            ],
                             event="Deleted scheduled reminder for incident updates.",
                         )
 
     # If the incident is resolved, disabled the select option to change it back
     if action_value == "resolved":
         result = slack_web_client.conversations_history(
-            channel=channel_id,
+            channel=action_parameters.channel_details["id"],
             inclusive=True,
             oldest=incident_data.bp_message_ts,
             limit=1,
@@ -623,55 +659,60 @@ def set_incident_status(
             "style": "danger",
         }
         slack_web_client.chat_update(
-            channel=p["channel_id"],
-            ts=p["timestamp"],
+            channel=action_parameters.channel_details["id"],
+            ts=action_parameters.message_details["ts"],
             blocks=blocks,
         )
     # Log
     logger.info(
-        f"Updated incident status for {channel_name} to {action_value}."
+        "Updated incident status for {} to {}.".format(
+            action_parameters.channel_details["name"], action_value
+        )
     )
-    message = build_status_update(channel_id, action_value)
+    message = build_status_update(
+        action_parameters.channel_details["id"], action_value
+    )
     try:
         result = slack_web_client.chat_postMessage(**message, text="")
         logger.debug(f"\n{result}\n")
     except slack_sdk.errors.SlackApiError as error:
         logger.error(
-            f"Error sending status update to incident channel {channel_name}: {error}"
+            "Error sending status update to incident channel {}: {}".format(
+                action_parameters.channel_details["name"], error
+            )
         )
     # Finally, updated the updated_at column
-    update_incident_db_entry_ts(channel_name)
+    update_incident_db_entry_ts(action_parameters.channel_details["name"])
 
 
-def reload_status_message(action_parameters: type[ap.ActionParameters]):
+def reload_status_message(action_parameters: type[ActionParametersSlack]):
     """When an incoming action is incident.reload_status_message, this method
     checks an external provider's status page for updates
 
     Keyword arguments:
-    action_parameters -- type[ap.ActionParameters] containing Slack actions data
+    action_parameters -- type[ActionParametersSlack] containing Slack actions data
     """
-    p = action_parameters.parameters()
-    ts = action_parameters.message_details()["ts"]
-    channel_id = p["channel_id"]
-    channel_name = p["channel_name"]
-    provider = action_parameters.actions()["value"]
+    ts = action_parameters.message_details["ts"]
+    provider = action_parameters.actions["value"]
 
     # Fetch latest Status to format message
     ext_incidents = epi.ExternalProviderIncidents(
         provider=provider,
         days_back=5,
-        slack_channel=channel_id,
+        slack_channel=action_parameters.channel_details["id"],
     )
     # Delete existing message and repost
     try:
         result = slack_web_client.chat_delete(
-            channel=channel_id,
+            channel=action_parameters.channel_details["id"],
             ts=ts,
         )
         logger.debug(f"\n{result}\n")
     except slack_sdk.errors.SlackApiError as error:
         logger.error(
-            f"Error deleting external provider message from channel {channel_name}: {error}"
+            "Error deleting external provider message from channel {}: {}".format(
+                action_parameters.channel_details["name"], error
+            )
         )
     # Post new message
     try:
@@ -682,37 +723,35 @@ def reload_status_message(action_parameters: type[ap.ActionParameters]):
         logger.debug(f"\n{result}\n")
     except slack_sdk.errors.SlackApiError as error:
         logger.error(
-            f"Error sending external provider message to incident channel {channel_name}: {error}"
+            "Error sending external provider message to incident channel {}: {}".format(
+                action_parameters.channel_details["name"], error
+            )
         )
     logger.info(
-        f"Updated external provider message for {provider} in channel {channel_name}"
+        "Updated external provider message for {} in channel {}".format(
+            provider, action_parameters.channel_details["name"]
+        )
     )
 
 
 def set_severity(
-    action_parameters: type[ap.ActionParameters] = None,
-    override_dict: Dict[str, Any] = {},
+    action_parameters: type[ActionParametersSlack] = None,
 ):
     """When an incoming action is incident.set_severity, this method
     updates the severity of the incident
 
     Keyword arguments:
-    action_parameters -- type[ap.ActionParameters] containing Slack actions data
-    override_dict -- Avoid using action_parameters and manually set data
+    action_parameters -- type[ActionParametersSlack] containing Slack actions data
 
     This function has two methods of providing data from Slack because we can
     also use the webapp to update features.
     """
-    if override_dict != {} and action_parameters == None:
-        p = override_dict
-        action_value = p["action_value"]
-    else:
-        p = action_parameters.parameters()
-        action_value = action_parameters.actions()["selected_option"]["value"]
-
-    channel_name = p["channel_name"]
-    channel_id = p["channel_id"]
-    incident_data = db_read_incident(incident_id=p["channel_name"])
+    action_value = action_parameters.actions["selected_option"]["value"]
+    channel_name = action_parameters.channel_details["name"]
+    channel_id = action_parameters.channel_details["id"]
+    incident_data = db_read_incident(
+        incident_id=action_parameters.channel_details["name"]
+    )
 
     # Write audit log
     log.write(
@@ -728,7 +767,7 @@ def set_severity(
         oldest=incident_data.dig_message_ts,
     )
     new_digest_message = build_updated_digest_message(
-        incident_id=p["channel_name"],
+        incident_id=action_parameters.channel_details["name"],
         incident_description=incident_data.channel_description,
         status=formatted_status,
         severity=action_value,
@@ -764,8 +803,8 @@ def set_severity(
         "value": action_value,
     }
     slack_web_client.chat_update(
-        channel=p["channel_id"],
-        ts=p["timestamp"],
+        channel=action_parameters.channel_details["id"],
+        ts=action_parameters.message_details["ts"],
         blocks=blocks,
     )
 
@@ -782,7 +821,7 @@ def set_severity(
         logger.fatal(f"Error updating entry in database: {error}")
 
     # If SEV1/2, we need to start a timer to remind the channel about sending status updates
-    if action_value == "sev1" or action_value == "sev2":
+    if action_value in ["sev1", "sev2"]:
         logger.info(f"Adding job because action was {action_value}")
         scheduler.add_incident_scheduled_reminder(
             channel_name=channel_name,

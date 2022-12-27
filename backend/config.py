@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 from typing import List
 
-__version__ = "v0.10.1"
+__version__ = "v0.11.2"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")

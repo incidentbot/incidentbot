@@ -256,6 +256,7 @@ def new_statuspage_incident_created_message(
                 "element": {
                     "type": "plain_text_input",
                     "action_id": "statuspage.update_message_input",
+                    "min_length": 1,
                 },
                 "label": {
                     "type": "plain_text",
@@ -367,6 +368,7 @@ def statuspage_incident_update_message(
                 "element": {
                     "type": "plain_text_input",
                     "action_id": "statuspage.update_message_input",
+                    "min_length": 1,
                 },
                 "label": {
                     "type": "plain_text",
