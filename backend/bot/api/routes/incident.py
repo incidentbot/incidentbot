@@ -6,6 +6,7 @@ from bot.api.schemas.incident import (
 )
 from bot.audit import log
 from bot.incident import actions, incident
+from bot.incident.action_parameters import ActionParametersWeb
 from bot.models.incident import db_read_all_incidents, db_read_incident
 from bot.models.pg import Incident, IncidentLogging, Session
 from flask import Blueprint, jsonify, request, Response
@@ -203,14 +204,14 @@ def get_delete_item_by_id(incident_id, id):
 def post_set_incident_role(incident_id):
     try:
         request_data = request.json
-        int_request_data = {
-            "incident_id": incident_id,
-            "channel_id": request_data["channel_id"],
-            "role": request_data["role"],
-            "bp_message_ts": request_data["bp_message_ts"],
-            "user": request_data["user"],
-        }
-        actions.assign_role(web_data=int_request_data, request_origin="web")
+        inc_request_data = ActionParametersWeb(
+            incident_id=incident_id,
+            channel_id=request_data["channel_id"],
+            role=request_data["role"],
+            bp_message_ts=request_data["bp_message_ts"],
+            user=request_data["user"],
+        )
+        actions.assign_role(web_data=inc_request_data, request_origin="web")
         return (
             jsonify({"success": True}),
             200,

@@ -13,7 +13,8 @@ from bot.slack.messages import (
     sp_incident_list_message,
 )
 from bot.slack.client import slack_web_client
-from bot.incident import actions as inc_actions, action_parameters, incident
+from bot.incident import actions as inc_actions, incident
+from bot.incident.action_parameters import ActionParametersSlack
 from bot.models.incident import db_read_all_incidents
 from bot.scheduler import scheduler
 from bot.shared import tools
@@ -123,7 +124,7 @@ Incident Management Actions
 
 
 def parse_action(body) -> Dict[str, Any]:
-    return action_parameters.ActionParameters(
+    return ActionParametersSlack(
         payload={
             "actions": body["actions"],
             "channel": body["channel"],
@@ -510,6 +511,12 @@ def handle_static_action(ack, body, logger):
 
 
 @app.action("open_incident_modal_set_security_type")
+def handle_static_action(ack, body, logger):
+    logger.debug(body)
+    ack()
+
+
+@app.action("view_statuspage_incident")
 def handle_static_action(ack, body, logger):
     logger.debug(body)
     ack()
