@@ -216,7 +216,7 @@ def create_incident(
             try:
                 conference_bridge_message = slack_web_client.chat_postMessage(
                     channel=created_channel_details["id"],
-                    text="",
+                    text=f":busts_in_silhouette: Please join the conference here: {incident.conference_bridge}",
                     blocks=[
                         {
                             "type": "header",
@@ -431,7 +431,7 @@ def handle_incident_optional_features(
         try:
             slack_web_client.chat_postMessage(
                 channel=channel_id,
-                text="",
+                text=f":warning: This incident was created via a reaction to a message. Here is a link to the original message: <{link_to_message}>",
                 blocks=[
                     {
                         "type": "header",
@@ -460,7 +460,7 @@ def handle_incident_optional_features(
         try:
             slack_web_client.chat_postMessage(
                 channel=original_channel,
-                text="",
+                text=f"I've created the incident channel as requested: <#{channel_id}>",
                 blocks=[
                     {
                         "type": "section",

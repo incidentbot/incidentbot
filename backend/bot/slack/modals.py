@@ -485,7 +485,11 @@ def handle_submission(ack, client, view):
             ]["message"]["value"],
         )
         client.chat_postMessage(
-            channel=variables.digest_channel_id, blocks=update, text=""
+            channel=variables.digest_channel_id,
+            blocks=update,
+            text=view["state"]["values"][
+                "open_incident_general_update_modal_update_msg"
+            ]["message"]["value"],
         )
     except Exception as error:
         logger.error(f"Error sending update out for {channel_id}: {error}")
@@ -784,7 +788,7 @@ def handle_submission(ack, body, say, view):
     finally:
         say(
             channel=incident_channel_id,
-            text="",
+            text=f"*NOTICE:* I have paged the team/escalation policy '{team}' to respond to this incident via PagerDuty at the request of *{paging_user}*.",
             blocks=[
                 {
                     "type": "header",
@@ -1074,7 +1078,7 @@ def handle_submission(ack, body, say, view):
     finally:
         say(
             channel=db_read_incident_channel_id(incident_id=incident_id),
-            text="",
+            text=f":wave: *I have added the following event to this incident's timeline:* {ts} - {event_text}",
             blocks=[
                 {
                     "type": "section",

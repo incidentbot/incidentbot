@@ -130,7 +130,7 @@ def assign_role(
             channel=target_channel,
             ts=ts,
             blocks=blocks,
-            text="",
+            text=f"{user_id} is now {new_role_name}",
         )
     except Exception as error:
         logger.error(
@@ -140,7 +140,9 @@ def assign_role(
     # Send update notification message to incident channel
     message = build_role_update(target_channel, new_role_name, user_id)
     try:
-        result = slack_web_client.chat_postMessage(**message, text="")
+        result = slack_web_client.chat_postMessage(
+            **message, text=f"{user_id} is now {new_role_name}"
+        )
         if log_level == "DEBUG":
             logger.debug(f"\n{result}\n")
     except slack_sdk.errors.SlackApiError as error:
@@ -151,7 +153,10 @@ def assign_role(
     # Let the user know they've been assigned the role and what to do
     dm = build_user_role_notification(target_channel, target_role, user_id)
     try:
-        result = slack_web_client.chat_postMessage(**dm, text="")
+        result = slack_web_client.chat_postMessage(
+            **dm,
+            text=f"You have been assigned {new_role_name} for incident <#{target_channel}>",
+        )
         if log_level == "DEBUG":
             logger.debug(f"\n{result}\n")
     except slack_sdk.errors.SlackApiError as error:
@@ -200,14 +205,18 @@ def claim_role(action_parameters: type[ActionParametersSlack]):
         channel=action_parameters.channel_details["id"],
         ts=action_parameters.message_details["ts"],
         blocks=blocks,
-        text="",
     )
     # Send update notification message to incident channel
     message = build_role_update(
         action_parameters.channel_details["id"], new_role_name, user
     )
     try:
-        result = slack_web_client.chat_postMessage(**message, text="")
+        result = slack_web_client.chat_postMessage(
+            **message,
+            text="You have claimed {} for incident <#{}>".format(
+                new_role_name, action_parameters.channel_details["id"]
+            ),
+        )
         logger.debug(f"\n{result}\n")
     except slack_sdk.errors.SlackApiError as error:
         logger.error(f"Error sending role update to incident channel: {error}")
