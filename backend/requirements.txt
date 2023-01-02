@@ -7,7 +7,7 @@ flasgger==0.9.5
 flask==2.2.2
 flask-cors==3.0.10
 flask-jwt-extended==4.4.4
-flask-limiter==2.8.1
+flask-limiter==3.1.0
 flask-login==0.6.2
 flask-marshmallow==0.14.0
 marshmallow==3.19.0
