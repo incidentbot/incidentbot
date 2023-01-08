@@ -61,7 +61,7 @@ incident_external_providers_enabled = os.getenv(
     "INCIDENT_EXTERNAL_PROVIDERS_ENABLED", default="false"
 )
 incident_external_providers_list = json.loads(
-    os.getenv("INCIDENT_EXTERNAL_PROVIDERS_LIST", default=[])
+    os.getenv("INCIDENT_EXTERNAL_PROVIDERS_LIST", default="[]")
 )
 
 
