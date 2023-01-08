@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 from typing import List
 
-__version__ = "v0.11.2"
+__version__ = "v0.12.0"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -115,6 +115,11 @@ Web Application
 """
 jwt_secret_key = os.getenv("JWT_SECRET_KEY")
 default_admin_password = os.getenv("DEFAULT_WEB_ADMIN_PASSWORD")
+flask_debug_mode = os.getenv("FLASK_DEBUG_MODE_ENABLED", default="false") in (
+    "True",
+    "true",
+    True,
+)
 
 """
 Helper Methods
@@ -245,7 +250,6 @@ Options:
     Auto create RCA doc:                {auto_create_rca}
     Auto group invite enabled:          {incident_auto_group_invite_enabled}
     Auto group invite group name:       {incident_auto_group_invite_group_name}
-    Confluence API token:               {confluence_api_token[-4:].rjust(len(confluence_api_token), "*")}
     Confluence API address:             {confluence_api_url}
     Confluence user:                    {confluence_api_username}
     Confluence space:                   {confluence_space}
@@ -253,13 +257,11 @@ Options:
     External providers enabled:         {incident_external_providers_enabled}
     External providers list:            {incident_external_providers_list}
     PagerDuty Integration enabled:      {pagerduty_integration_enabled}
-    PagerDuty API token:                {pagerduty_api_token[-4:].rjust(len(pagerduty_api_token), "*")}
     PagerDuty API user:                 {pagerduty_api_username}
     React to create incident enabled:   {incident_auto_create_from_react_enabled}
     React emoji:                        {incident_auto_create_from_react_emoji_name}
     Statuspage integration enabled:     {statuspage_integration_enabled}
-    Statuspage API key:                 {statuspage_api_key[-4:].rjust(len(statuspage_api_key), "*")}
-    Statuspage page ID:                 {statuspage_page_id[-4:].rjust(len(statuspage_page_id), "*")}
+    Zoom Meeting Autocreate             {auto_create_zoom_meeting}
 --------------------------------------------------------------------------------
     """
     if wrap:

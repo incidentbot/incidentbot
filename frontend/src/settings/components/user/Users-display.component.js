@@ -15,7 +15,7 @@ export default function UsersDisplay(props) {
   return (
     <div>
       <TableContainer component={Paper}>
-        <Table sx={{ minWidth: 700 }} aria-label="simple table">
+        <Table sx={{ minWidth: 900 }} aria-label="User management table">
           <TableHead>
             <TableRow>
               <TableCell align="left">{`ID`}</TableCell>

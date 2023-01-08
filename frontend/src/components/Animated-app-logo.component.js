@@ -25,7 +25,7 @@ const AnimatedAppLogo = (props) => {
         scale
       }}>
       <center>
-        <img alt="Apiary" width={props.width} height={props.height} src={logo} />
+        <img alt="Incident Bot" width={props.width} height={props.height} src={logo} />
       </center>
     </animated.div>
   );

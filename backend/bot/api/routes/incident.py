@@ -51,10 +51,14 @@ def get_one_incident(incident_id):
 def post_incident():
     try:
         data = request.json
-        description = data["description"]
-        user = data["user"]
-        severity = data["severity"]
-        is_security_incident = data["security"] in ("True", "true")
+        description = data.get("description", "")
+        user = data.get("user", None)
+        severity = data.get("severity", None)
+        is_security_incident = data.get("security", "false") in (
+            "True",
+            "true",
+        )
+        private_channel = data.get("private", "false") in ("True", "true")
         request_parameters = {
             "channel": "web",
             "incident_description": description,
@@ -62,6 +66,7 @@ def post_incident():
             "severity": severity,
             "created_from_web": True,
             "is_security_incident": is_security_incident,
+            "private_channel": private_channel,
         }
         # Create an incident based on the message using the internal path
         try:

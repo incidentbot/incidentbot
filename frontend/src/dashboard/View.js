@@ -114,7 +114,7 @@ const Dashboard = () => {
       <Container>
         {!loadingData ? (
           <Grid sx={{ flexGrow: 1 }} container columnSpacing={2} rowSpacing={4}>
-            <Grid item xs={3}>
+            <Grid item xs={12} md={3}>
               <Card raised>
                 <CardContent>
                   <Typography gutterBottom variant="h5" component="div">
@@ -138,7 +138,7 @@ const Dashboard = () => {
               </Card>
             </Grid>
 
-            <Grid item xs={3}>
+            <Grid item xs={12} md={3}>
               <Card raised>
                 <CardContent>
                   <Typography gutterBottom variant="h5" component="div">
@@ -162,7 +162,7 @@ const Dashboard = () => {
               </Card>
             </Grid>
 
-            <Grid item xs={3}>
+            <Grid item xs={12} md={3}>
               <Card
                 raised
                 sx={{
@@ -191,7 +191,7 @@ const Dashboard = () => {
               </Card>
             </Grid>
 
-            <Grid item xs={6}>
+            <Grid item xs={12} md={6}>
               <Grid key="incidents-snapshot" item>
                 <IncidentsChartCard incidents={incidents} />
               </Grid>

@@ -323,7 +323,6 @@ const ViewSingleIncident = () => {
                   <Typography
                     variant="h7"
                     sx={{
-                      display: { xs: 'none', sm: 'block' },
                       fontFamily: 'Roboto',
                       fontWeight: 100,
                       letterSpacing: '.1rem',
@@ -336,7 +335,6 @@ const ViewSingleIncident = () => {
                 <Typography
                   variant="subtitle2"
                   sx={{
-                    display: { xs: 'none', sm: 'block' },
                     fontFamily: 'Roboto',
                     fontWeight: 100,
                     letterSpacing: '.1rem',
@@ -358,7 +356,7 @@ const ViewSingleIncident = () => {
                 </Alert>
               )}
               <Grid container columns={2} spacing={2}>
-                <Grid item xs={1}>
+                <Grid item xs={12} md={1}>
                   <Card variant="outlined" sx={{ marginBottom: 2, height: '100%' }}>
                     <StyledCardHeader
                       avatar={<AnnouncementIcon fontSize="medium" sx={{ marginRight: 1 }} />}
@@ -465,7 +463,7 @@ const ViewSingleIncident = () => {
                     </List>
                   </Card>
                 </Grid>
-                <Grid item xs={1}>
+                <Grid item xs={12} md={1}>
                   <Card variant="outlined" sx={{ marginBottom: 2, height: '100%' }}>
                     <StyledCardHeader
                       avatar={<PeopleIcon fontSize="medium" sx={{ marginRight: 1 }} />}
@@ -581,7 +579,7 @@ const ViewSingleIncident = () => {
                     </List>
                   </Card>
                 </Grid>
-                <Grid item xs={1}>
+                <Grid item xs={12} md={1}>
                   <Card variant="outlined" sx={{ marginTop: 2, marginBottom: 2, height: '100%' }}>
                     <StyledCardHeader
                       avatar={<LabelIcon sx={{ marginRight: 1 }} />}
@@ -633,7 +631,7 @@ const ViewSingleIncident = () => {
                     </List>
                   </Card>
                 </Grid>
-                <Grid item xs={1}>
+                <Grid item xs={12} md={1}>
                   <Card variant="outlined" sx={{ marginTop: 2, marginBottom: 2, height: '100%' }}>
                     <StyledCardHeader
                       avatar={<QueryStatsIcon sx={{ marginRight: 1 }} />}

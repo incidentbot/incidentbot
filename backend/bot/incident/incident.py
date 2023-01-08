@@ -73,12 +73,15 @@ class Incident:
                     "is_security_incident"
                 ]
                 in ("True", "true", True),
+                "private_channel": self.request_parameters["private_channel"]
+                in ("True", "true", True),
             }
         else:
             self.channel_details = {}
             self.created_channel_details = {
                 "name": self.channel_details.get("name"),
                 "is_security_incident": False,
+                "private_channel": False,
             }
 
     def log(self):
@@ -102,7 +105,8 @@ class Incident:
             # conversations_create requires the channels:manage bot scope
             channel = slack_web_client.conversations_create(
                 # The name of the conversation
-                name=self.channel_name
+                name=self.channel_name,
+                is_private=self.request_parameters["private_channel"],
             )
             # Log the result which includes information like the ID of the conversation
             logger.debug(f"\n{channel}\n")
@@ -153,6 +157,7 @@ def create_incident(
     user = request_parameters["user"]
     severity = request_parameters["severity"] or "sev4"
     if incident_description != "":
+        print("here")
         if len(incident_description) < incident_description_max_length:
             incident = Incident(request_parameters)
             created_channel_details = incident.created_channel_details
@@ -408,8 +413,8 @@ def handle_incident_optional_features(
         )
         try:
             db_update_incident_sp_ts_col(
-                channel_name,
-                sp_starter_message["ts"],
+                incident_id=channel_name,
+                ts=sp_starter_message["ts"],
             )
         except Exception as error:
             logger.fatal(f"Error writing entry to database: {error}")

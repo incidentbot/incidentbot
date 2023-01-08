@@ -21,6 +21,10 @@ def components_select(
     """When an incoming action is statuspage.components_select, this method
     creates a Statuspage incident and sends an updated message to the channel
     """
+    incident_data = db_read_incident(
+        channel_id=action_parameters.channel_details["id"]
+    )
+
     state = action_parameters.state
 
     # Create a list for the components that were selected in the prompt
@@ -56,7 +60,7 @@ def components_select(
         }
     )
     message = spslack.new_statuspage_incident_created_message(
-        action_parameters.channel_details["id"], sp_inc.info
+        incident_data.channel_id, sp_inc.info
     )
     try:
         og_result = client.slack_web_client.chat_postMessage(
@@ -64,68 +68,53 @@ def components_select(
         )
         logger.debug(f"\n{og_result}\n")
         client.slack_web_client.pins_add(
-            channel=action_parameters.channel_details["id"],
+            channel=incident_data.channel_id,
             timestamp=og_result["ts"],
         )
         # Timestamp of original message is needed to delete it later
     except slack_sdk.errors.SlackApiError as error:
         logger.error(
-            "Error sending Statuspage starter to incident channel {}: {}".format(
-                action_parameters.channel_details["name"], error
-            )
+            f"Error sending Statuspage starter to incident channel {incident_data.channel_name}: {error}"
         )
     # Delete the original message after the incident is created
-    incident_data = db_read_incident(
-        incident_id=action_parameters.channel_details["name"]
-    )
     sp_initial_message_timestamp = incident_data.sp_message_ts
     try:
         result = client.slack_web_client.chat_delete(
-            channel=action_parameters.channel_details["id"],
+            channel=incident_data.channel_id,
             ts=sp_initial_message_timestamp,
         )
         logger.debug(f"\n{result}\n")
     except slack_sdk.errors.SlackApiError as error:
         logger.error(
-            "Error deleting Statuspage starter message from {}: {}".format(
-                action_parameters.channel_details["name"], error
-            )
+            f"Error deleting Statuspage starter message from {incident_data.channel_name}: {error}"
         )
     # Since we don't care about the original message anymore, but we do want
     # to mutate future messages, write to the database with the new message
     # timestamp
     logger.info(
-        "Updating incident record in database to overrwrite sp_ts column for channel {}...".format(
-            action_parameters.channel_details["name"]
-        )
+        f"Updating incident record in database to overrwrite sp_ts column for channel {incident_data.channel_name}..."
     )
     try:
         db_update_incident_sp_ts_col(
-            incident_id=action_parameters.channel_details["name"],
+            channel_id=incident_data.channel_id,
             ts=og_result["ts"],
         )
     except Exception as error:
         logger.fatal(
-            "Error updating incident record in database to overrwrite sp_ts column for channel {}: {}".format(
-                action_parameters.channel_details["name"], error
-            )
+            f"Error updating incident record in database to overrwrite sp_ts column for channel {incident_data.channel_name}: {error}"
         )
     # Write the Statuspage incident ID to the database
     logger.info(
-        "Updating incident record in database to add Statuspage incident id for channel {}...".format(
-            action_parameters.channel_details["name"]
-        )
+        f"Updating incident record in database to add Statuspage incident id for channel {incident_data.channel_name}..."
     )
     try:
         db_update_incident_sp_id_col(
-            incident_id=action_parameters.channel_details["name"],
+            channel_id=incident_data.channel_id,
             sp_incident_id=sp_inc.info["id"],
         )
     except Exception as error:
         logger.fatal(
-            "Error updating incident record in database to add Statuspage incident id for channel {}: {}".format(
-                action_parameters.channel_details["name"], error
-            )
+            f"Error updating incident record in database to add Statuspage incident id for channel {incident_data.channel_name}: {error}"
         )
 
 
@@ -134,11 +123,12 @@ def update_status(action_parameters: type[ActionParametersSlack]):
     updates the Statuspage incident and sends a new message to the incident
     channel
     """
+    incident_data = db_read_incident(
+        channel_id=action_parameters.channel_details["id"]
+    )
+
     # Base parameters
     state = action_parameters.state
-    incident_data = db_read_incident(
-        incident_id=action_parameters.channel_details["name"]
-    )
     sp_updated_message_timestamp = incident_data.sp_message_ts
     sp_incident_id = incident_data.sp_incident_id
 
@@ -168,7 +158,7 @@ def update_status(action_parameters: type[ActionParametersSlack]):
             }
         )
         slack_message = spslack.statuspage_incident_update_message_resolved(
-            action_parameters.channel_details["id"], updated_message
+            incident_data.channel_id, updated_message
         )
     else:
         updated_message = handler.update_sp_incident(
@@ -180,20 +170,18 @@ def update_status(action_parameters: type[ActionParametersSlack]):
             }
         )
         slack_message = spslack.statuspage_incident_update_message(
-            action_parameters.channel_details["id"], updated_message
+            incident_data.channel_id, updated_message
         )
     # Delete existing message and repost
     try:
         result = client.slack_web_client.chat_delete(
-            channel=action_parameters.channel_details["id"],
+            channel=incident_data.channel_id,
             ts=sp_updated_message_timestamp,
         )
         logger.debug(f"\n{result}\n")
     except slack_sdk.errors.SlackApiError as error:
         logger.error(
-            "Error deleting Statuspage updated message from channel {}: {}".format(
-                action_parameters.channel_details["name"], error
-            )
+            f"Error deleting Statuspage updated message from channel {incident_data.channel_name}: {error}"
         )
     # Post new message
     try:
@@ -202,30 +190,24 @@ def update_status(action_parameters: type[ActionParametersSlack]):
         )
         logger.debug(f"\n{result}\n")
         client.slack_web_client.pins_add(
-            channel=action_parameters.channel_details["id"],
+            channel=incident_data.channel_id,
             timestamp=result["ts"],
         )
         # Timestamp of original message is needed to delete it later
     except slack_sdk.errors.SlackApiError as error:
         logger.error(
-            "Error sending Statuspage starter to incident channel {}: {}".format(
-                action_parameters.channel_details["name"], error
-            )
+            f"Error sending Statuspage starter to incident channel {incident_data.channel_name}: {error}"
         )
     # Update timestamp in database entry to the newest one
     logger.info(
-        "Updating incident record in database to overrwrite sp_ts column for channel {}...".format(
-            action_parameters.channel_details["name"]
-        )
+        f"Updating incident record in database to overrwrite sp_ts column for channel {incident_data.channel_name}..."
     )
     try:
         db_update_incident_sp_ts_col(
-            incident_id=action_parameters.channel_details["name"],
+            channel_id=incident_data.channel_id,
             ts=result["ts"],
         )
     except Exception as error:
         logger.fatal(
-            "Error updating incident record in database to overrwrite sp_ts column for channel {}: {}".format(
-                action_parameters.channel_details["name"], error
-            )
+            f"Error updating incident record in database to overrwrite sp_ts column for channel {incident_data.channel_name}: {error}"
         )
