@@ -1,6 +1,6 @@
 alembic==1.9.1
 apispec==6.0.2
-apscheduler==4.0.0a2
+apscheduler==3.9.1.post1
 atlassian-python-api==3.32.2
 feedparser==6.0.10
 flasgger==0.9.5
@@ -8,7 +8,7 @@ flask==2.2.2
 flask-cors==3.0.10
 flask-debugtoolbar==0.13.1
 flask-jwt-extended==4.4.4
-flask-limiter==3.1.0
+flask-limiter==2.8.1
 flask-login==0.6.2
 flask-marshmallow==0.14.0
 marshmallow==3.19.0
