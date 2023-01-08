@@ -10,6 +10,7 @@ from flasgger import Swagger
 from flask import Flask, request, Response
 from flask import jsonify, make_response, redirect, render_template
 from flask_cors import CORS
+from flask_debugtoolbar import DebugToolbarExtension
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_marshmallow import Marshmallow
@@ -38,6 +39,7 @@ cors = CORS(
 app.config["CORS_HEADERS"] = "Content-Type"
 app.config["JWT_SECRET_KEY"] = config.jwt_secret_key
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=8)
+app.config["SECRET_KEY"] = "asfafsaf"
 app.config["SWAGGER"] = {
     "title": "Incident Bot API",
 }
@@ -46,6 +48,9 @@ limiter = Limiter(
     app,
     key_func=get_remote_address,
 )
+
+app.debug = config.flask_debug_mode
+toolbar = DebugToolbarExtension(app)
 
 """
 Request Modifiers
@@ -118,6 +123,7 @@ def ratelimit_handler(e):
 API Route Definitions
 """
 
+from .routes.auth import auth
 from .routes.health import health_check
 from .routes.incident import incidentrt
 from .routes.job import job
@@ -126,6 +132,7 @@ from .routes.postmortem import postmortem
 from .routes.setting import setting
 from .routes.user import user
 
+app.register_blueprint(auth, url_prefix=live_api_route)
 app.register_blueprint(health_check, url_prefix=live_api_route)
 app.register_blueprint(incidentrt, url_prefix=live_api_route)
 app.register_blueprint(job, url_prefix=live_api_route)

@@ -21,7 +21,6 @@ export default function ApplicationHeaderLogo() {
       <Typography
         variant="h7"
         sx={{
-          display: { xs: 'none', sm: 'block' },
           fontFamily: 'Roboto',
           fontWeight: 500,
           letterSpacing: '.1rem',

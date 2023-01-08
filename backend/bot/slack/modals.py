@@ -198,6 +198,38 @@ def open_modal(ack, body, client):
             },
         },
         {
+            "type": "section",
+            "block_id": "private_channel",
+            "text": {
+                "type": "mrkdwn",
+                "text": "*Make Slack channel private?*",
+            },
+            "accessory": {
+                "action_id": "open_incident_modal_set_private",
+                "type": "static_select",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Select...",
+                },
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Yes",
+                        },
+                        "value": "true",
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "No",
+                        },
+                        "value": "false",
+                    },
+                ],
+            },
+        },
+        {
             "type": "input",
             "block_id": "open_incident_modal_desc",
             "element": {
@@ -313,6 +345,9 @@ def handle_submission(ack, body, client, view):
     is_security_incident = view["state"]["values"]["is_security_incident"][
         "open_incident_modal_set_security_type"
     ]["selected_option"]["value"]
+    private_channel = view["state"]["values"]["private_channel"][
+        "open_incident_modal_set_private"
+    ]["selected_option"]["value"]
     description = view["state"]["values"]["open_incident_modal_desc"][
         "description"
     ]["value"]
@@ -327,6 +362,7 @@ def handle_submission(ack, body, client, view):
         "severity": severity,
         "created_from_web": False,
         "is_security_incident": is_security_incident,
+        "private_channel": private_channel,
     }
     resp = incident.create_incident(request_parameters)
     client.chat_postMessage(channel=user, text=resp)

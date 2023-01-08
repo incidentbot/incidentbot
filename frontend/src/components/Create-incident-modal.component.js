@@ -44,7 +44,8 @@ export default function IncidentCreateModal(props) {
     description: '',
     user: '',
     severity: '',
-    security: ''
+    security: '',
+    private: ''
   });
 
   const { token } = useToken();
@@ -82,7 +83,8 @@ export default function IncidentCreateModal(props) {
       description: `${values.description}`,
       user: `${values.user}`,
       severity: `${values.severity}`,
-      security: `${values.security}`
+      security: `${values.security}`,
+      private: `${values.private}`
     });
     if (!incident.success) {
       setCreateIncidentStatus('error');
@@ -130,8 +132,27 @@ export default function IncidentCreateModal(props) {
 
   return (
     <div>
-      <Button onClick={handleOpen} variant="contained" color="error" endIcon={<AddIcon />}>
+      <Button
+        onClick={handleOpen}
+        variant="contained"
+        color="error"
+        size="medium"
+        endIcon={<AddIcon />}
+        sx={{
+          display: { xs: 'none', md: 'flex' }
+        }}>
         New Incident
+      </Button>
+      <Button
+        onClick={handleOpen}
+        variant="contained"
+        color="error"
+        size="medium"
+        endIcon={<AddIcon />}
+        sx={{
+          display: { xs: 'flex', md: 'none' }
+        }}>
+        NEW
       </Button>
       <Dialog open={open} onClose={handleClose}>
         <DialogTitle>
@@ -214,7 +235,21 @@ export default function IncidentCreateModal(props) {
                 </RadioGroup>
               </FormControl>
             </Box>
-            <DialogActions sx={{ marginTop: 2 }}>
+            <Box display="flex" justifyContent="center" alignItem="center">
+              <FormControl sx={{ margin: 1, width: '80%' }} variant="standard">
+                <FormLabel id="set-security">Private Slack Channel</FormLabel>
+                <RadioGroup
+                  row
+                  aria-labelledby="set-private-slack-channel"
+                  defaultValue="false"
+                  name="radio-buttons-group"
+                  onChange={handleChange('private')}>
+                  <FormControlLabel value="false" control={<Radio />} label="False" />
+                  <FormControlLabel value="true" control={<Radio />} label="True" />
+                </RadioGroup>
+              </FormControl>
+            </Box>
+            <DialogActions sx={{ marginTop: 1 }}>
               <FormControl>
                 {loadingData ? (
                   <CircularProgress />

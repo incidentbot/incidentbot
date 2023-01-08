@@ -18,9 +18,9 @@ import {
 } from '@mui/material';
 
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
-import { apiUrl } from '../../shared/Variables';
-import useToken from '../../hooks/useToken';
-import { tryParseJSONObject } from './Shared';
+import { apiUrl } from '../../../shared/Variables';
+import useToken from '../../../hooks/useToken';
+import { tryParseJSONObject } from '../Shared';
 import CodeEditor from '@uiw/react-textarea-code-editor';
 
 const Transition = React.forwardRef(function Transition(props, ref) {

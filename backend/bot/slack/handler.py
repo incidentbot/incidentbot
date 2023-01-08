@@ -252,6 +252,7 @@ def reaction_added(event, say):
             "message_reacted_to_content": message_reacted_to_content,
             "original_message_timestamp": ts,
             "is_security_incident": False,
+            "private_channel": False,
         }
         # Create an incident based on the message using the internal path
         try:
@@ -511,6 +512,12 @@ def handle_static_action(ack, body, logger):
 
 
 @app.action("open_incident_modal_set_security_type")
+def handle_static_action(ack, body, logger):
+    logger.debug(body)
+    ack()
+
+
+@app.action("open_incident_modal_set_private")
 def handle_static_action(ack, body, logger):
     logger.debug(body)
     ack()

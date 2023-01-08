@@ -140,6 +140,19 @@ class PostmortemSettings(Base, Serializer):
         return d
 
 
+class PrivateSetting(Base, Serializer):
+    __tablename__ = "private_settings"
+
+    name = Column(String(50), primary_key=True, nullable=False)
+    value = Column(JSON)
+    description = Column(VARCHAR(250))
+    deletable = Column(Boolean)
+
+    def serialize(self):
+        d = Serializer.serialize(self)
+        return d
+
+
 class Setting(Base, Serializer):
     __tablename__ = "application_settings"
 

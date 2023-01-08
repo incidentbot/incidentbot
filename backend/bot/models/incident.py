@@ -1,9 +1,14 @@
 import logging
 
 from bot.models.pg import Incident, Session
+from sqlalchemy import or_
 from typing import List
 
 logger = logging.getLogger(__name__)
+
+"""
+Read
+"""
 
 
 def db_read_all_incidents(return_json: bool = False) -> List:
@@ -49,14 +54,21 @@ def db_read_open_incidents() -> List:
         Session.remove()
 
 
-def db_read_incident(incident_id: str, return_json: bool = False) -> Incident:
+def db_read_incident(
+    incident_id: str = "", channel_id: str = "", return_json: bool = False
+) -> Incident:
     """
-    Read from database
+    Read an incident from the database
     """
     try:
         incident = (
             Session.query(Incident)
-            .filter(Incident.incident_id == incident_id)
+            .filter(
+                or_(
+                    Incident.incident_id == incident_id,
+                    Incident.channel_id == channel_id,
+                )
+            )
             .one()
         )
         if return_json:
@@ -94,11 +106,25 @@ def db_read_incident_channel_id(incident_id: str) -> str:
         Session.remove()
 
 
-def db_update_incident_created_at_col(incident_id: str, created_at: str):
+"""
+Update
+"""
+
+
+def db_update_incident_created_at_col(
+    created_at: str,
+    incident_id: str = "",
+    channel_id: str = "",
+):
     try:
         incident = (
             Session.query(Incident)
-            .filter(Incident.incident_id == incident_id)
+            .filter(
+                or_(
+                    Incident.incident_id == incident_id,
+                    Incident.channel_id == channel_id,
+                )
+            )
             .one()
         )
         incident.created_at = created_at
@@ -112,12 +138,19 @@ def db_update_incident_created_at_col(incident_id: str, created_at: str):
 
 
 def db_update_incident_last_update_sent_col(
-    channel_id: str, last_update_sent: str
+    last_update_sent: str,
+    incident_id: str = "",
+    channel_id: str = "",
 ):
     try:
         incident = (
             Session.query(Incident)
-            .filter(Incident.channel_id == channel_id)
+            .filter(
+                or_(
+                    Incident.incident_id == incident_id,
+                    Incident.channel_id == channel_id,
+                )
+            )
             .one()
         )
         incident.last_update_sent = last_update_sent
@@ -137,11 +170,21 @@ def db_update_incident_last_update_sent_col(
         Session.remove()
 
 
-def db_update_incident_role(incident_id: str, role: str, user: str):
+def db_update_incident_role(
+    role: str,
+    user: str,
+    incident_id: str = "",
+    channel_id: str = "",
+):
     try:
         incident = (
             Session.query(Incident)
-            .filter(Incident.incident_id == incident_id)
+            .filter(
+                or_(
+                    Incident.incident_id == incident_id,
+                    Incident.channel_id == channel_id,
+                )
+            )
             .one()
         )
         if "incident_commander" in role:
@@ -161,11 +204,20 @@ def db_update_incident_role(incident_id: str, role: str, user: str):
         Session.remove()
 
 
-def db_update_incident_updated_at_col(incident_id: str, updated_at: str):
+def db_update_incident_updated_at_col(
+    updated_at: str,
+    incident_id: str = "",
+    channel_id: str = "",
+):
     try:
         incident = (
             Session.query(Incident)
-            .filter(Incident.incident_id == incident_id)
+            .filter(
+                or_(
+                    Incident.incident_id == incident_id,
+                    Incident.channel_id == channel_id,
+                )
+            )
             .one()
         )
         incident.updated_at = updated_at
@@ -178,11 +230,20 @@ def db_update_incident_updated_at_col(incident_id: str, updated_at: str):
         Session.remove()
 
 
-def db_update_incident_rca_col(incident_id: str, rca: str):
+def db_update_incident_rca_col(
+    rca: str,
+    incident_id: str = "",
+    channel_id: str = "",
+):
     try:
         incident = (
             Session.query(Incident)
-            .filter(Incident.incident_id == incident_id)
+            .filter(
+                or_(
+                    Incident.incident_id == incident_id,
+                    Incident.channel_id == channel_id,
+                )
+            )
             .one()
         )
         incident.rca = rca
@@ -195,11 +256,20 @@ def db_update_incident_rca_col(incident_id: str, rca: str):
         Session.remove()
 
 
-def db_update_incident_severity_col(incident_id: str, severity: str):
+def db_update_incident_severity_col(
+    severity: str,
+    incident_id: str = "",
+    channel_id: str = "",
+):
     try:
         incident = (
             Session.query(Incident)
-            .filter(Incident.incident_id == incident_id)
+            .filter(
+                or_(
+                    Incident.incident_id == incident_id,
+                    Incident.channel_id == channel_id,
+                )
+            )
             .one()
         )
         incident.severity = severity
@@ -212,11 +282,20 @@ def db_update_incident_severity_col(incident_id: str, severity: str):
         Session.remove()
 
 
-def db_update_incident_sp_id_col(incident_id: str, sp_incident_id: str):
+def db_update_incident_sp_id_col(
+    sp_incident_id: str,
+    incident_id: str = "",
+    channel_id: str = "",
+):
     try:
         incident = (
             Session.query(Incident)
-            .filter(Incident.incident_id == incident_id)
+            .filter(
+                or_(
+                    Incident.incident_id == incident_id,
+                    Incident.channel_id == channel_id,
+                )
+            )
             .one()
         )
         incident.sp_incident_id = sp_incident_id
@@ -229,11 +308,20 @@ def db_update_incident_sp_id_col(incident_id: str, sp_incident_id: str):
         Session.remove()
 
 
-def db_update_incident_sp_ts_col(incident_id: str, ts: str):
+def db_update_incident_sp_ts_col(
+    ts: str,
+    incident_id: str = "",
+    channel_id: str = "",
+):
     try:
         incident = (
             Session.query(Incident)
-            .filter(Incident.incident_id == incident_id)
+            .filter(
+                or_(
+                    Incident.incident_id == incident_id,
+                    Incident.channel_id == channel_id,
+                )
+            )
             .one()
         )
         incident.sp_message_ts = ts
@@ -246,11 +334,20 @@ def db_update_incident_sp_ts_col(incident_id: str, ts: str):
         Session.remove()
 
 
-def db_update_incident_status_col(incident_id: str, status: str):
+def db_update_incident_status_col(
+    status: str,
+    incident_id: str = "",
+    channel_id: str = "",
+):
     try:
         incident = (
             Session.query(Incident)
-            .filter(Incident.incident_id == incident_id)
+            .filter(
+                or_(
+                    Incident.incident_id == incident_id,
+                    Incident.channel_id == channel_id,
+                )
+            )
             .one()
         )
         incident.status = status
@@ -261,6 +358,11 @@ def db_update_incident_status_col(incident_id: str, status: str):
     finally:
         Session.close()
         Session.remove()
+
+
+"""
+Write
+"""
 
 
 def db_write_incident(
