@@ -1,11 +1,10 @@
-import json
 import logging
 import os
 
 from dotenv import load_dotenv
 from typing import List
 
-__version__ = "v0.12.0"
+__version__ = "v0.12.1"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -57,12 +56,6 @@ incident_auto_group_invite_enabled = os.getenv(
 incident_auto_group_invite_group_name = os.getenv(
     "INCIDENT_AUTO_GROUP_INVITE_GROUP_NAME", default=""
 )
-incident_external_providers_enabled = os.getenv(
-    "INCIDENT_EXTERNAL_PROVIDERS_ENABLED", default="false"
-)
-incident_external_providers_list = json.loads(
-    os.getenv("INCIDENT_EXTERNAL_PROVIDERS_LIST", default="[]")
-)
 
 
 """
@@ -104,7 +97,6 @@ pagerduty_api_token = os.getenv("PAGERDUTY_API_TOKEN", default="")
 """
 External
 """
-auth0_domain = os.getenv("AUTH0_DOMAIN", default="")
 auto_create_zoom_meeting = os.getenv("ZOOM_AUTO_CREATE", default="false")
 zoom_account_id = os.getenv("ZOOM_ACCOUNT_ID", default="")
 zoom_client_id = os.getenv("ZOOM_CLIENT_ID", default="")
@@ -175,13 +167,6 @@ def env_check(required_envs: List[str]):
                 f"If enabling auto group invite, the INCIDENT_AUTO_GROUP_INVITE_GROUP_NAME variable must be set."
             )
             exit(1)
-    if incident_external_providers_enabled in ("True", "true", True):
-        if "auth0" in incident_external_providers_list:
-            if auth0_domain == "":
-                logger.fatal(
-                    f"If enabling Auth0 status updates via external providers, you must set AUTH0_DOMAIN."
-                )
-                exit(1)
     if pagerduty_integration_enabled in ("True", "true", True):
         for var in [
             "PAGERDUTY_API_USERNAME",
@@ -254,8 +239,6 @@ Options:
     Confluence user:                    {confluence_api_username}
     Confluence space:                   {confluence_space}
     Confluence parent page:             {confluence_parent_page}
-    External providers enabled:         {incident_external_providers_enabled}
-    External providers list:            {incident_external_providers_list}
     PagerDuty Integration enabled:      {pagerduty_integration_enabled}
     PagerDuty API user:                 {pagerduty_api_username}
     React to create incident enabled:   {incident_auto_create_from_react_enabled}

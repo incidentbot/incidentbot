@@ -20,7 +20,6 @@ configMapGenerator:
       - INCIDENT_AUTO_CREATE_FROM_REACT_ENABLED=true
       - INCIDENT_AUTO_CREATE_FROM_REACT_EMOJI_NAME=create-incident
       - STATUSPAGE_INTEGRATION_ENABLED=false
-      - AUTH0_DOMAIN=mydomain
       - AUTO_CREATE_RCA=false
       - PAGERDUTY_INTEGRATION_ENABLED=false
       - ZOOM_AUTO_CREATE=false
