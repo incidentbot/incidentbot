@@ -5,7 +5,7 @@ import re
 import slack_sdk.errors
 
 from bot.audit import log
-from bot.external import epi, meetings
+from bot.external import meetings
 from bot.incident.templates import (
     build_digest_notification,
     build_incident_channel_boilerplate,
@@ -36,12 +36,6 @@ channel_name_prefix_length = len("inc-20211116-")
 incident_description_max_length = (
     channel_name_length_cap - channel_name_prefix_length
 )
-# Which external providers are supported? Ones not in this list will error.
-enabled_providers = [
-    "auth0",
-    "github",
-    "heroku",
-]
 
 if not config.is_test_environment:
     from bot.slack.client import invite_user_to_channel
@@ -357,32 +351,6 @@ def handle_incident_optional_features(
                 )
             except slack_sdk.errors.SlackApiError as error:
                 logger.error(f"Error when inviting mandatory users: {error}")
-
-    """
-    External provider statuses (optional)
-    """
-    if config.incident_external_providers_enabled in ("True", "true", True):
-        for p in config.incident_external_providers_list:
-            ext_incidents = epi.ExternalProviderIncidents(
-                provider=p,
-                days_back=5,
-                slack_channel=channel_id,
-            )
-            if p not in enabled_providers:
-                logger.error(
-                    f"Error sending external provider message to incident channel: {p} is not a valid provider - options are {enabled_providers}"
-                )
-            else:
-                try:
-                    pu_message = slack_web_client.chat_postMessage(
-                        **ext_incidents.slack_message(),
-                        text="",
-                    )
-                    logger.debug(f"\n{pu_message}\n")
-                except slack_sdk.errors.SlackApiError as error:
-                    logger.error(
-                        f"Error sending external provider message to incident channel: {error}"
-                    )
 
     """
     Post prompt for creating Statuspage incident (optional)

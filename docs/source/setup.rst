@@ -84,7 +84,6 @@ In this scenario, you'd want to provide the values using the file ``incident-bot
     enabled: true
     secretName: incident-bot-secret
   envVars:
-    AUTH0_DOMAIN:
     AUTO_CREATE_RCA: false
     INCIDENTS_DIGEST_CHANNEL: incidents
     INCIDENT_AUTO_GROUP_INVITE_ENABLED: false
@@ -190,11 +189,8 @@ Required Variables
 Optional Variables
 ------------
 
-- ``AUTH0_DOMAIN`` - If using ``auth0`` as an entry when enabling status for external providers, you must provide this variable and set it to the name of your Auth0 domain.
 - ``INCIDENT_AUTO_GROUP_INVITE_ENABLED`` - to enable the automatic invitation of a Slack group to each newly created incident channel (documented above), set this to ``true``.
 - ``INCIDENT_AUTO_GROUP_INVITE_GROUP_NAME`` - if enabling the automatic invitation of a Slack group to each newly created incident channel (documented above), set this to the name of the Slack group.
-- ``INCIDENT_EXTERNAL_PROVIDERS_ENABLED`` - if enabling status snapshots for external providers (documented above), set this to ``true``.
-- ``INCIDENT_EXTERNAL_PROVIDERS_LIST`` - if enabling status snapshots for external providers (documented above), set this to a list of providers to enable. For example: ``["auth0", "github", "heroku"]``
 - ``INCIDENT_AUTO_CREATE_FROM_REACT_ENABLED`` - if enabling auto incident channel create based on react, set this to ``true``.
 - ``INCIDENT_AUTO_CREATE_FROM_REACT_EMOJI_NAME`` - the name of the emoji that will trigger automatic incident creation.
 
