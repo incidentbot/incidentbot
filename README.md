@@ -11,19 +11,21 @@ Interacting with the bot is incredibly easy through the use of modals and simpli
 
 [View documentation on readthedocs](https://incident-bot.readthedocs.io/en/latest/)
 
-<img src="https://github.com/echoboomer/incident-bot/blob/main/assets/incident-bot-demo-1.gif" width="700" height="500" />
-
-Featuring a rich web management UI:
-
-<img src="https://github.com/echoboomer/incident-bot/blob/main/assets/incident-bot-demo-2.gif" width="700" height="500" />
-
 - [incident-bot](#incident-bot)
   - [Features at a Glance](#features-at-a-glance)
+  - [Quick Start](#quick-start)
+    - [Kubernetes](#kubernetes)
   - [Architecture](#architecture)
   - [Requirements](#requirements)
   - [Documentation](#documentation)
   - [Testing](#testing)
   - [Feedback](#feedback)
+  
+<img src="https://github.com/echoboomer/incident-bot/blob/main/assets/incident-bot-demo-1.gif" width="700" height="500" />
+
+Featuring a rich web management UI:
+
+<img src="https://github.com/echoboomer/incident-bot/blob/main/assets/incident-bot-demo-2.gif" width="700" height="500" />
 
 ## Features at a Glance
 
@@ -35,6 +37,21 @@ Featuring a rich web management UI:
 - Automatically create an RCA channel and an RCA document (if Confluence integration is enabled)
 - Optional integration to manage Statuspage incidents directly from the Slack channel
 - Optional integration to automatically fetch the status of upstream providers
+
+## Quick Start
+
+- [Create a Slack app](https://api.slack.com/apps?new_app=1) for this application. You can name it whatever you'd like, but `incident-bot` seems to make the most sense.
+- Select `from an app manifest` and copy `manifest.yaml` out of this repository and paste it in to automatically configure the app.
+- You'll need the app token, bot token, and user token for your application and provide those as `SLACK_APP_TOKEN`, `SLACK_BOT_TOKEN`, and `SLACK_USER_TOKEN` - these can be found within the app's configuration page in Slack.
+- You'll need a Postgres instance to connect to.
+- Check out [this](https://incident-bot.readthedocs.io/en/latest/setup.html#required-variables) page from the documentation that goes over all options and environment variables.
+
+### Kubernetes
+
+- You can use [kustomize](https://github.com/echoboomer/incident-bot/blob/main/deploy/kustomize/incident-bot/overlays/development/kustomization.yaml).
+- There's optionally a [Helm chart](https://github.com/echoboomer/incident-bot/blob/main/deploy/kustomize/incident-bot/overlays/development/kustomization.yaml). 
+
+Optionally, you can fork the repo and build and deploy on your own using these as a guideline.
 
 ## Architecture
 
