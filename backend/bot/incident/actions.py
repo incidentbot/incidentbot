@@ -27,7 +27,6 @@ from bot.models.incident import (
     db_update_incident_updated_at_col,
 )
 from bot.models.setting import read_single_setting_value
-from bot.pagerduty.api import resolve
 from bot.scheduler import scheduler
 from bot.shared import tools
 from bot.slack.client import (
@@ -527,6 +526,8 @@ def set_incident_status(
 
         # If PagerDuty incident(s) exist, attempt to resolve them
         if config.pagerduty_integration_enabled in ("True", "true", True):
+            from bot.pagerduty.api import resolve
+
             pd_incidents = incident_data.pagerduty_incidents
             if len(pd_incidents) > 0:
                 for inc in pd_incidents:
