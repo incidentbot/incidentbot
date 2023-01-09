@@ -8,7 +8,7 @@
     "@iconify/icons-mdi": "^1.2.24",
     "@iconify/react": "^4.0.1",
     "@mui/icons-material": "^5.6.2",
-    "@mui/material": "^5.6.2",
+    "@mui/material": "^5.11.3",
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
     "@testing-library/user-event": "^14.4.3",
