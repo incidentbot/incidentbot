@@ -140,7 +140,7 @@ def handle_api_allowed_hosts():
             except sqlalchemy.exc.NoResultFound as error:
                 Session.rollback()
                 return (
-                    jsonify({"data": None}),
+                    jsonify({"data": []}),
                     200,
                     {"ContentType": "application/json"},
                 )

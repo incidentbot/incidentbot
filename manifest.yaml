@@ -14,18 +14,22 @@ features:
     display_name: incident-bot
     always_online: false
   shortcuts:
-      - name: Provide incident update
-        type: global
-        callback_id: open_incident_general_update_modal
-        description: Provides a status update regarding an incident to the incidents channel.
-      - name: Start a new incident
-        type: global
-        callback_id: open_incident_modal
-        description: Creates a new incident.
-      - name: Incident Bot Pager
-        type: global
-        callback_id: open_incident_bot_pager
-        description: Allows you to page a team in PagerDuty when running incidents via Incident Bot.
+    - name: Provide incident update
+      type: global
+      callback_id: open_incident_general_update_modal
+      description: Provides a status update regarding an incident to the incidents channel.
+    - name: Start a new incident
+      type: global
+      callback_id: open_incident_modal
+      description: Creates a new incident.
+    - name: Incident Bot Pager
+      type: global
+      callback_id: open_incident_bot_pager
+      description: Allows you to page a team in PagerDuty when running incidents via Incident Bot.
+    - name: Incident Timeline
+      type: global
+      callback_id: open_incident_bot_timeline
+      description: Allows you to manage an incident's timeline.
 oauth_config:
   scopes:
     user:

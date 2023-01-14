@@ -1,3 +1,4 @@
+import asyncio
 import config
 import datetime
 import logging
@@ -23,12 +24,11 @@ from bot.settings.im import (
 from bot.shared import tools
 from bot.slack.client import slack_web_client, slack_workspace_id
 from bot.statuspage import slack as sp_slack, handler as sp_handler
-from threading import Thread
 from typing import Dict
 
 logger = logging.getLogger(__name__)
 
-# How many total characters are allowed in a Slack channel?
+# How many total characters are allowed in a Slack channel name?
 channel_name_length_cap = 80
 # How many characters does the incident prefix take up?
 channel_name_prefix_length = len("inc-20211116-")
@@ -279,12 +279,13 @@ def create_incident(
                 logger.fatal(
                     f"Error updating incident entry with creation timestamp: {error}"
                 )
-            # Handle optionals in a thread to avoid breaking the 3000ms limit for Slack slash commands
-            thr = Thread(
-                target=handle_incident_optional_features,
-                args=[request_parameters, created_channel_details, internal],
+
+            asyncio.run(
+                handle_incident_optional_features(
+                    request_parameters, created_channel_details, internal
+                )
             )
-            thr.start()
+
             # Invite the user who opened the channel to the channel.
             invite_user_to_channel(created_channel_details["id"], user)
             # Return for view method
@@ -303,7 +304,7 @@ def create_incident(
         return "Please provide a description for the channel."
 
 
-def handle_incident_optional_features(
+async def handle_incident_optional_features(
     request_parameters: Dict[str, str],
     created_channel_details: Dict[str, str],
     internal: bool = False,

@@ -18,6 +18,7 @@ from bot.api.flask import app
 from bot.models.pg import Session, TokenBlocklist, User
 from bot.models.user import (
     db_user_adj_admin,
+    db_user_change_password,
     db_user_create,
     db_user_delete,
     db_user_disable,
@@ -179,29 +180,13 @@ def return_user_list():
     )
 
 
-@user.route("/user/change/<user_id>", methods=["DELETE", "PATCH"])
+@user.route("/user/<user_id>", methods=["DELETE", "PATCH"])
 @jwt_required()
-def adjust_user(user_id):
+def patch_delete_user(user_id):
     user = db_user_lookup(id=user_id)
-    if request.method == "DELETE":
-        success, error = db_user_delete(email=user.email)
-        if success:
-            return (
-                jsonify({"success": True}),
-                200,
-                {"ContentType": "application/json"},
-            )
-        else:
-            return (
-                jsonify({"error": user}),
-                500,
-                {"ContentType": "application/json"},
-            )
-    elif request.method == "PATCH":
-        data = request.json
-        toggle = data["set_to"]
-        if toggle == "enabled":
-            success, error = db_user_enable(email=user.email)
+    match request.method:
+        case "DELETE":
+            success, error = db_user_delete(email=user.email)
             if success:
                 return (
                     jsonify({"success": True}),
@@ -214,37 +199,64 @@ def adjust_user(user_id):
                     500,
                     {"ContentType": "application/json"},
                 )
-        elif toggle == "disabled":
-            success, error = db_user_disable(email=user.email)
-            if success:
-                return (
-                    jsonify({"success": True}),
-                    200,
-                    {"ContentType": "application/json"},
-                )
-            else:
-                return (
-                    jsonify({"error": error}),
-                    500,
-                    {"ContentType": "application/json"},
-                )
-        elif toggle == "add_admin" or toggle == "remove_admin":
-            success, error = db_user_adj_admin(
-                email=user.email,
-                state=True if toggle == "add_admin" else False,
-            )
-            if success:
-                return (
-                    jsonify({"success": True}),
-                    200,
-                    {"ContentType": "application/json"},
-                )
-            else:
-                return (
-                    jsonify({"error": error}),
-                    500,
-                    {"ContentType": "application/json"},
-                )
+        case "PATCH":
+            data = request.json
+            match data["field"]:
+                case "enable_disable":
+                    match data["set_to"]:
+                        case "enabled":
+                            success, error = db_user_enable(email=user.email)
+                        case "disabled":
+                            success, error = db_user_disable(email=user.email)
+                    if success:
+                        return (
+                            jsonify({"success": True}),
+                            200,
+                            {"ContentType": "application/json"},
+                        )
+                    else:
+                        return (
+                            jsonify({"error": error}),
+                            500,
+                            {"ContentType": "application/json"},
+                        )
+                case "is_admin":
+                    success, error = db_user_adj_admin(
+                        email=user.email,
+                        state=True if data["set_to"] == "add_admin" else False,
+                    )
+                    if success:
+                        return (
+                            jsonify({"success": True}),
+                            200,
+                            {"ContentType": "application/json"},
+                        )
+                    else:
+                        return (
+                            jsonify({"error": error}),
+                            500,
+                            {"ContentType": "application/json"},
+                        )
+                case "change_password":
+                    print(data)
+                    success, error = db_user_change_password(
+                        email=user.email,
+                        new=generate_password_hash(
+                            data["password"], method="sha256"
+                        ),
+                    )
+                    if success:
+                        return (
+                            jsonify({"success": True}),
+                            200,
+                            {"ContentType": "application/json"},
+                        )
+                    else:
+                        return (
+                            jsonify({"error": error}),
+                            500,
+                            {"ContentType": "application/json"},
+                        )
 
 
 @user.route("/user/create", methods=["POST"])

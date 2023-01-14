@@ -185,7 +185,7 @@ export default function IncidentCreateModal(props) {
                 />
               </FormControl>
             </Box>
-            <Box display="flex" justifyContent="center" alignItem="center">
+            <Box display="flex" justifyContent="center" alignItems="center">
               <FormControl sx={{ margin: 1, width: '80%' }} variant="standard">
                 <InputLabel id="user">User</InputLabel>
                 <Select
@@ -203,7 +203,7 @@ export default function IncidentCreateModal(props) {
                 </Select>
               </FormControl>
             </Box>
-            <Box display="flex" justifyContent="center" alignItem="center">
+            <Box display="flex" justifyContent="center" alignItems="center">
               <FormControl sx={{ margin: 1, width: '80%' }} variant="standard">
                 <InputLabel id="severity">Severity</InputLabel>
                 <Select
@@ -221,7 +221,7 @@ export default function IncidentCreateModal(props) {
                 </Select>
               </FormControl>
             </Box>
-            <Box display="flex" justifyContent="center" alignItem="center">
+            <Box display="flex" justifyContent="center" alignItems="center">
               <FormControl sx={{ margin: 1, width: '80%' }} variant="standard">
                 <FormLabel id="set-security">Security Related Incident</FormLabel>
                 <RadioGroup
@@ -235,7 +235,7 @@ export default function IncidentCreateModal(props) {
                 </RadioGroup>
               </FormControl>
             </Box>
-            <Box display="flex" justifyContent="center" alignItem="center">
+            <Box display="flex" justifyContent="center" alignItems="center">
               <FormControl sx={{ margin: 1, width: '80%' }} variant="standard">
                 <FormLabel id="set-security">Private Slack Channel</FormLabel>
                 <RadioGroup
