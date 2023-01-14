@@ -54,63 +54,55 @@ function APIAccessManagement() {
     event.preventDefault();
   };
 
-  const createApiKey = async () => {
-    await axios({
+  async function createApiKey() {
+    return fetch(`${apiUrl}/auth/api_key`, {
       method: 'POST',
-      responseType: 'json',
-      url: apiUrl + '/auth/api_key',
       headers: {
-        Authorization: 'Bearer ' + token,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + token
       }
-    })
-      .then(function () {
-        setFetchStatus('success');
-        setFetchMessage('API key created successfully!');
-        setOpenFetchStatus(true);
-        setRefreshData(true);
-      })
-      .catch(function (error) {
-        if (error.response) {
-          setFetchStatus('error');
-          setFetchMessage(`Error creating API key: ${error.response.data.error}`);
-          setOpenFetchStatus(true);
-        } else if (error.request) {
-          setFetchStatus('error');
-          setFetchMessage(`Error creating API key: ${error}`);
-          setOpenFetchStatus(true);
-        }
-      });
+    }).then((data) => data.json());
+  }
+
+  const handleSubmitCreateApiKey = async (e) => {
+    e.preventDefault();
+    const apiKey = await createApiKey();
+    if (!apiKey.success) {
+      setFetchStatus('error');
+      setFetchMessage(`Error creating API key: ${apiKey.error}`);
+      setOpenFetchStatus(true);
+    } else if (apiKey.success) {
+      setFetchStatus('success');
+      setFetchMessage('API key created successfully!');
+      setOpenFetchStatus(true);
+      setRefreshData(true);
+    }
   };
 
-  const createApiAllowedHost = async () => {
-    await axios({
+  async function createApiAllowedHost() {
+    return fetch(`${apiUrl}/auth/api_allowed_hosts`, {
       method: 'POST',
-      responseType: 'json',
-      url: apiUrl + '/auth/api_allowed_hosts',
-      data: JSON.stringify(values),
       headers: {
-        Authorization: 'Bearer ' + token,
-        'Content-Type': 'application/json'
-      }
-    })
-      .then(function () {
-        setFetchStatus('success');
-        setFetchMessage('Host added successfully!');
-        setOpenFetchStatus(true);
-        setRefreshData(true);
-      })
-      .catch(function (error) {
-        if (error.response) {
-          setFetchStatus('error');
-          setFetchMessage(`Error adding host: ${error.response.data.error}`);
-          setOpenFetchStatus(true);
-        } else if (error.request) {
-          setFetchStatus('error');
-          setFetchMessage(`Error adding host: ${error}`);
-          setOpenFetchStatus(true);
-        }
-      });
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + token
+      },
+      body: JSON.stringify(values)
+    }).then((data) => data.json());
+  }
+
+  const handleSubmitCreateApiAllowedHost = async (e) => {
+    e.preventDefault();
+    const apiAllowedHost = await createApiAllowedHost();
+    if (!apiAllowedHost.success) {
+      setFetchStatus('error');
+      setFetchMessage(`Error adding host: ${apiAllowedHost.error}`);
+      setOpenFetchStatus(true);
+    } else if (apiAllowedHost.success) {
+      setFetchStatus('success');
+      setFetchMessage('Host added successfully!');
+      setOpenFetchStatus(true);
+      setRefreshData(true);
+    }
   };
 
   const deleteApiKey = async () => {
@@ -128,6 +120,7 @@ function APIAccessManagement() {
         setFetchMessage('API key deleted successfully!');
         setOpenFetchStatus(true);
         setRefreshData(true);
+        setApiKey(null);
       })
       .catch(function (error) {
         if (error.response) {
@@ -244,7 +237,7 @@ function APIAccessManagement() {
       <Container maxWidth="lg">
         {!loadingData ? (
           <>
-            <form onSubmit={createApiKey}>
+            <form onSubmit={handleSubmitCreateApiKey}>
               <Container>
                 <Typography variant="h5" noWrap component="div" color="primary">
                   API Token
@@ -254,7 +247,7 @@ function APIAccessManagement() {
                   Keep it secure. Regenerate it if you lose it.
                 </Typography>
                 <Box display="flex" alignItems="center">
-                  <FormControl sx={{ width: '50%' }} variant="outlined">
+                  <FormControl sx={{ width: { xs: '100%', md: '50%' } }} variant="outlined">
                     <FilledInput
                       disabled
                       id="apiKey"
@@ -309,7 +302,7 @@ function APIAccessManagement() {
               </Container>
             </form>
 
-            <form onSubmit={createApiAllowedHost}>
+            <form onSubmit={handleSubmitCreateApiAllowedHost}>
               <Container sx={{ marginTop: 8 }}>
                 <Typography variant="h5" noWrap component="div" color="primary">
                   Allowed Subnets
@@ -338,7 +331,7 @@ function APIAccessManagement() {
                   </List>
                 </Box>
                 <Box display="flex" alignItems="center">
-                  <FormControl sx={{ width: '50%' }} variant="outlined">
+                  <FormControl sx={{ width: { xs: '100%', md: '50%' } }} variant="outlined">
                     <FilledInput
                       required
                       id="host"

@@ -255,6 +255,7 @@ const SettingsManagementPanel = () => {
                   <Box key={i} sx={{ marginBottom: 2, marginTop: 2 }}>
                     <Typography
                       variant="h7"
+                      component={'span'}
                       sx={{
                         display: { xs: 'none', sm: 'block' },
                         fontFamily: 'Roboto',

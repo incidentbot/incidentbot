@@ -24,9 +24,7 @@ const AnimatedAppLogo = (props) => {
         borderRadius: props.borderRadius,
         scale
       }}>
-      <center>
-        <img alt="Incident Bot" width={props.width} height={props.height} src={logo} />
-      </center>
+      <img alt="Incident Bot" width={props.width} height={props.height} src={logo} />
     </animated.div>
   );
 };

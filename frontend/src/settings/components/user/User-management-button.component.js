@@ -3,7 +3,9 @@ import axios from 'axios';
 import useToken from '../../../hooks/useToken';
 
 import { Alert, Container, IconButton, Menu, MenuItem, Snackbar } from '@mui/material';
+
 import SettingsIcon from '@mui/icons-material/Settings';
+import PasswordChangeModal from './User-password-reset-dialog.component';
 
 export default function UserManagementMenu(props) {
   const { token } = useToken();
@@ -21,13 +23,13 @@ export default function UserManagementMenu(props) {
   const [editUserMessage, setEditUserMessage] = useState('');
   const [openEditUserStatus, setOpenEditUserStatus] = useState(false);
 
-  async function editUser(user, operation, value) {
-    var url = props.apiUrl + '/user/change/' + user.id;
+  async function editUser(user, operation, field, value) {
+    var url = props.apiUrl + '/user/' + user.id;
     await axios({
       method: `${operation === 'delete' ? 'DELETE' : 'PATCH'}`,
       responseType: 'json',
       url: url,
-      data: `${value !== null && JSON.stringify({ set_to: value })}`,
+      data: `${value !== null && JSON.stringify({ field: field, set_to: value })}`,
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer ' + token
@@ -70,25 +72,26 @@ export default function UserManagementMenu(props) {
         MenuListProps={{
           'aria-labelledby': 'um-button'
         }}>
-        <MenuItem onClick={() => editUser(props.user, 'delete', null)}>Delete</MenuItem>
+        <MenuItem onClick={() => editUser(props.user, 'delete', null, null)}>Delete</MenuItem>
         <MenuItem
           onClick={() =>
             editUser(
               props.user,
-              'toggle',
-              `${props.user.is_disabled ? 'enabled' : 'disabled'}`,
-              token
+              'patch',
+              'enable_disable',
+              `${props.user.is_disabled ? 'enabled' : 'disabled'}`
             )
           }>
           {props.user.is_disabled ? 'Enable' : 'Disable'}
         </MenuItem>
+        <PasswordChangeModal apiUrl={props.apiUrl} user={props.user} />
         <MenuItem
           onClick={() =>
             editUser(
               props.user,
-              'toggle',
-              `${props.user.is_admin ? 'remove_admin' : 'add_admin'}`,
-              token
+              'patch',
+              'is_admin',
+              `${props.user.is_admin ? 'remove_admin' : 'add_admin'}`
             )
           }>
           {props.user.is_admin ? 'Remove Administrator Privileges' : 'Add Administrator Privileges'}

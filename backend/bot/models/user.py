@@ -63,7 +63,10 @@ def db_user_create(
     is_admin: bool = False,
 ) -> Tuple[bool, str]:
     try:
-        if Session.query(User).filter_by(email=email).one_or_none() != None:
+        if (
+            Session.query(User).filter_by(email=email).one_or_none()
+            is not None
+        ):
             return False, "user_already_exists"
         else:
             new_user = User(
@@ -80,6 +83,21 @@ def db_user_create(
         logger.error(f"User creation failed for {email}: {error}")
         Session.rollback()
         return False, error
+    finally:
+        Session.close()
+        Session.remove()
+
+
+def db_user_change_password(email: str, new: str) -> Tuple[bool, str]:
+    try:
+        user = Session.query(User).filter(User.email == email).one()
+        user.password = new
+        Session.commit()
+        return True, "password_changed"
+    except Exception as error:
+        logger.error(f"User password change failed for {email}: {error}")
+        Session.rollback()
+        return False, str(error)
     finally:
         Session.close()
         Session.remove()

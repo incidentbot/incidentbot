@@ -8,7 +8,6 @@ from bot.settings.im import (
     read_single_setting_value,
 )
 from bot.shared import tools
-from bot.slack.client import slack_workspace_id
 from sqlalchemy import exc, update
 
 logger = logging.getLogger(__name__)
