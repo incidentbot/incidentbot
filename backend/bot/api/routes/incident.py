@@ -1,3 +1,4 @@
+import config
 import logging
 
 from bot.api.schemas.incident import (
@@ -244,7 +245,7 @@ def patch_update_incident(incident_id):
         if field == "tags":
             existing_tags = incident.tags
             if action == "update":
-                if existing_tags == None:
+                if existing_tags is None:
                     existing_tags = [value]
                 else:
                     existing_tags.append(value)
@@ -282,6 +283,31 @@ def patch_update_incident(incident_id):
                 {"ContentType": "application/json"},
             )
     except Exception as error:
+        return (
+            jsonify({"error": str(error)}),
+            500,
+            {"ContentType": "application/json"},
+        )
+
+
+@incidentrt.route("/incident/config/<parameter>", methods=["GET"])
+@jwt_required()
+def get_incident_config(parameter):
+    try:
+        match parameter:
+            case "roles":
+                resp = [key for key, _ in config.active.roles.items()]
+            case "severities":
+                resp = [key for key, _ in config.active.severities.items()]
+            case "statuses":
+                resp = config.active.statuses
+        return (
+            jsonify({"data": resp}),
+            200,
+            {"ContentType": "application/json"},
+        )
+    except Exception as error:
+        logger.error(f"Error returning incident configuration: {error}")
         return (
             jsonify({"error": str(error)}),
             500,

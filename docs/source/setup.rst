@@ -10,12 +10,6 @@ For those who wish to get started quickly without customizing core behavior, the
 
 You can run the image however you choose. A Docker Compose file is provided for guidance. It is recommended to use the Helm chart if running in Kubernetes.
 
-.. warning::
-
-  There are several features configurable via the bot's UI. Don't sleep on the bot's UI as you'll miss a lot of customization options.
-
-  The UI is available once the bot is running at ``/app``.
-
 .. _kubernetes:
 
 Kubernetes
@@ -59,8 +53,6 @@ Contained with ``.env``, you'd want to include the sensitive values for this app
   CONFLUENCE_API_URL=...
   CONFLUENCE_API_USERNAME=...
   CONFLUENCE_API_TOKEN=...
-  CONFLUENCE_SPACE=...
-  CONFLUENCE_PARENT_PAGE=...
   PAGERDUTY_API_TOKEN=...
   PAGERDUTY_API_USERNAME=...
   DEFAULT_WEB_ADMIN_PASSWORD=...
@@ -74,7 +66,7 @@ This will create the required ``Secret`` in the ``Namespace`` ``incident-bot``. 
 
 You can now install the application. As an example:
 
-``helm install echoboomer-charts/incident-bot --version 0.1.1 --values incident-bot-values.yaml --namespace incident-bot``
+``helm install echoboomer-charts/incident-bot --version 0.3.0 --values incident-bot-values.yaml --namespace incident-bot``
 
 In this scenario, you'd want to provide the values using the file ``incident-bot-values.yaml``. Here's an example:
 
@@ -89,16 +81,6 @@ In this scenario, you'd want to provide the values using the file ``incident-bot
   envFromSecret:
     enabled: true
     secretName: incident-bot-secret
-  envVars:
-    AUTO_CREATE_RCA: false
-    INCIDENTS_DIGEST_CHANNEL: incidents
-    INCIDENT_AUTO_GROUP_INVITE_ENABLED: false
-    INCIDENT_AUTO_GROUP_INVITE_GROUP_NAME: mygroup
-    INCIDENT_AUTO_CREATE_FROM_REACT_ENABLED: true
-    INCIDENT_AUTO_CREATE_FROM_REACT_EMOJI_NAME: create-incident
-    PAGERDUTY_INTEGRATION_ENABLED: false
-    STATUSPAGE_INTEGRATION_ENABLED: false
-    ZOOM_AUTO_CREATE: true
   healthCheck:
     enabled: true
     path: /api/v1/health
@@ -153,7 +135,7 @@ Kustomize
 
 The manifests are located at: ``deploy/kustomize/incident-bot``
 
-To preview generated manifests, run: ``kubectl kustomize .``
+To preview generated manifests, run ``kubectl kustomize .`` from an overlay directory like ``development``.
 
 To apply the resources, run: ``kubectl apply -k .``
 
@@ -162,6 +144,8 @@ To apply the resources, run: ``kubectl apply -k .``
   You will want to adjust the settings within the manifests to suit your needs before deploying. Specifically, ``.env`` in the overlay folder is used to generate a `Secret` containing sensitive values. Non-sensitive values are provided as literals in the overlay-level ``kustomization.yaml`` file.
 
   In production, you should use a secret management tool that integrates with Kubernetes. You should not hardcode sensitive values. This setup is provided for convenience.
+
+  In the default setup, your application's ``config.yaml`` will be mounted as a volume via a ``ConfigMap``.
 
 .. _docker-compose:
 
@@ -183,21 +167,12 @@ Required Variables
 - ``POSTGRES_USER`` - database user to use.
 - ``POSTGRES_PASSWORD`` - password for the user.
 - ``POSTGRES_PORT`` - the port to use when connecting to the database.
-- ``INCIDENTS_DIGEST_CHANNEL`` - the **name** of the incidents digest channel referenced in the features documentation.
 - ``SLACK_APP_TOKEN`` - the app-level token for enabling websocket communication.
 - ``SLACK_BOT_TOKEN`` - the API token to be used by your bot once it is deployed to your workspace for ``bot``-scoped pemissions.
 - ``SLACK_USER_TOKEN`` - the API token to be used by your bot for ``user``-scoped permissions.
 - ``DEFAULT_WEB_ADMIN_PASSWORD`` - the default password for the default admin account. See section on user management for more details.
 - ``JWT_SECRET_KEY`` - this must be provided for user management. Set to a secure string.
 - ``FLASK_APP_SECRET_KEY`` - this must be provided for the API.
-
-Optional Variables
-------------
-
-- ``INCIDENT_AUTO_GROUP_INVITE_ENABLED`` - to enable the automatic invitation of a Slack group to each newly created incident channel (documented above), set this to ``true``.
-- ``INCIDENT_AUTO_GROUP_INVITE_GROUP_NAME`` - if enabling the automatic invitation of a Slack group to each newly created incident channel (documented above), set this to the name of the Slack group.
-- ``INCIDENT_AUTO_CREATE_FROM_REACT_ENABLED`` - if enabling auto incident channel create based on react, set this to ``true``.
-- ``INCIDENT_AUTO_CREATE_FROM_REACT_EMOJI_NAME`` - the name of the emoji that will trigger automatic incident creation.
 
 Other variables are covered in the sections below documenting additional integrations.
 
@@ -232,12 +207,23 @@ Confluence Settings
 
 It is also possible to automatically create an RCA/postmortem document when an incident is transitioned to resolved. This only works with Confluence at this time.
 
-- ``AUTO_CREATE_RCA`` - Set this to ``true`` to enable RCA creation - this only works with Confluence Cloud. When enabled, this will automatically populate a postmortem document. If this is ``true``, you must provide all values below.
+The token can be created `here <https://id.atlassian.com/manage-profile/security/api-tokens>`_.
+
+Provide the following environment variables:
+
 - ``CONFLUENCE_API_URL`` - The URL of the Atlassian account.
 - ``CONFLUENCE_API_USERNAME`` - Username that owns the API token.
 - ``CONFLUENCE_API_TOKEN`` - The API token.
-- ``CONFLUENCE_SPACE`` - The space in which the RCAs page lives.
-- ``CONFLUENCE_PARENT_PAGE`` - The name of the page within the above space where RCAs are created as child objects.
+
+In the application's ``config.yaml``, you can set the Confluence space and parent page using the ``integrations`` section:
+
+.. code-block:: yaml
+
+  integrations:
+    confluence:
+      auto_create_rca: true
+      space: ENG
+      parent: Postmortems
 
 .. _pagerduty-settings:
 
@@ -246,9 +232,15 @@ PagerDuty Settings
 
 You can integrate with PagerDuty to provide details about who is on call and page teams either manually or automatically. To do so, provide the following variables. If either of these is blank, the feature will not be enabled.
 
-- ``PAGERDUTY_INTEGRATION_ENABLED`` - This must be provided and set to the string ``true`` if enabling the integration.
 - ``PAGERDUTY_API_TOKEN``
 - ``PAGERDUTY_API_USERNAME``
+
+In the application's ``config.yaml``, you can set the PagerDuty integration to active by providing a blank dict:
+
+.. code-block:: yaml
+
+  integrations:
+    pagerduty: {}
 
 You are then able to use the bot's ``pager`` command and paging-related shortcuts as well as the web features related to them.
 
@@ -259,10 +251,19 @@ Statuspage Settings
 
 You can integrate with Statuspage to automatically prompt for Statuspage incident creation for new incidents. You can also update them directly from Slack.
 
-- ``STATUSPAGE_INTEGRATION_ENABLED`` - set to ``true`` to enable the Statuspage integration.
+Provide the following environment variables:
+
 - ``STATUSPAGE_API_KEY`` - Statuspage API key if enabling.
 - ``STATUSPAGE_PAGE_ID`` - Statuspage page ID if enabling.
 - ``STATUSPAGE_URL`` - Link to the public Statuspage for your organization. **Note:** This must be a fully formed URL - example: ``https://status.foo.com``.
+
+In the application's ``config.yaml``, you can set the Statuspage integration to active by providing the heading and a key that indicates what URL to lead others to to view your incidents:
+
+.. code-block:: yaml
+
+  integrations:
+    statuspage:
+      url: https://status.mycorp.com
 
 .. _zoom-settings:
 
@@ -284,7 +285,16 @@ If you want to automatically create an instant Zoom meeting for each incident, u
 
   The account ID can be viewed on the app's page in the Zoom Marketplace developer app after it has been activated.
 
-- ``ZOOM_AUTO_CREATE`` - set to ``true`` to enable the integration.
+Provide the following environment variables:
+
 - ``ZOOM_ACCOUNT_ID`` - Account ID from the step above.
 - ``ZOOM_CLIENT_ID`` - The OAuth app client ID from the step above.
 - ``ZOOM_CLIENT_SECRET`` - The OAuth app client secret from the step above.
+
+In the application's ``config.yaml``, you can set the Zoom integration to active by providing the heading and the value:
+
+.. code-block:: yaml
+
+  integrations:
+    zoom:
+      auto_create_meeting: true

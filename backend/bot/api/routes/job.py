@@ -45,11 +45,7 @@ def post_delete_run_job(job_id):
     if request.method == "POST":
         try:
             if job_id == "update_pagerduty_oc_data":
-                if config.pagerduty_integration_enabled in (
-                    "True",
-                    "true",
-                    True,
-                ):
+                if "pagerduty" in config.active.integrations:
                     from bot.pagerduty.api import store_on_call_data
 
                     try:

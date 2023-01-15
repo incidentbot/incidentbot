@@ -1,10 +1,11 @@
 import logging
 import os
+import yaml
 
 from dotenv import load_dotenv
-from typing import List
+from typing import Dict, List
 
-__version__ = "v0.12.3"
+__version__ = "v1.0.0"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -24,9 +25,56 @@ is_test_environment = os.getenv("TEST_ENVIRONMENT", default="false") in (
     "true",
     True,
 )
-templates_directory = os.getenv(
-    "TEMPLATES_DIRECTORY", default="templates/slack/"
-)
+
+
+class Configuration:
+    def __init__(self):
+        self.filepath = (
+            os.getenv("CONFIG_FILE_PATH", default="config.yaml")
+            if not is_test_environment
+            else "config-test.yaml"
+        )
+        with open(self.filepath, "r") as yamlfile:
+            self.live = yaml.load(yamlfile, Loader=yaml.FullLoader)
+
+    @property
+    def all(self) -> Dict:
+        return self.live
+
+    @property
+    def digest_channel(self) -> str:
+        return self.live["digest_channel"]
+
+    @property
+    def integrations(self) -> Dict:
+        return self.live["integrations"]
+
+    @property
+    def links(self) -> Dict:
+        return self.live["links"]
+
+    @property
+    def options(self) -> Dict:
+        return self.live["options"]
+
+    @property
+    def platform(self) -> str:
+        return self.live["platform"]
+
+    @property
+    def roles(self) -> Dict[str, str]:
+        return self.live["roles"]
+
+    @property
+    def severities(self) -> Dict[str, str]:
+        return self.live["severities"]
+
+    @property
+    def statuses(self) -> List:
+        return self.live["statuses"]
+
+
+active = Configuration()
 
 """
 Database Settings
@@ -37,26 +85,6 @@ database_password = os.getenv("POSTGRES_PASSWORD")
 database_port = os.getenv("POSTGRES_PORT")
 database_user = os.getenv("POSTGRES_USER")
 database_url = f"postgresql://{database_user}:{database_password}@{database_host}:{database_port}/{database_name}"
-
-"""
-Incidents Module
-"""
-incidents_digest_channel = os.getenv("INCIDENTS_DIGEST_CHANNEL")
-
-## Options
-incident_auto_create_from_react_enabled = os.getenv(
-    "INCIDENT_AUTO_CREATE_FROM_REACT_ENABLED", default="false"
-)
-incident_auto_create_from_react_emoji_name = os.getenv(
-    "INCIDENT_AUTO_CREATE_FROM_REACT_EMOJI_NAME", default=""
-)
-incident_auto_group_invite_enabled = os.getenv(
-    "INCIDENT_AUTO_GROUP_INVITE_ENABLED", default="false"
-)
-incident_auto_group_invite_group_name = os.getenv(
-    "INCIDENT_AUTO_GROUP_INVITE_GROUP_NAME", default=""
-)
-
 
 """
 Slack
@@ -73,7 +101,6 @@ statuspage_integration_enabled = os.getenv(
     "STATUSPAGE_INTEGRATION_ENABLED", default="false"
 )
 statuspage_page_id = os.getenv("STATUSPAGE_PAGE_ID", default="")
-statuspage_url = os.getenv("STATUSPAGE_URL", default="")
 
 """
 Confluence
@@ -81,23 +108,16 @@ Confluence
 confluence_api_url = os.getenv("CONFLUENCE_API_URL", default="")
 confluence_api_username = os.getenv("CONFLUENCE_API_USERNAME", default="")
 confluence_api_token = os.getenv("CONFLUENCE_API_TOKEN", default="")
-confluence_space = os.getenv("CONFLUENCE_SPACE", default="")
-confluence_parent_page = os.getenv("CONFLUENCE_PARENT_PAGE", default="")
-auto_create_rca = os.getenv("AUTO_CREATE_RCA", default="false")
 
 """
 PagerDuty
 """
-pagerduty_integration_enabled = os.getenv(
-    "PAGERDUTY_INTEGRATION_ENABLED", default="false"
-)
 pagerduty_api_username = os.getenv("PAGERDUTY_API_USERNAME", default="")
 pagerduty_api_token = os.getenv("PAGERDUTY_API_TOKEN", default="")
 
 """
 External
 """
-auto_create_zoom_meeting = os.getenv("ZOOM_AUTO_CREATE", default="false")
 zoom_account_id = os.getenv("ZOOM_ACCOUNT_ID", default="")
 zoom_client_id = os.getenv("ZOOM_CLIENT_ID", default="")
 zoom_client_secret = os.getenv("ZOOM_CLIENT_SECRET", default="")
@@ -129,9 +149,7 @@ def env_check(required_envs: List[str]):
         if os.getenv(e) == "":
             logger.fatal(f"The environment variable {e} cannot be empty.")
             exit(1)
-        else:
-            pass
-    if auto_create_zoom_meeting in ("True", "true", True):
+    if "zoom" in active.integrations:
         for var in [
             "ZOOM_ACCOUNT_ID",
             "ZOOM_CLIENT_ID",
@@ -142,32 +160,32 @@ def env_check(required_envs: List[str]):
                     f"If enabling Zoom meeting auto-create, the {var} variable must be set."
                 )
                 exit(1)
-    if auto_create_rca in ("True", "true", True):
+    if "confluence" in active.integrations and active.integrations.get(
+        "confluence"
+    ).get("auto_create_rca"):
         for var in [
             "CONFLUENCE_API_URL",
             "CONFLUENCE_API_USERNAME",
             "CONFLUENCE_API_TOKEN",
-            "CONFLUENCE_SPACE",
-            "CONFLUENCE_PARENT_PAGE",
         ]:
             if os.getenv(var) == "":
                 logger.fatal(
                     f"If enabling the Confluence integration to auto create an RCA, the {var} variable must be set."
                 )
                 exit(1)
-    if incident_auto_create_from_react_enabled in ("True", "true", True):
-        if incident_auto_create_from_react_emoji_name == "":
+    if active.options.get("create_from_reaction"):
+        if active.options.get("create_from_reaction").get("reacji") is None:
             logger.fatal(
-                f"If enabling auto create via react, the INCIDENT_AUTO_CREATE_FROM_REACT_EMOJI_NAME variable must be set."
+                f"If enabling auto create via react, the reacji field in config.yaml should be set."
             )
             exit(1)
-    if incident_auto_group_invite_enabled in ("True", "true", True):
-        if incident_auto_group_invite_group_name == "":
+    if active.options.get("auto_invite_groups").get("enabled"):
+        if active.options.get("auto_invite_groups").get("groups") is None:
             logger.fatal(
-                f"If enabling auto group invite, the INCIDENT_AUTO_GROUP_INVITE_GROUP_NAME variable must be set."
+                f"If enabling auto group invite, the groups field in config.yaml should be set."
             )
             exit(1)
-    if pagerduty_integration_enabled in ("True", "true", True):
+    if "pagerduty" in active.integrations:
         for var in [
             "PAGERDUTY_API_USERNAME",
             "PAGERDUTY_API_TOKEN",
@@ -177,7 +195,7 @@ def env_check(required_envs: List[str]):
                     f"If enabling the PagerDuty integration, the {var} variable must be set."
                 )
                 exit(1)
-    if statuspage_integration_enabled in ("True", "true", True):
+    if "statuspage" in active.integrations:
         for var in [
             "STATUSPAGE_API_KEY",
             "STATUSPAGE_PAGE_ID",
@@ -190,33 +208,6 @@ def env_check(required_envs: List[str]):
                 exit(1)
 
 
-def slack_template_check(required_templates: List[str]):
-    """Check for the existence of the required Slack message
-    directory and json templates
-
-    Keyword arguments:
-    required_templates -- List[str] containing the names of required
-    json files in the templates_directory
-    """
-    logger.info("Running Slack template check...")
-    if os.path.isdir(templates_directory):
-        logger.info(f"Templates directory found: {templates_directory}")
-    else:
-        logger.fatal(
-            f"Templates directory not found - {templates_directory} was specified as the location."
-        )
-        exit(1)
-    for rt in required_templates:
-        if os.path.isfile(f"{templates_directory}/{rt}"):
-            logger.debug(f"Found {rt}")
-        else:
-            logger.fatal(
-                f"{rt} is a required template and is missing from the templates directory: {templates_directory}"
-            )
-            exit(1)
-    logger.info("All templates found successfully.")
-
-
 def startup_message(workspace: str, wrap: bool = False) -> str:
     """
     Returns diagnostic info for startup or troubleshooting
@@ -227,24 +218,9 @@ def startup_message(workspace: str, wrap: bool = False) -> str:
 --------------------------------------------------------------------------------
 Core functionality:
     Database host:                      {database_host}
-    Incidents digest channel:           {incidents_digest_channel}
+    Incidents digest channel:           {active.digest_channel}
     Slack workspace:                    {workspace}
     Logging level:                      {log_level}
-
-Options:
-    Auto create RCA doc:                {auto_create_rca}
-    Auto group invite enabled:          {incident_auto_group_invite_enabled}
-    Auto group invite group name:       {incident_auto_group_invite_group_name}
-    Confluence API address:             {confluence_api_url}
-    Confluence user:                    {confluence_api_username}
-    Confluence space:                   {confluence_space}
-    Confluence parent page:             {confluence_parent_page}
-    PagerDuty Integration enabled:      {pagerduty_integration_enabled}
-    PagerDuty API user:                 {pagerduty_api_username}
-    React to create incident enabled:   {incident_auto_create_from_react_enabled}
-    React emoji:                        {incident_auto_create_from_react_emoji_name}
-    Statuspage integration enabled:     {statuspage_integration_enabled}
-    Zoom Meeting Autocreate             {auto_create_zoom_meeting}
 --------------------------------------------------------------------------------
     """
     if wrap:

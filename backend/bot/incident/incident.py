@@ -7,23 +7,25 @@ import slack_sdk.errors
 
 from bot.audit import log
 from bot.external import meetings
-from bot.incident.templates import (
-    build_digest_notification,
-    build_incident_channel_boilerplate,
-)
 from bot.models.incident import (
     db_update_incident_created_at_col,
     db_update_incident_sp_ts_col,
     db_write_incident,
 )
 from bot.models.pager import read_pager_auto_page_targets
-from bot.settings.im import (
-    conference_bridge_link,
-    incident_channel_topic,
-)
 from bot.shared import tools
-from bot.slack.client import slack_web_client, slack_workspace_id
+from bot.slack.client import (
+    slack_web_client,
+    slack_workspace_id,
+    all_workspace_groups,
+)
 from bot.statuspage import slack as sp_slack, handler as sp_handler
+from bot.templates.incident.digest_notification import (
+    IncidentChannelDigestNotification,
+)
+from bot.templates.incident.channel_boilerplate import (
+    IncidentChannelBoilerplateMessage,
+)
 from typing import Dict
 
 logger = logging.getLogger(__name__)
@@ -53,7 +55,6 @@ class Incident:
             "incident_description"
         ]
         self.channel_name = self.__format_channel_name()
-        self.conference_bridge = self.__generate_conference_link()
         if not config.is_test_environment:
             self.channel = self.__create_incident_channel()
             self.channel_details = self.channel.get("channel")
@@ -70,6 +71,7 @@ class Incident:
                 "private_channel": self.request_parameters["private_channel"]
                 in ("True", "true", True),
             }
+            self.conference_bridge = self.__generate_conference_link()
         else:
             self.channel_details = {}
             self.created_channel_details = {
@@ -77,6 +79,7 @@ class Incident:
                 "is_security_incident": False,
                 "private_channel": False,
             }
+            self.conference_bridge = "mock"
 
     def log(self):
         request_log = {
@@ -124,10 +127,15 @@ class Incident:
         return f"inc-{now.year}{now.month}{now.day}{now.hour}{now.minute}-{formatted_channel_name_suffix}"
 
     def __generate_conference_link(self):
-        if config.auto_create_zoom_meeting in ("True", "true", True):
+        if (
+            "zoom" in config.active.integrations
+            and config.active.integrations.get("zoom").get(
+                "auto_create_meeting"
+            )
+        ):
             return meetings.ZoomMeeting().url
         else:
-            return conference_bridge_link
+            return config.active.options.get("conference_bridge_link")
 
 
 """
@@ -151,20 +159,20 @@ def create_incident(
     user = request_parameters["user"]
     severity = request_parameters["severity"] or "sev4"
     if incident_description != "":
-        print("here")
         if len(incident_description) < incident_description_max_length:
             incident = Incident(request_parameters)
             created_channel_details = incident.created_channel_details
             """
             Notify incidents digest channel (#incidents)
             """
-            digest_message_content = build_digest_notification(
-                created_channel_details, severity, incident.conference_bridge
-            )
             try:
                 digest_message = slack_web_client.chat_postMessage(
-                    **digest_message_content,
-                    text="",
+                    **IncidentChannelDigestNotification.create(
+                        incident_channel_details=created_channel_details,
+                        conference_bridge=incident.conference_bridge,
+                        severity=severity,
+                    ),
+                    text="New Incident",
                 )
                 logger.debug(f"\n{digest_message}\n")
             except slack_sdk.errors.SlackApiError as error:
@@ -179,7 +187,9 @@ def create_incident(
             """
             Set incident channel topic
             """
-            topic_boilerplate = incident_channel_topic
+            topic_boilerplate = config.active.options.get(
+                "incident_channel_topic"
+            )
             try:
                 topic = slack_web_client.conversations_setTopic(
                     channel=created_channel_details["id"],
@@ -191,13 +201,13 @@ def create_incident(
             """
             Send boilerplate info to incident channel
             """
-            bp_message_content = build_incident_channel_boilerplate(
-                created_channel_details, severity
-            )
             try:
                 bp_message = slack_web_client.chat_postMessage(
-                    **bp_message_content,
-                    text="",
+                    **IncidentChannelBoilerplateMessage.create(
+                        incident_channel_details=created_channel_details,
+                        severity=severity,
+                    ),
+                    text="Details",
                 )
                 logger.debug(f"\n{bp_message}\n")
             except slack_sdk.errors.SlackApiError as error:
@@ -318,45 +328,49 @@ async def handle_incident_optional_features(
     """
     Invite required participants (optional)
     """
-    if config.incident_auto_group_invite_enabled in ("True", "true", True):
-        all_groups = slack_web_client.all_workspace_groups["usergroups"]
-        group_to_invite = config.incident_auto_group_invite_group_name
-        if len(all_groups) == 0:
-            logger.error(
-                f"Error when inviting mandatory users: looked for group {group_to_invite} but did not find it."
-            )
-        else:
-            try:
-                required_participants_group = [
-                    g for g in all_groups if g["handle"] == group_to_invite
-                ][0]["id"]
-                required_participants_group_members = (
-                    slack_web_client.usergroups_users_list(
-                        usergroup=required_participants_group,
-                    )
-                )["users"]
-            except Exception as error:
+    if config.active.options.get("auto_invite_groups").get("enabled"):
+        for gr in config.active.options.get("auto_invite_groups").get(
+            "groups"
+        ):
+            all_groups = all_workspace_groups["usergroups"]
+            if len(all_groups) == 0:
                 logger.error(
-                    f"Error when formatting automatic invitees group name: {error}"
+                    f"Error when inviting mandatory users: looked for group {gr} but did not find it."
                 )
-            try:
-                invite = slack_web_client.conversations_invite(
-                    channel=channel_id,
-                    users=",".join(required_participants_group_members),
-                )
-                logger.debug(f"\n{invite}\n")
-                # Write audit log
-                log.write(
-                    incident_id=created_channel_details["name"],
-                    event=f"Group {required_participants_group} invited to the incident channel automatically.",
-                )
-            except slack_sdk.errors.SlackApiError as error:
-                logger.error(f"Error when inviting mandatory users: {error}")
+            else:
+                try:
+                    required_participants_group = [
+                        g for g in all_groups if g["handle"] == gr
+                    ][0]["id"]
+                    required_participants_group_members = (
+                        slack_web_client.usergroups_users_list(
+                            usergroup=required_participants_group,
+                        )
+                    )["users"]
+                except Exception as error:
+                    logger.error(
+                        f"Error when formatting automatic invitees group name: {error}"
+                    )
+                try:
+                    invite = slack_web_client.conversations_invite(
+                        channel=channel_id,
+                        users=",".join(required_participants_group_members),
+                    )
+                    logger.debug(f"\n{invite}\n")
+                    # Write audit log
+                    log.write(
+                        incident_id=created_channel_details["name"],
+                        event=f"Group {gr} invited to the incident channel automatically.",
+                    )
+                except slack_sdk.errors.SlackApiError as error:
+                    logger.error(
+                        f"Error when inviting mandatory users: {error}"
+                    )
 
     """
     Post prompt for creating Statuspage incident (optional)
     """
-    if config.statuspage_integration_enabled in ("True", "true", True):
+    if "statuspage" in config.active.integrations:
         sp_components = sp_handler.StatuspageComponents()
         sp_components_list = sp_components.list_of_names()
         sp_starter_message_content = sp_slack.return_new_incident_message(
@@ -391,10 +405,8 @@ async def handle_incident_optional_features(
     """
     If this is an internal incident, parse additional values
     """
-    if internal and config.incident_auto_create_from_react_enabled in (
-        "True",
-        "true",
-        True,
+    if internal and config.active.options.get("create_from_reaction").get(
+        "enabled"
     ):
         original_channel = request_parameters["channel"]
         original_message_timestamp = request_parameters[
@@ -452,7 +464,7 @@ async def handle_incident_optional_features(
     """
     Page groups that are required to be automatically paged (optional)
     """
-    if config.pagerduty_integration_enabled in ("True", "true", True):
+    if "pagerduty" in config.active.integrations:
         from bot.pagerduty import api as pd_api
 
         auto_page_targets = read_pager_auto_page_targets()

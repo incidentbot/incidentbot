@@ -1,0 +1,39 @@
+platform: slack
+digest_channel: incidents
+roles:
+  incident_commander: 'commander'
+  technical_lead: 'technical_lead'
+  communications_liaison: 'communications_liaison'
+severities:
+  sev1: 'sev1'
+  sev2: 'sev2'
+  sev3: 'sev3'
+  sev4: 'sev4'
+statuses:
+  - investigating
+  - identified
+  - monitoring
+  - resolved
+options:
+  incident_channel_topic: 'This is the default incident channel topic. You can edit it in settings.'
+  timezone: UTC
+  conference_bridge_link: 'https://zoom.us'
+  create_from_reaction:
+    enabled: true
+    reacji: create-incident
+  auto_invite_groups:
+    enabled: true
+    groups:
+      - sre-concierge
+integrations:
+  confluence:
+    auto_create_rca: true
+    space: ENGINEERIN
+    parent: RCAs
+  statuspage:
+    url: https://status.echoboomer.net
+  zoom:
+    auto_create_meeting: false
+links:
+  incident_guide: https://changeme.com
+  incident_postmortems: https://changeme.com

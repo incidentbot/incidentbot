@@ -7,21 +7,12 @@ bases:
 
 images:
   - name: eb129/incident-bot
-    newTag: v0.12.3
+    newTag: v1.0.0-beta
 
 configMapGenerator:
-  - name: incident-bot
-    literals:
-      - INCIDENTS_DIGEST_CHANNEL=incidents
-      - INCIDENT_AUTO_GROUP_INVITE_ENABLED=false
-      - INCIDENT_AUTO_GROUP_INVITE_GROUP_NAME=mygroup
-      - INCIDENT_EXTERNAL_PROVIDERS_ENABLED=false
-      - INCIDENT_AUTO_CREATE_FROM_REACT_ENABLED=true
-      - INCIDENT_AUTO_CREATE_FROM_REACT_EMOJI_NAME=create-incident
-      - STATUSPAGE_INTEGRATION_ENABLED=false
-      - AUTO_CREATE_RCA=false
-      - PAGERDUTY_INTEGRATION_ENABLED=false
-      - ZOOM_AUTO_CREATE=false
+  - name: incident-bot-config
+    files:
+      - config.yaml
 
 secretGenerator:
   - name: incident-bot

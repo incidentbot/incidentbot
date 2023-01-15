@@ -6,22 +6,18 @@ Features
 Incident Management
 ------------
 
-- Facilitates creation of incident channels.
-- Allows assigning roles for incident management.
-  - These roles are currently: ``incident commander``, ``communications liaison``, and ``technical lead``.
-  - The first two are based on the first and second tier of roles described by PagerDuty. The last can be thought of as a primary SME contact.
-  - If you'd like to change these definitions within the app, see the section below on customization.
+An overview of main features:
+
+- Create a war-room in Slack to gather resources and handle incidents.
 - A fully functioning digest channel that stays up to date with incident statuses that can be used by others to watch the status of incidents. Incident statuses are updated there in real time.
+- Define your own roles, severities, and statuses. There are some provided out of the box, but you can control them.
 - The ability to send out internal status updates that will be viewable in the incident digest channel.
-- Optional features documented below.
-
-All incidents start as SEV4. Incidents may be promoted through to SEV1 accordingly. Each time the status or severity of an incident is changed, an update is sent to the incident channel. The digest message is also updated. When an incident is resolved, the digest message will be changed to show this.
-
-You are also able to send out incident updates so that those who are not actively participating in an incident can stay informed regarding its status. These updates will appear in the incident's digest channel. This is done by using the "provide incident update" modal reachable by slash command or by searching in the search bar.
-
-When someone claims or is assigned a role during an incident, the bot will notify them via private message and automatically add them to the channel. The bot will also give them helpful information about the role they've been assigned. There are definitions established by default that can be changed in the web UI under settings.
-
-When an incident is marked as resolved, a separate RCA channel is created for users to collaborate on scheduling followup actions. The incident commander and technical lead roles are automatically invited to this channel and may invite others as needed.
+- Automatically generate unique Zoom meetings for each incident and tell everyone about them.
+- Create Statuspage incidents.
+- Page teams in PagerDuty.
+- Automatically create an RCA/postmortem document in Confluence.
+- Notify participants when they are assigned a role.
+- Automatically generate and manage a timeline of events.
 
 .. _incident-management-requirements:
 
@@ -30,8 +26,9 @@ Incident Management Requirements
 
 Since this bot mainly helps run incidents, there are a few prerequisites.
 
-- You should have a digest channel that serves as a collection of information for all of your incidents. Provide this as ``INCIDENTS_DIGEST_CHANNEL`` - this is the channel **name**, not the **ID**. A common sense one is ``incidents``. The idea is that all information about ongoing incidents will be sent to this channel and everyone who cares about incident management can go look there.
-- You should invite your bot user to the aforementioned incidents digest channel at a minimum as well as anywhere else you'd like to use it. If you'd like to enable the react-to-create feature, the bot will need to be in every channel you plan to use this in. Common places are alert channels, etc.
+- You should have a digest channel that serves as a collection of information for all of your incidents. Provide this as ``digest_channel`` in ``config.yaml`` - this is the channel **name**, not the **ID**. A common sense one is ``incidents``. The idea is that all information about ongoing incidents will be sent to this channel and everyone who cares about incident management can go look there.
+- The app will automatically try to invite the box to the incidents digest channel, so you won't have to do that provided your permissions are configured correctly.
+- If you'd like to react to messages in any other channel to automatically create an incident based on the message's content, you'll need to invite the bot to that channel first.
 
 .. _starting-and-running-incidents:
 
@@ -40,22 +37,18 @@ Starting and Running Incidents
 
 It is beyond the scope of this application to establish incident response processes - however, there are several features that can advise on it.
 
-- Incidents can be started by using the button on the app home, searching for the ``Start a new incident`` shortcut in the search bar or via slash lookup, or from the web UI
-- Once an incident is created, leverage the pinned control panel message that gets automatically added to each incident channel to assign roles, set severity, and set status
-- You can optionally assign roles from the web UI incident view
+- Incidents can be started by using the button on the app home, searching for the ``Start a new incident`` shortcut in the search bar or via slash lookup, from the web UI, or by reacting to messages if the feature is enabled.
+- Once an incident is created, leverage the pinned control panel message that gets automatically added to each incident channel to assign roles, set severity, and set status. There are also pinned messages documenting where meetings are taking place, etc.
+- You can manage incidents from the web UI as well if you choose to do so.
 
 .. _postmortems:
 
 Auto RCA/Postmortem Generation
 ------------
 
-This feature only works with Confluence Cloud and requires an API token and username as well as other variables described below. The template for the generated RCA is provided as an html file located at ``backend/templates/confluence/rca.html``. While a base template is provided, it is up to you to provide the rest. It is beyond the scope of this application to dictate the styles used in your documentation.
+This feature only works with Confluence Cloud and requires an API token and username as well as other variables described below. The template for the generated RCA is provided as an html file located at ``backend/bot/templates/confluence/rca.py``. A basic template is provided, but you can add whatever you'd like.
 
-You must set the required environment variables detailed in the setup guide to enable the integration.
-
-You will need to create an API key and add it to the variable ``CONFLUENCE_API_TOKEN`` along with the email address of the creator via ``CONFLUENCE_API_USERNAME``.
-
-The token can be created `here <https://id.atlassian.com/manage-profile/security/api-tokens>`_.
+See the setup guide for details on how to enable this feature.
 
 .. _scheduled-actions:
 
@@ -73,15 +66,7 @@ From then on, a reminder is sent out every ``25`` minutes to encourage you to se
 Customization
 ------------
 
-When the application is started the first time, several things are written to the database using stock definitions - you should update these. Once updated, they will persist in the database and be used by the application for various features.
-
-This can be accomplished in the web UI under the settings section. Specifically, you should set:
-
-- Incident channel topic
-- Incident documentation
-- Incident postmortems/RCA link
-- Timezone
-- Conference Bridge Link
+You can change configurable parameters that are not secrets in the app's ``config.yaml`` file.
 
 .. _pagerduty-integration:
 
@@ -136,9 +121,9 @@ If the Statuspage integration is enabled, the application can do the following:
 
 You must set the required environment variables detailed in the setup guide to enable the integration.
 
-.. _automated-helpers:
+.. _automation:
 
-Automated Helpers
+Automation
 ------------
 
 The following features are implemented to assist with managing incidents:

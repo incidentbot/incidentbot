@@ -69,7 +69,7 @@ def handle_mention(body, say, logger):
         resp = incident_list_message(database_data, all=True)
         say(blocks=resp, text="")
     elif "ls-sp-inc" in " ".join(message):
-        if config.statuspage_integration_enabled in ("True", "true", True):
+        if "statuspage" in config.active.integrations:
             sp_objects = sp_handler.StatuspageObjects()
             sp_incidents = sp_objects.open_incidents
             resp = sp_incident_list_message(sp_incidents)
@@ -79,7 +79,7 @@ def handle_mention(body, say, logger):
                 text=f"The Statuspage integration is not enabled. I cannot provide information from Statuspage as a result.",
             )
     elif "pager" in message:
-        if config.pagerduty_integration_enabled != "false":
+        if "pagerduty" in config.active.integrations:
             from bot.pagerduty import api as pd_api
 
             pd_oncall_data = pd_api.find_who_is_on_call()
@@ -230,11 +230,9 @@ def reaction_added(event, say):
     channel_id = event["item"]["channel"]
     ts = event["item"]["ts"]
     # Automatically create incident based on reaction with specific emoji
-    if (
-        emoji == config.incident_auto_create_from_react_emoji_name
-        and config.incident_auto_create_from_react_enabled
-        in ("True", "true", True)
-    ):
+    if emoji == config.active.options.get("create_from_reaction").get(
+        "reacji"
+    ) and config.active.options.get("create_from_reaction").get("enabled"):
         # Retrieve the content of the message that was reacted to
         try:
             result = slack_web_client.conversations_history(

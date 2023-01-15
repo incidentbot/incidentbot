@@ -10,14 +10,6 @@ from bot.incident.action_parameters import (
     ActionParametersSlack,
     ActionParametersWeb,
 )
-from bot.incident.templates import (
-    build_post_resolution_message,
-    build_role_update,
-    build_severity_update,
-    build_status_update,
-    build_updated_digest_message,
-    build_user_role_notification,
-)
 from bot.models.incident import (
     db_read_incident,
     db_update_incident_rca_col,
@@ -26,7 +18,6 @@ from bot.models.incident import (
     db_update_incident_severity_col,
     db_update_incident_updated_at_col,
 )
-from bot.models.setting import read_single_setting_value
 from bot.scheduler import scheduler
 from bot.shared import tools
 from bot.slack.client import (
@@ -38,6 +29,13 @@ from bot.slack.client import (
 )
 from bot.slack.incident_logging import read as read_incident_pinned_items
 from typing import Any, Dict
+
+from bot.templates.incident.updates import IncidentUpdate
+from bot.templates.incident.user_dm import IncidentUserNotification
+from bot.templates.incident.resolution_message import IncidentResolutionMessage
+from bot.templates.incident.digest_notification import (
+    IncidentChannelDigestNotification,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -141,10 +139,12 @@ def assign_role(
         )
 
     # Send update notification message to incident channel
-    message = build_role_update(target_channel, new_role_name, user_id)
     try:
         result = slack_web_client.chat_postMessage(
-            **message, text=f"{user_id} is now {new_role_name}"
+            **IncidentUpdate.role(
+                channel=target_channel, role=new_role_name, user=user_id
+            ),
+            text=f"{user_id} is now {new_role_name}",
         )
         if log_level == "DEBUG":
             logger.debug(f"\n{result}\n")
@@ -154,10 +154,11 @@ def assign_role(
         )
 
     # Let the user know they've been assigned the role and what to do
-    dm = build_user_role_notification(target_channel, target_role, user_id)
     try:
         result = slack_web_client.chat_postMessage(
-            **dm,
+            **IncidentUserNotification.create(
+                user=user_id, role=target_role, channel=target_channel
+            ),
             text=f"You have been assigned {new_role_name} for incident <#{target_channel}>",
         )
         if log_level == "DEBUG":
@@ -212,23 +213,26 @@ def claim_role(action_parameters: type[ActionParametersSlack]):
         blocks=blocks,
     )
     # Send update notification message to incident channel
-    message = build_role_update(incident_data.channel_id, new_role_name, user)
     try:
         result = slack_web_client.chat_postMessage(
-            **message,
+            **IncidentUpdate.role(
+                channel=incident_data.channel_id, role=new_role_name, user=user
+            ),
             text=f"You have claimed {new_role_name} for incident <#{incident_data.channel_id}>",
         )
         logger.debug(f"\n{result}\n")
     except slack_sdk.errors.SlackApiError as error:
         logger.error(f"Error sending role update to incident channel: {error}")
     # Let the user know they've been assigned the role and what to do
-    dm = build_user_role_notification(
-        incident_data.channel_id,
-        action_value,
-        action_parameters.user_details["id"],
-    )
     try:
-        result = slack_web_client.chat_postMessage(**dm, text="")
+        result = slack_web_client.chat_postMessage(
+            **IncidentUserNotification.create(
+                user=action_parameters.user_details["id"],
+                role=action_value,
+                channel=incident_data.channel_id,
+            ),
+            text=f"You have been assigned the role {action_value} for incident {incident_data.channel_name}.",
+        )
         logger.debug(f"\n{result}\n")
     except slack_sdk.errors.SlackApiError as error:
         logger.error(f"Error sending role description to user: {error}")
@@ -331,9 +335,6 @@ def set_incident_status(
         incident_commander = extract_role_owner(
             message_blocks, "role_incident_commander"
         )
-        technical_lead = extract_role_owner(
-            message_blocks, "role_technical_lead"
-        )
         # Error out if incident commander hasn't been claimed
         for role, person in {
             "incident commander": incident_commander,
@@ -375,13 +376,13 @@ def set_incident_status(
         }
         # We want real user names to tag in the rca doc
         actual_user_names = []
-        for person in [incident_commander, technical_lead]:
+        for person in [incident_commander]:
             if person != "_none_":
-                str = person.replace("<", "").replace(">", "").replace("@", "")
-                invite_user_to_channel(rcaChannelDetails["id"], str)
+                fmt = person.replace("<", "").replace(">", "").replace("@", "")
+                invite_user_to_channel(rcaChannelDetails["id"], fmt)
                 # Get real name of user to be used to generate RCA
                 actual_user_names.append(
-                    slack_web_client.users_info(user=str)["user"]["profile"][
+                    slack_web_client.users_info(user=fmt)["user"]["profile"][
                         "real_name"
                     ]
                 )
@@ -410,7 +411,12 @@ def set_incident_status(
         ]
         # Generate rca template and create rca if enabled
         # Get normalized description as rca title
-        if config.auto_create_rca in ("True", "true", True):
+        if (
+            "confluence" in config.active.integrations
+            and config.active.integrations.get("confluence").get(
+                "auto_create_rca"
+            )
+        ):
             from bot.confluence.rca import IncidentRootCauseAnalysis
 
             rca_title = " ".join(incident_data.incident_id.split("-")[2:])
@@ -418,11 +424,10 @@ def set_incident_status(
                 incident_id=incident_data.incident_id,
                 rca_title=rca_title,
                 incident_commander=actual_user_names[0],
-                technical_lead=actual_user_names[1],
                 severity=formatted_severity,
-                severity_definition=read_single_setting_value(
-                    "severity_levels"
-                )[formatted_severity],
+                severity_definition=config.active.severities[
+                    formatted_severity
+                ],
                 pinned_items=read_incident_pinned_items(
                     incident_id=incident_data.incident_id
                 ),
@@ -510,11 +515,13 @@ def set_incident_status(
             logger.error(f"Error sending RCA update to RCA channel: {error}")
 
         # Send message to incident channel
-        message = build_post_resolution_message(
-            incident_data.channel_id, action_value
-        )
         try:
-            result = slack_web_client.chat_postMessage(**message, text="")
+            result = slack_web_client.chat_postMessage(
+                **IncidentResolutionMessage.create(
+                    channel=incident_data.channel_id
+                ),
+                text="The incident has been resolved.",
+            )
             logger.debug(f"\n{result}\n")
         except slack_sdk.errors.SlackApiError as error:
             logger.error(
@@ -525,28 +532,26 @@ def set_incident_status(
         logger.info(f"Sent resolution info to {incident_data.channel_name}.")
 
         # If PagerDuty incident(s) exist, attempt to resolve them
-        if config.pagerduty_integration_enabled in ("True", "true", True):
+        if "pagerduty" in config.active.integrations:
             from bot.pagerduty.api import resolve
 
-            pd_incidents = incident_data.pagerduty_incidents
-            if len(pd_incidents) > 0:
-                for inc in pd_incidents:
+            if incident_data.pagerduty_incidents is not None:
+                for inc in incident_data.pagerduty_incidents:
                     resolve(pd_incident_id=inc)
 
     # Also updates digest message
-    new_digest_message = build_updated_digest_message(
-        incident_id=incident_data.channel_name,
-        incident_description=incident_data.channel_description,
-        status=action_value,
-        severity=formatted_severity,
-        is_security_incident=incident_data.is_security_incident,
-        conference_bridge=incident_data.conference_bridge,
-    )
     try:
         slack_web_client.chat_update(
             channel=variables.digest_channel_id,
             ts=incident_data.dig_message_ts,
-            blocks=new_digest_message["blocks"],
+            blocks=IncidentChannelDigestNotification.update(
+                incident_id=incident_data.channel_name,
+                incident_description=incident_data.channel_description,
+                is_security_incident=incident_data.is_security_incident,
+                status=action_value,
+                severity=formatted_severity,
+                conference_bridge=incident_data.conference_bridge,
+            ),
             text="",
         )
     except slack_sdk.errors.SlackApiError as e:
@@ -644,9 +649,13 @@ def set_incident_status(
     logger.info(
         f"Updated incident status for {incident_data.channel_name} to {action_value}."
     )
-    message = build_status_update(incident_data.channel_id, action_value)
     try:
-        result = slack_web_client.chat_postMessage(**message, text="")
+        result = slack_web_client.chat_postMessage(
+            **IncidentUpdate.status(
+                channel=incident_data.channel_id, status=action_value
+            ),
+            text=f"The incident status has been changed to {action_value}.",
+        )
         logger.debug(f"\n{result}\n")
     except slack_sdk.errors.SlackApiError as error:
         logger.error(
@@ -691,7 +700,7 @@ def reload_status_message(action_parameters: type[ActionParametersSlack]):
     try:
         result = slack_web_client.chat_postMessage(
             **ext_incidents.slack_message(),
-            text="",
+            text="External status refreshed.",
         )
         logger.debug(f"\n{result}\n")
     except slack_sdk.errors.SlackApiError as error:
@@ -734,19 +743,18 @@ def set_severity(
         channel=variables.digest_channel_id,
         oldest=incident_data.dig_message_ts,
     )
-    new_digest_message = build_updated_digest_message(
-        incident_id=incident_data.channel_name,
-        incident_description=incident_data.channel_description,
-        status=formatted_status,
-        severity=action_value,
-        is_security_incident=incident_data.is_security_incident,
-        conference_bridge=incident_data.conference_bridge,
-    )
     try:
         slack_web_client.chat_update(
             channel=variables.digest_channel_id,
             ts=incident_data.dig_message_ts,
-            blocks=new_digest_message["blocks"],
+            blocks=IncidentChannelDigestNotification.update(
+                incident_id=incident_data.channel_name,
+                incident_description=incident_data.channel_description,
+                is_security_incident=incident_data.is_security_incident,
+                status=formatted_status,
+                severity=action_value,
+                conference_bridge=incident_data.conference_bridge,
+            ),
         )
     except slack_sdk.errors.SlackApiError as error:
         logger.error(
@@ -803,11 +811,13 @@ def set_severity(
         )
 
     # Final notification
-    message = build_severity_update(
-        incident_data.channel_id, action_value
-    )  # build severity update
     try:
-        result = slack_web_client.chat_postMessage(**message, text="")
+        result = slack_web_client.chat_postMessage(
+            **IncidentUpdate.severity(
+                channel=incident_data.channel_id, severity=action_value
+            ),
+            text=f"The incident severity has been changed to {action_value}.",
+        )
         logger.debug(f"\n{result}\n")
     except slack_sdk.errors.SlackApiError as error:
         logger.error(

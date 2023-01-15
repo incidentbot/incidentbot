@@ -32,7 +32,6 @@ import AvatarMenu from './Avatar-menu.component';
 import { apiUrl } from '../shared/Variables';
 import { ThemeToggle } from './ThemeToggle.component';
 import ApplicationHeaderLogo from './Header-logo.component';
-import { severities } from '../shared/Variables';
 import IncidentCreateModal from './Create-incident-modal.component';
 
 const drawerWidth = 240;
@@ -172,7 +171,7 @@ export default function MiniDrawer() {
               </IconButton>
               {!open && <ApplicationHeaderLogo />}
             </Box>
-            <IncidentCreateModal apiUrl={apiUrl} severities={severities} />
+            <IncidentCreateModal apiUrl={apiUrl} />
             <AvatarMenu />
           </Toolbar>
         </AppBar>

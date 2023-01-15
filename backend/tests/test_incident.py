@@ -5,18 +5,16 @@ from bot.incident.action_parameters import (
     ActionParametersWeb,
 )
 from bot.incident.incident import Incident
-from bot.incident.templates import (
-    build_digest_notification,
-    build_incident_channel_boilerplate,
-    build_post_resolution_message,
-    build_public_status_update,
-    build_role_update,
-    build_severity_update,
-    build_status_update,
-    build_updated_digest_message,
-    build_user_role_notification,
-)
 from bot.shared import tools
+from bot.templates.incident.channel_boilerplate import (
+    IncidentChannelBoilerplateMessage,
+)
+from bot.templates.incident.digest_notification import (
+    IncidentChannelDigestNotification,
+)
+from bot.templates.incident.resolution_message import IncidentResolutionMessage
+from bot.templates.incident.updates import IncidentUpdate
+from bot.templates.incident.user_dm import IncidentUserNotification
 
 placeholder_token = "verification-token"
 placeholder_team_id = "T111"
@@ -140,7 +138,7 @@ class TestIncidentManagement:
 
         assert re.search("^inc.*something-has-broken$", inc.channel_name)
 
-        assert inc.conference_bridge == "https://zoom.us"
+        assert inc.conference_bridge == "mock"
 
     def test_incident_channel_name_create(self):
         inc = Incident(
@@ -157,15 +155,15 @@ class TestIncidentManagement:
         assert re.search("^inc.*unallowed-chracter-check$", inc.channel_name)
 
     def test_incident_build_digest_notification(self):
-        assert build_digest_notification(
-            created_channel_details={
+        assert IncidentChannelDigestNotification.create(
+            incident_channel_details={
                 "incident_description": "mock",
                 "id": "CBR2V3XEX",
                 "name": "mock",
                 "is_security_incident": False,
             },
-            severity="sev4",
             conference_bridge="mock",
+            severity="sev4",
         ) == {
             "channel": "incidents",
             "blocks": [
@@ -254,415 +252,310 @@ class TestIncidentManagement:
         }
 
     def test_build_incident_channel_boilerplate(self):
-        assert build_incident_channel_boilerplate(
-            created_channel_details={"id": "CBR2V3XEX", "name": "mock"},
+        msg = IncidentChannelBoilerplateMessage.create(
+            incident_channel_details={"id": "CBR2V3XEX", "name": "mock"},
             severity="sev4",
-        ) == {
+        )
+        assert msg == {
+            "channel": "CBR2V3XEX",
             "blocks": [
                 {"type": "divider"},
                 {
                     "block_id": "header",
-                    "text": {
-                        "text": "We're in an incident - now what?",
-                        "type": "plain_text",
-                    },
                     "type": "header",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "We're in an incident - now what?",
+                    },
                 },
                 {
                     "block_id": "header_info_1",
-                    "text": {
-                        "text": "Incident Commander should be claimed or "
-                        "assigned first. The other roles should then be "
-                        "claimed or assigned.",
-                        "type": "mrkdwn",
-                    },
                     "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "Incident Commander should be claimed or assigned first. The other roles should then be claimed or assigned.",
+                    },
                 },
                 {
                     "block_id": "header_info_2",
-                    "text": {
-                        "text": "The Incident Commander should set the severity "
-                        "of this incident immediately. If the severity "
-                        "changes, please update it accordingly.",
-                        "type": "mrkdwn",
-                    },
                     "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "The Incident Commander should set the severity of this incident immediately. If the severity changes, please update it accordingly.",
+                    },
                 },
                 {
                     "block_id": "header_info_3",
-                    "text": {
-                        "text": "The incident starts out in *investigating* "
-                        "mode. As the incident progresses, it can be "
-                        "moved through statuses until it is resolved. An "
-                        "explanation of statuses is available in our "
-                        "incident guide linked below.",
-                        "type": "mrkdwn",
-                    },
                     "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "The incident starts out in *investigating* mode. As the incident progresses, it can be moved through statuses until it is resolved. An explanation of statuses is available in our incident guide linked below.",
+                    },
                 },
                 {"type": "divider"},
                 {
+                    "block_id": "status",
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": "*Current Status:*"},
                     "accessory": {
+                        "type": "static_select",
                         "action_id": "incident.set_incident_status",
+                        "placeholder": {
+                            "type": "plain_text",
+                            "text": "Investigating",
+                            "emoji": True,
+                        },
                         "options": [
                             {
                                 "text": {
-                                    "emoji": True,
-                                    "text": "Investigating",
                                     "type": "plain_text",
+                                    "text": "Investigating",
+                                    "emoji": True,
                                 },
                                 "value": "investigating",
                             },
                             {
                                 "text": {
-                                    "emoji": True,
-                                    "text": "Identified",
                                     "type": "plain_text",
+                                    "text": "Identified",
+                                    "emoji": True,
                                 },
                                 "value": "identified",
                             },
                             {
                                 "text": {
-                                    "emoji": True,
-                                    "text": "Monitoring",
                                     "type": "plain_text",
+                                    "text": "Monitoring",
+                                    "emoji": True,
                                 },
                                 "value": "monitoring",
                             },
                             {
                                 "text": {
-                                    "emoji": True,
-                                    "text": "Resolved",
                                     "type": "plain_text",
+                                    "text": "Resolved",
+                                    "emoji": True,
                                 },
                                 "value": "resolved",
                             },
                         ],
-                        "placeholder": {
-                            "emoji": True,
-                            "text": "Investigating",
-                            "type": "plain_text",
-                        },
-                        "type": "static_select",
                     },
-                    "block_id": "status",
-                    "text": {"text": "*Current Status:*", "type": "mrkdwn"},
-                    "type": "section",
                 },
                 {
+                    "block_id": "severity",
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": "*Severity:*"},
                     "accessory": {
+                        "type": "static_select",
                         "action_id": "incident.set_severity",
+                        "placeholder": {
+                            "type": "plain_text",
+                            "text": "SEV4",
+                            "emoji": True,
+                        },
                         "options": [
                             {
                                 "text": {
-                                    "emoji": True,
-                                    "text": "SEV1",
                                     "type": "plain_text",
+                                    "text": "SEV1",
+                                    "emoji": True,
                                 },
                                 "value": "sev1",
                             },
                             {
                                 "text": {
-                                    "emoji": True,
-                                    "text": "SEV2",
                                     "type": "plain_text",
+                                    "text": "SEV2",
+                                    "emoji": True,
                                 },
                                 "value": "sev2",
                             },
                             {
                                 "text": {
-                                    "emoji": True,
-                                    "text": "SEV3",
                                     "type": "plain_text",
+                                    "text": "SEV3",
+                                    "emoji": True,
                                 },
                                 "value": "sev3",
                             },
                             {
                                 "text": {
-                                    "emoji": True,
-                                    "text": "SEV4",
                                     "type": "plain_text",
+                                    "text": "SEV4",
+                                    "emoji": True,
                                 },
                                 "value": "sev4",
                             },
                         ],
-                        "placeholder": {
-                            "emoji": True,
-                            "text": "SEV4",
-                            "type": "plain_text",
-                        },
-                        "type": "static_select",
                     },
-                    "block_id": "severity",
-                    "text": {"text": "*Severity:*", "type": "mrkdwn"},
-                    "type": "section",
                 },
                 {"type": "divider"},
                 {
                     "block_id": "role_incident_commander",
-                    "text": {
-                        "text": "*Incident Commander*:\n" " _none_",
-                        "type": "mrkdwn",
-                    },
                     "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "*Incident Commander*:\n _none_",
+                    },
                 },
                 {
-                    "accessory": {
-                        "action_id": "incident.claim_role",
-                        "text": {
-                            "emoji": True,
-                            "text": "Claim",
-                            "type": "plain_text",
-                        },
-                        "type": "button",
-                        "value": "incident_commander",
-                    },
+                    "type": "section",
                     "block_id": "claim_incident_commander",
                     "text": {
-                        "emoji": True,
-                        "text": "Claim Role",
                         "type": "plain_text",
+                        "text": "Claim Role",
+                        "emoji": True,
                     },
-                    "type": "section",
+                    "accessory": {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Claim",
+                            "emoji": True,
+                        },
+                        "value": "incident_commander",
+                        "action_id": "incident.claim_role",
+                    },
                 },
                 {
-                    "accessory": {
-                        "action_id": "incident.assign_role",
-                        "placeholder": {
-                            "text": "Select a user...",
-                            "type": "plain_text",
-                        },
-                        "type": "users_select",
-                    },
+                    "type": "section",
                     "block_id": "assign_incident_commander",
                     "text": {
-                        "emoji": True,
-                        "text": "Assign Role",
                         "type": "plain_text",
+                        "text": "Assign Role",
+                        "emoji": True,
                     },
-                    "type": "section",
+                    "accessory": {
+                        "action_id": "incident.assign_role",
+                        "type": "users_select",
+                        "placeholder": {
+                            "type": "plain_text",
+                            "text": "Select a user...",
+                        },
+                    },
                 },
                 {"type": "divider"},
                 {
                     "block_id": "role_technical_lead",
-                    "text": {
-                        "text": "*Technical Lead*:\n" " _none_",
-                        "type": "mrkdwn",
-                    },
                     "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "*Technical Lead*:\n _none_",
+                    },
                 },
                 {
-                    "accessory": {
-                        "action_id": "incident.claim_role",
-                        "text": {
-                            "emoji": True,
-                            "text": "Claim",
-                            "type": "plain_text",
-                        },
-                        "type": "button",
-                        "value": "technical_lead",
-                    },
+                    "type": "section",
                     "block_id": "claim_technical_lead",
                     "text": {
-                        "emoji": True,
-                        "text": "Claim Role",
                         "type": "plain_text",
+                        "text": "Claim Role",
+                        "emoji": True,
                     },
-                    "type": "section",
+                    "accessory": {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Claim",
+                            "emoji": True,
+                        },
+                        "value": "technical_lead",
+                        "action_id": "incident.claim_role",
+                    },
                 },
                 {
-                    "accessory": {
-                        "action_id": "incident.assign_role",
-                        "placeholder": {
-                            "text": "Select a user...",
-                            "type": "plain_text",
-                        },
-                        "type": "users_select",
-                    },
+                    "type": "section",
                     "block_id": "assign_technical_lead",
                     "text": {
-                        "emoji": True,
-                        "text": "Assign Role",
                         "type": "plain_text",
+                        "text": "Assign Role",
+                        "emoji": True,
                     },
-                    "type": "section",
+                    "accessory": {
+                        "action_id": "incident.assign_role",
+                        "type": "users_select",
+                        "placeholder": {
+                            "type": "plain_text",
+                            "text": "Select a user...",
+                        },
+                    },
                 },
                 {"type": "divider"},
                 {
                     "block_id": "role_communications_liaison",
-                    "text": {
-                        "text": "*Communications Liaison*:\n" " _none_",
-                        "type": "mrkdwn",
-                    },
                     "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "*Communications Liaison*:\n _none_",
+                    },
                 },
                 {
-                    "accessory": {
-                        "action_id": "incident.claim_role",
-                        "text": {
-                            "emoji": True,
-                            "text": "Claim",
-                            "type": "plain_text",
-                        },
-                        "type": "button",
-                        "value": "communications_liaison",
-                    },
+                    "type": "section",
                     "block_id": "claim_communications_liaison",
                     "text": {
-                        "emoji": True,
-                        "text": "Claim Role",
                         "type": "plain_text",
+                        "text": "Claim Role",
+                        "emoji": True,
                     },
-                    "type": "section",
+                    "accessory": {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Claim",
+                            "emoji": True,
+                        },
+                        "value": "communications_liaison",
+                        "action_id": "incident.claim_role",
+                    },
                 },
                 {
-                    "accessory": {
-                        "action_id": "incident.assign_role",
-                        "placeholder": {
-                            "text": "Select a user...",
-                            "type": "plain_text",
-                        },
-                        "type": "users_select",
-                    },
+                    "type": "section",
                     "block_id": "assign_communications_liaison",
                     "text": {
-                        "emoji": True,
-                        "text": "Assign Role",
                         "type": "plain_text",
+                        "text": "Assign Role",
+                        "emoji": True,
                     },
-                    "type": "section",
+                    "accessory": {
+                        "action_id": "incident.assign_role",
+                        "type": "users_select",
+                        "placeholder": {
+                            "type": "plain_text",
+                            "text": "Select a user...",
+                        },
+                    },
                 },
                 {"type": "divider"},
                 {
                     "block_id": "help_buttons",
+                    "type": "actions",
                     "elements": [
                         {
+                            "type": "button",
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Incident Guide",
+                            },
+                            "url": "https://changeme.com",
                             "action_id": "incident.incident_guide_link",
-                            "text": {
-                                "text": "Incident Guide",
-                                "type": "plain_text",
-                            },
-                            "type": "button",
-                            "url": "https://changeme.com",
                         },
                         {
+                            "type": "button",
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Incident Postmortems",
+                            },
+                            "url": "https://changeme.com",
                             "action_id": "incident.incident_postmortem_link",
-                            "text": {
-                                "text": "Incident Postmortems",
-                                "type": "plain_text",
-                            },
-                            "type": "button",
-                            "url": "https://changeme.com",
                         },
                     ],
-                    "type": "actions",
-                },
-                {"type": "divider"},
-                {
-                    "block_id": "resources",
-                    "text": {
-                        "text": "*Resources*\n"
-                        " <https://app.datadoghq.com/apm/home|Datadog>",
-                        "type": "mrkdwn",
-                    },
-                    "type": "section",
                 },
                 {"type": "divider"},
             ],
-            "channel": "CBR2V3XEX",
-        }
-
-    def test_build_post_resolution_message(self):
-        assert build_post_resolution_message(
-            channel="mock", status="resolved"
-        ) == {
-            "blocks": [
-                {"type": "divider"},
-                {
-                    "text": {
-                        "text": ":white_check_mark: Incident Resolved",
-                        "type": "plain_text",
-                    },
-                    "type": "header",
-                },
-                {
-                    "text": {
-                        "text": "This incident has been marked as resolved. The "
-                        "Incident Commander and the Technical Lead will "
-                        "be invited to an additional channel to discuss "
-                        "the RCA. Please use that channel to coordinate "
-                        "with others as needed. Remember to export the "
-                        "chat log for this incident below so it can be "
-                        "referenced in the RCA.",
-                        "type": "mrkdwn",
-                    },
-                    "type": "section",
-                },
-                {
-                    "block_id": "resolution_buttons",
-                    "elements": [
-                        {
-                            "action_id": "incident.export_chat_logs",
-                            "style": "primary",
-                            "text": {
-                                "text": "Export Chat Logs",
-                                "type": "plain_text",
-                            },
-                            "type": "button",
-                        },
-                        {
-                            "text": {
-                                "text": "Incident Guide",
-                                "type": "plain_text",
-                            },
-                            "type": "button",
-                            "url": "https://changeme.com",
-                        },
-                        {
-                            "text": {
-                                "text": "Incident Postmortems",
-                                "type": "plain_text",
-                            },
-                            "type": "button",
-                            "url": "https://changeme.com",
-                        },
-                    ],
-                    "type": "actions",
-                },
-                {"type": "divider"},
-            ],
-            "channel": "mock",
-        }
-
-    def test_build_role_update(self):
-        role = "Incident Commander"
-        assert build_role_update(
-            channel="mock", role=role, user="sample-user"
-        ) == {
-            "blocks": [
-                {"type": "divider"},
-                {
-                    "text": {
-                        "text": ":raising_hand: Role Update",
-                        "type": "plain_text",
-                    },
-                    "type": "header",
-                },
-                {
-                    "text": {
-                        "text": f"<@sample-user> has been assigned the *{role}* role.",
-                        "type": "mrkdwn",
-                    },
-                    "type": "section",
-                },
-                {"type": "divider"},
-            ],
-            "channel": "mock",
         }
 
     def test_build_status_update(self):
         status = "monitoring"
-        assert build_status_update(channel="mock", status=status) == {
+        assert IncidentUpdate.status(channel="mock", status=status) == {
             "blocks": [
                 {"type": "divider"},
                 {
@@ -686,104 +579,100 @@ class TestIncidentManagement:
 
     def test_build_updated_digest_message(self):
         status = "identified"
-        severity = "sev2"
+        severity = "sev4"
         is_security_incident = False
-        assert build_updated_digest_message(
+        msg = IncidentChannelDigestNotification.update(
             incident_id="mock",
             incident_description="mock",
+            is_security_incident=is_security_incident,
             status=status,
             severity=severity,
-            is_security_incident=is_security_incident,
             conference_bridge="mock",
-        ) == {
-            "blocks": [
-                {
-                    "type": "header",
-                    "text": {
-                        "type": "plain_text",
-                        "text": ":fire::fire_engine: Ongoing Incident",
-                    },
+        )
+        assert msg == [
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": ":fire::fire_engine: Ongoing Incident",
                 },
-                {
-                    "block_id": "digest_channel_title",
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": ":mag_right: Description:\n *mock*",
-                    },
+            },
+            {
+                "block_id": "digest_channel_title",
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": ":mag_right: Description:\n *mock*",
                 },
-                {
-                    "block_id": "digest_channel_status",
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": ":grey_question: Current Status:\n *Identified*",
-                    },
+            },
+            {
+                "block_id": "digest_channel_status",
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": ":grey_question: Current Status:\n *Identified*",
                 },
-                {
-                    "block_id": "digest_channel_severity",
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": ":grey_exclamation: Severity:\n *SEV2*",
-                    },
+            },
+            {
+                "block_id": "digest_channel_severity",
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": ":grey_exclamation: Severity:\n *SEV4*",
                 },
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": "This incident is in progress. Current status is listed here. Join the channel for more information.",
-                    },
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "This incident is in progress. Current status is listed here. Join the channel for more information.",
                 },
-                {
-                    "type": "actions",
-                    "block_id": "incchannelbuttons",
-                    "elements": [
-                        {
-                            "type": "button",
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Join Incident Channel",
-                            },
-                            "style": "primary",
-                            "url": "https://test.slack.com/archives/mock",
-                            "action_id": "incident.join_incident_channel",
+            },
+            {
+                "type": "actions",
+                "block_id": "incchannelbuttons",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Join Incident Channel",
                         },
-                        {
-                            "type": "button",
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Conference",
-                            },
-                            "url": "mock",
-                            "action_id": "incident.click_conference_bridge_link",
+                        "style": "primary",
+                        "url": "https://test.slack.com/archives/mock",
+                        "action_id": "incident.join_incident_channel",
+                    },
+                    {
+                        "type": "button",
+                        "text": {"type": "plain_text", "text": "Conference"},
+                        "url": "mock",
+                        "action_id": "incident.click_conference_bridge_link",
+                    },
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Incident Guide",
                         },
-                        {
-                            "type": "button",
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Incident Guide",
-                            },
-                            "url": "https://changeme.com",
-                            "action_id": "incident.incident_guide_link",
+                        "url": "https://changeme.com",
+                        "action_id": "incident.incident_guide_link",
+                    },
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Incident Postmortems",
                         },
-                        {
-                            "type": "button",
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Incident Postmortems",
-                            },
-                            "url": "https://changeme.com",
-                            "action_id": "incident.incident_postmortem_link",
-                        },
-                    ],
-                },
-            ]
-        }
+                        "url": "https://changeme.com",
+                        "action_id": "incident.incident_postmortem_link",
+                    },
+                ],
+            },
+        ]
 
     def test_build_public_status_update(self):
         timestamp = tools.fetch_timestamp()
-        assert build_public_status_update(
+        assert IncidentUpdate.public_update(
             incident_id="mock",
             impacted_resources="api",
             message="foobar",

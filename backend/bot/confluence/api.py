@@ -23,7 +23,8 @@ class ConfluenceApi:
 
     def test(self) -> bool:
         if self.confluence.page_exists(
-            config.confluence_space, config.confluence_parent_page
+            config.active.integrations.get("confluence").get("space"),
+            config.active.integrations.get("confluence").get("parent"),
         ):
             logger.info("Conflluence API test passed")
             return True

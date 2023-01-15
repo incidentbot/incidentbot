@@ -18,7 +18,7 @@ The digest channel shows that a new incident has been started:
 
 .. image:: examples/digest-new.png
 
-Upon joining the incident channel, the control panel is show where changes can be made to `status`, `severity`, and `roles`:
+Upon joining the incident channel, the control panel is shown where changes can be made to `status`, `severity`, and `roles`:
 
 .. image:: examples/digest-new.png
 
