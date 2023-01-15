@@ -218,6 +218,7 @@ Provide the following environment variables:
 In the application's ``config.yaml``, you can set the Confluence space and parent page using the ``integrations`` section:
 
 .. code-block:: yaml
+
   integrations:
     confluence:
       auto_create_rca: true
@@ -237,6 +238,7 @@ You can integrate with PagerDuty to provide details about who is on call and pag
 In the application's ``config.yaml``, you can set the PagerDuty integration to active by providing a blank dict:
 
 .. code-block:: yaml
+
   integrations:
     pagerduty: {}
 
@@ -258,6 +260,7 @@ Provide the following environment variables:
 In the application's ``config.yaml``, you can set the Statuspage integration to active by providing the heading and a key that indicates what URL to lead others to to view your incidents:
 
 .. code-block:: yaml
+
   integrations:
     statuspage:
       url: https://status.mycorp.com
@@ -291,6 +294,7 @@ Provide the following environment variables:
 In the application's ``config.yaml``, you can set the Zoom integration to active by providing the heading and the value:
 
 .. code-block:: yaml
+
   integrations:
     zoom:
       auto_create_meeting: true
