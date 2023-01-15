@@ -16,5 +16,6 @@ Contents
 
   features
   setup
+  configuration
   examples
   troubleshooting
