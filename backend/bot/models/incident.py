@@ -1,7 +1,8 @@
+import json
 import logging
 
 from bot.models.pg import Incident, Session
-from sqlalchemy import or_
+from sqlalchemy import or_, update
 from typing import List
 
 logger = logging.getLogger(__name__)
@@ -156,11 +157,6 @@ def db_update_incident_last_update_sent_col(
         incident.last_update_sent = last_update_sent
         Session.commit()
     except Exception as error:
-        incident = (
-            Session.query(Incident)
-            .filter(Incident.channel_id == channel_id)
-            .one()
-        )
         logger.error(
             f"Incident update failed for {incident.incident_id}: {error}"
         )
@@ -187,14 +183,11 @@ def db_update_incident_role(
             )
             .one()
         )
-        if "incident_commander" in role:
-            incident.commander = user
-        elif "technical_lead" in role:
-            incident.technical_lead = user
-        elif "communications_liaison" in role:
-            incident.communications_liaison = user
+        if incident.roles is None:
+            incident.roles = {}
+            incident.roles[role] = user
         else:
-            logger.error(f"{role} is not a valid choice.")
+            incident.roles[role] = user
         Session.commit()
     except Exception as error:
         logger.error(f"Incident update failed for {incident_id}: {error}")
@@ -401,11 +394,9 @@ def db_write_incident(
             severity=severity,
             bp_message_ts=bp_message_ts,
             dig_message_ts=dig_message_ts,
-            tags=[],
             is_security_incident=is_security_incident,
             channel_description=channel_description,
             conference_bridge=conference_bridge,
-            pagerduty_incidents=[],
         )
         Session.add(incident)
         Session.commit()

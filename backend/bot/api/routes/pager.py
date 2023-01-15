@@ -10,7 +10,7 @@ pager = Blueprint("pager", __name__)
 @pager.route("/pager", methods=["GET"])
 @jwt_required()
 def get_pager():
-    if config.pagerduty_integration_enabled != "false":
+    if "pagerduty" in config.active.integrations:
         try:
             data = (
                 Session.query(OperationalData)
@@ -42,7 +42,7 @@ def get_pager():
 @pager.route("/pager/auto_map", methods=["GET"])
 @jwt_required()
 def get_pager_automapping():
-    if config.pagerduty_integration_enabled != "false":
+    if "pagerduty" in config.active.integrations:
         try:
             data = (
                 Session.query(OperationalData)
@@ -74,7 +74,7 @@ def get_pager_automapping():
 @pager.route("/pager/auto_map/store", methods=["GET", "PATCH"])
 @jwt_required()
 def get_patch_pager_automapping():
-    if config.pagerduty_integration_enabled in ("True", "true", True):
+    if "pagerduty" in config.active.integrations:
         if request.method == "GET":
             try:
                 data = (

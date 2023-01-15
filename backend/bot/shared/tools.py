@@ -1,10 +1,10 @@
+import config
 import ipaddress
 import json
 import logging
 import random
 import string
 
-from bot.settings.im import timezone as application_timezone
 from datetime import datetime
 from pytz import timezone
 from typing import Any, Dict, List
@@ -16,6 +16,8 @@ random_suffix = "".join(
 )
 timestamp_fmt = "%Y-%m-%dT%H:%M:%S %Z"
 timestamp_fmt_short = "%d/%m/%Y %H:%M:%S %Z"
+
+application_timezone = config.active.options.get("timezone")
 
 
 class dotdict(Dict):

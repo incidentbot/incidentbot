@@ -1,3 +1,9 @@
+class RCATemplate:
+    def __init__(self):
+        pass
+
+    def template():
+        return """
 <table data-layout="default" ac:local-id="5169d0ee-8730-498e-926c-90449c5ed692">
   <colgroup>
     <col style="width: 340.0px;" />
@@ -187,3 +193,4 @@
 {pinned_messages}
 <ac:structured-macro ac:name="attachments" ac:schema-version="1" data-layout="wide"
   ac:local-id="033b7709-77e6-4a5e-96d4-95eb881791d7" ac:macro-id="d97514d5-d06a-43cc-b9f8-36f494ed7a79" />
+"""

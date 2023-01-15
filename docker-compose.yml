@@ -8,7 +8,6 @@ services:
     depends_on:
       - db
     environment:
-      INCIDENTS_DIGEST_CHANNEL: 'incidents'
       SLACK_APP_TOKEN: 'xapp-1-...'
       SLACK_BOT_TOKEN: 'xoxb-...'
       SLACK_USER_TOKEN: 'xoxp-...'
@@ -17,23 +16,14 @@ services:
       POSTGRES_USER: incident_bot
       POSTGRES_PASSWORD: somepassword
       POSTGRES_PORT: 5432
-      INCIDENT_AUTO_GROUP_INVITE_ENABLED: 'false'
-      INCIDENT_AUTO_GROUP_INVITE_GROUP_NAME: ''
-      INCIDENT_AUTO_CREATE_FROM_REACT_ENABLED: 'false'
-      INCIDENT_AUTO_CREATE_FROM_REACT_EMOJI_NAME: 'create-incident'
-      PAGERDUTY_INTEGRATION_ENABLED: 'false'
       PAGERDUTY_API_TOKEN: ''
       PAGERDUTY_API_USERNAME: ''
-      STATUSPAGE_INTEGRATION_ENABLED: 'false'
       STATUSPAGE_API_KEY: ''
       STATUSPAGE_PAGE_ID: ''
       STATUSPAGE_URL: ''
-      AUTO_CREATE_RCA: 'true'
       CONFLUENCE_API_URL: 'https://my-company.atlassian.net'
       CONFLUENCE_API_USERNAME: ''
       CONFLUENCE_API_TOKEN: ''
-      CONFLUENCE_SPACE: ''
-      CONFLUENCE_PARENT_PAGE: ''
       DEFAULT_WEB_ADMIN_PASSWORD: 'foobar1234'
       JWT_SECRET_KEY: 'supersecret'
     ports:

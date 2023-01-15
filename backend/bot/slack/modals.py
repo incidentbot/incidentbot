@@ -7,7 +7,6 @@ from bot.slack.client import return_slack_channel_info
 from bot.slack.messages import incident_list_message, pd_on_call_message
 from bot.audit.log import read as read_logs, write as write_log
 from bot.incident import incident
-from bot.incident.templates import build_public_status_update
 from bot.models.incident import (
     db_read_all_incidents,
     db_read_incident_channel_id,
@@ -16,6 +15,9 @@ from bot.models.incident import (
 )
 from bot.models.pager import read_pager_auto_page_targets
 from bot.shared import tools
+from bot.templates.incident.updates import (
+    IncidentUpdate,
+)
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
@@ -118,7 +120,7 @@ def update_home_tab(client, event, logger):
     open_incidents = incident_list_message(database_data, all=False)
     base_blocks.extend(open_incidents)
     # On call info
-    if config.pagerduty_integration_enabled != "false":
+    if "pagerduty" in config.active.integrations:
         from bot.pagerduty import api as pd_api
 
         pd_oncall_data = pd_api.find_who_is_on_call()
@@ -242,6 +244,21 @@ def open_modal(ack, body, client):
             },
             "label": {"type": "plain_text", "text": "Description"},
         },
+    ]
+
+    severities = []
+    for sev, _ in config.active.severities.items():
+        severities.append(
+            {
+                "text": {
+                    "type": "plain_text",
+                    "text": sev.upper(),
+                    "emoji": True,
+                },
+                "value": sev,
+            },
+        )
+    base_blocks.append(
         {
             "block_id": "severity",
             "type": "section",
@@ -254,47 +271,14 @@ def open_modal(ack, body, client):
                     "text": "Select a severity...",
                     "emoji": True,
                 },
-                "options": [
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "SEV1",
-                            "emoji": True,
-                        },
-                        "value": "sev1",
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "SEV2",
-                            "emoji": True,
-                        },
-                        "value": "sev2",
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "SEV3",
-                            "emoji": True,
-                        },
-                        "value": "sev3",
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "SEV4",
-                            "emoji": True,
-                        },
-                        "value": "sev4",
-                    },
-                ],
+                "options": severities,
             },
-        },
-    ]
+        }
+    ),
     """
     If there are teams that will be auto paged, mention that
     """
-    if config.pagerduty_integration_enabled in ("True", "true", True):
+    if "pagerduty" in config.active.integrations:
         auto_page_targets = read_pager_auto_page_targets()
         if len(auto_page_targets) != 0:
             base_blocks.extend(
@@ -511,18 +495,18 @@ def handle_submission(ack, client, view):
     for character in "#<>":
         channel_id = channel_id.replace(character, "")
     try:
-        update = build_public_status_update(
-            incident_id=channel_id,
-            impacted_resources=view["state"]["values"][
-                "open_incident_general_update_modal_impacted_resources"
-            ]["impacted_resources"]["value"],
-            message=view["state"]["values"][
-                "open_incident_general_update_modal_update_msg"
-            ]["message"]["value"],
-        )
         client.chat_postMessage(
             channel=variables.digest_channel_id,
-            blocks=update,
+            blocks=IncidentUpdate.public_update(
+                incident_id=channel_id,
+                impacted_resources=view["state"]["values"][
+                    "open_incident_general_update_modal_impacted_resources"
+                ]["impacted_resources"]["value"],
+                message=view["state"]["values"][
+                    "open_incident_general_update_modal_update_msg"
+                ]["message"]["value"],
+                timestamp=tools.fetch_timestamp(),
+            ),
             text=view["state"]["values"][
                 "open_incident_general_update_modal_update_msg"
             ]["message"]["value"],
@@ -546,7 +530,7 @@ def open_modal(ack, body, client):
     # Acknowledge the command request
     ack()
 
-    if config.pagerduty_integration_enabled != "false":
+    if "pagerduty" in config.active.integrations:
         from bot.pagerduty import api as pd_api
 
         # Format incident list

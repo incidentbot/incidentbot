@@ -8,7 +8,9 @@ api = ConfluenceApi()
 
 tplid = next(
     item
-    for item in api.get_content_templates(config.confluence_space)
+    for item in api.get_content_templates(
+        config.active.integrations.get("confluence").get("space")
+    )
     if item["name"] == template_name
 )["templateId"]
 
@@ -21,7 +23,7 @@ def update_template(new_body: str) -> tuple[bool, str]:
             name=name,
             body=body,
             template_id=tplid,
-            space=config.confluence_space,
+            space=config.active.integrations.get("confluence").get("space"),
         )
         return True, "success"
     except Exception as error:

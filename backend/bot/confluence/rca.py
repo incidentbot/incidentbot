@@ -27,8 +27,10 @@ class IncidentRootCauseAnalysis:
         self.pinned_items = pinned_items
         self.timeline = timeline
 
-        self.parent_page = config.confluence_parent_page
-        self.space = config.confluence_space
+        self.parent_page = config.active.integrations.get("confluence").get(
+            "parent"
+        )
+        self.space = config.active.integrations.get("confluence").get("space")
 
         self.confluence = ConfluenceApi()
         self.exec = self.confluence.api
@@ -87,7 +89,9 @@ class IncidentRootCauseAnalysis:
                                     name=item.title,
                                     content_type=item.mimetype,
                                     page_id=created_page_id,
-                                    space=config.confluence_space,
+                                    space=config.active.integrations.get(
+                                        "confluence"
+                                    ).get("space"),
                                     comment=f"This item was pinned to the incident by {item.user} at {item.ts}.",
                                 )
                             except Exception as error:

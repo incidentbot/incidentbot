@@ -319,7 +319,7 @@ process.scheduler.add_job(
     replace_existing=True,
 )
 
-if config.pagerduty_integration_enabled in ("True", "true", True):
+if "pagerduty" in config.active.integrations:
     from bot.pagerduty.api import store_on_call_data
 
     def update_pagerduty_oc_data():

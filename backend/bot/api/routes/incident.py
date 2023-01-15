@@ -244,7 +244,7 @@ def patch_update_incident(incident_id):
         if field == "tags":
             existing_tags = incident.tags
             if action == "update":
-                if existing_tags == None:
+                if existing_tags is None:
                     existing_tags = [value]
                 else:
                     existing_tags.append(value)

@@ -186,7 +186,9 @@ def return_new_incident_message(
                             "type": "plain_text",
                             "text": "Open Statuspage",
                         },
-                        "url": config.statuspage_url,
+                        "url": config.active.integrations.get(
+                            "statuspage"
+                        ).get("url"),
                     },
                 ],
             },

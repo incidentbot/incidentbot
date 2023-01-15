@@ -41,22 +41,6 @@ if __name__ == "__main__":
             "POSTGRES_PORT",
         ]
     )
-    ## Make sure templates directory exists and all templates are present
-    config.slack_template_check(
-        required_templates=[
-            "incident_channel_boilerplate.json",
-            "incident_digest_notification_update.json",
-            "incident_digest_notification.json",
-            "incident_public_status_update.json",
-            "incident_resolution_message.json",
-            "incident_role_update.json",
-            "incident_severity_update.json",
-            "incident_status_update.json",
-            "incident_user_role_dm.json",
-            "role_definitions.json",
-            "severity_levels.json",
-        ]
-    )
 
 """
 Scheduler

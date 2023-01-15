@@ -49,6 +49,7 @@ function renderManifest {
     "      - channels:read" \
     "      - chat:write" \
     "      - commands" \
+    "      - files:read" \
     "      - files:write" \
     "      - groups:history" \
     "      - groups:read" \

@@ -158,7 +158,8 @@ def page(
             Session.query(Incident).filter_by(incident_id=channel_name).one()
         )
         existing_incidents = incident.pagerduty_incidents
-        if existing_incidents == None:
+        if existing_incidents is None:
+            existing_incidents = []
             existing_incidents = [created_incident["id"]]
         else:
             existing_incidents.append(created_incident["id"])

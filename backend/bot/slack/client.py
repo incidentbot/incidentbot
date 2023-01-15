@@ -59,7 +59,7 @@ def get_digest_channel_id() -> str:
     # Get channel id of the incidents digest channel to send updates to
     channels = return_slack_channel_info()
     index = tools.find_index_in_list(
-        channels, "name", config.incidents_digest_channel
+        channels, "name", config.active.digest_channel
     )
     return channels[index]["id"]
 
