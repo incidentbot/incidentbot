@@ -26,6 +26,7 @@ services:
       CONFLUENCE_API_TOKEN: ''
       DEFAULT_WEB_ADMIN_PASSWORD: 'foobar1234'
       JWT_SECRET_KEY: 'supersecret'
+      CONFIG_FILE_PATH: '/config/incident-bot/config.yaml'
     ports:
       - target: 3000
         published: 3000
@@ -33,6 +34,9 @@ services:
         mode: host
     links:
       - db
+    volumes:
+      # Wherever the config file lives, root by default
+      - ./backend/config.yaml:/config/incident-bot/config.yaml
   db:
     image: postgres:13
     command:

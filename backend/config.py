@@ -30,7 +30,9 @@ is_test_environment = os.getenv("TEST_ENVIRONMENT", default="false") in (
 class Configuration:
     def __init__(self):
         self.filepath = (
-            "config.yaml" if not is_test_environment else "config-test.yaml"
+            os.getenv("CONFIG_FILE_PATH", default="config.yaml")
+            if not is_test_environment
+            else "config-test.yaml"
         )
         with open(self.filepath, "r") as yamlfile:
             self.live = yaml.load(yamlfile, Loader=yaml.FullLoader)

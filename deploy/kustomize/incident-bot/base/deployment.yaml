@@ -27,8 +27,6 @@ spec:
           envFrom:
             - secretRef:
                 name: incident-bot
-            - configMapRef:
-                name: incident-bot
           ports:
             - name: http
               containerPort: 3000
@@ -56,3 +54,10 @@ spec:
             requests:
               cpu: 250m
               memory: 256M
+          volumeMounts:
+            - name: incident-bot-config
+              mountPath: /config/incident-bot
+      volumes:
+        - name: incident-bot-config
+          configMap:
+            name: incident-bot-config

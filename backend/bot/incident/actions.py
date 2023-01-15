@@ -18,7 +18,6 @@ from bot.models.incident import (
     db_update_incident_severity_col,
     db_update_incident_updated_at_col,
 )
-from bot.models.setting import read_single_setting_value
 from bot.scheduler import scheduler
 from bot.shared import tools
 from bot.slack.client import (
@@ -379,11 +378,11 @@ def set_incident_status(
         actual_user_names = []
         for person in [incident_commander]:
             if person != "_none_":
-                str = person.replace("<", "").replace(">", "").replace("@", "")
-                invite_user_to_channel(rcaChannelDetails["id"], str)
+                fmt = person.replace("<", "").replace(">", "").replace("@", "")
+                invite_user_to_channel(rcaChannelDetails["id"], fmt)
                 # Get real name of user to be used to generate RCA
                 actual_user_names.append(
-                    slack_web_client.users_info(user=str)["user"]["profile"][
+                    slack_web_client.users_info(user=fmt)["user"]["profile"][
                         "real_name"
                     ]
                 )
@@ -426,9 +425,9 @@ def set_incident_status(
                 rca_title=rca_title,
                 incident_commander=actual_user_names[0],
                 severity=formatted_severity,
-                severity_definition=read_single_setting_value(
-                    "severity_levels"
-                )[formatted_severity],
+                severity_definition=config.active.severities[
+                    formatted_severity
+                ],
                 pinned_items=read_incident_pinned_items(
                     incident_id=incident_data.incident_id
                 ),
@@ -701,7 +700,7 @@ def reload_status_message(action_parameters: type[ActionParametersSlack]):
     try:
         result = slack_web_client.chat_postMessage(
             **ext_incidents.slack_message(),
-            text="",
+            text="External status refreshed.",
         )
         logger.debug(f"\n{result}\n")
     except slack_sdk.errors.SlackApiError as error:

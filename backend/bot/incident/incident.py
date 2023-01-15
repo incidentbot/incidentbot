@@ -360,7 +360,7 @@ async def handle_incident_optional_features(
                     # Write audit log
                     log.write(
                         incident_id=created_channel_details["name"],
-                        event=f"Group {required_participants_group} invited to the incident channel automatically.",
+                        event=f"Group {gr} invited to the incident channel automatically.",
                     )
                 except slack_sdk.errors.SlackApiError as error:
                     logger.error(

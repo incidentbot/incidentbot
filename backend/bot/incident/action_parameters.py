@@ -43,7 +43,7 @@ class ActionParametersSlack:
 
 @dataclass
 class ActionParametersWeb:
-    """Builds paramters based on web UI input"""
+    """Builds parameters based on web UI input"""
 
     incident_id: str
     channel_id: str

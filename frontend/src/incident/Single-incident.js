@@ -37,9 +37,7 @@ import { alpha } from '@mui/material/styles';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import AnnouncementIcon from '@mui/icons-material/Announcement';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
-import DeveloperBoardIcon from '@mui/icons-material/DeveloperBoard';
 import FindReplaceIcon from '@mui/icons-material/FindReplace';
-import ForumIcon from '@mui/icons-material/Forum';
 import LabelIcon from '@mui/icons-material/Label';
 import MeetingRoomRoundedIcon from '@mui/icons-material/MeetingRoomRounded';
 import MilitaryTechIcon from '@mui/icons-material/MilitaryTech';
@@ -50,8 +48,7 @@ import UpdateIcon from '@mui/icons-material/Update';
 import WarningIcon from '@mui/icons-material/Warning';
 
 import { Icon } from '@iconify/react';
-import { severities, statuses } from '../shared/Variables';
-//import { acGradientPerTheme } from '../shared/setTheme';
+
 import { apiUrl } from '../shared/Variables';
 import useToken from '../hooks/useToken';
 
@@ -80,6 +77,10 @@ const ViewSingleIncident = () => {
   const [fetchStatus, setFetchStatus] = useState('');
   const [fetchMessage, setFetchMessage] = useState('');
   const [openFetchStatus, setOpenFetchStatus] = useState(false);
+
+  const [severities, setSeverities] = useState([]);
+  const [statuses, setStatuses] = useState([]);
+  const [roles, setRoles] = useState([]);
 
   const { token } = useToken();
 
@@ -261,6 +262,88 @@ const ViewSingleIncident = () => {
       });
   }
 
+  async function getSeverities() {
+    await axios({
+      method: 'GET',
+      responseType: 'json',
+      url: apiUrl + '/incident/config/severities',
+      headers: {
+        Authorization: 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      }
+    })
+      .then(function (response) {
+        setSeverities(response.data.data);
+      })
+      .catch(function (error) {
+        if (error.response) {
+          setFetchStatus('error');
+          setFetchMessage(
+            `Error retrieving severity data from backend: ${error.response.data.error}`
+          );
+          setOpenFetchStatus(true);
+        } else if (error.request) {
+          setFetchStatus('error');
+          setFetchMessage(`Error retrieving severity data from backend: ${error}`);
+          setOpenFetchStatus(true);
+        }
+      });
+  }
+
+  async function getStatuses() {
+    await axios({
+      method: 'GET',
+      responseType: 'json',
+      url: apiUrl + '/incident/config/statuses',
+      headers: {
+        Authorization: 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      }
+    })
+      .then(function (response) {
+        setStatuses(response.data.data);
+      })
+      .catch(function (error) {
+        if (error.response) {
+          setFetchStatus('error');
+          setFetchMessage(
+            `Error retrieving status data from backend: ${error.response.data.error}`
+          );
+          setOpenFetchStatus(true);
+        } else if (error.request) {
+          setFetchStatus('error');
+          setFetchMessage(`Error retrieving status data from backend: ${error}`);
+          setOpenFetchStatus(true);
+        }
+      });
+  }
+
+  async function getRoles() {
+    await axios({
+      method: 'GET',
+      responseType: 'json',
+      url: apiUrl + '/incident/config/roles',
+      headers: {
+        Authorization: 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      }
+    })
+      .then(function (response) {
+        setRoles(response.data.data);
+      })
+      .catch(function (error) {
+        if (error.response) {
+          setFetchStatus('error');
+          setFetchMessage(`Error retrieving role data from backend: ${error.response.data.error}`);
+          setOpenFetchStatus(true);
+        } else if (error.request) {
+          setFetchStatus('error');
+          setFetchMessage(`Error retrieving role data from backend: ${error}`);
+          setOpenFetchStatus(true);
+        }
+      });
+  }
+
   // Handlers
   const handleUserAssign = (props) => (event) => {
     values.channel_id = props.channelID;
@@ -285,6 +368,9 @@ const ViewSingleIncident = () => {
     getPinnedItems();
     getSlackUsers();
     getIMSettings();
+    getSeverities();
+    getStatuses();
+    getRoles();
     setLoadingData(false);
   }, []);
 
@@ -295,6 +381,9 @@ const ViewSingleIncident = () => {
     getPinnedItems();
     getSlackUsers();
     getIMSettings();
+    getSeverities();
+    getStatuses();
+    getRoles();
     setLoadingData(false);
   }
 
@@ -394,12 +483,11 @@ const ViewSingleIncident = () => {
                           <FindReplaceIcon fontSize="large" />
                         </ListItemIcon>
                         <FormControl variant="filled" size="small" sx={{ minWidth: 120 }}>
-                          <InputLabel id="severity-select">Severity</InputLabel>
+                          <InputLabel id="status-select">Status</InputLabel>
                           <Select
-                            labelId="severity-select"
-                            id="severity-select"
+                            labelId="status-select"
+                            id="status-select"
                             value={incident.status}
-                            //disabled={waitingForSomething || incident.status === 'resolved'}
                             disabled
                             onChange={() => console.log('changed')}>
                             {statuses.map((status) => [
@@ -421,7 +509,6 @@ const ViewSingleIncident = () => {
                             labelId="severity-select"
                             id="severity-select"
                             value={incident.severity}
-                            //disabled={waitingForSomething || incident.status === 'resolved'}
                             disabled
                             onChange={() => console.log('changed')}>
                             {severities.map((sev) => [
@@ -481,101 +568,44 @@ const ViewSingleIncident = () => {
                       </Box>
                     )}
                     <List>
-                      <ListItem dense key="roles">
-                        <ListItemIcon>
-                          <MilitaryTechIcon fontSize="large" />
-                        </ListItemIcon>
-                        <FormControl
-                          variant="standard"
-                          sx={{
-                            marginLeft: 2,
-                            marginRight: 2,
-                            minWidth: 120,
-                            display: 'flex'
-                          }}>
-                          <InputLabel id="commander-select">Commander</InputLabel>
-                          <Select
-                            labelId="commander-select"
-                            id="commander-select"
-                            value={incident.commander !== null ? incident.commander : ''}
-                            disabled={waitingForSomething || incident.status === 'resolved'}
-                            onChange={handleUserAssign({
-                              incidentID: incident.incident_id,
-                              channelID: incident.channel_id,
-                              messageTS: incident.bp_message_ts,
-                              role: 'incident_commander'
-                            })}>
-                            {users.map((user) => [
-                              <MenuItem value={user.name} key={user.name}>
-                                {user.name}
-                              </MenuItem>
-                            ])}
-                          </Select>
-                        </FormControl>
-                      </ListItem>
-                      <Divider component="li" />
-                      <ListItem>
-                        <Divider orientation="vertical" flexItem />
-                        <ListItemIcon>
-                          <DeveloperBoardIcon fontSize="large" />
-                        </ListItemIcon>
-                        <FormControl
-                          variant="standard"
-                          sx={{ marginLeft: 2, marginRight: 2, minWidth: 120 }}>
-                          <InputLabel id="tech-lead-select">Tech Lead</InputLabel>
-                          <Select
-                            labelId="tech-lead-select"
-                            id="tech-lead-select"
-                            value={incident.technical_lead !== null ? incident.technical_lead : ''}
-                            disabled={waitingForSomething || incident.status === 'resolved'}
-                            onChange={handleUserAssign({
-                              incidentID: incident.incident_id,
-                              channelID: incident.channel_id,
-                              messageTS: incident.bp_message_ts,
-                              role: 'technical_lead'
-                            })}>
-                            {users.map((user) => [
-                              <MenuItem value={user.name} key={user.name}>
-                                {user.name}
-                              </MenuItem>
-                            ])}
-                          </Select>
-                        </FormControl>
-                      </ListItem>
-                      <Divider component="li" />
-                      <ListItem>
-                        <Divider orientation="vertical" flexItem />
-                        <ListItemIcon>
-                          <ForumIcon fontSize="large" />
-                        </ListItemIcon>
-                        <FormControl
-                          variant="standard"
-                          sx={{ marginLeft: 2, marginRight: 2, minWidth: 120 }}>
-                          <InputLabel id="communications-liaison-select">Comms</InputLabel>
-                          <Select
-                            labelId="communications-liaison-select"
-                            id="communications-liaison-select"
-                            value={
-                              incident.communications_liaison !== null
-                                ? incident.communications_liaison
-                                : ''
-                            }
-                            disabled={waitingForSomething || incident.status === 'resolved'}
-                            onChange={handleUserAssign({
-                              incidentID: incident.incident_id,
-                              channelID: incident.channel_id,
-                              messageTS: incident.bp_message_ts,
-                              role: 'communications_liaison'
-                            })}>
-                            {users.map((user) => [
-                              <MenuItem value={user.name} key={user.name}>
-                                {user.name}
-                              </MenuItem>
-                            ])}
-                          </Select>
-                        </FormControl>
-                      </ListItem>
-                      <Divider component="li" />
+                      {roles.map((role) => (
+                        <>
+                          <ListItem key={`${role}-select`}>
+                            <ListItemIcon>
+                              <MilitaryTechIcon fontSize="large" />
+                            </ListItemIcon>
+                            <FormControl
+                              variant="standard"
+                              sx={{
+                                marginLeft: 1,
+                                minWidth: 220,
+                                display: 'flex'
+                              }}>
+                              <InputLabel id={`${role}-select`}>
+                                {role.replace('_', ' ')}
+                              </InputLabel>
+                              <Select
+                                labelId={`${role}-select`}
+                                id={`${role}-select`}
+                                value={incident.roles[role] !== null ? incident.roles[role] : null}
+                                disabled={waitingForSomething || incident.status === 'resolved'}
+                                onChange={handleUserAssign({
+                                  incidentID: incident.incident_id,
+                                  channelID: incident.channel_id,
+                                  messageTS: incident.bp_message_ts,
+                                  role: role
+                                })}>
+                                {users.map((user) => [
+                                  <MenuItem value={user.name} key={user.name}>
+                                    {user.name}
+                                  </MenuItem>
+                                ])}
+                              </Select>
+                            </FormControl>
+                          </ListItem>
+                          <Divider component="li" />
+                        </>
+                      ))}
                     </List>
                   </Card>
                 </Grid>

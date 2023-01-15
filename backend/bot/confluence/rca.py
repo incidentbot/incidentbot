@@ -3,6 +3,7 @@ import config
 from bot.confluence.api import ConfluenceApi, logger
 from bot.models.pg import IncidentLogging
 from bot.shared import tools
+from bot.templates.confluence.rca import RCATemplate
 from typing import Any, Dict, List, Tuple
 
 
@@ -12,7 +13,6 @@ class IncidentRootCauseAnalysis:
         incident_id: str,
         rca_title: str,
         incident_commander: str,
-        technical_lead: str,
         severity: str,
         severity_definition: str,
         pinned_items: List[IncidentLogging],
@@ -21,7 +21,6 @@ class IncidentRootCauseAnalysis:
         self.incident_id = incident_id
         self.title = rca_title
         self.incident_commander = incident_commander
-        self.technical_lead = technical_lead
         self.severity = severity
         self.severity_definition = severity_definition
         self.pinned_items = pinned_items
@@ -48,7 +47,6 @@ class IncidentRootCauseAnalysis:
         # Generate html for rca doc
         body = self.__render_rca_html(
             incident_commander=self.incident_commander,
-            technical_lead=self.technical_lead,
             severity=self.severity,
             severity_definition=self.severity_definition,
             timeline=self.__generate_timeline(),
@@ -171,7 +169,6 @@ class IncidentRootCauseAnalysis:
     def __render_rca_html(
         self,
         incident_commander: str,
-        technical_lead: str,
         severity: str,
         severity_definition: str,
         timeline: str,
@@ -182,13 +179,18 @@ class IncidentRootCauseAnalysis:
             "incident_commander": self.__user_mention_format(
                 incident_commander
             ),
-            "technical_lead": self.__user_mention_format(technical_lead),
             "severity": severity.upper(),
             "severity_definition": severity_definition,
             "timeline": timeline,
             "pinned_messages": pinned_messages,
         }
-        return tools.render_html(f"templates/confluence/rca.html", variables)
+        return RCATemplate.template(
+            incident_commander=incident_commander,
+            severity=severity,
+            severity_definition=severity_definition,
+            timeline=timeline,
+            pinned_messages=pinned_messages,
+        )
 
     def __user_mention_format(self, role: str) -> str:
         """

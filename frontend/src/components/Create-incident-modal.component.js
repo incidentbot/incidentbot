@@ -61,9 +61,38 @@ export default function IncidentCreateModal(props) {
   };
   const handleClose = () => setOpen(false);
 
-  const [createIncidentStatus, setCreateIncidentStatus] = useState('');
-  const [createIncidentMessage, setCreateIncidentMessage] = useState('');
-  const [openCreateIncidentStatus, setOpenCreateIncidentStatus] = useState(false);
+  const [fetchStatus, setFetchStatus] = useState('');
+  const [fetchMessage, setFetchMessage] = useState('');
+  const [openFetchStatus, setOpenFetchStatus] = useState(false);
+  const [severities, setSeverities] = useState([]);
+
+  async function getSeverities() {
+    await axios({
+      method: 'GET',
+      responseType: 'json',
+      url: props.apiUrl + '/incident/config/severities',
+      headers: {
+        Authorization: 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      }
+    })
+      .then(function (response) {
+        setSeverities(response.data.data);
+      })
+      .catch(function (error) {
+        if (error.response) {
+          setFetchStatus('error');
+          setFetchMessage(
+            `Error retrieving severity data from backend: ${error.response.data.error}`
+          );
+          setOpenFetchStatus(true);
+        } else if (error.request) {
+          setFetchStatus('error');
+          setFetchMessage(`Error retrieving severity data from backend: ${error}`);
+          setOpenFetchStatus(true);
+        }
+      });
+  }
 
   async function createIncident(values) {
     return fetch(`${props.apiUrl}/incident`, {
@@ -87,13 +116,13 @@ export default function IncidentCreateModal(props) {
       private: `${values.private}`
     });
     if (!incident.success) {
-      setCreateIncidentStatus('error');
-      setCreateIncidentMessage(`Error creating incident: ${incident.error}`);
-      setOpenCreateIncidentStatus(true);
+      setFetchStatus('error');
+      setFetchMessage(`Error creating incident: ${incident.error}`);
+      setOpenFetchStatus(true);
     } else if (incident.success) {
-      setCreateIncidentStatus('success');
-      setCreateIncidentMessage('Incident created successfully!');
-      setOpenCreateIncidentStatus(true);
+      setFetchStatus('success');
+      setFetchMessage('Incident created successfully!');
+      setOpenFetchStatus(true);
       setOpen(false);
       window.location.reload();
     }
@@ -127,7 +156,8 @@ export default function IncidentCreateModal(props) {
 
   // Retrieve users only when modal is opened
   useEffect(() => {
-    if (open && firstLoad) getSlackUsers();
+    getSlackUsers();
+    getSeverities();
   }, [open, firstLoad]);
 
   return (
@@ -213,7 +243,7 @@ export default function IncidentCreateModal(props) {
                   value={values.severity}
                   label="Severity"
                   onChange={handleChange('severity')}>
-                  {props.severities.map((sev) => [
+                  {severities.map((sev) => [
                     <MenuItem value={sev} key={sev}>
                       {sev.toUpperCase()}
                     </MenuItem>
@@ -272,23 +302,23 @@ export default function IncidentCreateModal(props) {
           </form>
         </DialogContent>
       </Dialog>
-      {createIncidentStatus && (
+      {fetchStatus && (
         <Container>
           <Snackbar
-            open={openCreateIncidentStatus}
+            open={openFetchStatus}
             autoHideDuration={6000}
             anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
             onClose={(event, reason) => {
               if (reason === 'clickaway') {
                 return;
               }
-              setOpenCreateIncidentStatus(false);
+              setOpenFetchStatus(false);
             }}>
             <Alert
-              severity={createIncidentStatus ? createIncidentStatus : 'info'}
+              severity={fetchStatus ? fetchStatus : 'info'}
               variant="filled"
               sx={{ width: '100%' }}>
-              {createIncidentMessage}
+              {fetchMessage}
             </Alert>
           </Snackbar>
         </Container>

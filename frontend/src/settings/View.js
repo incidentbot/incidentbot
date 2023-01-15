@@ -5,7 +5,6 @@ import PropTypes from 'prop-types';
 import useUserData from '../hooks/useUserData';
 import APIAccessManagement from './components/api/Access-management';
 import OverviewFlow from './components/incident-workflow/Incident-workflow.component';
-import SettingsManagementPanel from './components/Settings-view.component';
 import UserManagementPanel from './components/Users-view.component';
 
 function TabPanel(props) {
@@ -57,22 +56,18 @@ const Settings = () => {
             <Box sx={{ width: '100%' }}>
               <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                 <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
-                  <Tab label="Incident Management" {...a11yProps(0)} />
-                  <Tab label="Users" {...a11yProps(1)} />
-                  <Tab label="Workflows" {...a11yProps(2)} />
-                  <Tab label="API" {...a11yProps(3)} />
+                  <Tab label="Users" {...a11yProps(0)} />
+                  <Tab label="Workflows" {...a11yProps(1)} />
+                  <Tab label="API" {...a11yProps(2)} />
                 </Tabs>
               </Box>
               <TabPanel value={value} index={0}>
-                <SettingsManagementPanel />
-              </TabPanel>
-              <TabPanel value={value} index={1}>
                 <UserManagementPanel />
               </TabPanel>
-              <TabPanel value={value} index={2}>
+              <TabPanel value={value} index={1}>
                 <OverviewFlow />
               </TabPanel>
-              <TabPanel value={value} index={3}>
+              <TabPanel value={value} index={2}>
                 <APIAccessManagement />
               </TabPanel>
             </Box>
