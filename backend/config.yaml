@@ -52,8 +52,8 @@ integrations:
     space: ENG
     parent: Postmortems
   # Enable Statuspage integration
-  # statuspage:
-  #   url: https://status.mydomain
+  statuspage:
+    url: https://status.mydomain
   # Enable Zoom integration
   zoom:
     # Set to true to automatically generate a Zoom meeting for each incident
