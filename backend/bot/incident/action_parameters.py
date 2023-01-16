@@ -21,12 +21,12 @@ class ActionParametersSlack:
         return self.payload["message"]
 
     @property
-    def user_details(self) -> str:
-        return self.payload["user"]
-
-    @property
     def state(self) -> str:
         return self.payload["state"]
+
+    @property
+    def user_details(self) -> str:
+        return self.payload["user"]
 
     @property
     def parameters(self) -> Dict[str, Any]:

@@ -56,46 +56,6 @@ def find_index_in_list(lst: List, key: Any, value: Any):
     return -1
 
 
-def read_json_from_file(file_path: str) -> Any:
-    """
-    Opens a json file in the filesystem and returns its data as a dictionary.
-    """
-    file = open(file_path)
-    json_data = json.load(file)
-    file.close()
-    return json_data
-
-
-def render_html(file, variables: dict) -> dict:
-    """Reads a template file as HTML, replaces vars using a dict,
-    and returns HTML
-    """
-    try:
-        with open(file, "r") as f:
-            html_data = f.read()
-            for k, v in variables.items():
-                html_data = html_data.replace(f"{{{k}}}", v)
-    except:
-        print(f"error when interpolating variables on file {file}: ")
-        print(variables)
-    return html_data
-
-
-def render_json(file, variables: dict) -> Any:
-    """Reads a template file as JSON, replaces vars using a dict,
-    and returns JSON
-    """
-    try:
-        with open(file, "r") as f:
-            json_data = f.read()
-            for k, v in variables.items():
-                json_data = json_data.replace(f"{{{k}}}", v)
-    except:
-        print(f"error when interpolating variables on file {file}: ")
-        print(variables)
-    return json.loads(json_data)
-
-
 def validate_ip_address(address):
     try:
         ipaddress.ip_network(address)

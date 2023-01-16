@@ -15,7 +15,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.ext.mutable import MutableBase, MutableDict
+from sqlalchemy.ext.mutable import MutableBase, MutableDict, MutableList
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 logger = logging.getLogger(__name__)
@@ -84,13 +84,13 @@ class Incident(Base, MutableBase, Serializer):
     created_at = Column(VARCHAR(50))
     updated_at = Column(VARCHAR(50))
     last_update_sent = Column(VARCHAR(50))
-    tags = Column(MutableDict.as_mutable(JSONB))
+    tags = Column(MutableList.as_mutable(JSONB))
     roles = Column(MutableDict.as_mutable(JSONB))
     rca = Column(VARCHAR)
     is_security_incident = Column(Boolean)
     channel_description = Column(String())
     conference_bridge = Column(String())
-    pagerduty_incidents = Column(MutableDict.as_mutable(JSONB))
+    pagerduty_incidents = Column(MutableList.as_mutable(JSONB))
 
     def serialize(self):
         d = Serializer.serialize(self)

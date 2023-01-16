@@ -12,7 +12,7 @@ const Incidents = () => {
   const [incidents, setIncidents] = useState([]);
   const [refreshData, setRefreshData] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
-  const [imSettings, setIMSettings] = useState([]);
+  const [slackWorkspaceID, setSlackWorkspaceID] = useState();
 
   const [fetchStatus, setFetchStatus] = useState('');
   const [fetchMessage, setFetchMessage] = useState('');
@@ -46,8 +46,8 @@ const Incidents = () => {
       });
   }
 
-  async function getIMSettings() {
-    var url = apiUrl + '/setting/incident_management_configuration';
+  async function getSlackWorkspaceID() {
+    var url = apiUrl + '/setting/slack_workspace_id';
     await axios({
       method: 'GET',
       responseType: 'json',
@@ -57,7 +57,7 @@ const Incidents = () => {
       }
     })
       .then(function (response) {
-        setIMSettings(response.data.data);
+        setSlackWorkspaceID(response.data.data);
       })
       .catch(function (error) {
         if (error.response) {
@@ -75,7 +75,7 @@ const Incidents = () => {
   // Retrieve incidents
   useEffect(() => {
     getAllIncidents();
-    getIMSettings();
+    getSlackWorkspaceID();
     setLoadingData(false);
   }, []);
 
@@ -83,16 +83,9 @@ const Incidents = () => {
     setLoadingData(true);
     setRefreshData(false);
     getAllIncidents();
-    getIMSettings();
+    getSlackWorkspaceID();
     setLoadingData(false);
   }
-
-  var slackWorkspaceID;
-  Object.entries(imSettings).forEach((key) => {
-    if (key[0] === 'slack_workspace_id') {
-      slackWorkspaceID = key[1];
-    }
-  });
 
   return (
     <div className="incidents-page">
