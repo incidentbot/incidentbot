@@ -234,45 +234,71 @@ def post_set_incident_role(incident_id):
 @incidentrt.route("/incident/<incident_id>", methods=["PATCH"])
 @jwt_required()
 def patch_update_incident(incident_id):
-    try:
-        request_data = request.json
-        field = request_data["field"]
-        action = request_data["action"]
-        value = request_data["value"]
-        incident = (
-            Session.query(Incident).filter_by(incident_id=incident_id).one()
-        )
-        if field == "tags":
-            existing_tags = incident.tags
-            if action == "update":
-                if existing_tags is None:
-                    existing_tags = [value]
-                else:
-                    existing_tags.append(value)
-            elif action == "delete":
-                existing_tags.remove(value)
-            try:
-                Session.execute(
-                    update(Incident)
-                    .where(Incident.incident_id == incident_id)
-                    .values(tags=existing_tags)
-                )
-                Session.commit()
-                return (
-                    jsonify({"success": True}),
-                    200,
-                    {"ContentType": "application/json"},
-                )
-            except Exception as error:
-                return (
-                    jsonify({"error": str(error)}),
-                    500,
-                    {"ContentType": "application/json"},
-                )
-            finally:
-                Session.close()
-                Session.remove()
-        else:
+    request_data = request.json
+    field = request_data["field"]
+    action = request_data["action"]
+    value = request_data["value"]
+    incident = Session.query(Incident).filter_by(incident_id=incident_id).one()
+    match field:
+        case "tags":
+            match action:
+                case "update":
+                    if incident.tags is None:
+                        try:
+                            incident.tags = []
+                            incident.tags.append(value)
+                            Session.commit()
+                            return (
+                                jsonify({"success": True}),
+                                200,
+                                {"ContentType": "application/json"},
+                            )
+                        except Exception as error:
+                            return (
+                                jsonify({"error": str(error)}),
+                                500,
+                                {"ContentType": "application/json"},
+                            )
+                        finally:
+                            Session.close()
+                            Session.remove()
+                    else:
+                        try:
+                            incident.tags.append(value)
+                            Session.commit()
+                            return (
+                                jsonify({"success": True}),
+                                200,
+                                {"ContentType": "application/json"},
+                            )
+                        except Exception as error:
+                            return (
+                                jsonify({"error": str(error)}),
+                                500,
+                                {"ContentType": "application/json"},
+                            )
+                        finally:
+                            Session.close()
+                            Session.remove()
+                case "delete":
+                    try:
+                        incident.tags.remove(value)
+                        Session.commit()
+                        return (
+                            jsonify({"success": True}),
+                            200,
+                            {"ContentType": "application/json"},
+                        )
+                    except Exception as error:
+                        return (
+                            jsonify({"error": str(error)}),
+                            500,
+                            {"ContentType": "application/json"},
+                        )
+                    finally:
+                        Session.close()
+                        Session.remove()
+        case _:
             return (
                 jsonify(
                     {
@@ -282,12 +308,6 @@ def patch_update_incident(incident_id):
                 500,
                 {"ContentType": "application/json"},
             )
-    except Exception as error:
-        return (
-            jsonify({"error": str(error)}),
-            500,
-            {"ContentType": "application/json"},
-        )
 
 
 @incidentrt.route("/incident/config/<parameter>", methods=["GET"])

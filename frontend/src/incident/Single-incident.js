@@ -28,6 +28,7 @@ import {
   MenuItem,
   Select,
   Snackbar,
+  Stack,
   Typography
 } from '@mui/material';
 
@@ -67,8 +68,9 @@ const ViewSingleIncident = () => {
 
   const [incident, setIncident] = useState();
   const [pinnedItemsData, setPinnedItemsData] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [users, setUsers] = useState([]);
-  const [imSettings, setIMSettings] = useState([]);
+  const [slackWorkspaceID, setSlackWorkspaceID] = useState();
 
   const [loadingData, setLoadingData] = useState(true);
   const [refreshData, setRefreshData] = useState(false);
@@ -77,10 +79,6 @@ const ViewSingleIncident = () => {
   const [fetchStatus, setFetchStatus] = useState('');
   const [fetchMessage, setFetchMessage] = useState('');
   const [openFetchStatus, setOpenFetchStatus] = useState(false);
-
-  const [severities, setSeverities] = useState([]);
-  const [statuses, setStatuses] = useState([]);
-  const [roles, setRoles] = useState([]);
 
   const { token } = useToken();
 
@@ -236,8 +234,8 @@ const ViewSingleIncident = () => {
       });
   }
 
-  async function getIMSettings() {
-    var url = apiUrl + '/setting/incident_management_configuration';
+  async function getSlackWorkspaceID() {
+    var url = apiUrl + '/setting/slack_workspace_id';
     await axios({
       method: 'GET',
       responseType: 'json',
@@ -247,7 +245,7 @@ const ViewSingleIncident = () => {
       }
     })
       .then(function (response) {
-        setIMSettings(response.data.data);
+        setSlackWorkspaceID(response.data.data);
       })
       .catch(function (error) {
         if (error.response) {
@@ -257,62 +255,6 @@ const ViewSingleIncident = () => {
         } else if (error.request) {
           setFetchStatus('error');
           setFetchMessage(`Error retrieving settings from backend: ${error}`);
-          setOpenFetchStatus(true);
-        }
-      });
-  }
-
-  async function getSeverities() {
-    await axios({
-      method: 'GET',
-      responseType: 'json',
-      url: apiUrl + '/incident/config/severities',
-      headers: {
-        Authorization: 'Bearer ' + token,
-        'Content-Type': 'application/json'
-      }
-    })
-      .then(function (response) {
-        setSeverities(response.data.data);
-      })
-      .catch(function (error) {
-        if (error.response) {
-          setFetchStatus('error');
-          setFetchMessage(
-            `Error retrieving severity data from backend: ${error.response.data.error}`
-          );
-          setOpenFetchStatus(true);
-        } else if (error.request) {
-          setFetchStatus('error');
-          setFetchMessage(`Error retrieving severity data from backend: ${error}`);
-          setOpenFetchStatus(true);
-        }
-      });
-  }
-
-  async function getStatuses() {
-    await axios({
-      method: 'GET',
-      responseType: 'json',
-      url: apiUrl + '/incident/config/statuses',
-      headers: {
-        Authorization: 'Bearer ' + token,
-        'Content-Type': 'application/json'
-      }
-    })
-      .then(function (response) {
-        setStatuses(response.data.data);
-      })
-      .catch(function (error) {
-        if (error.response) {
-          setFetchStatus('error');
-          setFetchMessage(
-            `Error retrieving status data from backend: ${error.response.data.error}`
-          );
-          setOpenFetchStatus(true);
-        } else if (error.request) {
-          setFetchStatus('error');
-          setFetchMessage(`Error retrieving status data from backend: ${error}`);
           setOpenFetchStatus(true);
         }
       });
@@ -367,9 +309,7 @@ const ViewSingleIncident = () => {
     getSingleIncident();
     getPinnedItems();
     getSlackUsers();
-    getIMSettings();
-    getSeverities();
-    getStatuses();
+    getSlackWorkspaceID();
     getRoles();
     setLoadingData(false);
   }, []);
@@ -380,19 +320,10 @@ const ViewSingleIncident = () => {
     getSingleIncident();
     getPinnedItems();
     getSlackUsers();
-    getIMSettings();
-    getSeverities();
-    getStatuses();
+    getSlackWorkspaceID();
     getRoles();
     setLoadingData(false);
   }
-
-  var slackWorkspaceID;
-  Object.entries(imSettings).forEach((key) => {
-    if (key[0] === 'slack_workspace_id') {
-      slackWorkspaceID = key[1];
-    }
-  });
 
   return (
     <div className="view-single-incident-page">
@@ -482,42 +413,18 @@ const ViewSingleIncident = () => {
                         <ListItemIcon>
                           <FindReplaceIcon fontSize="large" />
                         </ListItemIcon>
-                        <FormControl variant="filled" size="small" sx={{ minWidth: 120 }}>
-                          <InputLabel id="status-select">Status</InputLabel>
-                          <Select
-                            labelId="status-select"
-                            id="status-select"
-                            value={incident.status}
-                            disabled
-                            onChange={() => console.log('changed')}>
-                            {statuses.map((status) => [
-                              <MenuItem value={status} key={status}>
-                                {status}
-                              </MenuItem>
-                            ])}
-                          </Select>
-                        </FormControl>
+                        <Stack direction="row" spacing={1}>
+                          <Chip label={incident.status} color="primary" />
+                        </Stack>
                       </ListItem>
                       <Divider component="li" />
                       <ListItem dense key="severity">
                         <ListItemIcon>
                           <WarningIcon fontSize="large" />
                         </ListItemIcon>
-                        <FormControl variant="filled" size="small" sx={{ minWidth: 120 }}>
-                          <InputLabel id="severity-select">Severity</InputLabel>
-                          <Select
-                            labelId="severity-select"
-                            id="severity-select"
-                            value={incident.severity}
-                            disabled
-                            onChange={() => console.log('changed')}>
-                            {severities.map((sev) => [
-                              <MenuItem value={sev} key={sev}>
-                                {sev}
-                              </MenuItem>
-                            ])}
-                          </Select>
-                        </FormControl>
+                        <Stack direction="row" spacing={1}>
+                          <Chip label={incident.severity} color="primary" />
+                        </Stack>
                       </ListItem>
                       <Divider component="li" />
                       <ListItem dense key="slack-channel">
@@ -587,7 +494,11 @@ const ViewSingleIncident = () => {
                               <Select
                                 labelId={`${role}-select`}
                                 id={`${role}-select`}
-                                value={incident.roles[role] !== null ? incident.roles[role] : null}
+                                value={
+                                  incident.roles !== null && incident.roles[role] !== null
+                                    ? incident.roles[role]
+                                    : ''
+                                }
                                 disabled={waitingForSomething || incident.status === 'resolved'}
                                 onChange={handleUserAssign({
                                   incidentID: incident.incident_id,

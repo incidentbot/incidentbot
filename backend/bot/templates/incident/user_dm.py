@@ -10,7 +10,9 @@ class IncidentUserNotification:
                     "type": "header",
                     "text": {
                         "type": "plain_text",
-                        "text": f":wave: You have been elected as the {role} for an incident.",
+                        "text": ":wave: You have been elected as the {} for an incident.".format(
+                            role.replace("_", " ").title()
+                        ),
                     },
                 },
                 {

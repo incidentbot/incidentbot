@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import {
   Alert,
   Box,
@@ -45,32 +44,30 @@ export default function AddTagButton(props) {
     setAnchorEl(null);
   };
 
-  async function addTag() {
-    await axios({
+  async function addTag(values) {
+    return fetch(`${props.apiUrl}/incident/` + props.incidentID, {
       method: 'PATCH',
-      responseType: 'json',
-      url: props.apiUrl + '/incident/' + props.incidentID,
-      data: JSON.stringify({ field: 'tags', action: 'update', value: values.tag }),
-      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }
-    })
-      .then(function () {
-        setFetchStatus('success');
-        setFetchMessage(`Added tag.`);
-        setOpenFetchStatus(true);
-        props.setRefreshData(true);
-      })
-      .catch(function (error) {
-        if (error.response) {
-          setFetchStatus('error');
-          setFetchMessage(`Error adding tag: ${error.response.data.error}`);
-          setOpenFetchStatus(true);
-        } else if (error.request) {
-          setFetchStatus('error');
-          setFetchMessage(`Error adding tag: ${error}`);
-          setOpenFetchStatus(true);
-        }
-      });
+      headers: {
+        Authorization: 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(values)
+    }).then((data) => data.json());
   }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const incident = await addTag({ field: 'tags', action: 'update', value: values.tag });
+    if (!incident.success) {
+      setFetchStatus('error');
+      setFetchMessage(`Error adding tag: ${incident.error}`);
+      setOpenFetchStatus(true);
+    } else if (incident.success) {
+      setFetchStatus('success');
+      setFetchMessage('Tag added successfully!');
+      setOpenFetchStatus(true);
+    }
+  };
 
   return (
     <div>
@@ -92,7 +89,7 @@ export default function AddTagButton(props) {
           vertical: 'bottom',
           horizontal: 'left'
         }}>
-        <form onSubmit={() => addTag()}>
+        <form onSubmit={handleSubmit}>
           <Box
             display="flex"
             sx={{

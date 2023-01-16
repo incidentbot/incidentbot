@@ -8,6 +8,7 @@ import {
   IconButton,
   Link,
   Paper,
+  Stack,
   Table,
   TableBody,
   TableCell,
@@ -121,6 +122,12 @@ const headCells = [
     numeric: false,
     disablePadding: false,
     label: 'Slack Channel'
+  },
+  {
+    id: 'tags',
+    numeric: false,
+    disablePadding: false,
+    label: 'Tags'
   }
 ];
 
@@ -249,7 +256,9 @@ export default function EnhancedTable(props) {
       r = r.filter((incident) => incident.status !== 'resolved');
     }
     if (query !== null) {
-      r = r.filter((incident) => incident.incident_id.includes(query));
+      r = r.filter(
+        (incident) => incident.incident_id.includes(query) || incident.tags.includes(query)
+      );
     }
     return r;
   }
@@ -394,6 +403,13 @@ export default function EnhancedTable(props) {
                             target="new">
                             <Icon icon="bxl:slack" width="20" height="20" />
                           </IconButton>
+                        </TableCell>
+                        <TableCell align="left" padding="normal">
+                          <Stack direction="row" spacing={1}>
+                            {row.tags.map((tag, i) => (
+                              <Chip key={i} label={tag} color="primary" />
+                            ))}
+                          </Stack>
                         </TableCell>
                       </TableRow>
                     );

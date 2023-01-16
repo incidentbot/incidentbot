@@ -5,6 +5,7 @@ import sqlalchemy
 from bot.models.pg import PrivateSetting, Session
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
+from bot.shared import tools
 
 logger = logging.getLogger(__name__)
 
@@ -158,53 +159,61 @@ def handle_api_allowed_hosts():
                 Session.close()
                 Session.remove()
         case "POST":
-            try:
-                setting = (
-                    Session.query(PrivateSetting)
-                    .filter(PrivateSetting.name == "api_allowed_hosts")
-                    .one()
-                )
-                existing = setting.value
-                existing.append(request.json.get("host", None))
-                Session.execute(
-                    sqlalchemy.update(PrivateSetting)
-                    .where(PrivateSetting.name == "api_allowed_hosts")
-                    .values(value=existing)
-                )
-                Session.commit()
-                return (
-                    jsonify({"success": True}),
-                    200,
-                    {"ContentType": "application/json"},
-                )
-            except sqlalchemy.exc.NoResultFound as error:
+            submission = request.json.get("host", None)
+            if tools.validate_ip_address(submission):
                 try:
-                    setting = PrivateSetting(
-                        name="api_allowed_hosts",
-                        value=[request.json.get("host", None)],
-                        description="Allowed API hosts",
-                        deletable=True,
+                    setting = (
+                        Session.query(PrivateSetting)
+                        .filter(PrivateSetting.name == "api_allowed_hosts")
+                        .one()
                     )
-                    Session.add(setting)
+                    existing = setting.value
+                    existing.append(request.json.get("host", None))
+                    Session.execute(
+                        sqlalchemy.update(PrivateSetting)
+                        .where(PrivateSetting.name == "api_allowed_hosts")
+                        .values(value=existing)
+                    )
                     Session.commit()
                     return (
                         jsonify({"success": True}),
                         200,
                         {"ContentType": "application/json"},
                     )
-                except Exception as error:
-                    logger.error(
-                        f"Setting lookup failed for allowed API hosts: {error}"
-                    )
-                    Session.rollback()
-                    return (
-                        jsonify({"error": str(error)}),
-                        500,
-                        {"ContentType": "application/json"},
-                    )
-                finally:
-                    Session.close()
-                    Session.remove()
+                except sqlalchemy.exc.NoResultFound as error:
+                    try:
+                        setting = PrivateSetting(
+                            name="api_allowed_hosts",
+                            value=[request.json.get("host", None)],
+                            description="Allowed API hosts",
+                            deletable=True,
+                        )
+                        Session.add(setting)
+                        Session.commit()
+                        return (
+                            jsonify({"success": True}),
+                            200,
+                            {"ContentType": "application/json"},
+                        )
+                    except Exception as error:
+                        logger.error(
+                            f"Setting lookup failed for allowed API hosts: {error}"
+                        )
+                        Session.rollback()
+                        return (
+                            jsonify({"error": str(error)}),
+                            500,
+                            {"ContentType": "application/json"},
+                        )
+                    finally:
+                        Session.close()
+                        Session.remove()
+            else:
+                return (
+                    jsonify({"error": "not a valid ip address"}),
+                    500,
+                    {"ContentType": "application/json"},
+                )
         case "DELETE":
             try:
                 setting = (

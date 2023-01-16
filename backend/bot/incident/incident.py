@@ -15,16 +15,16 @@ from bot.models.incident import (
 from bot.models.pager import read_pager_auto_page_targets
 from bot.shared import tools
 from bot.slack.client import (
+    all_workspace_groups,
     slack_web_client,
     slack_workspace_id,
-    all_workspace_groups,
 )
 from bot.statuspage import slack as sp_slack, handler as sp_handler
-from bot.templates.incident.digest_notification import (
-    IncidentChannelDigestNotification,
-)
 from bot.templates.incident.channel_boilerplate import (
     IncidentChannelBoilerplateMessage,
+)
+from bot.templates.incident.digest_notification import (
+    IncidentChannelDigestNotification,
 )
 from typing import Dict
 
@@ -149,11 +149,6 @@ def create_incident(
 ) -> str:
     """
     Create an incident
-    """
-
-    """
-    Return formatted incident channel name
-    Typically inc-datefmt-topic
     """
     incident_description = request_parameters["incident_description"]
     user = request_parameters["user"]
@@ -472,7 +467,7 @@ async def handle_incident_optional_features(
             for i in auto_page_targets:
                 for k, v in i.items():
                     logger.info(
-                        f"Creating page for {k} since this team was included in auto_page_targets..."
+                        f"Paging {k}..."
                     )
                     # Write audit log
                     log.write(

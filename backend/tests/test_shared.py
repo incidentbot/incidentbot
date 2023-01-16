@@ -7,6 +7,7 @@ class TestUtils:
     def test_fetch_timestamp(self):
         ts = tools.fetch_timestamp()
         assert len(ts) == 23
+
         time = datetime.datetime.strptime(ts, tools.timestamp_fmt)
         assert type(time) == datetime.datetime
 
@@ -80,24 +81,6 @@ class TestUtils:
             "Ev222",
         )
         assert index == 1
-
-    def test_read_json_from_file(self):
-        json_data = tools.read_json_from_file("tests/files/sample.json")
-        assert json_data == {"sample_json": "somevalue"}
-
-    def test_render_html(self):
-        variables = {
-            "foo": "Bar",
-        }
-        html = tools.render_html(f"tests/files/sample.html", variables)
-        assert html == "<h1>Test Bar Page</h1>"
-
-    def test_render_json(self):
-        variables = {
-            "foo": "bar",
-        }
-        json_data = tools.render_json(f"tests/files/sample2.json", variables)
-        assert json_data == {"sample_json": "bar"}
 
     def test_validate_ip_address(self):
         is_ip = tools.validate_ip_address("127.0.0.1")

@@ -252,7 +252,7 @@ function APIAccessManagement() {
                       disabled
                       id="apiKey"
                       type={values.showApiKey ? 'text' : 'password'}
-                      value={apiKey}
+                      value={apiKey === undefined ? '' : apiKey}
                       onChange={handleChange('password')}
                       placeholder="API key will appear here"
                       endAdornment={
@@ -301,9 +301,8 @@ function APIAccessManagement() {
                 </FormControl>
               </Container>
             </form>
-
             <form onSubmit={handleSubmitCreateApiAllowedHost}>
-              <Container sx={{ marginTop: 8 }}>
+              <Container sx={{ marginTop: 4 }}>
                 <Typography variant="h5" noWrap component="div" color="primary">
                   Allowed Subnets
                 </Typography>
@@ -311,11 +310,11 @@ function APIAccessManagement() {
                   Endpoints originating in these subnets will be able to use the API.
                 </Typography>
                 <Box>
-                  <List>
-                    {apiAllowedHosts.map((host) => (
-                      <>
+                  <div>
+                    <List>
+                      {apiAllowedHosts.map((host, i) => (
                         <ListItem
-                          key={host}
+                          key={i}
                           disablePadding
                           secondaryAction={
                             <Tooltip title="Delete">
@@ -326,9 +325,9 @@ function APIAccessManagement() {
                           }>
                           <ListItemText primary={host} />
                         </ListItem>
-                      </>
-                    ))}
-                  </List>
+                      ))}
+                    </List>
+                  </div>
                 </Box>
                 <Box display="flex" alignItems="center">
                   <FormControl sx={{ width: { xs: '100%', md: '50%' } }} variant="outlined">

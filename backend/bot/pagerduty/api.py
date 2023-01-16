@@ -109,18 +109,6 @@ def page(
 ):
     """
     Page via an escalation policy when triggered from Slack.
-
-    This can be added back to the call when the following error is resolved.
-    {
-        "error": {
-            "message": "Required abilities are unavailable",
-            "code": 2014,
-            "errors": [
-                "The coordinated_responding account ability is required to access conference bridge details."
-            ],
-            "missing_abilities": "coordinated_responding",
-        }
-    }
     """
     service_id = find_service_for_escalation_policy(ep_name=ep_name)
     ep_id = find_escalation_policy_id(ep_name=ep_name)
@@ -159,7 +147,6 @@ def page(
         )
         existing_incidents = incident.pagerduty_incidents
         if existing_incidents is None:
-            existing_incidents = []
             existing_incidents = [created_incident["id"]]
         else:
             existing_incidents.append(created_incident["id"])
