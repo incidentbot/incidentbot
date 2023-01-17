@@ -15,9 +15,6 @@ Interacting with the bot is incredibly easy through the use of modals and simpli
   - [Features at a Glance](#features-at-a-glance)
   - [Quick Start](#quick-start)
     - [Kubernetes](#kubernetes)
-  - [Architecture](#architecture)
-  - [Requirements](#requirements)
-  - [Documentation](#documentation)
   - [Testing](#testing)
   - [Feedback](#feedback)
   
@@ -29,14 +26,13 @@ Featuring a rich web management UI:
 
 ## Features at a Glance
 
-- Fully featured web management UI
+- Fully featured optional web management UI - you can manage everything directly from Slack if desired
 - Robust experience in Slack to create and manage incidents using actions, shortcuts, and modals
 - Automatic creation of a centralized incident channel to partition conversation about incidents
 - Automatically page teams (if PagerDuty integration is enabled) on incident creation and/or on-demand
 - Select messages to pin to the incident that can be displayed in the web UI and automatically added to the RCA document
 - Automatically create an RCA channel and an RCA document (if Confluence integration is enabled)
 - Optional integration to manage Statuspage incidents directly from the Slack channel
-- Optional integration to automatically fetch the status of upstream providers
 
 ## Quick Start
 
@@ -44,46 +40,23 @@ Featuring a rich web management UI:
 - Select `from an app manifest` and copy `manifest.yaml` out of this repository and paste it in to automatically configure the app.
 - You'll need the app token, bot token, and user token for your application and provide those as `SLACK_APP_TOKEN`, `SLACK_BOT_TOKEN`, and `SLACK_USER_TOKEN` - these can be found within the app's configuration page in Slack.
 - You'll need a Postgres instance to connect to.
-- Check out [this](https://incident-bot.readthedocs.io/en/latest/setup.html#required-variables) page from the documentation that goes over all options and environment variables.
+- Configure the app using `config.yaml` and deploy it to Kubernetes, Docker, or whichever platform you choose.
 
 ### Kubernetes
 
-- You can use [kustomize](https://github.com/echoboomer/incident-bot/blob/main/deploy/kustomize/incident-bot/overlays/development/kustomization.yaml).
-- There's optionally a [Helm chart](https://github.com/echoboomer/incident-bot/blob/main/deploy/kustomize/incident-bot/overlays/development/kustomization.yaml). 
-
-Optionally, you can fork the repo and build and deploy on your own using these as a guideline.
-
-## Architecture
-
-The app is written in Python and backed by Postgresql and leverages the `slack-bolt` websocket framework to provide zero footprint for security concerns.
-
-The web UI is written in React.
-
-Each incident stores unique data referenced by processes throughout the app for lifecycle management on creation. The database should be durable and connection information should be passed to the application securely. In the event that a record is lost while an incident is open, the bot will be unable to manage that incident and none of the commands will work.
-
-## Requirements
-
-- [Create a Slack app](https://api.slack.com/apps?new_app=1) for this application. You can name it whatever you'd like, but `incident-bot` seems to make the most sense.
-- Use the option to create the app from a manifest. Run `make render` to output `slack_app_manifest.yaml` at project root and paste in the contents. You can adjust these settings later as you see fit, but these are the minimum permissions required for the bot to function properly.
-- Install the app to your workspace. You'll now have OAuth tokens. Provide the bot token as `SLACK_BOT_TOKEN` and the user token as `SLACK_USER_TOKEN`.
-- Verify that websocket mode is enabled and provide the generated app token as `SLACK_APP_TOKEN` - you can generate an app token via the `Basic Information` page in your app's configuration.
-
-## Documentation
-
-The documentation covers all setup requirements and features of the app.
-
-[View on readthedocs](https://incident-bot.readthedocs.io/en/latest/)
+- You can use [kustomize](https://github.com/echoboomer/incident-bot/blob/main/deploy/kustomize/incident-bot/overlays/development/kustomization.yaml). More details available [here](https://incident-bot.readthedocs.io/en/latest/setup.html#kustomize).
+- There's optionally a Helm chart - instructions are available [here](https://incident-bot.readthedocs.io/en/latest/setup.html#helm).
 
 ## Testing
 
 Tests will run on each pull request and merge to the primary branch. To run them locally:
 
 ```bash
-$ make -C backend run-tests
+make -C backend run-tests
 ```
 
 ## Feedback
 
 This application is not meant to solve every problem with regard to incident management. It was created as an open-source alternative to paid solutions that integrate with Slack.
 
-If you encounter issues with functionality or wish to see new features, please open an issue and let us know.
+If you encounter issues with functionality or wish to see new features, please open an issue and let us know!
