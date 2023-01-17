@@ -61,40 +61,57 @@ Contained with ``.env``, you'd want to include the sensitive values for this app
   ZOOM_CLIENT_ID=...
   ZOOM_CLIENT_SECRET=...
 
-
 This will create the required ``Secret`` in the ``Namespace`` ``incident-bot``. You may need to create the ``Namespace`` if it doesn't exist.
 
-You can now install the application. As an example:
-
-``helm install echoboomer-charts/incident-bot --version 0.3.0 --values incident-bot-values.yaml --namespace incident-bot``
-
-In this scenario, you'd want to provide the values using the file ``incident-bot-values.yaml``. Here's an example:
+Create a values file. We'll call this one ``incident-bot-values.yaml``:
 
 .. code-block:: yaml
 
-  database:
-    # Only if enabling for development of testing
-    # Don't do this in production
-    enabled: true
-    password: somepassword
-  # This is what gets created via the steps below
+  configMap:
+    create: true
+    data:
+      platform: slack
+      digest_channel: incidents
+      roles:
+        incident_commander: "The Incident Commander is the decision maker during a major incident, delegating tasks and listening to input from subject matter experts in order to bring the incident to resolution. They become the highest ranking individual on any major incident call, regardless of their day-to-day rank. Their decisions made as commander are final.\\n\\nYour job as an Incident Commander is to listen to the call and to watch the incident Slack room in order to provide clear coordination, recruiting others to gather context and details. You should not be performing any actions or remediations, checking graphs, or investigating logs. Those tasks should be delegated.\\n\\nAn IC should also be considering next steps and backup plans at every opportunity, in an effort to avoid getting stuck without any clear options to proceed and to keep things moving towards resolution.\\n\\nMore information: https://response.pagerduty.com/training/incident_commander/"
+        communications_liaison: "The purpose of the Communications Liaison is to be the primary individual in charge of notifying our customers of the current conditions, and informing the Incident Commander of any relevant feedback from customers as the incident progresses.\\n\\nIt's important for the rest of the command staff to be able to focus on the problem at hand, rather than worrying about crafting messages to customers.\\n\\nYour job as Communications Liaison is to listen to the call, watch the incident Slack room, and track incoming customer support requests, keeping track of what's going on and how far the incident is progressing (still investigating vs close to resolution).\\n\\nThe Incident Commander will instruct you to notify customers of the incident and keep them updated at various points throughout the call. You will be required to craft the message, gain approval from the IC, and then disseminate that message to customers.\\n\\nMore information: https://response.pagerduty.com/training/customer_liaison/"
+      severities:
+        sev1: 'This signifies a critical production scenario that impacts most or all users with a major impact on SLAs. This is an all-hands-on-deck scenario that requires swift action to restore operation. Customers must be notified.'
+        sev2: 'This signifies a significant production degradation scenario impacting a large portion of users.'
+        sev3: 'This signifies a minor production scenario that may or may not result in degradation. This situation is worth coordination to resolve quickly but does not indicate a critical loss of service for users.'
+        sev4: 'This signifies an ongoing investigation. This incident has not been promoted to SEV3 yet, indicating there may be little to no impact, but the situation warrants a closer look. This is diagnostic in nature. This is the default setting for a new incident.'
+      statuses:
+        - investigating
+        - identified
+        - monitoring
+        - resolved
+      options:
+        incident_channel_topic: 'This is the default incident channel topic. You can edit it in settings.'
+        timezone: UTC
+        conference_bridge_link: 'https://zoom.us'
+        create_from_reaction:
+          enabled: false
+          reacji: create-incident
+        auto_invite_groups:
+          enabled: false
+          groups:
+            - my-slack-group
+            - my-other-slack-group
+      integrations:
+        confluence:
+          auto_create_rca: false
+          space: ENG
+          parent: Postmortems
+        zoom:
+          auto_create_meeting: false
+      links:
+        incident_guide: https://changeme.com
+        incident_postmortems: https://changeme.com
   envFromSecret:
     enabled: true
     secretName: incident-bot-secret
-  healthCheck:
-    enabled: true
-    path: /api/v1/health
-    port: 3000
-    scheme: HTTP
-    initialDelaySeconds: 30
-    periodSeconds: 30
-    timeoutSeconds: 1
-  image:
-    repository: eb129/incident-bot
-    pullPolicy: Always
   ingress:
     enabled: true
-    className: ''
     annotations:
       kubernetes.io/ingress.class: nginx
       cert-manager.io/cluster-issuer: letsencrypt-prod
@@ -108,19 +125,14 @@ In this scenario, you'd want to provide the values using the file ``incident-bot
         hosts:
           - incident-bot.mydomain.com
   podDisruptionBudget:
-    enabled: false
+    enabled: true
     minAvailable: 1
-  replicaCount: 1
-  resources:
-    limits:
-      cpu: 1000m
-      memory: 512M
-    requests:
-      cpu: 250m
-      memory: 256M
-  service:
-    type: ClusterIP
-    port: 3000
+
+You can now install the application. As an example:
+
+``helm install echoboomer-charts/incident-bot --version 0.3.1 --values incident-bot-values.yaml --namespace incident-bot``
+
+Everything that needs to be configured has been configured directly in the values file as part of the values file.
 
 If you'd like to clean everything up:
 
@@ -146,6 +158,8 @@ To apply the resources, run: ``kubectl apply -k .``
   In production, you should use a secret management tool that integrates with Kubernetes. You should not hardcode sensitive values. This setup is provided for convenience.
 
   In the default setup, your application's ``config.yaml`` will be mounted as a volume via a ``ConfigMap``.
+
+  Check out the ``helm`` section above for info on what should go in the ``Secret``.
 
 .. _docker-compose:
 

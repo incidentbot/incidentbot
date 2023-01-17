@@ -2,10 +2,12 @@ import logging
 import os
 import yaml
 
+from bot.exc import ConfigurationError
+from cerberus import Validator
 from dotenv import load_dotenv
 from typing import Dict, List
 
-__version__ = "v1.0.1"
+__version__ = "v1.1.0"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -36,6 +38,194 @@ class Configuration:
         )
         with open(self.filepath, "r") as yamlfile:
             self.live = yaml.load(yamlfile, Loader=yaml.FullLoader)
+        self.url_regex = "^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+"
+
+    def validate(self):
+        """Given a config supplied as dict[str, any], validate its
+        fields.
+
+        Args:
+            service_definition: dict[str, any]
+
+        Returns bool indicating whether or not the service passes validation
+        """
+        schema = {
+            "platform": {
+                "required": True,
+                "type": "string",
+                "allowed": ["slack"],
+                "empty": False,
+            },
+            "digest_channel": {
+                "required": True,
+                "type": "string",
+                "empty": False,
+            },
+            "roles": {
+                "required": True,
+                "type": "dict",
+                "keysrules": {
+                    "type": "string",
+                    "empty": False,
+                },
+                "valuesrules": {
+                    "type": "string",
+                    "empty": False,
+                },
+            },
+            "severities": {
+                "required": True,
+                "type": "dict",
+                "keysrules": {
+                    "type": "string",
+                    "empty": False,
+                },
+                "valuesrules": {
+                    "type": "string",
+                    "empty": False,
+                },
+            },
+            "statuses": {
+                "required": True,
+                "type": "list",
+                "schema": {"type": "string", "empty": False},
+            },
+            "options": {
+                "required": True,
+                "type": "dict",
+                "schema": {
+                    "incident_channel_topic": {
+                        "required": True,
+                        "type": "string",
+                        "empty": False,
+                    },
+                    "timezone": {
+                        "required": True,
+                        "type": "string",
+                        "empty": False,
+                    },
+                    "conference_bridge_link": {
+                        "required": False,
+                        "type": "string",
+                        "empty": True,
+                        "regex": self.url_regex,
+                    },
+                    "create_from_reaction": {
+                        "required": True,
+                        "type": "dict",
+                        "schema": {
+                            "enabled": {
+                                "required": True,
+                                "type": "boolean",
+                                "empty": False,
+                            },
+                            "reacji": {
+                                "required": True,
+                                "type": "string",
+                                "empty": False,
+                            },
+                        },
+                    },
+                    "auto_invite_groups": {
+                        "required": True,
+                        "type": "dict",
+                        "schema": {
+                            "enabled": {
+                                "required": True,
+                                "type": "boolean",
+                                "empty": False,
+                            },
+                            "groups": {
+                                "required": False,
+                                "type": "list",
+                                "empty": True,
+                            },
+                        },
+                    },
+                },
+            },
+            "integrations": {
+                "required": False,
+                "type": "dict",
+                "schema": {
+                    "confluence": {
+                        "required": False,
+                        "type": "dict",
+                        "schema": {
+                            "auto_create_rca": {
+                                "required": True,
+                                "type": "boolean",
+                                "empty": False,
+                            },
+                            "space": {
+                                "required": True,
+                                "type": "string",
+                                "empty": False,
+                            },
+                            "parent": {
+                                "required": True,
+                                "type": "string",
+                                "empty": False,
+                            },
+                        },
+                    },
+                    "pagerduty": {
+                        "required": False,
+                        "type": "dict",
+                    },
+                    "statuspage": {
+                        "required": False,
+                        "type": "dict",
+                        "schema": {
+                            "url": {
+                                "required": True,
+                                "type": "string",
+                                "empty": False,
+                                "regex": self.url_regex,
+                            },
+                        },
+                    },
+                    "zoom": {
+                        "required": False,
+                        "type": "dict",
+                        "schema": {
+                            "auto_create_meeting": {
+                                "required": True,
+                                "type": "boolean",
+                                "empty": False,
+                            },
+                        },
+                    },
+                },
+            },
+            "links": {
+                "required": True,
+                "type": "dict",
+                "schema": {
+                    "incident_guide": {
+                        "required": True,
+                        "type": "string",
+                        "empty": False,
+                        "regex": self.url_regex,
+                    },
+                    "incident_postmortems": {
+                        "required": False,
+                        "type": "string",
+                        "empty": False,
+                        "regex": self.url_regex,
+                    },
+                },
+            },
+        }
+        v = Validator(schema)
+        if not v.validate(self.live, schema):
+            raise ConfigurationError(
+                f"Application configuration has errors: {v.errors}"
+            )
+
+    @property
+    def path(self) -> str:
+        return self.filepath
 
     @property
     def all(self) -> Dict:
@@ -75,6 +265,7 @@ class Configuration:
 
 
 active = Configuration()
+active.validate()
 
 """
 Database Settings
