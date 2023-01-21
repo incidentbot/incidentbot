@@ -406,9 +406,10 @@ export default function EnhancedTable(props) {
                         </TableCell>
                         <TableCell align="left" padding="normal">
                           <Stack direction="row" spacing={1}>
-                            {row.tags.map((tag, i) => (
-                              <Chip key={i} label={tag} color="primary" />
-                            ))}
+                            {row.tags !== null &&
+                              row.tags.map((tag, i) => (
+                                <Chip key={i} label={tag} color="primary" />
+                              ))}
                           </Stack>
                         </TableCell>
                       </TableRow>

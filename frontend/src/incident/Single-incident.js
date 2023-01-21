@@ -55,7 +55,8 @@ import useToken from '../hooks/useToken';
 
 import moment from 'moment';
 import AddTagButton from './components/Add-tag.component';
-import TagStack from '../components/Tag-stack.component';
+import AttachmentImage from './components/Attachment-image.component';
+import TagStack from './components/Tag-stack.component';
 import Timeline from './components/Timeline.component';
 import WaitingBase from '../components/Waiting-base.component';
 
@@ -475,9 +476,9 @@ const ViewSingleIncident = () => {
                       </Box>
                     )}
                     <List>
-                      {roles.map((role) => (
+                      {roles.map((role, i) => (
                         <>
-                          <ListItem key={`${role}-select`}>
+                          <ListItem key={i}>
                             <ListItemIcon>
                               <MilitaryTechIcon fontSize="large" />
                             </ListItemIcon>
@@ -506,8 +507,8 @@ const ViewSingleIncident = () => {
                                   messageTS: incident.bp_message_ts,
                                   role: role
                                 })}>
-                                {users.map((user) => [
-                                  <MenuItem value={user.name} key={user.name}>
+                                {users.map((user, i) => [
+                                  <MenuItem value={user.name} key={i}>
                                     {user.name}
                                   </MenuItem>
                                 ])}
@@ -643,9 +644,9 @@ const ViewSingleIncident = () => {
                       <CardContent>
                         {
                           <ImageList sx={{ width: '100%' }} cols={4}>
-                            {imgData.map((item) => (
-                              <ImageListItem key={item.img}>
-                                <img src={`${item.img}`} alt={item.title} loading="lazy" />
+                            {imgData.map((item, i) => (
+                              <ImageListItem key={i}>
+                                <AttachmentImage item={item} token={token} />
                                 <ImageListItemBar
                                   title={item.title}
                                   subtitle={`${item.author} - ${item.ts}`}

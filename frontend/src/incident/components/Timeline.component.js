@@ -248,9 +248,9 @@ export default function Timeline(props) {
                   />
                   <TableBody>
                     {auditLogData.length > 0 ? (
-                      stableSort(auditLogData, getComparator(order, orderBy)).map((row) => {
+                      stableSort(auditLogData, getComparator(order, orderBy)).map((row, i) => {
                         return (
-                          <TableRow hover tabIndex={-1} key={row.ts}>
+                          <TableRow hover tabIndex={-1} key={i}>
                             <TableCell align="left" padding="normal">
                               {row.ts}
                             </TableCell>

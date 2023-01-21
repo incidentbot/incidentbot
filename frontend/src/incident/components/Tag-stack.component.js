@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Alert, Chip, Container, Snackbar, Stack } from '@mui/material';
 import LabelIcon from '@mui/icons-material/Label';
 
-import useToken from '../hooks/useToken';
+import useToken from '../../hooks/useToken';
 
 export default function TagStack(props) {
   const [fetchStatus, setFetchStatus] = useState('');
