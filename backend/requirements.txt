@@ -21,7 +21,7 @@ pytest==7.2.0
 pytest-env==0.8.1
 pytest-mock==3.10.0
 pytest-sqlalchemy-mock==0.1.4
-python-dotenv==0.21.0
+python-dotenv==0.21.1
 pytz==2022.7
 PyYAML==6.0
 requests==2.28.1
