@@ -130,3 +130,5 @@ You can use this key to send a request to create an incident:
     -d '{"description": "Alarm triggered in Datadog", "severity": "sev3", "is_security_incident": "false", "private_channel": "false"}'
 
 This will create an incident and broadcast it to the incident channel as with any other incident.
+
+There is optionally a section to add host entries that have permission to access the API.
