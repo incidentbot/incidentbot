@@ -1,1 +1,0 @@
-sphinx-copybutton==0.5.1
