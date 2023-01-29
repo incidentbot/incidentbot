@@ -39,6 +39,9 @@ slack_workspace_id = (
     else "test"
 )
 
+# Users to skip invites for
+skip_invite_for_users = ["api", "web"]
+
 
 def get_channel_history(channel_id: str) -> str:
     """Return the history of a Slack channel as a json string object
@@ -139,13 +142,16 @@ def invite_user_to_channel(channel_id: str, user: str):
             in slack_web_client.conversations_members(channel=channel_id)[
                 "members"
             ]
+            and user not in skip_invite_for_users
         ):
             invite = slack_web_client.conversations_invite(
                 channel=channel_id,
                 users=user,
             )
             logger.debug(f"\n{invite}\n")
-        logger.info("User already in channel. Skipping invite.")
+        logger.info(
+            f"User already in channel or is one of {skip_invite_for_users}. Skipping invite."
+        )
     except SlackApiError as error:
         logger.error(f"Error when inviting user {user}: {error}")
 

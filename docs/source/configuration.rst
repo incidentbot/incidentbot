@@ -1,7 +1,7 @@
 Configuration
 =====
 
-.. _configuration:
+.. _application-configuration:
 
 Application Configuration
 ------------
@@ -104,3 +104,29 @@ Here is the standard layout of the file:
     incident_postmortems: https://changeme.com
 
 Any time you'd like to change these settings, adjust them here and provide them to the app. In most cases this can be done by mounting the config file to a path and then setting that path to the value of the environment variable ``CONFIG_FILE_PATH``.
+
+.. _api-configuration:
+
+API Configuration
+------------
+
+The bot has an API that can be used to create incidents with an API key. This is useful for creating incidents from external sources.
+
+To start, create an API key:
+
+.. image:: examples/create-api-key.png
+
+Once you've created a key, you can view it and copy it:
+
+.. image:: examples/create-api-key-after.png
+
+You can use this key to send a request to create an incident:
+
+.. code-block:: bash
+
+  curl -X POST http://mybot.domain/api/v1/incident/ext \
+    -H 'Content-Type: application/json' \
+    -H 'Authorization: Bearer my-api-key' \
+    -d '{"description": "Alarm triggered in Datadog", "severity": "sev3", "is_security_incident": "false", "private_channel": "false"}'
+
+This will create an incident and broadcast it to the incident channel as with any other incident.

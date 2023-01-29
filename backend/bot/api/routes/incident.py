@@ -1,18 +1,19 @@
 import config
 import logging
 
+from bot.api.routes.auth import api_key_required
 from bot.api.schemas.incident import (
     incident_schema,
     incidents_schema,
 )
 from bot.audit import log
+from bot.exc import ConfigurationError
 from bot.incident import actions, incident
 from bot.incident.action_parameters import ActionParametersWeb
 from bot.models.incident import db_read_all_incidents, db_read_incident
 from bot.models.pg import Incident, IncidentLogging, Session
 from flask import Blueprint, jsonify, request, Response
 from flask_jwt_extended import jwt_required
-from sqlalchemy import update
 
 logger = logging.getLogger("incident-api-router")
 
@@ -53,29 +54,102 @@ def post_incident():
     try:
         data = request.json
         description = data.get("description", "")
-        user = data.get("user", None)
         severity = data.get("severity", None)
         is_security_incident = data.get("security", "false") in (
             "True",
             "true",
+            True,
         )
-        private_channel = data.get("private", "false") in ("True", "true")
-        request_parameters = {
-            "channel": "web",
-            "incident_description": description,
-            "user": user,
-            "severity": severity,
-            "created_from_web": True,
-            "is_security_incident": is_security_incident,
-            "private_channel": private_channel,
-        }
+        private_channel = data.get("private", "false") in (
+            "True",
+            "true",
+            True,
+        )
+        # Create request parameters object
+        try:
+            request_parameters = incident.RequestParameters(
+                channel="web",
+                incident_description=description,
+                user="api",
+                severity=severity,
+                created_from_web=True,
+                is_security_incident=is_security_incident,
+                private_channel=private_channel,
+            )
+        except ConfigurationError as error:
+            logger.error(error)
+            return (
+                jsonify({"error": str(error)}),
+                500,
+                {"ContentType": "application/json"},
+            )
         # Create an incident based on the message using the internal path
         try:
-            incident.create_incident(
+            resp = incident.create_incident(
                 internal=False, request_parameters=request_parameters
             )
             return (
-                jsonify({"success": True}),
+                jsonify({"success": True, "message": resp}),
+                201,
+                {"ContentType": "application/json"},
+            )
+        except Exception as error:
+            logger.error(f"Error when trying to create an incident: {error}")
+            return (
+                jsonify({"error": str(error)}),
+                500,
+                {"ContentType": "application/json"},
+            )
+    except Exception as error:
+        return (
+            jsonify({"error": str(error)}),
+            500,
+            {"ContentType": "application/json"},
+        )
+
+
+@incidentrt.route("/incident/ext", methods=["POST"])
+@api_key_required
+def post_incident_ext():
+    try:
+        data = request.json
+        description = data.get("description", "")
+        severity = data.get("severity", None)
+        is_security_incident = data.get("security", "false") in (
+            "True",
+            "true",
+            True,
+        )
+        private_channel = data.get("private", "false") in (
+            "True",
+            "true",
+            True,
+        )
+        # Create request parameters object
+        try:
+            request_parameters = incident.RequestParameters(
+                channel="web",
+                incident_description=description,
+                user="api",
+                severity=severity,
+                created_from_web=True,
+                is_security_incident=is_security_incident,
+                private_channel=private_channel,
+            )
+        except ConfigurationError as error:
+            logger.error(error)
+            return (
+                jsonify({"error": str(error)}),
+                500,
+                {"ContentType": "application/json"},
+            )
+        # Create an incident based on the message using the internal path
+        try:
+            resp = incident.create_incident(
+                internal=False, request_parameters=request_parameters
+            )
+            return (
+                jsonify({"success": True, "message": resp}),
                 201,
                 {"ContentType": "application/json"},
             )

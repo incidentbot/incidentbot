@@ -2,10 +2,8 @@ import config
 import logging
 import variables
 
-from bot.slack.handler import app, help_menu
-from bot.slack.client import return_slack_channel_info
-from bot.slack.messages import incident_list_message, pd_on_call_message
 from bot.audit.log import read as read_logs, write as write_log
+from bot.exc import ConfigurationError
 from bot.incident import incident
 from bot.models.incident import (
     db_read_all_incidents,
@@ -15,6 +13,8 @@ from bot.models.incident import (
 )
 from bot.models.pager import read_pager_auto_page_targets
 from bot.shared import tools
+from bot.slack.handler import app, help_menu
+from bot.slack.messages import incident_list_message, pd_on_call_message
 from bot.templates.incident.updates import (
     IncidentUpdate,
 )
@@ -339,17 +339,31 @@ def handle_submission(ack, body, client, view):
     severity = view["state"]["values"]["severity"][
         "open_incident_modal_severity"
     ]["selected_option"]["value"]
-    request_parameters = {
-        "channel": "modal",
-        "incident_description": description,
-        "user": user,
-        "severity": severity,
-        "created_from_web": False,
-        "is_security_incident": is_security_incident,
-        "private_channel": private_channel,
-    }
-    resp = incident.create_incident(request_parameters)
-    client.chat_postMessage(channel=user, text=resp)
+    # Create request parameters object
+    try:
+        request_parameters = incident.RequestParameters(
+            channel="modal",
+            incident_description=description,
+            user=user,
+            severity=severity,
+            created_from_web=False,
+            is_security_incident=is_security_incident
+            in (
+                "True",
+                "true",
+                True,
+            ),
+            private_channel=private_channel
+            in (
+                "True",
+                "true",
+                True,
+            ),
+        )
+        resp = incident.create_incident(request_parameters)
+        client.chat_postMessage(channel=user, text=resp)
+    except ConfigurationError as error:
+        logger.error(error)
 
 
 @app.action("open_incident_general_update_modal")

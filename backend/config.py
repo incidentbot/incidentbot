@@ -7,7 +7,7 @@ from cerberus import Validator
 from dotenv import load_dotenv
 from typing import Dict, List
 
-__version__ = "v1.1.1"
+__version__ = "v1.2.0"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -43,9 +43,6 @@ class Configuration:
     def validate(self):
         """Given a config supplied as dict[str, any], validate its
         fields.
-
-        Args:
-            service_definition: dict[str, any]
 
         Returns bool indicating whether or not the service passes validation
         """

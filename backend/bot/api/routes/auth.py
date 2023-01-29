@@ -3,9 +3,10 @@ import secrets
 import sqlalchemy
 
 from bot.models.pg import PrivateSetting, Session
-from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required
 from bot.shared import tools
+from flask import abort, Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required
+from functools import wraps
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,29 @@ class ApiKey:
     @staticmethod
     def generate() -> str:
         return secrets.token_urlsafe(20)
+
+
+def api_key_required(func):
+    """Decorator to verify a valid API key is provided on a route"""
+
+    @wraps(func)
+    def decorated_function(*args, **kwargs):
+        active_api_key = (
+            Session.query(PrivateSetting)
+            .filter(PrivateSetting.name == "active_api_key")
+            .one()
+            .value
+        )
+        if (
+            request.headers.get("Authorization")
+            and request.headers.get("Authorization")
+            == f"Bearer {active_api_key}"
+        ):
+            return func(*args, **kwargs)
+        else:
+            abort(401)
+
+    return decorated_function
 
 
 @auth.route("/auth/api_key", methods=["GET", "POST", "DELETE"])
