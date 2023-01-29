@@ -132,3 +132,6 @@ You can use this key to send a request to create an incident:
 This will create an incident and broadcast it to the incident channel as with any other incident.
 
 There is optionally a section to add host entries that have permission to access the API.
+
+.. warning::
+    Limiting access to the API based on host IP is a beta feature. At this time, it remains unsupported.
