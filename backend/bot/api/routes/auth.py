@@ -24,18 +24,50 @@ def api_key_required(func):
 
     @wraps(func)
     def decorated_function(*args, **kwargs):
-        active_api_key = (
-            Session.query(PrivateSetting)
-            .filter(PrivateSetting.name == "active_api_key")
-            .one()
-            .value
-        )
+        # Determine whether or not there's an active API key
+        try:
+            active_api_key = (
+                Session.query(PrivateSetting)
+                .filter(PrivateSetting.name == "active_api_key")
+                .one()
+                .value
+            )
+        except sqlalchemy.exc.NoResultFound:
+            return (
+                jsonify({"error": "There are no active API keys."}),
+                401,
+                {"ContentType": "application/json"},
+            )
+        # Determine if there are any allowed host entries
+        try:
+            api_allowed_hosts = (
+                Session.query(PrivateSetting)
+                .filter(PrivateSetting.name == "api_allowed_hosts")
+                .one()
+                .value
+            )
+        except sqlalchemy.exc.NoResultFound:
+            api_allowed_hosts = []
+        # Process API request
         if (
             request.headers.get("Authorization")
             and request.headers.get("Authorization")
             == f"Bearer {active_api_key}"
         ):
-            return func(*args, **kwargs)
+            if len(api_allowed_hosts) > 0:
+                for host in api_allowed_hosts:
+                    if tools.validate_ip_in_subnet(
+                        request.access_route[-1], host
+                    ):
+                        return func(*args, **kwargs)
+                else:
+                    return (
+                        jsonify({"error": "Host not allowed."}),
+                        401,
+                        {"ContentType": "application/json"},
+                    )
+            else:
+                return func(*args, **kwargs)
         else:
             abort(401)
 

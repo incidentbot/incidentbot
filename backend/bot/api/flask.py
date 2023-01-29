@@ -66,8 +66,9 @@ def basic_authentication():
 @app.after_request
 def webserver_logging(response):
     logger.info(
-        '{} [{}] "{} {}" - {} - {} {}'.format(
+        '{} {} [{}] "{} {}" - {} - {} {}'.format(
             request.headers["host"],
+            request.access_route[-1],
             tools.fetch_timestamp(short=True),
             request.method,
             request.path,
