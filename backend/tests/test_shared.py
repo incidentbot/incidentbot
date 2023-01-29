@@ -84,7 +84,13 @@ class TestUtils:
 
     def test_validate_ip_address(self):
         is_ip = tools.validate_ip_address("127.0.0.1")
-        assert is_ip == True
+        assert is_ip
 
         is_ip = tools.validate_ip_address("300.0.0.2")
-        assert is_ip == False
+        assert not is_ip
+
+    def test_validate_ip_in_subnet(self):
+        is_in_subnet = tools.validate_ip_in_subnet(
+            "192.168.10.30", "192.168.10.0/24"
+        )
+        assert is_in_subnet

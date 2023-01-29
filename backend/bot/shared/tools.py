@@ -1,6 +1,5 @@
 import config
 import ipaddress
-import json
 import logging
 import random
 import string
@@ -20,18 +19,8 @@ timestamp_fmt_short = "%d/%m/%Y %H:%M:%S %Z"
 application_timezone = config.active.options.get("timezone")
 
 
-class dotdict(Dict):
-    """dot.notation access to dictionary attributes"""
-
-    __getattr__ = dict.get
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
-
-
 def fetch_timestamp(short: bool = False):
-    """
-    Return a localized, formatted timestamp using datetime.now()
-    """
+    """Return a localized, formatted timestamp using datetime.now()"""
     now = datetime.now()
     localized = timezone(application_timezone).localize(now)
     if short:
@@ -40,9 +29,7 @@ def fetch_timestamp(short: bool = False):
 
 
 def fetch_timestamp_from_time_obj(t: datetime):
-    """
-    Return a localized, formatted timestamp using datetime.datetime class
-    """
+    """Return a localized, formatted timestamp using datetime.datetime class"""
     return timezone(application_timezone).localize(t).strftime(timestamp_fmt)
 
 
@@ -56,10 +43,16 @@ def find_index_in_list(lst: List, key: Any, value: Any):
     return -1
 
 
-def validate_ip_address(address):
+def validate_ip_address(address: str) -> bool:
+    """Validate that a provided string is an IP address"""
     try:
         ipaddress.ip_network(address)
         return True
     except ValueError as error:
         logger.error(error)
         return False
+
+
+def validate_ip_in_subnet(address: str, subnet: str) -> bool:
+    """Return whether or not an IP address is within a subnet"""
+    return ipaddress.ip_address(address) in ipaddress.ip_network(subnet)

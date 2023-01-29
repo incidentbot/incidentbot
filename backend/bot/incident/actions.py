@@ -44,7 +44,7 @@ Functions for handling inbound actions
 """
 
 
-def assign_role(
+async def assign_role(
     action_parameters: type[ActionParametersSlack] = ActionParametersSlack,
     web_data: type[ActionParametersWeb] = ActionParametersWeb,
     request_origin: str = "slack",
@@ -182,7 +182,7 @@ def assign_role(
     )
 
 
-def claim_role(action_parameters: type[ActionParametersSlack]):
+async def claim_role(action_parameters: type[ActionParametersSlack]):
     """When an incoming action is incident.claim_role, this method
     assigns the role to the user that hit the claim button
 
@@ -254,7 +254,7 @@ def claim_role(action_parameters: type[ActionParametersSlack]):
     )
 
 
-def export_chat_logs(action_parameters: type[ActionParametersSlack]):
+async def export_chat_logs(action_parameters: type[ActionParametersSlack]):
     """When an incoming action is incident.export_chat_logs, this method
     fetches channel history, formats it, and returns it to the channel
 
@@ -296,7 +296,7 @@ def export_chat_logs(action_parameters: type[ActionParametersSlack]):
         )
 
 
-def set_incident_status(
+async def set_incident_status(
     action_parameters: type[ActionParametersSlack] = ActionParametersSlack,
 ):
     """When an incoming action is incident.set_incident_status, this method
@@ -662,7 +662,9 @@ def set_incident_status(
     )
 
 
-def reload_status_message(action_parameters: type[ActionParametersSlack]):
+async def reload_status_message(
+    action_parameters: type[ActionParametersSlack],
+):
     """When an incoming action is incident.reload_status_message, this method
     checks an external provider's status page for updates
 
@@ -709,7 +711,7 @@ def reload_status_message(action_parameters: type[ActionParametersSlack]):
     )
 
 
-def set_severity(
+async def set_severity(
     action_parameters: type[ActionParametersSlack] = None,
 ):
     """When an incoming action is incident.set_severity, this method

@@ -6,6 +6,7 @@ import re
 import slack_sdk.errors
 
 from bot.audit import log
+from bot.exc import ConfigurationError
 from bot.external import meetings
 from bot.models.incident import (
     db_update_incident_created_at_col,
@@ -26,7 +27,8 @@ from bot.templates.incident.channel_boilerplate import (
 from bot.templates.incident.digest_notification import (
     IncidentChannelDigestNotification,
 )
-from typing import Dict
+from cerberus import Validator
+from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -43,33 +45,124 @@ if not config.is_test_environment:
     from bot.slack.client import invite_user_to_channel
 
 
+class RequestParameters:
+    def __init__(
+        self,
+        channel: str,
+        incident_description: str,
+        severity: str,
+        user: str = "",
+        created_from_web: bool = False,
+        is_security_incident: bool = False,
+        private_channel: bool = False,
+        message_reacted_to_content: str = "",
+        original_message_timestamp: str = "",
+    ):
+        self.channel = channel
+        self.incident_description = incident_description
+        self.user = user
+        self.severity = severity
+        self.created_from_web = created_from_web
+        self.is_security_incident = is_security_incident
+        self.private_channel = private_channel
+        self.message_reacted_to_content = message_reacted_to_content
+        self.original_message_timestamp = original_message_timestamp
+
+        self.as_dict = {
+            "channel": channel,
+            "incident_description": incident_description,
+            "user": user,
+            "severity": severity,
+            "created_from_web": created_from_web,
+            "is_security_incident": is_security_incident,
+            "private_channel": private_channel,
+            "message_reacted_to_content": message_reacted_to_content,
+            "original_message_timestamp": original_message_timestamp,
+        }
+
+        self.validate()
+
+    def validate(self):
+        """Given a request supplied as dict[str, any], validate its
+        fields.
+
+        Returns bool indicating whether or not the service passes validation
+        """
+        schema = {
+            "channel": {
+                "required": True,
+                "type": "string",
+                "empty": False,
+            },
+            "incident_description": {
+                "required": True,
+                "type": "string",
+                "empty": False,
+            },
+            "user": {
+                "required": False,
+                "type": "string",
+            },
+            "severity": {
+                "required": True,
+                "type": "string",
+                "allowed": [
+                    key for key, _ in config.active.severities.items()
+                ],
+                "empty": False,
+            },
+            "created_from_web": {
+                "required": True,
+                "type": "boolean",
+                "empty": False,
+            },
+            "is_security_incident": {
+                "required": True,
+                "type": "boolean",
+                "empty": False,
+            },
+            "private_channel": {
+                "required": True,
+                "type": "boolean",
+                "empty": False,
+            },
+            "message_reacted_to_content": {
+                "required": False,
+                "type": "string",
+            },
+            "original_message_timestamp": {
+                "required": False,
+                "type": "string",
+            },
+        }
+        v = Validator(schema)
+        if not v.validate(self.as_dict, schema):
+            raise ConfigurationError(
+                f"Request parameters has errors: {v.errors}"
+            )
+
+
 class Incident:
     """Instantiates an incident"""
 
-    def __init__(self, request_parameters: Dict[str, str]):
+    def __init__(self, request_parameters: RequestParameters):
         self.request_parameters = request_parameters
         # Log transaction
         self.log()
         # Set instance variables
-        self.incident_description = self.request_parameters[
-            "incident_description"
-        ]
+        self.incident_description = (
+            self.request_parameters.incident_description
+        )
         self.channel_name = self.__format_channel_name()
         if not config.is_test_environment:
             self.channel = self.__create_incident_channel()
             self.channel_details = self.channel.get("channel")
             self.created_channel_details = {
-                "incident_description": self.request_parameters[
-                    "incident_description"
-                ],
+                "incident_description": self.request_parameters.incident_description,
                 "id": self.channel_details.get("id"),
                 "name": self.channel_details.get("name"),
-                "is_security_incident": self.request_parameters[
-                    "is_security_incident"
-                ]
-                in ("True", "true", True),
-                "private_channel": self.request_parameters["private_channel"]
-                in ("True", "true", True),
+                "is_security_incident": self.request_parameters.is_security_incident,
+                "private_channel": self.request_parameters.private_channel,
             }
             self.conference_bridge = self.__generate_conference_link()
         else:
@@ -83,11 +176,9 @@ class Incident:
 
     def log(self):
         request_log = {
-            "user": self.request_parameters["user"],
-            "channel": self.request_parameters["channel"],
-            "incident_description": self.request_parameters[
-                "incident_description"
-            ],
+            "user": self.request_parameters.user,
+            "channel": self.request_parameters.channel,
+            "incident_description": self.request_parameters.incident_description,
         }
         logger.info(
             f"Request received from Slack to start a new incident: {request_log}"
@@ -103,7 +194,7 @@ class Incident:
             channel = slack_web_client.conversations_create(
                 # The name of the conversation
                 name=self.channel_name,
-                is_private=self.request_parameters["private_channel"],
+                is_private=self.request_parameters.private_channel,
             )
             # Log the result which includes information like the ID of the conversation
             logger.debug(f"\n{channel}\n")
@@ -144,15 +235,15 @@ Core Functionality
 
 
 def create_incident(
-    request_parameters: Dict[str, str],
+    request_parameters: RequestParameters,
     internal: bool = False,
 ) -> str:
     """
     Create an incident
     """
-    incident_description = request_parameters["incident_description"]
-    user = request_parameters["user"]
-    severity = request_parameters["severity"] or "sev4"
+    incident_description = request_parameters.incident_description
+    user = request_parameters.user
+    severity = request_parameters.severity
     if incident_description != "":
         if len(incident_description) < incident_description_max_length:
             incident = Incident(request_parameters)
@@ -310,7 +401,7 @@ def create_incident(
 
 
 async def handle_incident_optional_features(
-    request_parameters: Dict[str, str],
+    request_parameters: RequestParameters,
     created_channel_details: Dict[str, str],
     internal: bool = False,
 ):
@@ -403,10 +494,10 @@ async def handle_incident_optional_features(
     if internal and config.active.options.get("create_from_reaction").get(
         "enabled"
     ):
-        original_channel = request_parameters["channel"]
-        original_message_timestamp = request_parameters[
-            "original_message_timestamp"
-        ]
+        original_channel = request_parameters.channel
+        original_message_timestamp = (
+            request_parameters.original_message_timestamp
+        )
         formatted_timestamp = str.replace(original_message_timestamp, ".", "")
         link_to_message = f"https://{slack_workspace_id}.slack.com/archives/{original_channel}/p{formatted_timestamp}"
         try:
@@ -466,9 +557,7 @@ async def handle_incident_optional_features(
         if len(auto_page_targets) != 0:
             for i in auto_page_targets:
                 for k, v in i.items():
-                    logger.info(
-                        f"Paging {k}..."
-                    )
+                    logger.info(f"Paging {k}...")
                     # Write audit log
                     log.write(
                         incident_id=created_channel_details["name"],

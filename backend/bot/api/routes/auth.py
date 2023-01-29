@@ -3,9 +3,10 @@ import secrets
 import sqlalchemy
 
 from bot.models.pg import PrivateSetting, Session
-from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required
 from bot.shared import tools
+from flask import abort, Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required
+from functools import wraps
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,61 @@ class ApiKey:
     @staticmethod
     def generate() -> str:
         return secrets.token_urlsafe(20)
+
+
+def api_key_required(func):
+    """Decorator to verify a valid API key is provided on a route"""
+
+    @wraps(func)
+    def decorated_function(*args, **kwargs):
+        # Determine whether or not there's an active API key
+        try:
+            active_api_key = (
+                Session.query(PrivateSetting)
+                .filter(PrivateSetting.name == "active_api_key")
+                .one()
+                .value
+            )
+        except sqlalchemy.exc.NoResultFound:
+            return (
+                jsonify({"error": "There are no active API keys."}),
+                401,
+                {"ContentType": "application/json"},
+            )
+        # Determine if there are any allowed host entries
+        try:
+            api_allowed_hosts = (
+                Session.query(PrivateSetting)
+                .filter(PrivateSetting.name == "api_allowed_hosts")
+                .one()
+                .value
+            )
+        except sqlalchemy.exc.NoResultFound:
+            api_allowed_hosts = []
+        # Process API request
+        if (
+            request.headers.get("Authorization")
+            and request.headers.get("Authorization")
+            == f"Bearer {active_api_key}"
+        ):
+            if len(api_allowed_hosts) > 0:
+                for host in api_allowed_hosts:
+                    if tools.validate_ip_in_subnet(
+                        request.access_route[-1], host
+                    ):
+                        return func(*args, **kwargs)
+                else:
+                    return (
+                        jsonify({"error": "Host not allowed."}),
+                        401,
+                        {"ContentType": "application/json"},
+                    )
+            else:
+                return func(*args, **kwargs)
+        else:
+            abort(401)
+
+    return decorated_function
 
 
 @auth.route("/auth/api_key", methods=["GET", "POST", "DELETE"])

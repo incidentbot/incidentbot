@@ -4,7 +4,7 @@ from bot.incident.action_parameters import (
     ActionParametersSlack,
     ActionParametersWeb,
 )
-from bot.incident.incident import Incident
+from bot.incident.incident import Incident, RequestParameters
 from bot.shared import tools
 from bot.templates.incident.channel_boilerplate import (
     IncidentChannelBoilerplateMessage,
@@ -125,14 +125,14 @@ class TestIncidentManagement:
 
     def test_incident_instantiate(self):
         inc = Incident(
-            request_parameters={
-                "channel": "CBR2V3XEX",
-                "incident_description": "something has broken",
-                "user": "sample-incident-creator-user",
-                "severity": "sev4",
-                "created_from_web": False,
-                "is_security_incident": False,
-            }
+            request_parameters=RequestParameters(
+                channel="CBR2V3XEX",
+                incident_description="something has broken",
+                user="sample-incident-creator-user",
+                severity="sev4",
+                created_from_web=False,
+                is_security_incident=False,
+            )
         )
         assert isinstance(inc, Incident)
 
@@ -142,14 +142,14 @@ class TestIncidentManagement:
 
     def test_incident_channel_name_create(self):
         inc = Incident(
-            request_parameters={
-                "channel": "CBR2V3XEX",
-                "incident_description": "unallowed ch@racter check!",
-                "user": "sample-incident-creator-user",
-                "severity": "sev4",
-                "created_from_web": False,
-                "is_security_incident": False,
-            }
+            request_parameters=RequestParameters(
+                channel="CBR2V3XEX",
+                incident_description="unallowed ch@racter check!",
+                user="sample-incident-creator-user",
+                severity="sev4",
+                created_from_web=False,
+                is_security_incident=False,
+            )
         )
 
         assert re.search("^inc.*unallowed-chracter-check$", inc.channel_name)
@@ -713,16 +713,3 @@ class TestIncidentManagement:
                 "type": "context",
             },
         ]
-
-    # This needs to mock the client.
-    # def test_incident_create(self):
-    #     request_parameters = {
-    #         "channel": "mock",
-    #         "incident_description": "test incident",
-    #         "user": "sample-user",
-    #         "token": placeholder_token,
-    #         "created_from_web": False,
-    #     }
-    #     resp = create_incident(request_parameters, internal=True)
-    #
-    #     assert resp == "ok"

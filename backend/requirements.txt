@@ -1,4 +1,4 @@
-alembic==1.9.1
+alembic==1.9.2
 apispec==6.0.2
 apscheduler==3.9.1.post1
 atlassian-python-api==3.32.2
@@ -9,7 +9,7 @@ flask==2.2.2
 flask-cors==3.0.10
 flask-debugtoolbar==0.13.1
 flask-jwt-extended==4.4.4
-flask-limiter==2.8.1
+flask-limiter==3.1.0
 flask-login==0.6.2
 flask-marshmallow==0.14.0
 marshmallow==3.19.0
@@ -21,10 +21,10 @@ pytest==7.2.0
 pytest-env==0.8.1
 pytest-mock==3.10.0
 pytest-sqlalchemy-mock==0.1.4
-python-dotenv==0.21.0
-pytz==2022.7
+python-dotenv==0.21.1
+pytz==2022.7.1
 PyYAML==6.0
-requests==2.28.1
+requests==2.28.2
 requests-mock==1.10.0
 slack_bolt==1.16.1
 slack_sdk==3.19.5

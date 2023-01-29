@@ -1,3 +1,4 @@
+import asyncio
 import config
 import logging
 import pyjokes
@@ -5,6 +6,19 @@ import requests
 import slack_sdk
 import variables
 
+from bot.exc import ConfigurationError
+from bot.incident import actions as inc_actions, incident
+from bot.incident.action_parameters import ActionParametersSlack
+from bot.models.incident import db_read_all_incidents
+from bot.scheduler import scheduler
+from bot.shared import tools
+from bot.slack.client import (
+    get_user_name,
+    slack_web_client,
+    slack_workspace_id,
+)
+from bot.slack.helpers import DigestMessageTracking
+from bot.slack.incident_logging import write as write_content
 from bot.slack.messages import (
     help_menu,
     incident_list_message,
@@ -12,15 +26,6 @@ from bot.slack.messages import (
     pd_on_call_message,
     sp_incident_list_message,
 )
-from bot.slack.client import slack_web_client
-from bot.incident import actions as inc_actions, incident
-from bot.incident.action_parameters import ActionParametersSlack
-from bot.models.incident import db_read_all_incidents
-from bot.scheduler import scheduler
-from bot.shared import tools
-from bot.slack.client import get_user_name, slack_workspace_id
-from bot.slack.helpers import DigestMessageTracking
-from bot.slack.incident_logging import write as write_content
 from bot.statuspage import actions as sp_actions, handler as sp_handler
 from slack_bolt import App
 from slack_sdk.errors import SlackApiError
@@ -139,7 +144,9 @@ def parse_action(body) -> Dict[str, Any]:
 def handle_incident_export_chat_logs(ack, body):
     logger.debug(body)
     ack()
-    inc_actions.export_chat_logs(action_parameters=parse_action(body))
+    asyncio.run(
+        inc_actions.export_chat_logs(action_parameters=parse_action(body))
+    )
 
 
 @app.action("incident.add_on_call_to_channel")
@@ -157,35 +164,39 @@ def handle_incident_add_on_call(ack, body, say):
 def handle_incident_assign_role(ack, body):
     logger.debug(body)
     ack()
-    inc_actions.assign_role(action_parameters=parse_action(body))
+    asyncio.run(inc_actions.assign_role(action_parameters=parse_action(body)))
 
 
 @app.action("incident.claim_role")
 def handle_incident_claim_role(ack, body):
     logger.debug(body)
     ack()
-    inc_actions.claim_role(action_parameters=parse_action(body))
+    asyncio.run(inc_actions.claim_role(action_parameters=parse_action(body)))
 
 
 @app.action("incident.reload_status_message")
 def handle_incident_reload_status_message(ack, body):
     logger.debug(body)
     ack()
-    inc_actions.reload_status_message(action_parameters=parse_action(body))
+    asyncio.run(
+        inc_actions.reload_status_message(action_parameters=parse_action(body))
+    )
 
 
 @app.action("incident.set_incident_status")
-def handle_incident_set_incident_statuse(ack, body):
+def handle_incident_set_incident_status(ack, body):
     logger.debug(body)
     ack()
-    inc_actions.set_incident_status(action_parameters=parse_action(body))
+    asyncio.run(
+        inc_actions.set_incident_status(action_parameters=parse_action(body))
+    )
 
 
 @app.action("incident.set_severity")
 def handle_incident_set_severity(ack, body):
     logger.debug(body)
     ack()
-    inc_actions.set_severity(action_parameters=parse_action(body))
+    asyncio.run(inc_actions.set_severity(action_parameters=parse_action(body)))
 
 
 """
@@ -242,16 +253,20 @@ def reaction_added(event, say):
             message_reacted_to_content = message["text"]
         except Exception as error:
             logger.error(f"Error when trying to retrieve a message: {error}")
-        request_parameters = {
-            "channel": channel_id,
-            "incident_description": f"auto-{tools.random_suffix}",
-            "user": "internal_auto_create",
-            "severity": "sev4",
-            "message_reacted_to_content": message_reacted_to_content,
-            "original_message_timestamp": ts,
-            "is_security_incident": False,
-            "private_channel": False,
-        }
+        # Create request parameters object
+        try:
+            request_parameters = incident.RequestParameters(
+                channel=channel_id,
+                incident_description=f"auto-{tools.random_suffix}",
+                user="internal_auto_create",
+                severity="sev4",
+                message_reacted_to_content=message_reacted_to_content,
+                original_message_timestamp=ts,
+                is_security_incident=False,
+                private_channel=False,
+            )
+        except ConfigurationError as error:
+            logger.error(error)
         # Create an incident based on the message using the internal path
         try:
             incident.create_incident(
