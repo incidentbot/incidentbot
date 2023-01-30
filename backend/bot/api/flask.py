@@ -16,7 +16,7 @@ from flask_limiter.util import get_remote_address
 from flask_marshmallow import Marshmallow
 from flask import Flask
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("api")
 
 """
 Run Init Tasks

@@ -7,7 +7,7 @@ from sqlalchemy import update
 from sqlalchemy.orm import scoped_session
 from typing import Dict, List, Tuple
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("audit")
 
 
 def delete(

@@ -3,7 +3,7 @@ import sqlalchemy
 
 from bot.models.pg import OperationalData, Session
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("models.pager")
 
 
 def read_pager_auto_page_targets():

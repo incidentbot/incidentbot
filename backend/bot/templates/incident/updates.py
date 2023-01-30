@@ -67,7 +67,9 @@ class IncidentUpdate:
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": f"The incident severity has changed to *{severity.upper()}*. {config.active.severities.get(severity)}",
+                        "text": "The incident severity has changed to "
+                        + f"*{severity.upper()}*. "
+                        + {config.active.severities.get(severity)},
                     },
                 },
                 {"type": "divider"},
@@ -116,7 +118,8 @@ class IncidentUpdate:
                 "elements": [
                     {
                         "type": "mrkdwn",
-                        "text": "This update was provided by the incident management team in response to an ongoing incident.",
+                        "text": "This update was provided by the incident "
+                        + "management team in response to an ongoing incident.",
                     }
                 ],
             },

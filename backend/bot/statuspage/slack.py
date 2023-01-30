@@ -14,17 +14,16 @@ def return_new_incident_message(
         channel_id: the channel to post the message to
         info: Dict[str, str] as returned by the StatuspageIncident class info method
     """
-    formatted_components = []
-    for c in components:
-        formatted_components.append(
-            {
-                "text": {
-                    "type": "plain_text",
-                    "text": c,
-                },
-                "value": c,
-            }
-        )
+    formatted_components = [
+        {
+            "text": {
+                "type": "plain_text",
+                "text": c,
+            },
+            "value": c,
+        }
+        for c in components
+    ]
     return {
         "channel": channel_id,
         "blocks": [
@@ -38,7 +37,11 @@ def return_new_incident_message(
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": "This incident has just been created. Please use the fields below to start a corresponding incident on Statuspage.\n\nThe Statuspage incident will start in *investigating* mode just like our internal incidents. Each time our internal incident is updated, the Statuspage incident will also be updated.",
+                    "text": "This incident has just been created. Please use "
+                    + "the fields below to start a corresponding incident on "
+                    + "Statuspage.\n\nThe Statuspage incident will start in "
+                    + "*investigating* mode. Each time our internal incident "
+                    + "is updated, the Statuspage incident will also be updated.",
                 },
             },
             {"type": "divider"},
@@ -46,7 +49,10 @@ def return_new_incident_message(
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": "Please enter a brief description that will appear as the incident description in the Statuspage incident. Then select impacted components and confirm. Once confirmed, the incident will be opened.",
+                    "text": "Please enter a brief description that will appear "
+                    + "as the incident description in the Statuspage incident. "
+                    + "Then select impacted components and confirm. Once "
+                    + "confirmed, the incident will be opened.",
                 },
             },
             {"type": "divider"},

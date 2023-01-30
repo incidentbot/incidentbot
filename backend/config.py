@@ -7,7 +7,7 @@ from cerberus import Validator
 from dotenv import load_dotenv
 from typing import Dict, List
 
-__version__ = "v1.2.0"
+__version__ = "v1.2.1"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -16,7 +16,7 @@ log_level = os.getenv("LOGLEVEL", "INFO").upper()
 
 # Create the logging object
 # This is used by submodules as well
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("config")
 
 
 """

@@ -4,7 +4,7 @@ import sqlalchemy
 from bot.models.pg import Setting, Session
 from typing import Dict
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("models.setting")
 
 
 def read_single_setting_value(name: str) -> Dict:

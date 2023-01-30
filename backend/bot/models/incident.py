@@ -2,10 +2,10 @@ import json
 import logging
 
 from bot.models.pg import Incident, Session
-from sqlalchemy import or_, update
+from sqlalchemy import or_
 from typing import List
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("models.incident")
 
 """
 Read

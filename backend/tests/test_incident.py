@@ -273,7 +273,7 @@ class TestIncidentManagement:
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "Incident Commander should be claimed or assigned first. The other roles should then be claimed or assigned.",
+                        "text": "Incident Commander should be claimed or assigned first. Any other roles should then be claimed or assigned.",
                     },
                 },
                 {
@@ -281,7 +281,7 @@ class TestIncidentManagement:
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "The Incident Commander should set the severity of this incident immediately. If the severity changes, please update it accordingly.",
+                        "text": "The Incident Commander should verify the severity of this incident immediately. If the severity changes, please update it accordingly.",
                     },
                 },
                 {
@@ -289,7 +289,7 @@ class TestIncidentManagement:
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "The incident starts out in *investigating* mode. As the incident progresses, it can be moved through statuses until it is resolved. An explanation of statuses is available in our incident guide linked below.",
+                        "text": "The incident starts out in *investigating* mode. As the incident progresses, it can be moved through statuses until it is resolved.",
                     },
                 },
                 {"type": "divider"},

@@ -8,7 +8,7 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from http import HTTPStatus
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("api.postmortem")
 
 postmortem = Blueprint("postmortem", __name__)
 

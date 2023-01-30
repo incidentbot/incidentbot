@@ -11,7 +11,7 @@ from bot.models.incident import (
 from bot.slack import client
 from bot.incident.action_parameters import ActionParametersSlack
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("statuspage.actions")
 log_level = config.log_level
 
 

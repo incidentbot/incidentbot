@@ -6,7 +6,7 @@ import requests
 from bot.audit import log
 from typing import Dict, List
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("statuspage.handler")
 
 api = "https://api.statuspage.io/v1/"
 api_key = config.statuspage_api_key

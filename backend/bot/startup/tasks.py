@@ -5,7 +5,7 @@ from bot.models.pg import OperationalData, Session, Setting
 from bot.scheduler.scheduler import update_slack_user_list
 from sqlalchemy import exc, update
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("startup.tasks")
 
 
 def startup_task_init():

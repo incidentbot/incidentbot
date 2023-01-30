@@ -8,7 +8,7 @@ from bot.shared import tools
 from datetime import datetime, timedelta
 from typing import Any, Dict
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("ext")
 
 
 class ExternalProviderIncidents:

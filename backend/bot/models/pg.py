@@ -18,7 +18,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.mutable import MutableBase, MutableDict, MutableList
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("models.postgres")
 
 engine = create_engine(
     config.database_url,

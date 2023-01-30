@@ -6,7 +6,7 @@ from bot.slack.client import slack_workspace_id
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("api.setting")
 
 setting = Blueprint("setting", __name__)
 
