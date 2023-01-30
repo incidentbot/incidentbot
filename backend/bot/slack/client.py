@@ -10,7 +10,7 @@ from slack_sdk.errors import SlackApiError
 
 from typing import Dict
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("slack.client")
 
 # Initialize Slack clients
 slack_web_client = WebClient(token=config.slack_bot_token)

@@ -31,7 +31,7 @@ from slack_bolt import App
 from slack_sdk.errors import SlackApiError
 from typing import Any, Dict
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("slack.handler")
 
 ## The xoxb oauth token for the bot is called here to provide bot privileges.
 app = App(token=config.slack_bot_token)
@@ -157,6 +157,17 @@ def handle_incident_add_on_call(ack, body, say):
     say(
         channel=user,
         text="Hi! If you want to page someone, use my shortcut 'Incident Bot Pager' instead!",
+    )
+
+
+@app.action("incident.archive_incident_channel")
+def handle_incident_archive_incident_channel(ack, body):
+    logger.debug(body)
+    ack()
+    asyncio.run(
+        inc_actions.archive_incident_channel(
+            action_parameters=parse_action(body)
+        )
     )
 
 

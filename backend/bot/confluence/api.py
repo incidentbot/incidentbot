@@ -4,7 +4,7 @@ import logging
 
 from atlassian import Confluence
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("confluence")
 
 
 class ConfluenceApi:

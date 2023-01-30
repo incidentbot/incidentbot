@@ -30,7 +30,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 user = Blueprint("user", __name__)
 
-logger = logging.getLogger("auth-router")
+logger = logging.getLogger("api.user")
 
 # jwt
 

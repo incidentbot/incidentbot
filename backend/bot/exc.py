@@ -1,5 +1,5 @@
 class ConfigurationError(Exception):
-    """Exception raised for errors in app config
+    """Exception raised for errors in a config object
 
     Attributes:
         message -- explanation of the error

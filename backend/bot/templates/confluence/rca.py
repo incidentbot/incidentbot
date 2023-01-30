@@ -22,7 +22,7 @@ class RCATemplate:
         <p><strong>Role</strong></p>
       </td>
       <td data-highlight-colour="#f4f5f7">
-        <p><strong>Individuals</strong></p>
+        <p><strong>Participants</strong></p>
       </td>
     </tr>
     <tr>
@@ -35,7 +35,7 @@ class RCATemplate:
     </tr>
     <tr>
       <td>
-        <p>Participants</p>
+        <p>Contributors</p>
       </td>
       <td>
         <p>Tag other people that participated in the resolution of the incident here.</p>

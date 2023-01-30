@@ -16,7 +16,7 @@ from bot.slack.client import (
 )
 from typing import List
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("scheduler")
 
 
 jobstores = {"default": SQLAlchemyJobStore(url=config.database_url)}

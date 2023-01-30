@@ -57,7 +57,8 @@ class IncidentChannelDigestNotification:
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "A new incident has been declared. Please use the buttons here to participate.",
+                        "text": "A new incident has been declared. "
+                        + "Please use the buttons here to participate.",
                     },
                 },
                 {
@@ -130,7 +131,7 @@ class IncidentChannelDigestNotification:
         )
         if status == "resolved":
             header = f":white_check_mark: Resolved {incident_type} :white_check_mark:"
-            message = "This incident has been resolved. You can still check out the channel for context."
+            message = "This incident has been resolved."
         else:
             header = f"{incident_reacji_header} Ongoing {incident_type}"
             message = "This incident is in progress. Current status is listed here. Join the channel for more information."

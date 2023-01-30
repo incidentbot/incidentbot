@@ -10,7 +10,7 @@ from pdpyras import APISession, PDClientError
 from sqlalchemy import update
 from typing import Dict
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("pagerduty.api")
 
 session = APISession(
     config.pagerduty_api_token, default_from=config.pagerduty_api_username

@@ -36,12 +36,40 @@ from bot.templates.incident.updates import IncidentUpdate
 from bot.templates.incident.user_dm import IncidentUserNotification
 from typing import Any, Dict
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("incident.actions")
 
 
 """
 Functions for handling inbound actions
 """
+
+
+async def archive_incident_channel(
+    action_parameters: type[ActionParametersSlack],
+):
+    """When an incoming action is incident.archive_incident_channel, this method
+    archives the target channel.
+
+    Keyword arguments:
+    action_parameters -- type[ActionParametersSlack] containing Slack actions data
+    """
+    incident_data = db_read_incident(
+        channel_id=action_parameters.channel_details["id"]
+    )
+    try:
+        logger.info(f"Archiving {incident_data.channel_name}.")
+        result = slack_web_client.conversations_archive(
+            channel=incident_data.channel_id
+        )
+        logger.debug(f"\n{result}\n")
+    except slack_sdk.errors.SlackApiError as error:
+        logger.error(f"Error archiving {incident_data.channel_name}: {error}")
+    finally:
+        # Write audit log
+        log.write(
+            incident_id=incident_data.channel_name,
+            event="Channel archived.",
+        )
 
 
 async def assign_role(

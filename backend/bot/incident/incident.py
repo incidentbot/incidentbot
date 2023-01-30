@@ -30,7 +30,7 @@ from bot.templates.incident.digest_notification import (
 from cerberus import Validator
 from typing import Any, Dict, List
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("incident.handler")
 
 # How many total characters are allowed in a Slack channel name?
 channel_name_length_cap = 80

@@ -2,9 +2,9 @@ import logging
 
 from bot.models.pg import IncidentLogging, Session
 from sqlalchemy.orm import scoped_session
-from typing import Dict, List
+from typing import List
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("slack.logging")
 
 
 def read(

@@ -5,7 +5,7 @@ from bot.shared import tools
 from typing import Dict, List
 from .client import bot_user_name, bot_user_id
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("slack.messages")
 
 
 def help_menu(include_header: bool = True) -> List:

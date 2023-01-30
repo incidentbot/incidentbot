@@ -20,7 +20,7 @@ from bot.templates.incident.updates import (
 )
 from datetime import datetime
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("slack.modals")
 
 
 @app.event("app_home_opened")
@@ -59,7 +59,8 @@ def update_home_tab(client, event, logger):
                 "type": "mrkdwn",
                 "text": "*Hi there, <@"
                 + event["user"]
-                + "> :wave:*!\n\nI'm your friendly Incident Bot, and my sole purpose is to help us identify and run incidents.\n",
+                + "> :wave:*!\n\nI'm your friendly Incident Bot, and my "
+                + "sole purpose is to help us identify and run incidents.\n",
             },
         },
         {"type": "divider"},
@@ -75,7 +76,10 @@ def update_home_tab(client, event, logger):
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "To start a new incident, you can do the following:\n - Use the button here\n - Search for 'start a new incident' in the Slack search bar\n - type _/start_ in any Slack channel to find my command and run it.",
+                "text": "To start a new incident, you can do the following:\n"
+                + "- Use the button here\n "
+                + "- Search for 'start a new incident' in the Slack search bar\n"
+                + "- type _/start_ in any Slack channel to find my command and run it.",
             },
         },
         {
@@ -100,7 +104,8 @@ def update_home_tab(client, event, logger):
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": " - You can react to any message or image in any incident channel with :pushpin: and I'll automatically add it to the RCA!",
+                "text": "- You can react to any message or image in any incident"
+                + " channel with :pushpin: and I'll automatically add it to the RCA!",
             },
         },
         {"type": "divider"},
@@ -164,7 +169,10 @@ def open_modal(ack, body, client):
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "This will start a new incident channel and you will be invited to it. From there, please use our incident management process to run the incident or coordinate with others to do so.",
+                "text": "This will start a new incident channel and you will "
+                + "be invited to it. From there, please use our incident "
+                + "management process to run the incident or coordinate "
+                + "with others to do so.",
             },
         },
         {
@@ -288,7 +296,8 @@ def open_modal(ack, body, client):
                         "type": "section",
                         "text": {
                             "type": "mrkdwn",
-                            "text": ":point_right: *The following teams will be automatically paged when this incident is created:*",
+                            "text": ":point_right: *The following teams will "
+                            + "be automatically paged when this incident is created:*",
                         },
                     },
                 ]
@@ -432,7 +441,10 @@ def open_modal(ack, body, client):
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "This will send a formatted, timestamped message to the public incidents channel to provide an update on the status of an incident. Use this to keep those outside the incident process informed.",
+                        "text": "This will send a formatted, timestamped message "
+                        + "to the public incidents channel to provide an update "
+                        + "on the status of an incident. Use this to keep those "
+                        + "outside the incident process informed.",
                     },
                 },
                 {
@@ -822,7 +834,8 @@ def handle_submission(ack, body, say, view):
     finally:
         say(
             channel=incident_channel_id,
-            text=f"*NOTICE:* I have paged the team/escalation policy '{team}' to respond to this incident via PagerDuty at the request of *{paging_user}*.",
+            text=f"*NOTICE:* I have paged the team/escalation policy '{team}' "
+            + f"to respond to this incident via PagerDuty at the request of *{paging_user}*.",
             blocks=[
                 {
                     "type": "header",
@@ -959,7 +972,8 @@ def update_modal(ack, body, client):
             "block_id": "incident_bot_timeline_info",
             "text": {
                 "type": "mrkdwn",
-                "text": "Add a new event to the incident's timeline. This will be automatically added to the RCA when the incident is resolved.\n",
+                "text": "Add a new event to the incident's timeline. This will "
+                + "be automatically added to the RCA when the incident is resolved.\n",
             },
         },
         {"type": "divider"},

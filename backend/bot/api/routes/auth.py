@@ -8,7 +8,7 @@ from flask import abort, Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from functools import wraps
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("api.auth")
 
 auth = Blueprint("auth", __name__)
 

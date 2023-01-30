@@ -6,9 +6,9 @@ import string
 
 from datetime import datetime
 from pytz import timezone
-from typing import Any, Dict, List
+from typing import Any, List
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("shared")
 
 random_suffix = "".join(
     random.choices(string.ascii_lowercase + string.digits, k=6)
