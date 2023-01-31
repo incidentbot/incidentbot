@@ -1,14 +1,10 @@
-Configuration
-=====
+# Configuration
 
-.. _application-configuration:
+## Application Configuration
 
-Application Configuration
-------------
+All application settings are configured using environment variables/secrets for sensitive values and `config.yaml` for everything else.
 
-All application settings are configured using environment variables/secrets for sensitive values and ``config.yaml`` for everything else.
-
-You can call this file whatever you'd like, but by default it's called ``config.yaml``. An example is provided at the backend root.
+You can call this file whatever you'd like, but by default it's called `config.yaml`. An example is provided at the backend root.
 
 You can change the following settings in this file:
 
@@ -37,8 +33,7 @@ Lastly, you can also adjust integrations:
 
 Here is the standard layout of the file:
 
-.. code-block:: yaml
-
+```yaml
   # Options: slack
   platform: slack
   # The channel where incident activity is logged
@@ -102,13 +97,11 @@ Here is the standard layout of the file:
   links:
     incident_guide: https://changeme.com
     incident_postmortems: https://changeme.com
+```
 
-Any time you'd like to change these settings, adjust them here and provide them to the app. In most cases this can be done by mounting the config file to a path and then setting that path to the value of the environment variable ``CONFIG_FILE_PATH``.
+Any time you'd like to change these settings, adjust them here and provide them to the app. In most cases this can be done by mounting the config file to a path and then setting that path to the value of the environment variable `CONFIG_FILE_PATH`.
 
-.. _api-configuration:
-
-API Configuration
-------------
+## API Configuration
 
 The bot has an API that can be used to create incidents with an API key. This is useful for creating incidents from external sources.
 
@@ -122,16 +115,17 @@ Once you've created a key, you can view it and copy it:
 
 You can use this key to send a request to create an incident:
 
-.. code-block:: bash
-
-  curl -X POST http://mybot.domain/api/v1/incident/ext \
-    -H 'Content-Type: application/json' \
-    -H 'Authorization: Bearer my-api-key' \
-    -d '{"description": "Alarm triggered in Datadog", "severity": "sev3", "is_security_incident": "false", "private_channel": "false"}'
+```bash
+curl -X POST http://mybot.domain/api/v1/incident/ext \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer my-api-key' \
+  -d '{"description": "Alarm triggered in Datadog", "severity": "sev3", "is_security_incident": "false", "private_channel": "false"}'
+```
 
 This will create an incident and broadcast it to the incident channel as with any other incident.
 
 There is optionally a section to add host entries that have permission to access the API.
 
-.. warning::
+!!! warning
+
     Limiting access to the API based on host IP is a beta feature. At this time, it remains unsupported.

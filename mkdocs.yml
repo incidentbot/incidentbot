@@ -1,0 +1,46 @@
+site_name: Incident Bot Docs
+repo_url: https://github.com/echoboomer/incident-bot
+edit_uri: edit/main/docs/
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - search.highlight
+    - search.suggest
+    - search.share
+  palette:
+    # Palette toggle for dark mode
+    - scheme: default
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    # Palette toggle for light mode
+    - scheme: slate
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+plugins:
+  - glightbox
+  - search:
+      lang: en
+nav:
+  - Home:
+      - index.md
+      - Features: 'features.md'
+      - Usage Guide: 'usage.md'
+      - Installation, Setup, and Configuration:
+          - Installation and Setup: 'setup.md'
+          - Configuration: 'configuration.md'
+      - Troubleshooting: 'troubleshooting.md'
