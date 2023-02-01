@@ -9,7 +9,7 @@ Incident management ChatOps bot for Slack to allow your teams to easily and effe
 
 Interacting with the bot is incredibly easy through the use of modals and simplified commands.
 
-[View documentation on readthedocs](https://incident-bot.readthedocs.io/en/latest/)
+[Check out Incident Bot's Documentation](https://docs.incidentbot.io)
 
 - [incident-bot](#incident-bot)
   - [Features at a Glance](#features-at-a-glance)
