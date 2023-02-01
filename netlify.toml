@@ -1,4 +1,5 @@
 [build]
+PYTHON_VERSION = "3.11.0"
 publish = "docs"
 command = """
 pip install mkdocs-glightbox && 
