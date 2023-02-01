@@ -1,7 +1,0 @@
-[build]
-PYTHON_VERSION = "3.11.0"
-publish = "docs"
-command = """
-pip3 install mkdocs-glightbox && 
-mkdocs build -d docs
-"""
