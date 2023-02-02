@@ -4,7 +4,6 @@ import logging
 import logging.config
 
 from bot.shared import tools
-from bot.startup.tasks import startup_task_init
 from datetime import timedelta
 from flasgger import Swagger
 from flask import Flask, request, Response
@@ -22,8 +21,6 @@ logger = logging.getLogger("api")
 Run Init Tasks
 """
 
-startup_task_init()
-
 live_api_route = "/api/v1"
 
 app = Flask(
@@ -39,7 +36,7 @@ cors = CORS(
 app.config["CORS_HEADERS"] = "Content-Type"
 app.config["JWT_SECRET_KEY"] = config.jwt_secret_key
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=8)
-app.config["SECRET_KEY"] = "asfafsaf"
+app.config["SECRET_KEY"] = config.flask_app_secret_key
 app.config["SWAGGER"] = {
     "title": "Incident Bot API",
 }
@@ -129,7 +126,6 @@ from .routes.health import health_check
 from .routes.incident import incidentrt
 from .routes.job import job
 from .routes.pager import pager
-from .routes.postmortem import postmortem
 from .routes.setting import setting
 from .routes.user import user
 
@@ -138,6 +134,5 @@ app.register_blueprint(health_check, url_prefix=live_api_route)
 app.register_blueprint(incidentrt, url_prefix=live_api_route)
 app.register_blueprint(job, url_prefix=live_api_route)
 app.register_blueprint(pager, url_prefix=live_api_route)
-app.register_blueprint(postmortem, url_prefix=live_api_route)
 app.register_blueprint(setting, url_prefix=live_api_route)
 app.register_blueprint(user, url_prefix=live_api_route)

@@ -4,14 +4,13 @@ import logging.config
 import sys
 
 from bot.api.flask import app
-from bot.models.pg import db_verify
+from bot.models.pg import db_verify, OperationalData, Session
 from bot.scheduler import scheduler
 from bot.slack.client import (
     slack_workspace_id,
     check_bot_user_in_digest_channel,
 )
 from bot.slack.handler import app as slack_app
-
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 from waitress import serve
 
@@ -27,18 +26,14 @@ if __name__ == "__main__":
     ## Check for environment variables
     config.env_check(
         required_envs=[
-            "INCIDENTS_DIGEST_CHANNEL",
-            "INCIDENT_GUIDE_LINK",
-            "INCIDENT_POSTMORTEMS_LINK",
-            "INCIDENT_CHANNEL_TOPIC",
+            "POSTGRES_DB",
+            "POSTGRES_HOST",
+            "POSTGRES_PASSWORD",
+            "POSTGRES_PORT",
+            "POSTGRES_USER",
             "SLACK_APP_TOKEN",
             "SLACK_BOT_TOKEN",
             "SLACK_USER_TOKEN",
-            "POSTGRES_HOST",
-            "POSTGRES_DB",
-            "POSTGRES_USER",
-            "POSTGRES_PASSWORD",
-            "POSTGRES_PORT",
         ]
     )
 
@@ -71,9 +66,46 @@ Database name:  {config.database_name}
         exit(1)
 
 
+def startup_tasks():
+    """Tasks that should be run at each startup"""
+    from bot.scheduler.scheduler import update_slack_user_list
+
+    # If the init job has already run, skip it
+    logger.info("Running startup tasks...")
+
+    # Populate list of Slack users
+    update_slack_user_list()
+
+    # Optionally populate PagerDuty on-call data and sete auto-page option if integration is enabled
+    if "pagerduty" in config.active.integrations:
+        from bot.scheduler.scheduler import update_pagerduty_oc_data
+
+        update_pagerduty_oc_data()
+        try:
+            if (
+                not Session.query(OperationalData)
+                .filter(OperationalData.id == "auto_page_teams")
+                .all()
+            ):
+                auto_page_teams = OperationalData(
+                    id="auto_page_teams",
+                    json_data={"teams": []},
+                )
+                Session.add(auto_page_teams)
+                Session.commit()
+        except Exception as error:
+            logger.error(f"Error storing auto_page_teams: {error}")
+        finally:
+            Session.close()
+            Session.remove()
+
+
 if __name__ == "__main__":
     ## Make sure database connection works
     db_check()
+
+    ## Run startup tasks
+    startup_tasks()
 
     ## Startup splash for confirming key options
     startup_message = config.startup_message(workspace=slack_workspace_id)

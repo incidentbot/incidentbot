@@ -184,15 +184,14 @@ def store_slack_user_list():
     is desired
     """
     try:
-        users_array = []
-        for user in slack_web_client.users_list()["members"]:
-            users_array.append(
-                {
-                    "name": user["name"],
-                    "real_name": user["profile"]["real_name"],
-                    "id": user["id"],
-                }
-            )
+        users_array = [
+            {
+                "name": user["name"],
+                "real_name": user["profile"]["real_name"],
+                "id": user["id"],
+            }
+            for user in slack_web_client.users_list()["members"]
+        ]
         jdata = sorted(users_array, key=lambda d: d["name"])
         # Delete if exists
         if Session.query(OperationalData).filter_by(id="slack_users").all():
@@ -211,6 +210,7 @@ def store_slack_user_list():
         )
         Session.add(row)
         Session.commit()
+        logger.info("Stored current Slack users in database...")
     except Exception as error:
         logger.error(f"Opdata row create failed for slack_users: {error}")
         Session.rollback()
