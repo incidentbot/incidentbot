@@ -48,9 +48,9 @@ integrations:
   # Enable Confluence integration
   confluence:
     # Set to true to automatically create an RCA doc
-    auto_create_rca: false
-    space: ENG
-    parent: Postmortems
+    auto_create_rca: true
+    space: ENGINEERIN
+    parent: RCAs
   # Enable Statuspage integration
   statuspage:
     url: https://status.mydomain

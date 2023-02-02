@@ -127,19 +127,6 @@ class OperationalData(Base, Serializer):
         return d
 
 
-class PostmortemSettings(Base, Serializer):
-    __tablename__ = "postmortem_settings"
-
-    id = Column((String(30)), primary_key=True, nullable=False)
-    data = Column(String)
-    json_data = Column(JSON)
-    updated_at = Column(VARCHAR(50))
-
-    def serialize(self):
-        d = Serializer.serialize(self)
-        return d
-
-
 class PrivateSetting(Base, Serializer):
     __tablename__ = "private_settings"
 
@@ -160,19 +147,6 @@ class Setting(Base, Serializer):
     value = Column(JSON)
     description = Column(VARCHAR(250))
     deletable = Column(Boolean)
-
-    def serialize(self):
-        d = Serializer.serialize(self)
-        return d
-
-
-class SlackData(Base, Serializer):
-    __tablename__ = "slack_data"
-
-    id = Column((String(30)), primary_key=True, nullable=False)
-    data = Column(VARCHAR(250))
-    json_data = Column(JSON)
-    updated_at = Column(VARCHAR(50))
 
     def serialize(self):
         d = Serializer.serialize(self)

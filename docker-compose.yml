@@ -25,6 +25,7 @@ services:
       CONFLUENCE_API_USERNAME: ''
       CONFLUENCE_API_TOKEN: ''
       DEFAULT_WEB_ADMIN_PASSWORD: 'foobar1234'
+      FLASK_APP_SECRET_KEY: 'supersecret'
       JWT_SECRET_KEY: 'supersecret'
       CONFIG_FILE_PATH: '/config/incident-bot/config.yaml'
     ports:

@@ -7,7 +7,7 @@ from cerberus import Validator
 from dotenv import load_dotenv
 from typing import Dict, List
 
-__version__ = "v1.2.1"
+__version__ = "v1.2.2"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -313,13 +313,14 @@ zoom_client_secret = os.getenv("ZOOM_CLIENT_SECRET", default="")
 """
 Web Application
 """
-jwt_secret_key = os.getenv("JWT_SECRET_KEY")
 default_admin_password = os.getenv("DEFAULT_WEB_ADMIN_PASSWORD")
+flask_app_secret_key = os.getenv("FLASK_APP_SECRET_KEY")
 flask_debug_mode = os.getenv("FLASK_DEBUG_MODE_ENABLED", default="false") in (
     "True",
     "true",
     True,
 )
+jwt_secret_key = os.getenv("JWT_SECRET_KEY")
 
 """
 Helper Methods
@@ -337,17 +338,18 @@ def env_check(required_envs: List[str]):
         if os.getenv(e) == "":
             logger.fatal(f"The environment variable {e} cannot be empty.")
             exit(1)
-    if "zoom" in active.integrations:
-        for var in [
-            "ZOOM_ACCOUNT_ID",
-            "ZOOM_CLIENT_ID",
-            "ZOOM_CLIENT_SECRET",
-        ]:
-            if os.getenv(var) == "":
-                logger.fatal(
-                    f"If enabling Zoom meeting auto-create, the {var} variable must be set."
-                )
-                exit(1)
+    if active.options.get("auto_invite_groups").get("enabled"):
+        if active.options.get("auto_invite_groups").get("groups") is None:
+            logger.fatal(
+                f"If enabling auto group invite, the groups field in config.yaml should be set."
+            )
+            exit(1)
+    if active.options.get("create_from_reaction"):
+        if active.options.get("create_from_reaction").get("reacji") is None:
+            logger.fatal(
+                f"If enabling auto create via react, the reacji field in config.yaml should be set."
+            )
+            exit(1)
     if "confluence" in active.integrations and active.integrations.get(
         "confluence"
     ).get("auto_create_rca"):
@@ -361,18 +363,6 @@ def env_check(required_envs: List[str]):
                     f"If enabling the Confluence integration to auto create an RCA, the {var} variable must be set."
                 )
                 exit(1)
-    if active.options.get("create_from_reaction"):
-        if active.options.get("create_from_reaction").get("reacji") is None:
-            logger.fatal(
-                f"If enabling auto create via react, the reacji field in config.yaml should be set."
-            )
-            exit(1)
-    if active.options.get("auto_invite_groups").get("enabled"):
-        if active.options.get("auto_invite_groups").get("groups") is None:
-            logger.fatal(
-                f"If enabling auto group invite, the groups field in config.yaml should be set."
-            )
-            exit(1)
     if "pagerduty" in active.integrations:
         for var in [
             "PAGERDUTY_API_USERNAME",
@@ -392,6 +382,17 @@ def env_check(required_envs: List[str]):
             if os.getenv(var) == "":
                 logger.fatal(
                     f"If enabling the Statuspage integration, the {var} variable must be set."
+                )
+                exit(1)
+    if "zoom" in active.integrations:
+        for var in [
+            "ZOOM_ACCOUNT_ID",
+            "ZOOM_CLIENT_ID",
+            "ZOOM_CLIENT_SECRET",
+        ]:
+            if os.getenv(var) == "":
+                logger.fatal(
+                    f"If enabling Zoom meeting auto-create, the {var} variable must be set."
                 )
                 exit(1)
 
