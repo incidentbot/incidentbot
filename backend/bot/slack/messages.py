@@ -1,8 +1,10 @@
+import config
 import logging
 
 from apscheduler.job import Job
+from bot.models.incident import db_read_incident
 from bot.shared import tools
-from typing import Dict, List
+from typing import Any, Dict, List
 from .client import bot_user_name, bot_user_id
 
 logger = logging.getLogger("slack.messages")

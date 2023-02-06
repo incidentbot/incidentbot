@@ -15,7 +15,9 @@ statuses:
   - monitoring
   - resolved
 options:
-  incident_channel_topic: 'This is the default incident channel topic. You can edit it in settings.'
+  channel_topic:
+    default: 'This is the default incident channel topic. You can edit it in settings.'
+    set_to_meeting_link: false
   timezone: UTC
   conference_bridge_link: 'https://zoom.us'
   create_from_reaction:

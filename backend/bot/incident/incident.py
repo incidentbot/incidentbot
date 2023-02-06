@@ -20,7 +20,7 @@ from bot.slack.client import (
     slack_web_client,
     slack_workspace_id,
 )
-from bot.statuspage import slack as sp_slack, handler as sp_handler
+from bot.statuspage.slack import return_new_statuspage_incident_message
 from bot.templates.incident.channel_boilerplate import (
     IncidentChannelBoilerplateMessage,
 )
@@ -273,8 +273,12 @@ def create_incident(
             """
             Set incident channel topic
             """
-            topic_boilerplate = config.active.options.get(
-                "incident_channel_topic"
+            topic_boilerplate = (
+                config.active.options.get("channel_topic").get("default")
+                if config.active.options.get("channel_topic").get(
+                    "set_to_meeting_link"
+                )
+                else incident.conference_bridge
             )
             try:
                 topic = slack_web_client.conversations_setTopic(
@@ -418,7 +422,7 @@ async def handle_incident_optional_features(
         for gr in config.active.options.get("auto_invite_groups").get(
             "groups"
         ):
-            all_groups = all_workspace_groups["usergroups"]
+            all_groups = all_workspace_groups.get("usergroups")
             if len(all_groups) == 0:
                 logger.error(
                     f"Error when inviting mandatory users: looked for group {gr} but did not find it."
@@ -449,18 +453,14 @@ async def handle_incident_optional_features(
                         event=f"Group {gr} invited to the incident channel automatically.",
                     )
                 except slack_sdk.errors.SlackApiError as error:
-                    logger.error(
-                        f"Error when inviting mandatory users: {error}"
-                    )
+                    logger.error(f"Error when inviting auto users: {error}")
 
     """
-    Post prompt for creating Statuspage incident (optional)
+    Post prompt for creating Statuspage incident if enabled
     """
     if "statuspage" in config.active.integrations:
-        sp_components = sp_handler.StatuspageComponents()
-        sp_components_list = sp_components.list_of_names()
-        sp_starter_message_content = sp_slack.return_new_incident_message(
-            channel_id, sp_components_list
+        sp_starter_message_content = return_new_statuspage_incident_message(
+            channel_id
         )
         try:
             sp_starter_message = slack_web_client.chat_postMessage(

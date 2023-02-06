@@ -81,6 +81,7 @@ class Incident(Base, MutableBase, Serializer):
     dig_message_ts = Column(VARCHAR(50), nullable=False)
     sp_message_ts = Column(VARCHAR(50))
     sp_incident_id = Column(VARCHAR(50))
+    sp_incident_data = Column(JSON)
     created_at = Column(VARCHAR(50))
     updated_at = Column(VARCHAR(50))
     last_update_sent = Column(VARCHAR(50))

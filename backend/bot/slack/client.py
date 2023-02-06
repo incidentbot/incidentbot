@@ -24,23 +24,48 @@ all_workspace_groups = (
     else []
 )
 bot_user_id = (
-    slack_web_client.auth_test()["user_id"]
+    slack_web_client.auth_test().get("user_id")
     if not config.is_test_environment
     else "test"
 )
 bot_user_name = (
-    slack_web_client.auth_test()["user"]
+    slack_web_client.auth_test().get("user")
     if not config.is_test_environment
     else "test"
 )
 slack_workspace_id = (
-    slack_web_client.auth_test()["url"].replace("https://", "").split(".")[0]
+    slack_web_client.auth_test()
+    .get("url")
+    .replace("https://", "")
+    .split(".")[0]
     if not config.is_test_environment
     else "test"
 )
 
 # Users to skip invites for
 skip_invite_for_users = ["api", "web"]
+
+
+def check_user_in_group(user_id: str, group_name: str) -> bool:
+    """Provided a user ID and a group name, return a bool indicating
+    whether or not the user is in the group.
+    """
+    all_groups = all_workspace_groups.get("usergroups")
+    try:
+        target_group = [g for g in all_groups if g["handle"] == group_name]
+        if len(target_group) == 0:
+            logger.error(f"Couldn't find group {group_name}")
+            return False
+        target_group_members = slack_web_client.usergroups_users_list(
+            usergroup=target_group[0].get("id"),
+        ).get("users")
+        if user_id in target_group_members:
+            return True
+        return False
+    except Exception as error:
+        logger.error(
+            f"Error looking for user {user_id} in group {group_name}: {error}"
+        )
 
 
 def get_channel_history(channel_id: str) -> str:
