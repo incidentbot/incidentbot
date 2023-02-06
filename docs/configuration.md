@@ -56,7 +56,10 @@ Here is the standard layout of the file:
     - resolved
   options:
     # The topic that will be set on all incident channels
-    incident_channel_topic: 'This is the default incident channel topic. You can edit it in settings.'
+    channel_topic:
+      default: 'This is the default incident channel topic. You can edit it in settings.'
+      # If set to true, set the channel topic to the meeting link. This will override incident_channel_topic.
+      # set_to_meeting_link: true
     # Timezone to use for logging, etc.
     timezone: UTC
     # If not using Zoom auto-create
@@ -87,9 +90,15 @@ Here is the standard layout of the file:
       auto_create_rca: false
       space: ENG
       parent: Postmortems
-    # Enable Statuspage integration
-    statuspage:
-      url: https://status.mydomain
+  # Enable Statuspage integration
+  statuspage:
+    # The public URL of the Statuspage.
+    url: https://status.mydomain
+    # Which Slack groups have permissions to manage Statuspage incidents?
+    # If not provided, everyone can manage Statuspage incidents from Slack.
+    # permissions:
+    #   groups:
+    #     - my-slack-group
     # Enable Zoom integration
     zoom:
       # Set to true to automatically generate a Zoom meeting for each incident

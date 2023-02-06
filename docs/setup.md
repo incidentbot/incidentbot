@@ -77,7 +77,10 @@ configMap:
       - monitoring
       - resolved
     options:
-      incident_channel_topic: 'This is the default incident channel topic. You can edit it in settings.'
+      channel_topic:
+        default: 'This is the default incident channel topic. You can edit it in settings.'
+        # If set to true, set the channel topic to the meeting link. This will override incident_channel_topic.
+        # set_to_meeting_link: true
       timezone: UTC
       conference_bridge_link: 'https://zoom.us'
       create_from_reaction:
@@ -249,10 +252,18 @@ Provide the following environment variables:
 In the application's `config.yaml`, you can set the Statuspage integration to active by providing the heading and a key that indicates what URL to lead others to to view your incidents:
 
 ```yaml
-integrations:
+# Enable Statuspage integration
   statuspage:
-    url: https://status.mycorp.com
+    # The public URL of the Statuspage.
+    url: https://status.mydomain.com
+    # Which Slack groups have permissions to manage Statuspage incidents?
+    # If not provided, everyone can manage Statuspage incidents from Slack.
+    # permissions:
+    #   groups:
+    #     - my-slack-group
 ```
+
+You can optionally add groups under the `permissions.groups` heading to limit who can create and manage Statuspage incidents from Slack.
 
 ## Zoom
 
