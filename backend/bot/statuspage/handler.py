@@ -171,7 +171,7 @@ class StatuspageIncidentUpdate:
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": "A Statuspage incident has been created.",
+                    "text": "A Statuspage incident has been created. Use the options here to manage it.",
                 },
             },
             {

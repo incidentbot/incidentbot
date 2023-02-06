@@ -23,7 +23,7 @@ options:
   channel_topic:
     default: 'This is the default incident channel topic. You can edit it in settings.'
     # If set to true, set the channel topic to the meeting link. This will override incident_channel_topic.
-    set_to_meeting_link: false
+    # set_to_meeting_link: true
   # Timezone to use for logging, etc.
   timezone: UTC
   # If not using Zoom auto-create
@@ -60,9 +60,9 @@ integrations:
     url: https://status.mydomain
     # Which Slack groups have permissions to manage Statuspage incidents?
     # If not provided, everyone can manage Statuspage incidents from Slack.
-    permissions:
-      groups:
-        - sre-concierge
+    # permissions:
+    #   groups:
+    #     - my-slack-group
   # Enable Zoom integration
   zoom:
     # Set to true to automatically generate a Zoom meeting for each incident
