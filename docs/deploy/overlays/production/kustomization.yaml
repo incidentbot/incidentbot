@@ -7,7 +7,7 @@ bases:
 
 images:
   - name: eb129/incident-bot-docs
-    newTag: v1.2.1
+    newTag: v1.3.0
 
 generatorOptions:
   disableNameSuffixHash: true
