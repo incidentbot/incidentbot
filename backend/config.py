@@ -7,7 +7,7 @@ from cerberus import Validator
 from dotenv import load_dotenv
 from typing import Dict, List
 
-__version__ = "v1.2.2"
+__version__ = "v1.3.0"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -91,10 +91,21 @@ class Configuration:
                 "required": True,
                 "type": "dict",
                 "schema": {
-                    "incident_channel_topic": {
+                    "channel_topic": {
                         "required": True,
-                        "type": "string",
+                        "type": "dict",
                         "empty": False,
+                        "schema": {
+                            "default": {
+                                "required": True,
+                                "type": "string",
+                                "empty": False,
+                            },
+                            "set_to_meeting_link": {
+                                "required": False,
+                                "type": "boolean",
+                            },
+                        },
                     },
                     "timezone": {
                         "required": True,
@@ -179,6 +190,17 @@ class Configuration:
                                 "type": "string",
                                 "empty": False,
                                 "regex": self.url_regex,
+                            },
+                            "permissions": {
+                                "required": False,
+                                "type": "dict",
+                                "schema": {
+                                    "groups": {
+                                        "required": False,
+                                        "type": "list",
+                                        "empty": True,
+                                    },
+                                },
                             },
                         },
                     },
@@ -289,6 +311,7 @@ statuspage_integration_enabled = os.getenv(
     "STATUSPAGE_INTEGRATION_ENABLED", default="false"
 )
 statuspage_page_id = os.getenv("STATUSPAGE_PAGE_ID", default="")
+sp_logo_url = "https://i.imgur.com/v4xmF6u.png"
 
 """
 Confluence

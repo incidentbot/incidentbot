@@ -47,76 +47,60 @@ class IncidentChannelBoilerplateMessage:
                 },
             },
             {"type": "divider"},
+            {
+                "block_id": "status",
+                "type": "section",
+                "text": {"type": "mrkdwn", "text": "*Current Status:*"},
+                "accessory": {
+                    "type": "static_select",
+                    "action_id": "incident.set_incident_status",
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": config.active.statuses[0].title(),
+                        "emoji": True,
+                    },
+                    "options": [
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": st.title(),
+                                "emoji": True,
+                            },
+                            "value": st,
+                        }
+                        for st in config.active.statuses
+                    ],
+                },
+            },
+            {
+                "block_id": "severity",
+                "type": "section",
+                "text": {"type": "mrkdwn", "text": "*Severity:*"},
+                "accessory": {
+                    "type": "static_select",
+                    "action_id": "incident.set_severity",
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": severity.upper(),
+                        "emoji": True,
+                    },
+                    "options": [
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": sev.upper(),
+                                "emoji": True,
+                            },
+                            "value": sev,
+                        }
+                        for sev, _ in config.active.severities.items()
+                    ],
+                },
+            },
+            {"type": "divider"},
         ]
-
-        statuses = []
-        for st in config.active.statuses:
-            statuses.append(
-                {
-                    "text": {
-                        "type": "plain_text",
-                        "text": st.title(),
-                        "emoji": True,
-                    },
-                    "value": st,
-                }
-            )
-        blocks.extend(
-            [
-                {
-                    "block_id": "status",
-                    "type": "section",
-                    "text": {"type": "mrkdwn", "text": "*Current Status:*"},
-                    "accessory": {
-                        "type": "static_select",
-                        "action_id": "incident.set_incident_status",
-                        "placeholder": {
-                            "type": "plain_text",
-                            "text": config.active.statuses[0].title(),
-                            "emoji": True,
-                        },
-                        "options": statuses,
-                    },
-                },
-            ],
-        )
-
-        severities = []
-        for sev, _ in config.active.severities.items():
-            severities.append(
-                {
-                    "text": {
-                        "type": "plain_text",
-                        "text": sev.upper(),
-                        "emoji": True,
-                    },
-                    "value": sev,
-                }
-            )
-        blocks.extend(
-            [
-                {
-                    "block_id": "severity",
-                    "type": "section",
-                    "text": {"type": "mrkdwn", "text": "*Severity:*"},
-                    "accessory": {
-                        "type": "static_select",
-                        "action_id": "incident.set_severity",
-                        "placeholder": {
-                            "type": "plain_text",
-                            "text": severity.upper(),
-                            "emoji": True,
-                        },
-                        "options": severities,
-                    },
-                },
-                {"type": "divider"},
-            ]
-        )
-
-        roles = []
         for role, _ in config.active.roles.items():
-            roles.extend(
+            blocks.extend(
                 [
                     {
                         "block_id": f"role_{role}",
@@ -167,8 +151,6 @@ class IncidentChannelBoilerplateMessage:
                     {"type": "divider"},
                 ]
             )
-        blocks.extend(roles)
-
         blocks.extend(
             [
                 {
@@ -202,6 +184,6 @@ class IncidentChannelBoilerplateMessage:
         )
 
         return {
-            "channel": "{}".format(incident_channel_details.get("id")),
+            "channel": incident_channel_details.get("id"),
             "blocks": blocks,
         }

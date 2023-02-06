@@ -24,9 +24,7 @@ from bot.slack.messages import (
     incident_list_message,
     job_list_message,
     pd_on_call_message,
-    sp_incident_list_message,
 )
-from bot.statuspage import actions as sp_actions, handler as sp_handler
 from slack_bolt import App
 from slack_sdk.errors import SlackApiError
 from typing import Any, Dict
@@ -73,16 +71,6 @@ def handle_mention(body, say, logger):
         database_data = db_read_all_incidents()
         resp = incident_list_message(database_data, all=True)
         say(blocks=resp, text="")
-    elif "ls-sp-inc" in " ".join(message):
-        if "statuspage" in config.active.integrations:
-            sp_objects = sp_handler.StatuspageObjects()
-            sp_incidents = sp_objects.open_incidents
-            resp = sp_incident_list_message(sp_incidents)
-            say(blocks=resp, text="")
-        else:
-            say(
-                text=f"The Statuspage integration is not enabled. I cannot provide information from Statuspage as a result.",
-            )
     elif "pager" in message:
         if "pagerduty" in config.active.integrations:
             from bot.pagerduty import api as pd_api
@@ -208,37 +196,6 @@ def handle_incident_set_severity(ack, body):
     logger.debug(body)
     ack()
     asyncio.run(inc_actions.set_severity(action_parameters=parse_action(body)))
-
-
-"""
-Statuspage Actions
-"""
-
-
-@app.action("statuspage.components_select")
-def handle_incident_components_select(ack, body):
-    logger.debug(body)
-    ack()
-    sp_actions.components_select(action_parameters=parse_action(body))
-
-
-@app.action("statuspage.components_status_select")
-def handle_static_action(ack, body, logger):
-    logger.debug(body)
-    ack()
-
-
-@app.action("statuspage.impact_select")
-def handle_incident_components_select(ack, body):
-    logger.debug(body)
-    ack()
-
-
-@app.action("statuspage.update_status")
-def handle_incident_update_status(ack, body):
-    logger.debug(body)
-    ack()
-    sp_actions.update_status(action_parameters=parse_action(body))
 
 
 """
@@ -462,6 +419,47 @@ def handle_message_events(body, logger):
                 logger.error(
                     f"Error sending help message to incident channel during increased chatter: {error}"
                 )
+
+
+"""
+Statuspage
+"""
+
+
+@app.action("statuspage.components_select")
+def handle_static_action(ack, body):
+    logger.debug(body)
+    ack()
+
+
+@app.action("statuspage.components_status_select")
+def handle_static_action(ack, body, logger):
+    logger.debug(body)
+    ack()
+
+
+@app.action("statuspage.impact_select")
+def handle_static_action(ack, body):
+    logger.debug(body)
+    ack()
+
+
+@app.action("statuspage.open_statuspage")
+def handle_static_action(ack, body):
+    logger.debug(body)
+    ack()
+
+
+@app.action("statuspage.update_status")
+def handle_static_action(ack, body):
+    logger.debug(body)
+    ack()
+
+
+@app.action("statuspage.view_incident")
+def handle_static_action(ack, body):
+    logger.debug(body)
+    ack()
 
 
 """

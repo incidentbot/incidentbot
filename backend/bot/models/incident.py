@@ -117,6 +117,9 @@ def db_update_incident_created_at_col(
     incident_id: str = "",
     channel_id: str = "",
 ):
+    """
+    Update an incident's created_at column
+    """
     try:
         incident = (
             Session.query(Incident)
@@ -143,6 +146,9 @@ def db_update_incident_last_update_sent_col(
     incident_id: str = "",
     channel_id: str = "",
 ):
+    """
+    Update an incident's last_update_sent column
+    """
     try:
         incident = (
             Session.query(Incident)
@@ -172,6 +178,9 @@ def db_update_incident_role(
     incident_id: str = "",
     channel_id: str = "",
 ):
+    """
+    Update an incident's roles column
+    """
     try:
         incident = (
             Session.query(Incident)
@@ -202,6 +211,9 @@ def db_update_incident_updated_at_col(
     incident_id: str = "",
     channel_id: str = "",
 ):
+    """
+    Update an incident's updated_at column
+    """
     try:
         incident = (
             Session.query(Incident)
@@ -228,6 +240,9 @@ def db_update_incident_rca_col(
     incident_id: str = "",
     channel_id: str = "",
 ):
+    """
+    Update an incident's rca column
+    """
     try:
         incident = (
             Session.query(Incident)
@@ -254,6 +269,9 @@ def db_update_incident_severity_col(
     incident_id: str = "",
     channel_id: str = "",
 ):
+    """
+    Update an incident's severity column
+    """
     try:
         incident = (
             Session.query(Incident)
@@ -280,6 +298,9 @@ def db_update_incident_sp_id_col(
     incident_id: str = "",
     channel_id: str = "",
 ):
+    """
+    Update an incident's Statuspage incident id column
+    """
     try:
         incident = (
             Session.query(Incident)
@@ -301,11 +322,43 @@ def db_update_incident_sp_id_col(
         Session.remove()
 
 
+def db_update_incident_sp_data_col(
+    sp_incident_data,
+    incident_id: str = "",
+    channel_id: str = "",
+):
+    """
+    Update an incident's Statuspage incident data column
+    """
+    try:
+        incident = (
+            Session.query(Incident)
+            .filter(
+                or_(
+                    Incident.incident_id == incident_id,
+                    Incident.channel_id == channel_id,
+                )
+            )
+            .one()
+        )
+        incident.sp_incident_data = sp_incident_data
+        Session.commit()
+    except Exception as error:
+        logger.error(f"Incident update failed for {incident_id}: {error}")
+        Session.rollback()
+    finally:
+        Session.close()
+        Session.remove()
+
+
 def db_update_incident_sp_ts_col(
     ts: str,
     incident_id: str = "",
     channel_id: str = "",
 ):
+    """
+    Update an incident's Statuspage message timestamp column
+    """
     try:
         incident = (
             Session.query(Incident)
@@ -332,6 +385,9 @@ def db_update_incident_status_col(
     incident_id: str = "",
     channel_id: str = "",
 ):
+    """
+    Update an incident's status column
+    """
     try:
         incident = (
             Session.query(Incident)

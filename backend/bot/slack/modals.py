@@ -9,12 +9,22 @@ from bot.models.incident import (
     db_read_all_incidents,
     db_read_incident_channel_id,
     db_read_open_incidents,
+    db_read_incident,
     db_update_incident_last_update_sent_col,
 )
 from bot.models.pager import read_pager_auto_page_targets
 from bot.shared import tools
+from bot.slack.client import check_user_in_group
 from bot.slack.handler import app, help_menu
-from bot.slack.messages import incident_list_message, pd_on_call_message
+from bot.slack.messages import (
+    incident_list_message,
+    pd_on_call_message,
+)
+from bot.statuspage.handler import (
+    StatuspageComponents,
+    StatuspageIncident,
+    StatuspageIncidentUpdate,
+)
 from bot.templates.incident.updates import (
     IncidentUpdate,
 )
@@ -1145,3 +1155,458 @@ def handle_submission(ack, body, say, view):
                 },
             ],
         )
+
+
+"""
+Statuspage
+"""
+
+
+@app.action("open_statuspage_incident_modal")
+def open_modal(ack, body, client):
+    """
+    Provides the modal that will display when the shortcut is used to start a Statuspage incident
+    """
+    user = body.get("user").get("id")
+    incident_id = body.get("actions")[0].get("value").split("_")[-1:][0]
+    incident_data = db_read_incident(channel_id=incident_id)
+    blocks = [
+        {
+            "type": "image",
+            "image_url": config.sp_logo_url,
+            "alt_text": "statuspage",
+        },
+        {"type": "divider"},
+        {
+            "type": "section",
+            "block_id": incident_id,
+            "text": {
+                "type": "mrkdwn",
+                "text": "Incident ID: {}".format(incident_data.incident_id),
+            },
+        },
+        {"type": "divider"},
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "This Statuspage incident will start in "
+                + "*investigating* mode. You may change its status as the "
+                + "incident proceeds.",
+            },
+        },
+        {"type": "divider"},
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Please enter a brief description that will appear "
+                + "as the incident description in the Statuspage incident. "
+                + "Then select impacted components and confirm. Once "
+                + "confirmed, the incident will be opened.",
+            },
+        },
+        {"type": "divider"},
+        {
+            "type": "input",
+            "block_id": "statuspage_name_input",
+            "element": {
+                "type": "plain_text_input",
+                "action_id": "statuspage.name_input",
+                "min_length": 1,
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "Name for the incident",
+                "emoji": True,
+            },
+        },
+        {
+            "type": "input",
+            "block_id": "statuspage_body_input",
+            "element": {
+                "type": "plain_text_input",
+                "action_id": "statuspage.body_input",
+                "min_length": 1,
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "Message describing the incident",
+                "emoji": True,
+            },
+        },
+        {
+            "block_id": "statuspage_impact_select",
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": "*Impact:*"},
+            "accessory": {
+                "type": "static_select",
+                "action_id": "statuspage.impact_select",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Select an impact...",
+                    "emoji": True,
+                },
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Minor",
+                            "emoji": True,
+                        },
+                        "value": "minor",
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Major",
+                            "emoji": True,
+                        },
+                        "value": "major",
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Critical",
+                            "emoji": True,
+                        },
+                        "value": "critical",
+                    },
+                ],
+            },
+        },
+        {
+            "block_id": "statuspage_components_status",
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": "*Components Impact:*"},
+            "accessory": {
+                "type": "static_select",
+                "action_id": "statuspage.components_status_select",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Select status of components...",
+                    "emoji": True,
+                },
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Degraded Performance",
+                            "emoji": True,
+                        },
+                        "value": "degraded_performance",
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Partial Outage",
+                            "emoji": True,
+                        },
+                        "value": "partial_outage",
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Major Outage",
+                            "emoji": True,
+                        },
+                        "value": "major_outage",
+                    },
+                ],
+            },
+        },
+        {
+            "type": "section",
+            "block_id": "statuspage_components_select",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Select impacted components",
+            },
+            "accessory": {
+                "action_id": "statuspage.components_select",
+                "type": "multi_static_select",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Select components",
+                },
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": c,
+                        },
+                        "value": c,
+                    }
+                    for c in StatuspageComponents().list_of_names
+                ],
+            },
+        },
+    ]
+
+    ack()
+
+    # Return modal only if user has permissions
+    sp_config = config.active.integrations.get("statuspage")
+    if sp_config.get("permissions") and sp_config.get("permissions").get(
+        "groups"
+    ):
+        for gr in sp_config.get("permissions").get("groups"):
+            if check_user_in_group(user_id=user, group_name=gr):
+                client.views_open(
+                    trigger_id=body["trigger_id"],
+                    view={
+                        "type": "modal",
+                        # View identifier
+                        "callback_id": "open_statuspage_incident_modal",
+                        "title": {
+                            "type": "plain_text",
+                            "text": "Statuspage Incident",
+                        },
+                        "submit": {"type": "plain_text", "text": "Start"},
+                        "blocks": blocks,
+                    },
+                )
+            else:
+                client.chat_postEphemeral(
+                    channel=incident_id,
+                    user=user,
+                    text="You don't have permissions to manage Statuspage incidents.",
+                )
+    else:
+        client.views_open(
+            trigger_id=body["trigger_id"],
+            view={
+                "type": "modal",
+                # View identifier
+                "callback_id": "open_statuspage_incident_modal",
+                "title": {
+                    "type": "plain_text",
+                    "text": "Statuspage Incident",
+                },
+                "submit": {"type": "plain_text", "text": "Start"},
+                "blocks": blocks,
+            },
+        )
+
+
+@app.view("open_statuspage_incident_modal")
+def handle_submission(ack, body, client, view):
+    """
+    Handles open_statuspage_incident_modal
+    """
+    ack()
+    incident_data = db_read_incident(
+        channel_id=view["blocks"][2].get("block_id")
+    )
+    values = body.get("view").get("state").get("values")
+
+    # Fetch parameters from modal
+    body = values["statuspage_body_input"]["statuspage.body_input"]["value"]
+    impact = values["statuspage_impact_select"]["statuspage.impact_select"][
+        "selected_option"
+    ]["value"]
+    name = values["statuspage_name_input"]["statuspage.name_input"]["value"]
+    status = values["statuspage_components_status"][
+        "statuspage.components_status_select"
+    ]["selected_option"]["value"]
+    selected_components = [
+        component["text"]["text"]
+        for component in values["statuspage_components_select"][
+            "statuspage.components_select"
+        ]["selected_options"]
+    ]
+
+    # Create Statuspage incident
+    try:
+        StatuspageIncident(
+            channel_id=incident_data.channel_id,
+            request_data={
+                "name": name,
+                "status": "investigating",
+                "body": body,
+                "impact": impact,
+                "components": StatuspageComponents().formatted_components_update(
+                    selected_components, status
+                ),
+            },
+        )
+    except Exception as error:
+        logger.error(f"Error creating Statuspage incident: {error}")
+
+    client.chat_update(
+        channel=incident_data.channel_id,
+        ts=incident_data.sp_message_ts,
+        text="Statuspage incident has been created.",
+        blocks=StatuspageIncidentUpdate.update_management_message(
+            incident_data.channel_id
+        ),
+    )
+
+
+@app.action("open_statuspage_incident_update_modal")
+def open_modal(ack, body, client):
+    """
+    Provides the modal that will display when the shortcut is used to update a Statuspage incident
+    """
+    user = body.get("user").get("id")
+    incident_id = body.get("channel").get("id")
+    incident_data = db_read_incident(channel_id=incident_id)
+    sp_incident_data = incident_data.sp_incident_data
+    blocks = [
+        {"type": "divider"},
+        {
+            "type": "image",
+            "image_url": config.sp_logo_url,
+            "alt_text": "statuspage",
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "*Name*: {}\n*Status*: {}\nLast Updated: {}\n".format(
+                    sp_incident_data.get("name"),
+                    sp_incident_data.get("status"),
+                    sp_incident_data.get("updated_at"),
+                ),
+            },
+        },
+        {"type": "divider"},
+        {
+            "type": "input",
+            "block_id": f"statuspage_update_message_input_{incident_id}",
+            "element": {
+                "type": "plain_text_input",
+                "action_id": "statuspage.update_message_input",
+                "min_length": 1,
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "Message to include with this update",
+                "emoji": True,
+            },
+        },
+        {
+            "block_id": "statuspage_incident_status_management",
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": "*Update Status:*"},
+            "accessory": {
+                "type": "static_select",
+                "action_id": "statuspage.update_status",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Investigating",
+                    "emoji": True,
+                },
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Investigating",
+                            "emoji": True,
+                        },
+                        "value": "investigating",
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Identified",
+                            "emoji": True,
+                        },
+                        "value": "identified",
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Monitoring",
+                            "emoji": True,
+                        },
+                        "value": "monitoring",
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Resolved",
+                            "emoji": True,
+                        },
+                        "value": "resolved",
+                    },
+                ],
+            },
+        },
+    ]
+
+    ack()
+
+    # Return modal only if user has permissions
+    sp_config = config.active.integrations.get("statuspage")
+    if sp_config.get("permissions") and sp_config.get("permissions").get(
+        "groups"
+    ):
+        for gr in sp_config.get("permissions").get("groups"):
+            if check_user_in_group(user_id=user, group_name=gr):
+                client.views_open(
+                    trigger_id=body["trigger_id"],
+                    view={
+                        "type": "modal",
+                        # View identifier
+                        "callback_id": "open_statuspage_incident_update_modal",
+                        "title": {
+                            "type": "plain_text",
+                            "text": "Update Incident",
+                        },
+                        "submit": {"type": "plain_text", "text": "Update"},
+                        "blocks": blocks,
+                    },
+                )
+            else:
+                client.chat_postEphemeral(
+                    channel=incident_id,
+                    user=user,
+                    text="You don't have permissions to manage Statuspage incidents.",
+                )
+    else:
+        client.views_open(
+            trigger_id=body["trigger_id"],
+            view={
+                "type": "modal",
+                # View identifier
+                "callback_id": "open_statuspage_incident_update_modal",
+                "title": {
+                    "type": "plain_text",
+                    "text": "Update Incident",
+                },
+                "submit": {"type": "plain_text", "text": "Update"},
+                "blocks": blocks,
+            },
+        )
+
+
+@app.view("open_statuspage_incident_update_modal")
+def handle_submission(ack, body):
+    """
+    Handles open_statuspage_incident_update_modal
+    """
+    ack()
+
+    channel_id = (
+        body.get("view").get("blocks")[4].get("block_id").split("_")[-1:][0]
+    )
+    values = body.get("view").get("state").get("values")
+    update_message = (
+        values.get(f"statuspage_update_message_input_{channel_id}")
+        .get("statuspage.update_message_input")
+        .get("value")
+    )
+    update_status = (
+        values.get("statuspage_incident_status_management")
+        .get("statuspage.update_status")
+        .get("selected_option")
+        .get("value")
+    )
+
+    try:
+        StatuspageIncidentUpdate().update(
+            channel_id, update_status, update_message
+        )
+    except Exception as error:
+        logger.error(f"Error updating Statuspage incident: {error}")
