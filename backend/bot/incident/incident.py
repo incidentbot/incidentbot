@@ -7,7 +7,6 @@ import slack_sdk.errors
 
 from bot.audit import log
 from bot.exc import ConfigurationError
-from bot.external import meetings
 from bot.models.incident import (
     db_update_incident_created_at_col,
     db_update_incident_sp_ts_col,
@@ -27,6 +26,7 @@ from bot.templates.incident.channel_boilerplate import (
 from bot.templates.incident.digest_notification import (
     IncidentChannelDigestNotification,
 )
+from bot.zoom.meeting import ZoomMeeting
 from cerberus import Validator
 from typing import Any, Dict, List
 
@@ -224,7 +224,7 @@ class Incident:
                 "auto_create_meeting"
             )
         ):
-            return meetings.ZoomMeeting().url
+            return ZoomMeeting().url
         else:
             return config.active.options.get("conference_bridge_link")
 

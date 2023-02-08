@@ -1,7 +1,6 @@
 import asyncio
 import config
 import logging
-import pyjokes
 import requests
 import slack_sdk
 import variables
@@ -97,8 +96,6 @@ def handle_mention(body, say, logger):
                     say(f"Could not delete the job {job_title}: {delete_job}")
                 else:
                     say(f"Deleted job: *{job_title}*")
-    elif "tell me a joke" in " ".join(message):
-        say(text=pyjokes.get_joke())
     elif "ping" in message:
         say(text="pong")
     elif "version" in message:

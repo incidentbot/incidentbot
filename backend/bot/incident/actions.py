@@ -5,7 +5,6 @@ import slack_sdk.errors
 import variables
 
 from bot.audit import log
-from bot.external import epi
 from bot.incident.action_parameters import (
     ActionParametersSlack,
     ActionParametersWeb,
@@ -687,55 +686,6 @@ async def set_incident_status(
     db_update_incident_updated_at_col(
         channel_id=incident_data.channel_id,
         updated_at=tools.fetch_timestamp(),
-    )
-
-
-async def reload_status_message(
-    action_parameters: type[ActionParametersSlack],
-):
-    """When an incoming action is incident.reload_status_message, this method
-    checks an external provider's status page for updates
-
-    Keyword arguments:
-    action_parameters -- type[ActionParametersSlack] containing Slack actions data
-    """
-    incident_data = db_read_incident(
-        channel_id=action_parameters.channel_details["id"]
-    )
-
-    ts = action_parameters.message_details["ts"]
-    provider = action_parameters.actions["value"]
-
-    # Fetch latest Status to format message
-    ext_incidents = epi.ExternalProviderIncidents(
-        provider=provider,
-        days_back=5,
-        slack_channel=incident_data.channel_id,
-    )
-    # Delete existing message and repost
-    try:
-        result = slack_web_client.chat_delete(
-            channel=incident_data.channel_id,
-            ts=ts,
-        )
-        logger.debug(f"\n{result}\n")
-    except slack_sdk.errors.SlackApiError as error:
-        logger.error(
-            f"Error deleting external provider message from channel {incident_data.channel_name}: {error}"
-        )
-    # Post new message
-    try:
-        result = slack_web_client.chat_postMessage(
-            **ext_incidents.slack_message(),
-            text="External status refreshed.",
-        )
-        logger.debug(f"\n{result}\n")
-    except slack_sdk.errors.SlackApiError as error:
-        logger.error(
-            f"Error sending external provider message to incident channel {incident_data.channel_name}: {error}"
-        )
-    logger.info(
-        f"Updated external provider message for {provider} in channel {incident_data.channel_name}"
     )
 
 
