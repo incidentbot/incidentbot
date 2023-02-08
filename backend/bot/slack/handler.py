@@ -1,7 +1,6 @@
 import asyncio
 import config
 import logging
-import pyjokes
 import requests
 import slack_sdk
 import variables
@@ -97,8 +96,6 @@ def handle_mention(body, say, logger):
                     say(f"Could not delete the job {job_title}: {delete_job}")
                 else:
                     say(f"Deleted job: *{job_title}*")
-    elif "tell me a joke" in " ".join(message):
-        say(text=pyjokes.get_joke())
     elif "ping" in message:
         say(text="pong")
     elif "version" in message:
@@ -173,22 +170,11 @@ def handle_incident_claim_role(ack, body):
     asyncio.run(inc_actions.claim_role(action_parameters=parse_action(body)))
 
 
-@app.action("incident.reload_status_message")
-def handle_incident_reload_status_message(ack, body):
+@app.action("incident.set_status")
+def handle_incident_set_status(ack, body):
     logger.debug(body)
     ack()
-    asyncio.run(
-        inc_actions.reload_status_message(action_parameters=parse_action(body))
-    )
-
-
-@app.action("incident.set_incident_status")
-def handle_incident_set_incident_status(ack, body):
-    logger.debug(body)
-    ack()
-    asyncio.run(
-        inc_actions.set_incident_status(action_parameters=parse_action(body))
-    )
+    asyncio.run(inc_actions.set_status(action_parameters=parse_action(body)))
 
 
 @app.action("incident.set_severity")

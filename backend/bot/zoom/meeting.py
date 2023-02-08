@@ -24,7 +24,7 @@ class ZoomMeeting:
 
     def __create(self) -> str:
         meeting_details = {
-            "agenda": f"Incident Discussion",
+            "agenda": "Incident Discussion",
             "settings": {
                 "audio": "voip",
                 "host_video": False,
@@ -36,7 +36,7 @@ class ZoomMeeting:
                 "use_pmi": False,
                 "waiting_room": False,
             },
-            "topic": f"Incident Discussion",
+            "topic": "Incident Discussion",
             "type": 1,
         }
         try:
