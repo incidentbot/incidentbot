@@ -170,22 +170,11 @@ def handle_incident_claim_role(ack, body):
     asyncio.run(inc_actions.claim_role(action_parameters=parse_action(body)))
 
 
-@app.action("incident.reload_status_message")
-def handle_incident_reload_status_message(ack, body):
+@app.action("incident.set_status")
+def handle_incident_set_status(ack, body):
     logger.debug(body)
     ack()
-    asyncio.run(
-        inc_actions.reload_status_message(action_parameters=parse_action(body))
-    )
-
-
-@app.action("incident.set_incident_status")
-def handle_incident_set_incident_status(ack, body):
-    logger.debug(body)
-    ack()
-    asyncio.run(
-        inc_actions.set_incident_status(action_parameters=parse_action(body))
-    )
+    asyncio.run(inc_actions.set_status(action_parameters=parse_action(body)))
 
 
 @app.action("incident.set_severity")

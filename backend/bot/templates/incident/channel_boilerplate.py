@@ -53,7 +53,7 @@ class IncidentChannelBoilerplateMessage:
                 "text": {"type": "mrkdwn", "text": "*Current Status:*"},
                 "accessory": {
                     "type": "static_select",
-                    "action_id": "incident.set_incident_status",
+                    "action_id": "incident.set_status",
                     "placeholder": {
                         "type": "plain_text",
                         "text": config.active.statuses[0].title(),

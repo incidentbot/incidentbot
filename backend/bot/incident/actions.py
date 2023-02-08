@@ -323,10 +323,10 @@ async def export_chat_logs(action_parameters: type[ActionParametersSlack]):
         )
 
 
-async def set_incident_status(
+async def set_status(
     action_parameters: type[ActionParametersSlack] = ActionParametersSlack,
 ):
-    """When an incoming action is incident.set_incident_status, this method
+    """When an incoming action is incident.set_status, this method
     updates the status of the incident
 
     Keyword arguments:

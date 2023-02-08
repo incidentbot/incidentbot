@@ -184,8 +184,7 @@ class TestBotSlackHandler:
             "incident.export_chat_logs",
             "incident.assign_role",
             "incident.claim_role",
-            "incident.reload_status_message",
-            "incident.set_incident_status",
+            "incident.set_status",
             "incident.set_severity",
         ]
 
