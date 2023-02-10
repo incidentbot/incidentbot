@@ -449,6 +449,41 @@ def handle_static_action(ack, body):
 
 
 """
+Jira
+"""
+
+
+@app.action("jira.description_input")
+def handle_static_action(ack, body, logger):
+    logger.debug(body)
+    ack()
+
+
+@app.action("jira.priority_select")
+def handle_static_action(ack, body):
+    logger.debug(body)
+    ack()
+
+
+@app.action("jira.summary_input")
+def handle_static_action(ack, body):
+    logger.debug(body)
+    ack()
+
+
+@app.action("jira.type_select")
+def handle_static_action(ack, body):
+    logger.debug(body)
+    ack()
+
+
+@app.action("jira.view_issue")
+def handle_static_action(ack, body):
+    logger.debug(body)
+    ack()
+
+
+"""
 Logs for request handling various other requests
 """
 

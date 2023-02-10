@@ -26,10 +26,16 @@ class IncidentRootCauseAnalysis:
         self.pinned_items = pinned_items
         self.timeline = timeline
 
-        self.parent_page = config.active.integrations.get("confluence").get(
-            "parent"
+        self.parent_page = (
+            config.active.integrations.get("atlassian")
+            .get("confluence")
+            .get("parent")
         )
-        self.space = config.active.integrations.get("confluence").get("space")
+        self.space = (
+            config.active.integrations.get("atlassian")
+            .get("confluence")
+            .get("space")
+        )
 
         self.confluence = ConfluenceApi()
         self.exec = self.confluence.api
@@ -88,8 +94,10 @@ class IncidentRootCauseAnalysis:
                                     content_type=item.mimetype,
                                     page_id=created_page_id,
                                     space=config.active.integrations.get(
-                                        "confluence"
-                                    ).get("space"),
+                                        "atlassian"
+                                    )
+                                    .get("confluence")
+                                    .get("space"),
                                     comment=f"This item was pinned to the incident by {item.user} at {item.ts}.",
                                 )
                             except Exception as error:

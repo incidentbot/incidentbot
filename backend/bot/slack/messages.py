@@ -86,7 +86,6 @@ def incident_list_message(
                 "text": ":open_file_folder: No Open Incidents",
             },
         },
-        {"type": "divider"},
     ]
     # Check to see if there are any incidents
     if len(incidents) == 0:

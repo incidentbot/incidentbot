@@ -38,7 +38,7 @@ plugins:
 nav:
   - Home:
       - index.md
-      - Features: 'features.md'
+      - Integrations: 'integrations.md'
       - Usage Guide: 'usage.md'
       - Installation, Setup, and Configuration:
           - Installation and Setup: 'setup.md'

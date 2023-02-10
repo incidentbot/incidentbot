@@ -151,33 +151,50 @@ class IncidentChannelBoilerplateMessage:
                     {"type": "divider"},
                 ]
             )
+        button_el = [
+            {
+                "type": "button",
+                "text": {
+                    "type": "plain_text",
+                    "text": "Incident Guide",
+                },
+                "url": config.active.links.get("incident_guide"),
+                "action_id": "incident.incident_guide_link",
+            },
+            {
+                "type": "button",
+                "text": {
+                    "type": "plain_text",
+                    "text": "Incident Postmortems",
+                },
+                "url": config.active.links.get("incident_postmortems"),
+                "action_id": "incident.incident_postmortem_link",
+            },
+        ]
+
+        if (
+            "atlassian" in config.active.integrations
+            and "jira" in config.active.integrations.get("atlassian")
+        ):
+            button_el.append(
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Create Jira Issue",
+                        "emoji": True,
+                    },
+                    "value": "foo",
+                    "action_id": "open_incident_create_jira_issue_modal",
+                    "style": "primary",
+                },
+            )
         blocks.extend(
             [
                 {
                     "block_id": "help_buttons",
                     "type": "actions",
-                    "elements": [
-                        {
-                            "type": "button",
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Incident Guide",
-                            },
-                            "url": config.active.links.get("incident_guide"),
-                            "action_id": "incident.incident_guide_link",
-                        },
-                        {
-                            "type": "button",
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Incident Postmortems",
-                            },
-                            "url": config.active.links.get(
-                                "incident_postmortems"
-                            ),
-                            "action_id": "incident.incident_postmortem_link",
-                        },
-                    ],
+                    "elements": button_el,
                 },
                 {"type": "divider"},
             ]

@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 import yaml
 
 from bot.exc import ConfigurationError
@@ -7,7 +8,7 @@ from cerberus import Validator
 from dotenv import load_dotenv
 from typing import Dict, List
 
-__version__ = "v1.3.1"
+__version__ = "v1.4.0"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -156,24 +157,46 @@ class Configuration:
                 "required": False,
                 "type": "dict",
                 "schema": {
-                    "confluence": {
+                    "atlassian": {
                         "required": False,
                         "type": "dict",
                         "schema": {
-                            "auto_create_rca": {
-                                "required": True,
-                                "type": "boolean",
-                                "empty": False,
+                            "confluence": {
+                                "required": False,
+                                "type": "dict",
+                                "schema": {
+                                    "auto_create_rca": {
+                                        "required": True,
+                                        "type": "boolean",
+                                        "empty": False,
+                                    },
+                                    "space": {
+                                        "required": True,
+                                        "type": "string",
+                                        "empty": False,
+                                    },
+                                    "parent": {
+                                        "required": True,
+                                        "type": "string",
+                                        "empty": False,
+                                    },
+                                },
                             },
-                            "space": {
-                                "required": True,
-                                "type": "string",
-                                "empty": False,
-                            },
-                            "parent": {
-                                "required": True,
-                                "type": "string",
-                                "empty": False,
+                            "jira": {
+                                "required": False,
+                                "type": "dict",
+                                "schema": {
+                                    "project": {
+                                        "required": True,
+                                        "type": "string",
+                                        "empty": False,
+                                    },
+                                    "labels": {
+                                        "required": True,
+                                        "type": "list",
+                                        "empty": False,
+                                    },
+                                },
                             },
                         },
                     },
@@ -314,11 +337,11 @@ statuspage_page_id = os.getenv("STATUSPAGE_PAGE_ID", default="")
 sp_logo_url = "https://i.imgur.com/v4xmF6u.png"
 
 """
-Confluence
+Atlassian
 """
-confluence_api_url = os.getenv("CONFLUENCE_API_URL", default="")
-confluence_api_username = os.getenv("CONFLUENCE_API_USERNAME", default="")
-confluence_api_token = os.getenv("CONFLUENCE_API_TOKEN", default="")
+atlassian_api_url = os.getenv("ATLASSIAN_API_URL", default="")
+atlassian_api_username = os.getenv("ATLASSIAN_API_USERNAME", default="")
+atlassian_api_token = os.getenv("ATLASSIAN_API_TOKEN", default="")
 
 """
 PagerDuty
@@ -360,32 +383,43 @@ def env_check(required_envs: List[str]):
     for e in required_envs:
         if os.getenv(e) == "":
             logger.fatal(f"The environment variable {e} cannot be empty.")
-            exit(1)
+            sys.exit(1)
     if active.options.get("auto_invite_groups").get("enabled"):
         if active.options.get("auto_invite_groups").get("groups") is None:
             logger.fatal(
                 f"If enabling auto group invite, the groups field in config.yaml should be set."
             )
-            exit(1)
+            sys.exit(1)
     if active.options.get("create_from_reaction"):
         if active.options.get("create_from_reaction").get("reacji") is None:
             logger.fatal(
                 f"If enabling auto create via react, the reacji field in config.yaml should be set."
             )
-            exit(1)
+            sys.exit(1)
     if "confluence" in active.integrations and active.integrations.get(
         "confluence"
     ).get("auto_create_rca"):
         for var in [
-            "CONFLUENCE_API_URL",
-            "CONFLUENCE_API_USERNAME",
-            "CONFLUENCE_API_TOKEN",
+            "ATLASSIAN_API_URL",
+            "ATLASSIAN_API_USERNAME",
+            "ATLASSIAN_API_TOKEN",
         ]:
             if os.getenv(var) == "":
                 logger.fatal(
                     f"If enabling the Confluence integration to auto create an RCA, the {var} variable must be set."
                 )
-                exit(1)
+                sys.exit(1)
+    if "jira" in active.integrations:
+        for var in [
+            "ATLASSIAN_API_URL",
+            "ATLASSIAN_API_USERNAME",
+            "ATLASSIAN_API_TOKEN",
+        ]:
+            if os.getenv(var) == "":
+                logger.fatal(
+                    f"If enabling the Jira integration, the {var} variable must be set."
+                )
+                sys.exit(1)
     if "pagerduty" in active.integrations:
         for var in [
             "PAGERDUTY_API_USERNAME",
@@ -395,7 +429,7 @@ def env_check(required_envs: List[str]):
                 logger.fatal(
                     f"If enabling the PagerDuty integration, the {var} variable must be set."
                 )
-                exit(1)
+                sys.exit(1)
     if "statuspage" in active.integrations:
         for var in [
             "STATUSPAGE_API_KEY",
@@ -406,7 +440,7 @@ def env_check(required_envs: List[str]):
                 logger.fatal(
                     f"If enabling the Statuspage integration, the {var} variable must be set."
                 )
-                exit(1)
+                sys.exit(1)
     if "zoom" in active.integrations:
         for var in [
             "ZOOM_ACCOUNT_ID",
@@ -417,7 +451,7 @@ def env_check(required_envs: List[str]):
                 logger.fatal(
                     f"If enabling Zoom meeting auto-create, the {var} variable must be set."
                 )
-                exit(1)
+                sys.exit(1)
 
 
 def startup_message(workspace: str, wrap: bool = False) -> str:

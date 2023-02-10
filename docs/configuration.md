@@ -27,6 +27,7 @@ You can also set:
 Lastly, you can also adjust integrations:
 
 - Confluence
+- Jira
 - PagerDuty
 - Statuspage
 - Zoom
@@ -85,21 +86,28 @@ Here is the standard layout of the file:
     # Simply provide an empty dict to enable PagerDuty
     # pagerduty: {}
     # Enable Confluence integration
-    confluence:
-      # Set to true to automatically create an RCA doc
-      auto_create_rca: false
-      space: ENG
-      parent: Postmortems
-  # Enable Statuspage integration
-  statuspage:
-    # The public URL of the Statuspage.
-    url: https://status.mydomain
-    # Which Slack groups have permissions to manage Statuspage incidents?
-    # If not provided, everyone can manage Statuspage incidents from Slack.
-    # permissions:
-    #   groups:
-    #     - my-slack-group
-    # Enable Zoom integration
+    atlassian:
+      confluence:
+        # Set to true to automatically create an RCA doc
+        auto_create_rca: false
+        space: ENG
+        parent: Postmortems
+      # Enable Jira integration
+      jira:
+        project: my-jira-project-name
+        labels:
+          - incident-management
+          - etc
+    # Enable Statuspage integration
+    statuspage:
+      # The public URL of the Statuspage.
+      url: https://status.mydomain
+      # Which Slack groups have permissions to manage Statuspage incidents?
+      # If not provided, everyone can manage Statuspage incidents from Slack.
+      permissions:
+        groups:
+          - my-slack-group
+      # Enable Zoom integration
     zoom:
       # Set to true to automatically generate a Zoom meeting for each incident
       auto_create_meeting: false
@@ -116,11 +124,11 @@ The bot has an API that can be used to create incidents with an API key. This is
 
 To start, create an API key:
 
-.. image:: examples/create-api-key.png
+![Create API key](./assets/create-api-key.png)
 
 Once you've created a key, you can view it and copy it:
 
-.. image:: examples/create-api-key-after.png
+![Create API key after](./assets/create-api-key-after.png)
 
 You can use this key to send a request to create an incident:
 

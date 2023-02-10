@@ -46,14 +46,21 @@ options:
 integrations:
   # Secret data is provided as environment variables for integrations
   # Only non-secret data is configured here
+  atlassian:
+    # Enable Confluence integration
+    confluence:
+      # Set to true to automatically create an RCA doc
+      auto_create_rca: true
+      space: ENGINEERIN
+      parent: RCAs
+    # Enable Jira integration
+    jira:
+      project: 'SRE'
+      # Labels to apply to created issues
+      labels:
+        - incident-management
   # Simply provide an empty dict to enable PagerDuty
   # pagerduty: {}
-  # Enable Confluence integration
-  confluence:
-    # Set to true to automatically create an RCA doc
-    auto_create_rca: true
-    space: ENGINEERIN
-    parent: RCAs
   # Enable Statuspage integration
   statuspage:
     # The public URL of the Statuspage.

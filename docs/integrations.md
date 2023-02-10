@@ -1,0 +1,135 @@
+# Integrations
+
+Incident Bot feature several integrations to help with automation at critical junctures during the incident management process.
+
+Check out these sections to learn more about the integrations, how to enable and configure them, and how to use them.
+
+## Jira and Confluence
+
+It is possible to automatically create an RCA/postmortem document when an incident is transitioned to `resolved` status. This only works with Confluence Cloud at this time.
+
+There is also the ability to create issues in Jira related to an incident.
+
+To start, you'll need an API token for your Atlassian account. The token can be created [here](https://id.atlassian.com/manage-profile/security/api-tokens>).
+
+Provide the following environment variables:
+
+- `ATLASSIAN_API_URL` - The URL of the Atlassian account.
+- `ATLASSIAN_API_USERNAME` - Username that owns the API token.
+- `ATLASSIAN_API_TOKEN` - The API token.
+
+In the application's `config.yaml`, you can set the Confluence space and parent page and the Jira project using the `integrations` section:
+
+```yaml
+integrations:
+  atlassian:
+    confluence:
+      auto_create_rca: true
+      space: ENG
+      parent: Postmortems
+    jira:
+      project: INCMGMT
+      labels:
+        - incident-management
+        - etc
+```
+
+This is only an example - you'll obviously need to provide your own information here.
+
+### Using the Confluence Integration
+
+When enabled, an RCA document will be created in Confluence with start information. In general, no additional participation is required to generate this document.
+
+If you use the pinned items feature, those will automatically be added to the document.
+
+### Using the Jira Integration
+
+When an incident is created and the Jira integration is enabled, you'll see an option in the incident channel management section to create a Jira issue:
+
+![Jira button](./assets/boilerplate-showing-jira.png)
+
+Once you click this button, you'll be prompted for some information to create the issue:
+
+![Issue create modal](./assets/jira-issue-create-modal.png)
+
+When the issue is created, a message is posted and pinned to the incident channel. This is also visible from the shortcut menu:
+
+![Issue created message](./assets/jira-issue-create-message.png)
+
+You can view issues in the channel history or from the pinned items menu a tthe top of the incident channel:
+
+![Issue viewable in pinned items](./assets/jira-issue-create-pinned-shortcut.png)
+
+## PagerDuty
+
+You can integrate with PagerDuty to provide details about who is on call and page teams either manually or automatically. To do so, provide the following variables. If either of these is blank, the feature will not be enabled.
+
+- `PAGERDUTY_API_TOKEN`
+- `PAGERDUTY_API_USERNAME`
+
+In the application's `config.yaml`, you can set the PagerDuty integration to active by providing a blank dict:
+
+```yaml
+integrations:
+  pagerduty: {}
+```
+
+You are then able to use the bot's `pager` command and paging-related shortcuts as well as the web features related to them.
+
+## Statuspage
+
+You can integrate with Statuspage to automatically prompt for Statuspage incident creation for new incidents. You can also update them directly from Slack.
+
+Provide the following environment variables:
+
+- `STATUSPAGE_API_KEY` - Statuspage API key if enabling.
+- `STATUSPAGE_PAGE_ID` - Statuspage page ID if enabling.
+- `STATUSPAGE_URL` - Link to the public Statuspage for your organization. **Note:** This must be a fully formed URL - example: `https://status.foo.com`.
+
+In the application's `config.yaml`, you can set the Statuspage integration to active by providing the heading and a key that indicates what URL to lead others to to view your incidents:
+
+```yaml
+integrations:
+# Enable Statuspage integration
+  statuspage:
+    # The public URL of the Statuspage.
+    url: https://status.mydomain.com
+    # Which Slack groups have permissions to manage Statuspage incidents?
+    # If not provided, everyone can manage Statuspage incidents from Slack.
+    permissions:
+      groups:
+        - my-slack-group
+```
+
+You can optionally add groups under the `permissions.groups` heading to limit who can create and manage Statuspage incidents from Slack. Anyone not in one of these groups will get an ephemeral message indicating they do not have the required permissions.
+
+## Zoom
+
+At this time, the bot can automatically create a Zoom meeting for each new incident. In the future, other platforms may be supported.
+
+If you want to automatically create an instant Zoom meeting for each incident, use the following steps to create a Zoom app and enable the integration:
+
+1. Visit [https://marketplace.zoom.us/develop/create](https://marketplace.zoom.us/develop/create).
+2. Create a Server-to-Server OAuth app.
+3. Fill out the required generic information.
+4. Add scope for View and manage all user meetings.
+5. Activate app.
+6. Add account ID, client ID, and client secret to env vars below.
+
+!!! warning
+
+    The account ID can be viewed on the app's page in the Zoom Marketplace developer app after it has been activated.
+
+Provide the following environment variables:
+
+- `ZOOM_ACCOUNT_ID` - Account ID from the step above.
+- `ZOOM_CLIENT_ID` - The OAuth app client ID from the step above.
+- `ZOOM_CLIENT_SECRET` - The OAuth app client secret from the step above.
+
+In the application's `config.yaml`, you can set the Zoom integration to active by providing the heading and the value:
+
+```yaml
+integrations:
+  zoom:
+    auto_create_meeting: true
+```

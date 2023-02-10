@@ -5,12 +5,14 @@ import variables
 from bot.audit.log import read as read_logs, write as write_log
 from bot.exc import ConfigurationError
 from bot.incident import incident
+from bot.jira.issue import JiraIssue
 from bot.models.incident import (
     db_read_all_incidents,
     db_read_incident_channel_id,
     db_read_open_incidents,
     db_read_incident,
     db_update_incident_last_update_sent_col,
+    db_update_jira_issues_col,
 )
 from bot.models.pager import read_pager_auto_page_targets
 from bot.shared import tools
@@ -28,6 +30,7 @@ from bot.statuspage.handler import (
 from bot.templates.incident.updates import (
     IncidentUpdate,
 )
+from bot.templates.tools import parse_modal_values
 from datetime import datetime
 
 logger = logging.getLogger("slack.modals")
@@ -73,7 +76,6 @@ def update_home_tab(client, event, logger):
                 + "sole purpose is to help us identify and run incidents.\n",
             },
         },
-        {"type": "divider"},
         {
             "type": "header",
             "text": {
@@ -102,23 +104,21 @@ def update_home_tab(client, event, logger):
             "image_url": "https://i.imgur.com/bGGtLr4.png",
             "alt_text": "how to start a new incident",
         },
-        {"type": "divider"},
         {
             "type": "header",
             "text": {
                 "type": "plain_text",
-                "text": ":point_right: Some Handy Stuff You Should Know",
+                "text": ":point_right: Documentation and Learning Materials",
             },
         },
+        {"type": "divider"},
         {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "- You can react to any message or image in any incident"
-                + " channel with :pushpin: and I'll automatically add it to the RCA!",
+                "text": "I have a lot of features. To check them all out, visit my <https://docs.incidentbot.io/|docs>.",
             },
         },
-        {"type": "divider"},
         {
             "type": "header",
             "text": {
@@ -150,7 +150,7 @@ def update_home_tab(client, event, logger):
                 "elements": [
                     {
                         "type": "mrkdwn",
-                        "text": f"If anyone asks, I'm running version {config.__version__}!",
+                        "text": f"Version {config.__version__}",
                     }
                 ],
             },
@@ -1610,3 +1610,256 @@ def handle_submission(ack, body):
         )
     except Exception as error:
         logger.error(f"Error updating Statuspage incident: {error}")
+
+
+"""
+Jira
+"""
+
+
+@app.action("open_incident_create_jira_issue_modal")
+def open_modal(ack, body, client):
+    """
+    Provides the modal that will display when the shortcut is used to create a Jira issue
+    """
+    incident_id = body.get("channel").get("id")
+    blocks = [
+        {
+            "type": "header",
+            "block_id": incident_id,
+            "text": {
+                "type": "plain_text",
+                "text": "Create a Jira Issue",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "This issue will be created in the project: *{}*".format(
+                    config.active.integrations.get("atlassian")
+                    .get("jira")
+                    .get("project")
+                ),
+            },
+        },
+        {"type": "divider"},
+        {
+            "type": "input",
+            "block_id": "jira_issue_summary_input",
+            "element": {
+                "type": "plain_text_input",
+                "action_id": "jira.summary_input",
+                "min_length": 1,
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "Issue Summary",
+                "emoji": True,
+            },
+        },
+        {
+            "type": "input",
+            "block_id": "jira_issue_description_input",
+            "element": {
+                "type": "plain_text_input",
+                "action_id": "jira.description_input",
+                "min_length": 1,
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "Issue Description",
+                "emoji": True,
+            },
+        },
+        {
+            "block_id": "jira_issue_type_select",
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": "*Issue Type:*"},
+            "accessory": {
+                "type": "static_select",
+                "action_id": "jira.type_select",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Task",
+                    "emoji": True,
+                },
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Task",
+                            "emoji": True,
+                        },
+                        "value": "Task",
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Story",
+                            "emoji": True,
+                        },
+                        "value": "Story",
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Bug",
+                            "emoji": True,
+                        },
+                        "value": "Bug",
+                    },
+                ],
+            },
+        },
+        {
+            "block_id": "jira_issue_priority_select",
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": "*Priority:*"},
+            "accessory": {
+                "type": "static_select",
+                "action_id": "jira.priority_select",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "low",
+                    "emoji": True,
+                },
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "low",
+                            "emoji": True,
+                        },
+                        "value": "low",
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "medium",
+                            "emoji": True,
+                        },
+                        "value": "medium",
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "high",
+                            "emoji": True,
+                        },
+                        "value": "high",
+                    },
+                ],
+            },
+        },
+    ]
+
+    ack()
+    client.views_open(
+        trigger_id=body["trigger_id"],
+        view={
+            "type": "modal",
+            # View identifier
+            "callback_id": "open_incident_create_jira_issue_modal",
+            "title": {
+                "type": "plain_text",
+                "text": "Jira Issue",
+            },
+            "submit": {"type": "plain_text", "text": "Create"},
+            "blocks": blocks,
+        },
+    )
+
+
+@app.view("open_incident_create_jira_issue_modal")
+def handle_submission(ack, body, client, view):
+    """
+    Handles open_incident_create_jira_issue_modal
+    """
+    ack()
+    incident_id = body.get("view").get("blocks")[0].get("block_id")
+    parsed = parse_modal_values(body)
+    try:
+        resp = JiraIssue(
+            incident_id=incident_id,
+            description=parsed.get("jira.description_input"),
+            issue_type=parsed.get("jira.type_select"),
+            priority=parsed.get("jira.priority_select"),
+            summary=parsed.get("jira.summary_input"),
+        ).new()
+        issue_link = "{}/browse/{}".format(
+            config.atlassian_api_url, resp.get("key")
+        )
+        db_update_jira_issues_col(
+            channel_id=incident_id, issue_link=issue_link
+        )
+        try:
+            resp = client.chat_postMessage(
+                channel=incident_id,
+                blocks=[
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "A Jira issue has been created for this incident.",
+                        },
+                    },
+                    {"type": "divider"},
+                    {
+                        "type": "section",
+                        "fields": [
+                            {
+                                "type": "mrkdwn",
+                                "text": "*Key:* {}".format(resp.get("key")),
+                            },
+                            {
+                                "type": "mrkdwn",
+                                "text": "*Summary:* {}".format(
+                                    parsed.get("jira.summary_input")
+                                ),
+                            },
+                            {
+                                "type": "mrkdwn",
+                                "text": "*Priority:* {}".format(
+                                    parsed.get("jira.priority_select")
+                                ),
+                            },
+                            {
+                                "type": "mrkdwn",
+                                "text": "*Type:* {}".format(
+                                    parsed.get("jira.type_select")
+                                ),
+                            },
+                        ],
+                    },
+                    {
+                        "type": "actions",
+                        "block_id": "jira_view_issue",
+                        "elements": [
+                            {
+                                "type": "button",
+                                "action_id": "jira.view_issue",
+                                "style": "primary",
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "View Issue",
+                                },
+                                "url": issue_link,
+                            },
+                        ],
+                    },
+                ],
+                text="A Jira issue has been created for this incident: {}".format(
+                    resp.get("self")
+                ),
+            )
+            client.pins_add(
+                channel=resp.get("channel"),
+                timestamp=resp.get("ts"),
+            )
+        except Exception as error:
+            logger.error(
+                f"Error sending Jira issue message for {incident_id}: {error}"
+            )
+    except Exception as error:
+        logger.error(error)

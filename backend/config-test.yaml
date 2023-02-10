@@ -28,10 +28,11 @@ options:
     groups:
       - sre-concierge
 integrations:
-  confluence:
-    auto_create_rca: true
-    space: ENGINEERIN
-    parent: RCAs
+  atlassian:
+    confluence:
+      auto_create_rca: true
+      space: ENGINEERIN
+      parent: RCAs
   statuspage:
     url: https://status.echoboomer.net
   zoom:

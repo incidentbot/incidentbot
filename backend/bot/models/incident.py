@@ -409,6 +409,38 @@ def db_update_incident_status_col(
         Session.remove()
 
 
+def db_update_jira_issues_col(
+    issue_link: str,
+    incident_id: str = "",
+    channel_id: str = "",
+):
+    """
+    Update an incident's jira_issues column
+    """
+    try:
+        incident = (
+            Session.query(Incident)
+            .filter(
+                or_(
+                    Incident.incident_id == incident_id,
+                    Incident.channel_id == channel_id,
+                )
+            )
+            .one()
+        )
+        if incident.jira_issues is None:
+            incident.jira_issues = [issue_link]
+        else:
+            incident.jira_issues.append(issue_link)
+        Session.commit()
+    except Exception as error:
+        logger.error(f"Incident update failed for {incident_id}: {error}")
+        Session.rollback()
+    finally:
+        Session.close()
+        Session.remove()
+
+
 """
 Write
 """
