@@ -41,9 +41,9 @@ STATUSPAGE_API_KEY=b...
 STATUSPAGE_PAGE_ID=f5...
 STATUSPAGE_URL=https://status.e...
 FLASK_APP_SECRET_KEY=supersecret
-CONFLUENCE_API_URL=...
-CONFLUENCE_API_USERNAME=...
-CONFLUENCE_API_TOKEN=...
+ATLASSIAN_API_URL=...
+ATLASSIAN_API_USERNAME=...
+ATLASSIAN_API_TOKEN=...
 PAGERDUTY_API_TOKEN=...
 PAGERDUTY_API_USERNAME=...
 DEFAULT_WEB_ADMIN_PASSWORD=...
@@ -91,13 +91,8 @@ configMap:
         groups:
           - my-slack-group
           - my-other-slack-group
-    integrations:
-      confluence:
-        auto_create_rca: false
-        space: ENG
-        parent: Postmortems
-      zoom:
-        auto_create_meeting: false
+    # integrations: {}
+    # Integrations are covered in their own section.
     links:
       incident_guide: https://changeme.com
       incident_postmortems: https://changeme.com
@@ -126,7 +121,7 @@ podDisruptionBudget:
 You can now install the application. As an example:
 
 ```bash
-helm install echoboomer-charts/incident-bot --version 0.3.1 --values incident-bot-values.yaml --namespace incident-bot
+helm install echoboomer-charts/incident-bot --version 0.4.0 --values incident-bot-values.yaml --namespace incident-bot
 ```
 
 Everything that needs to be configured has been configured directly in the values file as part of the values file.
@@ -191,6 +186,10 @@ The web UI should only be accessible internally, and websocket mode eliminates t
 
 Please exercise good judgment and caution when deploying this application.
 
+!!! warning
+
+    The application does have an API that can be used to create incidents covered in the configuration section. It is recommended to keep this communication private as well.
+
 ## User Management
 
 The value of `DEFAULT_WEB_ADMIN_PASSWORD` will become the default login password for the admin user for the web UI.
@@ -200,98 +199,3 @@ The automatically created web UI admin user is `admin@admin.com`. Once you login
 You're able to add new users from the settings page. You can optionally enable/disable and delete the users as well.
 
 At this time, this is basic username (in the form of email) and password authentication. In the future, integration with OAuth providers will be added.
-
-## Confluence
-
-It is also possible to automatically create an RCA/postmortem document when an incident is transitioned to resolved. This only works with Confluence at this time.
-
-The token can be created [here](https://id.atlassian.com/manage-profile/security/api-tokens>).
-
-Provide the following environment variables:
-
-- `CONFLUENCE_API_URL` - The URL of the Atlassian account.
-- `CONFLUENCE_API_USERNAME` - Username that owns the API token.
-- `CONFLUENCE_API_TOKEN` - The API token.
-
-In the application's `config.yaml`, you can set the Confluence space and parent page using the `integrations` section:
-
-```yaml
-integrations:
-  confluence:
-    auto_create_rca: true
-    space: ENG
-    parent: Postmortems
-```
-
-## PagerDuty
-
-You can integrate with PagerDuty to provide details about who is on call and page teams either manually or automatically. To do so, provide the following variables. If either of these is blank, the feature will not be enabled.
-
-- `PAGERDUTY_API_TOKEN`
-- `PAGERDUTY_API_USERNAME`
-
-In the application's `config.yaml`, you can set the PagerDuty integration to active by providing a blank dict:
-
-```yaml
-integrations:
-  pagerduty: {}
-```
-
-You are then able to use the bot's `pager` command and paging-related shortcuts as well as the web features related to them.
-
-## Statuspage
-
-You can integrate with Statuspage to automatically prompt for Statuspage incident creation for new incidents. You can also update them directly from Slack.
-
-Provide the following environment variables:
-
-- `STATUSPAGE_API_KEY` - Statuspage API key if enabling.
-- `STATUSPAGE_PAGE_ID` - Statuspage page ID if enabling.
-- `STATUSPAGE_URL` - Link to the public Statuspage for your organization. **Note:** This must be a fully formed URL - example: `https://status.foo.com`.
-
-In the application's `config.yaml`, you can set the Statuspage integration to active by providing the heading and a key that indicates what URL to lead others to to view your incidents:
-
-```yaml
-# Enable Statuspage integration
-  statuspage:
-    # The public URL of the Statuspage.
-    url: https://status.mydomain.com
-    # Which Slack groups have permissions to manage Statuspage incidents?
-    # If not provided, everyone can manage Statuspage incidents from Slack.
-    # permissions:
-    #   groups:
-    #     - my-slack-group
-```
-
-You can optionally add groups under the `permissions.groups` heading to limit who can create and manage Statuspage incidents from Slack.
-
-## Zoom
-
-At this time, the bot can automatically create a Zoom meeting for each new incident. In the future, other platforms may be supported.
-
-If you want to automatically create an instant Zoom meeting for each incident, use the following steps to create a Zoom app and enable the integration:
-
-1. Visit [https://marketplace.zoom.us/develop/create](https://marketplace.zoom.us/develop/create).
-2. Create a Server-to-Server OAuth app.
-3. Fill out the required generic information.
-4. Add scope for View and manage all user meetings.
-5. Activate app.
-6. Add account ID, client ID, and client secret to env vars below.
-
-!!! warning
-
-    The account ID can be viewed on the app's page in the Zoom Marketplace developer app after it has been activated.
-
-Provide the following environment variables:
-
-- `ZOOM_ACCOUNT_ID` - Account ID from the step above.
-- `ZOOM_CLIENT_ID` - The OAuth app client ID from the step above.
-- `ZOOM_CLIENT_SECRET` - The OAuth app client secret from the step above.
-
-In the application's `config.yaml`, you can set the Zoom integration to active by providing the heading and the value:
-
-```yaml
-integrations:
-  zoom:
-    auto_create_meeting: true
-```

@@ -63,7 +63,7 @@ Database name:  {config.database_name}
         logger.fatal(
             "Cannot connect to the database - check settings and try again."
         )
-        exit(1)
+        sys.exit(1)
 
 
 def startup_tasks():
@@ -76,6 +76,8 @@ def startup_tasks():
     # Populate list of Slack users
     update_slack_user_list()
 
+    # Integration Tests
+    # --------------------
     # Optionally populate PagerDuty on-call data and sete auto-page option if integration is enabled
     if "pagerduty" in config.active.integrations:
         from bot.scheduler.scheduler import update_pagerduty_oc_data
@@ -98,6 +100,39 @@ def startup_tasks():
         finally:
             Session.close()
             Session.remove()
+
+    if "confluence" in config.active.integrations.get("atlassian"):
+        from bot.confluence.api import ConfluenceApi
+
+        api_test = ConfluenceApi()
+        passes = api_test.test()
+        if not passes:
+            logger.fatal(
+                "Could not verify Confluence parent page exists.\nYou provided: {}/{}".format(
+                    config.active.integrations.get("atlassian")
+                    .get("confluence")
+                    .get("space"),
+                    config.active.integrations.get("atlassian")
+                    .get("confluence")
+                    .get("parent"),
+                )
+            )
+            sys.exit(1)
+
+    if "jira" in config.active.integrations.get("atlassian"):
+        from bot.jira.api import JiraApi
+
+        api_test = JiraApi()
+        passes = api_test.test()
+        if not passes:
+            logger.fatal(
+                "Could not verify Jira project exists.\nYou provided: {}".format(
+                    config.active.integrations.get("atlassian")
+                    .get("jira")
+                    .get("project"),
+                )
+            )
+            sys.exit(1)
 
 
 if __name__ == "__main__":
