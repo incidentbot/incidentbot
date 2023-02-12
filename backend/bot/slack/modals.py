@@ -254,7 +254,7 @@ def open_modal(ack, body, client):
             "block_id": "open_incident_modal_desc",
             "element": {
                 "type": "plain_text_input",
-                "action_id": "description",
+                "action_id": "open_incident_modal_set_description",
                 "placeholder": {
                     "type": "plain_text",
                     "text": "A brief description of the problem.",
@@ -262,37 +262,33 @@ def open_modal(ack, body, client):
             },
             "label": {"type": "plain_text", "text": "Description"},
         },
-    ]
-
-    severities = []
-    for sev, _ in config.active.severities.items():
-        severities.append(
-            {
-                "text": {
-                    "type": "plain_text",
-                    "text": sev.upper(),
-                    "emoji": True,
-                },
-                "value": sev,
-            },
-        )
-    base_blocks.append(
         {
             "block_id": "severity",
             "type": "section",
             "text": {"type": "mrkdwn", "text": "*Severity*"},
             "accessory": {
                 "type": "static_select",
-                "action_id": "open_incident_modal_severity",
+                "action_id": "open_incident_modal_set_severity",
                 "placeholder": {
                     "type": "plain_text",
                     "text": "Select a severity...",
                     "emoji": True,
                 },
-                "options": severities,
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": sev.upper(),
+                            "emoji": True,
+                        },
+                        "value": sev,
+                    }
+                    for sev, _ in config.active.severities.items()
+                ],
             },
-        }
-    ),
+        },
+    ]
+
     """
     If there are teams that will be auto paged, mention that
     """
@@ -340,39 +336,33 @@ def open_modal(ack, body, client):
 
 
 @app.view("open_incident_modal")
-def handle_submission(ack, body, client, view):
+def handle_submission(ack, body, client):
     """
     Handles open_incident_modal
     """
     ack()
-    is_security_incident = view["state"]["values"]["is_security_incident"][
-        "open_incident_modal_set_security_type"
-    ]["selected_option"]["value"]
-    private_channel = view["state"]["values"]["private_channel"][
-        "open_incident_modal_set_private"
-    ]["selected_option"]["value"]
-    description = view["state"]["values"]["open_incident_modal_desc"][
-        "description"
-    ]["value"]
-    user = body["user"]["id"]
-    severity = view["state"]["values"]["severity"][
-        "open_incident_modal_severity"
-    ]["selected_option"]["value"]
+    parsed = parse_modal_values(body)
+    user = body.get("user").get("id")
+
     # Create request parameters object
     try:
         request_parameters = incident.RequestParameters(
             channel="modal",
-            incident_description=description,
+            incident_description=parsed.get(
+                "open_incident_modal_set_description"
+            ),
             user=user,
-            severity=severity,
+            severity=parsed.get("open_incident_modal_set_severity"),
             created_from_web=False,
-            is_security_incident=is_security_incident
+            is_security_incident=parsed.get(
+                "open_incident_modal_set_security_type"
+            )
             in (
                 "True",
                 "true",
                 True,
             ),
-            private_channel=private_channel
+            private_channel=parsed.get("open_incident_modal_set_private")
             in (
                 "True",
                 "true",
@@ -395,121 +385,105 @@ def open_modal(ack, body, client):
 
     # Build blocks for open incidents
     database_data = db_read_open_incidents()
-    options = []
-    logger.info(
-        "Received request to open incident update modal, matched {} open incidents.".format(
-            len(database_data)
-        )
-    )
-    if len(database_data) == 0:
-        options.append(
+    view = {
+        "type": "modal",
+        # View identifier
+        "callback_id": "open_incident_general_update_modal",
+        "title": {"type": "plain_text", "text": "Provide incident update"},
+        "submit": {"type": "plain_text", "text": "Submit"},
+        "blocks": [
             {
+                "type": "section",
                 "text": {
+                    "type": "mrkdwn",
+                    "text": "This will send a formatted, timestamped message "
+                    + "to the public incidents channel to provide an update "
+                    + "on the status of an incident. Use this to keep those "
+                    + "outside the incident process informed.",
+                },
+            },
+            {
+                "block_id": "open_incident_general_update_modal_incident_channel",
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "Associated Incident:",
+                },
+                "accessory": {
+                    "type": "static_select",
+                    "action_id": "incident_update_modal_select_incident",
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": "Select an ongoing incident...",
+                        "emoji": True,
+                    },
+                    "options": [
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "None",
+                                "emoji": True,
+                            },
+                            "value": "none",
+                        }
+                        if len(database_data) == 0
+                        else {
+                            "text": {
+                                "type": "plain_text",
+                                "text": f"<#{inc.channel_id}>",
+                                "emoji": True,
+                            },
+                            "value": f"<#{inc.channel_id}>",
+                        }
+                        for inc in database_data
+                        if inc.status != "resolved"
+                    ],
+                },
+            },
+            {
+                "type": "input",
+                "block_id": "open_incident_general_update_modal_impacted_resources",
+                "element": {
+                    "type": "plain_text_input",
+                    "action_id": "impacted_resources",
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": "e.g. API, Authentication, Dashboards",
+                    },
+                },
+                "label": {
                     "type": "plain_text",
-                    "text": "None",
-                    "emoji": True,
+                    "text": "Impacted Resources:",
                 },
-                "value": "none",
-            }
-        )
-        view = {
-            "type": "modal",
-            # View identifier
-            "callback_id": "open_incident_general_update_modal",
-            "title": {"type": "plain_text", "text": "Provide incident update"},
-            "blocks": [
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": "There are currently no open incidents.",
-                    },
-                },
-            ],
-        }
-    else:
-        for inc in database_data:
-            if inc.status != "resolved":
-                options.append(
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": f"<#{inc.channel_id}>",
-                            "emoji": True,
-                        },
-                        "value": f"<#{inc.channel_id}>",
-                    },
-                )
-        view = {
-            "type": "modal",
-            # View identifier
-            "callback_id": "open_incident_general_update_modal",
-            "title": {"type": "plain_text", "text": "Provide incident update"},
-            "submit": {"type": "plain_text", "text": "Submit"},
-            "blocks": [
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": "This will send a formatted, timestamped message "
-                        + "to the public incidents channel to provide an update "
-                        + "on the status of an incident. Use this to keep those "
-                        + "outside the incident process informed.",
-                    },
-                },
-                {
-                    "block_id": "open_incident_general_update_modal_incident_channel",
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": "Associated Incident:",
-                    },
-                    "accessory": {
-                        "type": "static_select",
-                        "action_id": "incident_update_modal_select_incident",
-                        "placeholder": {
-                            "type": "plain_text",
-                            "text": "Select an ongoing incident...",
-                            "emoji": True,
-                        },
-                        "options": options,
-                    },
-                },
-                {
-                    "type": "input",
-                    "block_id": "open_incident_general_update_modal_impacted_resources",
-                    "element": {
-                        "type": "plain_text_input",
-                        "action_id": "impacted_resources",
-                        "placeholder": {
-                            "type": "plain_text",
-                            "text": "e.g. API, Authentication, Dashboards",
-                        },
-                    },
-                    "label": {
+            },
+            {
+                "type": "input",
+                "block_id": "open_incident_general_update_modal_update_msg",
+                "element": {
+                    "type": "plain_text_input",
+                    "action_id": "message",
+                    "placeholder": {
                         "type": "plain_text",
-                        "text": "Impacted Resources:",
+                        "text": "A brief message to include with this update.",
                     },
                 },
-                {
-                    "type": "input",
-                    "block_id": "open_incident_general_update_modal_update_msg",
-                    "element": {
-                        "type": "plain_text_input",
-                        "action_id": "message",
-                        "placeholder": {
-                            "type": "plain_text",
-                            "text": "A brief message to include with this update.",
-                        },
-                    },
-                    "label": {
-                        "type": "plain_text",
-                        "text": "Message to Include:",
-                    },
+                "label": {
+                    "type": "plain_text",
+                    "text": "Message to Include:",
                 },
-            ],
-        }
-
+            },
+        ]
+        if len(database_data) != 0
+        else [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "There are currently no open incidents.",
+                },
+            },
+        ],
+    }
     client.views_open(
         trigger_id=body["trigger_id"],
         view=view,
@@ -517,16 +491,15 @@ def open_modal(ack, body, client):
 
 
 @app.view("open_incident_general_update_modal")
-def handle_submission(ack, client, view):
+def handle_submission(ack, body, client):
+    import sys
+
     """
     Handles open_incident_general_update_modal
     """
     ack()
-
-    # Format message to be sent as an update
-    channel_id = view["state"]["values"][
-        "open_incident_general_update_modal_incident_channel"
-    ]["incident_update_modal_select_incident"]["selected_option"]["value"]
+    parsed = parse_modal_values(body)
+    channel_id = parsed.get("incident_update_modal_select_incident")
     # Extract the channel ID without extra characters
     for character in "#<>":
         channel_id = channel_id.replace(character, "")
@@ -535,17 +508,13 @@ def handle_submission(ack, client, view):
             channel=variables.digest_channel_id,
             blocks=IncidentUpdate.public_update(
                 incident_id=channel_id,
-                impacted_resources=view["state"]["values"][
-                    "open_incident_general_update_modal_impacted_resources"
-                ]["impacted_resources"]["value"],
-                message=view["state"]["values"][
-                    "open_incident_general_update_modal_update_msg"
-                ]["message"]["value"],
+                impacted_resources=parsed.get("impacted_resources"),
+                message=parsed.get("message"),
                 timestamp=tools.fetch_timestamp(),
             ),
-            text=view["state"]["values"][
-                "open_incident_general_update_modal_update_msg"
-            ]["message"]["value"],
+            text="Incident update for incident <#{}>: {}".format(
+                channel_id, parsed.get("message")
+            ),
         )
     except Exception as error:
         logger.error(f"Error sending update out for {channel_id}: {error}")
@@ -569,148 +538,129 @@ def open_modal(ack, body, client):
     if "pagerduty" in config.active.integrations:
         from bot.pagerduty import api as pd_api
 
-        # Format incident list
         database_data = db_read_open_incidents()
-        incident_options = []
-        if len(database_data) == 0:
-            incident_options.append(
-                {
-                    "text": {
+        blocks = [
+            {
+                "type": "section",
+                "block_id": "incident_bot_pager_team_select",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "Choose a team to page:",
+                },
+                "accessory": {
+                    "action_id": "update_incident_bot_pager_selected_team",
+                    "type": "static_select",
+                    "placeholder": {
                         "type": "plain_text",
-                        "text": "None",
-                        "emoji": True,
+                        "text": "Team...",
                     },
-                    "value": "none",
-                }
-            )
-        else:
-            for inc in database_data:
-                if inc.status != "resolved":
-                    incident_options.append(
+                    "options": [
                         {
+                            "text": {
+                                "type": "plain_text",
+                                "text": ep,
+                            },
+                            "value": ep,
+                        }
+                        for ep in pd_api.find_who_is_on_call()
+                    ],
+                },
+            },
+            {
+                "type": "section",
+                "block_id": "incident_bot_pager_priority_select",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "Choose an urgency:",
+                },
+                "accessory": {
+                    "action_id": "update_incident_bot_pager_selected_priority",
+                    "type": "static_select",
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": "Urgency...",
+                    },
+                    "options": [
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "low",
+                            },
+                            "value": "low",
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "high",
+                            },
+                            "value": "high",
+                        },
+                    ],
+                },
+            },
+            {
+                "type": "section",
+                "block_id": "incident_bot_pager_incident_select",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "Choose an incident:",
+                },
+                "accessory": {
+                    "action_id": "update_incident_bot_pager_selected_incident",
+                    "type": "static_select",
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": "Incident...",
+                    },
+                    "options": [
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "None",
+                                "emoji": True,
+                            },
+                            "value": "none",
+                        }
+                        if len(database_data) == 0
+                        else {
                             "text": {
                                 "type": "plain_text",
                                 "text": inc.channel_name,
                                 "emoji": True,
                             },
                             "value": f"{inc.channel_name}/{inc.channel_id}",
-                        },
-                    )
-        # Call views_open with the built-in client
-        client.views_open(
-            # Pass a valid trigger_id within 3 seconds of receiving it
-            trigger_id=body["trigger_id"],
-            # View payload
-            view={
-                "type": "modal",
-                "callback_id": "incident_bot_pager_modal",
-                "title": {
-                    "type": "plain_text",
-                    "text": "Page a team in PagerDuty",
+                        }
+                        for inc in database_data
+                        if inc.status != "resolved"
+                    ],
                 },
-                "blocks": [
-                    {
-                        "type": "section",
-                        "block_id": "incident_bot_pager_team_select",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "Choose a team to page:",
-                        },
-                        "accessory": {
-                            "action_id": "update_incident_bot_pager_selected_team",
-                            "type": "static_select",
-                            "placeholder": {
-                                "type": "plain_text",
-                                "text": "Team...",
-                            },
-                            "options": [
-                                {
-                                    "text": {
-                                        "type": "plain_text",
-                                        "text": ep,
-                                    },
-                                    "value": ep,
-                                }
-                                for ep in pd_api.find_who_is_on_call()
-                            ],
-                        },
-                    },
-                    {
-                        "type": "section",
-                        "block_id": "incident_bot_pager_priority_select",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "Choose an urgency:",
-                        },
-                        "accessory": {
-                            "action_id": "update_incident_bot_pager_selected_priority",
-                            "type": "static_select",
-                            "placeholder": {
-                                "type": "plain_text",
-                                "text": "Urgency...",
-                            },
-                            "options": [
-                                {
-                                    "text": {
-                                        "type": "plain_text",
-                                        "text": "low",
-                                    },
-                                    "value": "low",
-                                },
-                                {
-                                    "text": {
-                                        "type": "plain_text",
-                                        "text": "high",
-                                    },
-                                    "value": "high",
-                                },
-                            ],
-                        },
-                    },
-                    {
-                        "type": "section",
-                        "block_id": "incident_bot_pager_incident_select",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "Choose an incident:",
-                        },
-                        "accessory": {
-                            "action_id": "update_incident_bot_pager_selected_incident",
-                            "type": "static_select",
-                            "placeholder": {
-                                "type": "plain_text",
-                                "text": "Incident...",
-                            },
-                            "options": incident_options,
-                        },
-                    },
-                ],
             },
-        )
-    else:
-        client.views_open(
-            # Pass a valid trigger_id within 3 seconds of receiving it
-            trigger_id=body["trigger_id"],
-            # View payload
-            view={
-                "type": "modal",
-                "callback_id": "incident_bot_pager_modal",
-                "title": {
-                    "type": "plain_text",
-                    "text": "Page a team in PagerDuty",
+        ]
+    client.views_open(
+        # Pass a valid trigger_id within 3 seconds of receiving it
+        trigger_id=body["trigger_id"],
+        # View payload
+        view={
+            "type": "modal",
+            "callback_id": "incident_bot_pager_modal",
+            "title": {
+                "type": "plain_text",
+                "text": "Page a team in PagerDuty",
+            },
+            "blocks": blocks
+            if "pagerduty" in config.active.integrations
+            else [
+                {
+                    "type": "section",
+                    "block_id": "incident_bot_pager_disabled",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "The PagerDuty integration is not currently enabled.",
+                    },
                 },
-                "blocks": [
-                    {
-                        "type": "section",
-                        "block_id": "incident_bot_pager_disabled",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "The PagerDuty integration is not currently enabled.",
-                        },
-                    },
-                ],
-            },
-        )
+            ],
+        },
+    )
 
 
 @app.action("update_incident_bot_pager_selected_incident")
@@ -718,35 +668,12 @@ def update_modal(ack, body, client):
     # Acknowledge the button request
     ack()
 
-    team = body["view"]["state"]["values"]["incident_bot_pager_team_select"][
-        "update_incident_bot_pager_selected_team"
-    ]["selected_option"]["value"]
-
-    priority = body["view"]["state"]["values"][
-        "incident_bot_pager_priority_select"
-    ]["update_incident_bot_pager_selected_priority"]["selected_option"][
-        "value"
-    ]
-
-    incident_channel_name = body["view"]["state"]["values"][
-        "incident_bot_pager_incident_select"
-    ]["update_incident_bot_pager_selected_incident"]["selected_option"][
-        "value"
-    ].split(
-        "/"
-    )[
-        0
-    ]
-
-    incident_channel_id = body["view"]["state"]["values"][
-        "incident_bot_pager_incident_select"
-    ]["update_incident_bot_pager_selected_incident"]["selected_option"][
-        "value"
-    ].split(
-        "/"
-    )[
-        1
-    ]
+    parsed = parse_modal_values(body)
+    incident = parsed.get("update_incident_bot_pager_selected_incident")
+    incident_channel_name = incident.split("/")[0]
+    incident_channel_id = incident.split("/")[1]
+    priority = parsed.get("update_incident_bot_pager_selected_priority")
+    team = parsed.get("update_incident_bot_pager_selected_team")
 
     # Call views_update with the built-in client
     client.views_update(
@@ -805,13 +732,13 @@ def update_modal(ack, body, client):
 
 
 @app.action("update_incident_bot_pager_selected_team")
-def handle_some_action(ack, body, logger):
+def handle_static_action(ack, body, logger):
     ack()
     logger.debug(body)
 
 
 @app.action("update_incident_bot_pager_selected_priority")
-def handle_some_action(ack, body, logger):
+def handle_static_action(ack, body, logger):
     ack()
     logger.debug(body)
 
@@ -822,7 +749,6 @@ def handle_submission(ack, body, say, view):
     Handles open_incident_bot_pager
     """
     ack()
-    logger.info("Attempting to page user...")
     from bot.pagerduty import api as pd_api
 
     team = view["blocks"][2]["block_id"].split("/")[1]
@@ -839,8 +765,9 @@ def handle_submission(ack, body, say, view):
             channel_id=incident_channel_id,
             paging_user=paging_user,
         )
+        msg = f"*NOTICE:* I have paged the team/escalation policy '{team}' to respond to this incident via PagerDuty at the request of *{paging_user}*."
     except Exception as error:
-        logger.error(error)
+        msg = f"Looks like I encountered an error issuing that page: {error}"
     finally:
         say(
             channel=incident_channel_id,
@@ -858,7 +785,7 @@ def handle_submission(ack, body, say, view):
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": f"*NOTICE:* I have paged the team/escalation policy '{team}' to respond to this incident via PagerDuty at the request of *{paging_user}*.",
+                        "text": msg,
                     },
                 },
                 {
@@ -871,7 +798,7 @@ def handle_submission(ack, body, say, view):
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"An corresponding PagerDuty incident has been created to notify the team to respond at: {tools.fetch_timestamp()}",
+                            "text": f"This PagerDuty action was attempted at: {tools.fetch_timestamp()}",
                         },
                     ],
                 },
@@ -884,6 +811,7 @@ Timeline
 """
 
 
+@app.action("open_incident_bot_timeline")
 @app.shortcut("open_incident_bot_timeline")
 def open_modal(ack, body, client):
     # Acknowledge the command request
@@ -891,34 +819,17 @@ def open_modal(ack, body, client):
 
     # Format incident list
     database_data = db_read_open_incidents()
-    incident_options = []
-    for inc in database_data:
-        if inc.status != "resolved":
-            incident_options.append(
-                {
-                    "text": {
-                        "type": "plain_text",
-                        "text": inc.channel_name,
-                        "emoji": True,
-                    },
-                    "value": f"{inc.channel_name}/{inc.channel_id}",
-                },
-            )
-    base_blocks = []
-    if len(incident_options) == 0:
-        base_blocks.append(
-            {
-                "type": "section",
-                "block_id": "no_incidents",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "There are currently no open incidents.\n\nYou can only add timeline events to open incidents.",
-                },
-            },
-        )
-    else:
-        base_blocks.extend(
-            [
+
+    # Call views_open with the built-in client
+    client.views_open(
+        # Pass a valid trigger_id within 3 seconds of receiving it
+        trigger_id=body["trigger_id"],
+        # View payload
+        view={
+            "type": "modal",
+            "callback_id": "incident_bot_timeline_modal",
+            "title": {"type": "plain_text", "text": "Incident timeline"},
+            "blocks": [
                 {
                     "type": "section",
                     "block_id": "incident_bot_timeline_incident_select",
@@ -933,21 +844,30 @@ def open_modal(ack, body, client):
                             "type": "plain_text",
                             "text": "Incident...",
                         },
-                        "options": incident_options,
+                        "options": [
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": inc.channel_name,
+                                    "emoji": True,
+                                },
+                                "value": f"{inc.channel_name}/{inc.channel_id}",
+                            }
+                            for inc in database_data
+                            if inc.status != "resolved"
+                        ],
                     },
-                },
-            ]
-        )
-    # Call views_open with the built-in client
-    client.views_open(
-        # Pass a valid trigger_id within 3 seconds of receiving it
-        trigger_id=body["trigger_id"],
-        # View payload
-        view={
-            "type": "modal",
-            "callback_id": "incident_bot_timeline_modal",
-            "title": {"type": "plain_text", "text": "Incident timeline"},
-            "blocks": base_blocks,
+                }
+                if len(database_data) != 0
+                else {
+                    "type": "section",
+                    "block_id": "no_incidents",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "There are currently no open incidents.\n\nYou can only add timeline events to open incidents.",
+                    },
+                }
+            ],
         },
     )
 
@@ -957,18 +877,10 @@ def update_modal(ack, body, client):
     # Acknowledge the button request
     ack()
 
-    incident_channel_name = body["view"]["state"]["values"][
-        "incident_bot_timeline_incident_select"
-    ]["update_incident_bot_timeline_selected_incident"]["selected_option"][
-        "value"
-    ].split(
-        "/"
-    )[
-        0
-    ]
-
+    parsed = parse_modal_values(body)
+    incident = parsed.get("update_incident_bot_timeline_selected_incident")
+    incident_channel_name = incident.split("/")[0]
     current_logs = read_logs(incident_channel_name)
-
     base_blocks = [
         {
             "type": "header",
@@ -995,7 +907,6 @@ def update_modal(ack, body, client):
             },
         },
     ]
-
     for log in current_logs:
         base_blocks.extend(
             [
@@ -1019,7 +930,6 @@ def update_modal(ack, body, client):
                 {"type": "divider"},
             ],
         )
-
     base_blocks.extend(
         [
             {
@@ -1087,19 +997,19 @@ def update_modal(ack, body, client):
 
 
 @app.action("update_incident_bot_timeline_date")
-def handle_some_action(ack, body, logger):
+def handle_static_action(ack, body, logger):
     ack()
     logger.debug(body)
 
 
 @app.action("update_incident_bot_timeline_time")
-def handle_some_action(ack, body, logger):
+def handle_static_action(ack, body, logger):
     ack()
     logger.debug(body)
 
 
 @app.action("update_incident_bot_timeline_text")
-def handle_some_action(ack, body, logger):
+def handle_static_action(ack, body, logger):
     ack()
     logger.debug(body)
 
@@ -1111,16 +1021,11 @@ def handle_submission(ack, body, say, view):
     """
     ack()
 
+    parsed = parse_modal_values(body)
     incident_id = view["blocks"][0]["text"]["text"]
-    event_date = view["state"]["values"]["date"][
-        "update_incident_bot_timeline_date"
-    ]["selected_date"]
-    event_time = view["state"]["values"]["time"][
-        "update_incident_bot_timeline_time"
-    ]["selected_time"]
-    event_text = view["state"]["values"]["text"][
-        "update_incident_bot_timeline_text"
-    ]["value"]
+    event_date = parsed.get("update_incident_bot_timeline_date")
+    event_time = parsed.get("update_incident_bot_timeline_time")
+    event_text = parsed.get("update_incident_bot_timeline_text")
     ts = tools.fetch_timestamp_from_time_obj(
         datetime.strptime(f"{event_date} {event_time}", "%Y-%m-%d %H:%M")
     )
@@ -1398,23 +1303,14 @@ def handle_submission(ack, body, client, view):
     incident_data = db_read_incident(
         channel_id=view["blocks"][2].get("block_id")
     )
-    values = body.get("view").get("state").get("values")
 
     # Fetch parameters from modal
-    body = values["statuspage_body_input"]["statuspage.body_input"]["value"]
-    impact = values["statuspage_impact_select"]["statuspage.impact_select"][
-        "selected_option"
-    ]["value"]
-    name = values["statuspage_name_input"]["statuspage.name_input"]["value"]
-    status = values["statuspage_components_status"][
-        "statuspage.components_status_select"
-    ]["selected_option"]["value"]
-    selected_components = [
-        component["text"]["text"]
-        for component in values["statuspage_components_select"][
-            "statuspage.components_select"
-        ]["selected_options"]
-    ]
+    parsed = parse_modal_values(body)
+    body = parsed.get("statuspage.body_input")
+    impact = parsed.get("statuspage.impact_select")
+    name = parsed.get("statuspage.name_input")
+    status = parsed.get("statuspage.components_status_select")
+    selected_components = parsed.get("statuspage.components_select")
 
     # Create Statuspage incident
     try:

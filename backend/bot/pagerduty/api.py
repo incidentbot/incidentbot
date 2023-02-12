@@ -12,9 +12,24 @@ from typing import Dict
 
 logger = logging.getLogger("pagerduty.api")
 
-session = APISession(
-    config.pagerduty_api_token, default_from=config.pagerduty_api_username
-)
+
+class PagerDutyAPI:
+    @classmethod
+    def session(cls) -> APISession:
+        return APISession(
+            config.pagerduty_api_token,
+            default_from=config.pagerduty_api_username,
+        )
+
+    @classmethod
+    def test(cls):
+        try:
+            return [user for user in cls.session().iter_all("users")]
+        except Exception as error:
+            logger.error(f"Error during validation of PagerDuty auth: {error}")
+
+
+session = PagerDutyAPI().session()
 
 """
 PagerDuty
@@ -29,7 +44,7 @@ def find_escalation_policy_id(ep_name: str) -> str:
     # .find wasn't working for this, no idea why.
     for ep in eps:
         if ep["name"] == ep_name:
-            return ep["id"]
+            return ep.get("id")
 
 
 def find_service_for_escalation_policy(ep_name: str) -> str:
@@ -40,7 +55,7 @@ def find_service_for_escalation_policy(ep_name: str) -> str:
     # .find wasn't working for this, no idea why.
     for ep in eps:
         if ep["name"] == ep_name:
-            return ep["services"][0]["id"]
+            return ep.get("services")[0].get("id")
 
 
 def find_who_is_on_call(short: bool = False) -> Dict:
@@ -132,35 +147,35 @@ def page(
     }
     try:
         response = session.post("/incidents", json=pd_inc)
-        logger.info(response)
         if not response.ok:
-            logger.error(
+            raise Exception(
                 "Error creating PagerDuty incident: {}".format(response.json())
             )
+        try:
+            created_incident = json.loads(response.text)["incident"]
+            incident = (
+                Session.query(Incident)
+                .filter_by(incident_id=channel_name)
+                .one()
+            )
+            existing_incidents = incident.pagerduty_incidents
+            if existing_incidents is None:
+                existing_incidents = [created_incident["id"]]
+            else:
+                existing_incidents.append(created_incident["id"])
+                Session.execute(
+                    update(Incident)
+                    .where(Incident.incident_id == channel_name)
+                    .values(pagerduty_incidents=existing_incidents)
+                )
+                Session.commit()
+        except Exception as error:
+            logger.error(f"Error updating incident: {error}")
+        finally:
+            Session.close()
+            Session.remove()
     except PDClientError as error:
         logger.error(f"Error creating PagerDuty incident: {error}")
-    # Update incident record with PagerDuty incident info
-    try:
-        created_incident = json.loads(response.text)["incident"]
-        incident = (
-            Session.query(Incident).filter_by(incident_id=channel_name).one()
-        )
-        existing_incidents = incident.pagerduty_incidents
-        if existing_incidents is None:
-            existing_incidents = [created_incident["id"]]
-        else:
-            existing_incidents.append(created_incident["id"])
-            Session.execute(
-                update(Incident)
-                .where(Incident.incident_id == channel_name)
-                .values(pagerduty_incidents=existing_incidents)
-            )
-            Session.commit()
-    except Exception as error:
-        logger.error(f"Error updating incident: {error}")
-    finally:
-        Session.close()
-        Session.remove()
 
 
 def resolve(pd_incident_id: str):

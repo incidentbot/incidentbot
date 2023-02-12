@@ -548,7 +548,7 @@ def handle_static_action(ack, body, logger):
     ack()
 
 
-@app.action("open_incident_modal_severity")
+@app.action("open_incident_modal_set_severity")
 def handle_static_action(ack, body, logger):
     logger.debug(body)
     ack()

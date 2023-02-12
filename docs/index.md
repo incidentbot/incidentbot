@@ -4,7 +4,7 @@ Incident Bot is an incident management ChatOps bot for Slack to allow your teams
 
 Interacting with the bot is incredibly easy through the use of modals and simplified commands.
 
-!!! abstract
+!!! note
 
     We are looking to add support to other platforms in the future.
 

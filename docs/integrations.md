@@ -76,6 +76,32 @@ integrations:
 
 You are then able to use the bot's `pager` command and paging-related shortcuts as well as the web features related to them.
 
+### Using the PagerDuty Integration
+
+!!! warning
+
+    You will need to have services and escalation policies defined for this integration to function.
+
+You can issue a page by searching for the `pager` command:
+
+![Page modal](./assets/pager-search.png)
+
+Once the modal pops up, you'll need to fill out some information:
+
+![Page modal filled](./assets/pager-modal-default.png)
+
+When the last field is selected, the modal will change to ask you to confirm the pending operation:
+
+![Page confirmation](./assets/pager-modal-filled.png)
+
+Once a page is issued, the team is paged within PagerDuty where an incident is created:
+
+![An incident in PagerDuty](./assets/pager-pd-incident.png)
+
+A message is also sent to the incident channel to let everyone know the page has been issued:
+
+![A message is sent to the incident channel regarding the page](./assets/pager-sent-message.png)
+
 ## Statuspage
 
 You can integrate with Statuspage to automatically prompt for Statuspage incident creation for new incidents. You can also update them directly from Slack.
@@ -102,6 +128,30 @@ integrations:
 ```
 
 You can optionally add groups under the `permissions.groups` heading to limit who can create and manage Statuspage incidents from Slack. Anyone not in one of these groups will get an ephemeral message indicating they do not have the required permissions.
+
+### Using the Statuspage Integration
+
+When the integration is properly configured and enabled, all new incidents will feature a pinned message prompting for the creation of a Statuspage incident:
+
+![Statuspage incident prompt](./assets/statuspage-prompt.png)
+
+Click on `start new incident` within the Statuspage prompt and then fill out the required information in the modal:
+
+![Statuspage incident modal](./assets/statuspage-modal.png)
+
+Once an incident is created, the original pinned message will update to reflect current status. You can use this message to continue changing status and providing updates and view the incident:
+
+![Statuspage incident update](./assets/statuspage-update.png)
+
+![Statuspage incident ongoing](./assets/statuspage-ongoing.png)
+
+Once the incident is resolved, the message will reflect all status updates:
+
+![Statuspage incident resolved](./assets/statuspage-resolved.png)
+
+You can see that each of these steps was reflected on Statuspage:
+
+![Statuspage incident web](./assets/statuspage-web-example.png)
 
 ## Zoom
 
@@ -133,3 +183,22 @@ integrations:
   zoom:
     auto_create_meeting: true
 ```
+
+When enabled, the conference bridge link will be a dynamically-generated Zoom link:
+
+![Zoom link](./assets/zoom-dynamic-link.png)
+
+If you set `options.channel_topic.set_to_meeting_link` to `true`, the dynamic Zoom link will also appear in the channel topic.
+
+```yaml
+options:
+  channel_topic:
+    default: 'This is the default incident channel topic. You can edit it in settings.'
+    set_to_meeting_link: true
+```
+
+![Zoom link as topic](./assets/zoom-dynamic-link-topic.png)
+
+Note that regardless of what the meeting link is, it is always accessible from the digest channel message without needing to join the incident channel:
+
+![Digest sample](./assets/digest-new.png)
