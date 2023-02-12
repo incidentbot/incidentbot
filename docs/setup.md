@@ -16,7 +16,13 @@ You can get started quickly by using the Helm chart:
 helm repo add echoboomer-charts https://charts.echoboomer.net
 ```
 
-Sensitive data should come from Kubernetes `Secret` objects at a minimum. Secret management is outside of the scope of this application. One method is to used something like [sealed secrets](https://github.com/bitnami-labs/sealed-secrets>).
+Sensitive data should come from Kubernetes `Secret` objects at a minimum. 
+
+!!! warning
+
+    Secret management is outside of the scope of this application. Choose the solution that works best for you.
+
+One method is to used something like [sealed secrets](https://github.com/bitnami-labs/sealed-secrets>).
 
 If using `sealed-secrets`, you could create your sensitive environment variables in a `.env` file and create the `Secret` like this:
 
@@ -51,6 +57,8 @@ JWT_SECRET_KEY=...
 ZOOM_ACCOUNT_ID=...
 ZOOM_CLIENT_ID=...
 ZOOM_CLIENT_SECRET=...
+# This is required if setting a custom path for the config file.
+# CONFIG_FILE_PATH=config.yaml
 ```
 
 This will create the required `Secret` in the `Namespace` `incident-bot`. You may need to create the `Namespace` if it doesn't exist.
@@ -121,7 +129,7 @@ podDisruptionBudget:
 You can now install the application. As an example:
 
 ```bash
-helm install echoboomer-charts/incident-bot --version 0.4.1 --values incident-bot-values.yaml --namespace incident-bot
+helm install echoboomer-charts/incident-bot --version 0.4.3 --values incident-bot-values.yaml --namespace incident-bot
 ```
 
 Everything that needs to be configured has been configured directly in the values file as part of the values file.
@@ -164,14 +172,16 @@ A sample compose file is provided with sample variables. This is useful for runn
 
 ## Required Variables
 
+Regardless of your installation method, these variables are **required**:
+
 - `POSTGRES_HOST` - the hostname of the database.
 - `POSTGRES_DB` - database name to use.
 - `POSTGRES_USER` - database user to use.
 - `POSTGRES_PASSWORD` - password for the user.
 - `POSTGRES_PORT` - the port to use when connecting to the database.
-- `SLACK_APP_TOKEN` - the app-level token for enabling websocket communication.
-- `SLACK_BOT_TOKEN` - the API token to be used by your bot once it is deployed to your workspace for `bot`-scoped pemissions.
-- `SLACK_USER_TOKEN` - the API token to be used by your bot for `user`-scoped permissions.
+- `SLACK_APP_TOKEN` - the app-level token for enabling websocket communication. Found under your Slack app's `Basic Information` tab in the `App-Level Tokens` section.
+- `SLACK_BOT_TOKEN` - the API token to be used by your bot once it is deployed to your workspace for `bot`-scoped pemissions. Found under your Slack app's `OAuth & Permissions` tab.
+- `SLACK_USER_TOKEN` - the API token to be used by your bot for `user`-scoped permissions. Found under your Slack app's `OAuth & Permissions` tab.
 - `DEFAULT_WEB_ADMIN_PASSWORD` - the default password for the default admin account. See section on user management for more details.
 - `JWT_SECRET_KEY` - this must be provided for user management. Set to a secure string.
 - `FLASK_APP_SECRET_KEY` - this must be provided for the API.
