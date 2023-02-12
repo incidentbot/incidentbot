@@ -533,6 +533,16 @@ class TestIncidentManagement:
                             "type": "button",
                             "text": {
                                 "type": "plain_text",
+                                "text": "Manage Timeline",
+                                "emoji": True,
+                            },
+                            "action_id": "open_incident_bot_timeline",
+                            "style": "primary",
+                        },
+                        {
+                            "type": "button",
+                            "text": {
+                                "type": "plain_text",
                                 "text": "Incident Guide",
                             },
                             "url": "https://changeme.com",

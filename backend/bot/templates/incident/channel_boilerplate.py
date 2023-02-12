@@ -156,22 +156,13 @@ class IncidentChannelBoilerplateMessage:
                 "type": "button",
                 "text": {
                     "type": "plain_text",
-                    "text": "Incident Guide",
+                    "text": "Manage Timeline",
+                    "emoji": True,
                 },
-                "url": config.active.links.get("incident_guide"),
-                "action_id": "incident.incident_guide_link",
-            },
-            {
-                "type": "button",
-                "text": {
-                    "type": "plain_text",
-                    "text": "Incident Postmortems",
-                },
-                "url": config.active.links.get("incident_postmortems"),
-                "action_id": "incident.incident_postmortem_link",
+                "action_id": "open_incident_bot_timeline",
+                "style": "primary",
             },
         ]
-
         if (
             "atlassian" in config.active.integrations
             and "jira" in config.active.integrations.get("atlassian")
@@ -184,11 +175,32 @@ class IncidentChannelBoilerplateMessage:
                         "text": "Create Jira Issue",
                         "emoji": True,
                     },
-                    "value": "foo",
                     "action_id": "open_incident_create_jira_issue_modal",
                     "style": "primary",
                 },
             )
+        button_el.extend(
+            [
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Incident Guide",
+                    },
+                    "url": config.active.links.get("incident_guide"),
+                    "action_id": "incident.incident_guide_link",
+                },
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Incident Postmortems",
+                    },
+                    "url": config.active.links.get("incident_postmortems"),
+                    "action_id": "incident.incident_postmortem_link",
+                },
+            ]
+        )
         blocks.extend(
             [
                 {

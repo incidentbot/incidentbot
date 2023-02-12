@@ -274,11 +274,11 @@ def create_incident(
             Set incident channel topic
             """
             topic_boilerplate = (
-                config.active.options.get("channel_topic").get("default")
+                incident.conference_bridge
                 if config.active.options.get("channel_topic").get(
                     "set_to_meeting_link"
                 )
-                else incident.conference_bridge
+                else config.active.options.get("channel_topic").get("default")
             )
             try:
                 topic = slack_web_client.conversations_setTopic(

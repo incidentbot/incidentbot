@@ -78,29 +78,6 @@ def startup_tasks():
 
     # Integration Tests
     # --------------------
-    # Optionally populate PagerDuty on-call data and sete auto-page option if integration is enabled
-    if "pagerduty" in config.active.integrations:
-        from bot.scheduler.scheduler import update_pagerduty_oc_data
-
-        update_pagerduty_oc_data()
-        try:
-            if (
-                not Session.query(OperationalData)
-                .filter(OperationalData.id == "auto_page_teams")
-                .all()
-            ):
-                auto_page_teams = OperationalData(
-                    id="auto_page_teams",
-                    json_data={"teams": []},
-                )
-                Session.add(auto_page_teams)
-                Session.commit()
-        except Exception as error:
-            logger.error(f"Error storing auto_page_teams: {error}")
-        finally:
-            Session.close()
-            Session.remove()
-
     if "confluence" in config.active.integrations.get("atlassian"):
         from bot.confluence.api import ConfluenceApi
 
@@ -133,6 +110,33 @@ def startup_tasks():
                 )
             )
             sys.exit(1)
+
+    if "pagerduty" in config.active.integrations:
+        from bot.pagerduty.api import PagerDutyAPI
+
+        if PagerDutyAPI().test() is None:
+            sys.exit(1)
+
+        from bot.scheduler.scheduler import update_pagerduty_oc_data
+
+        update_pagerduty_oc_data()
+        try:
+            if (
+                not Session.query(OperationalData)
+                .filter(OperationalData.id == "auto_page_teams")
+                .all()
+            ):
+                auto_page_teams = OperationalData(
+                    id="auto_page_teams",
+                    json_data={"teams": []},
+                )
+                Session.add(auto_page_teams)
+                Session.commit()
+        except Exception as error:
+            logger.error(f"Error storing auto_page_teams: {error}")
+        finally:
+            Session.close()
+            Session.remove()
 
 
 if __name__ == "__main__":
