@@ -28,4 +28,4 @@ slack_bolt==1.16.1
 slack_sdk==3.19.5
 sqlalchemy==1.4.46
 waitress==2.1.2
-werkzeug==2.2.2
+werkzeug==2.2.3
