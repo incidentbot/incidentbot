@@ -7,6 +7,7 @@ theme:
     - content.code.copy
     - navigation.sections
     - navigation.expand
+    - navigation.footer
     - navigation.indexes
     - search.highlight
     - search.suggest
@@ -44,3 +45,7 @@ nav:
           - Installation and Setup: 'setup.md'
           - Configuration: 'configuration.md'
       - Troubleshooting: 'troubleshooting.md'
+extra:
+  social:
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/PzqSQUY88c
