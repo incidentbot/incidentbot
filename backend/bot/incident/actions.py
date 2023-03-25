@@ -338,11 +338,6 @@ async def set_status(
 
     action_value = action_parameters.actions["selected_option"]["value"]
     user = action_parameters.user_details["id"]
-    formatted_severity = extract_attribute(
-        attribute="severity",
-        channel=variables.digest_channel_id,
-        oldest=incident_data.dig_message_ts,
-    )
 
     # Write audit log
     log.write(
@@ -448,9 +443,9 @@ async def set_status(
                 incident_id=incident_data.incident_id,
                 rca_title=rca_title,
                 incident_commander=actual_user_names[0],
-                severity=formatted_severity,
+                severity=incident_data.severity,
                 severity_definition=config.active.severities[
-                    formatted_severity
+                    incident_data.severity
                 ],
                 pinned_items=read_incident_pinned_items(
                     incident_id=incident_data.incident_id
@@ -573,7 +568,7 @@ async def set_status(
                 incident_description=incident_data.channel_description,
                 is_security_incident=incident_data.is_security_incident,
                 status=action_value,
-                severity=formatted_severity,
+                severity=incident_data.severity,
                 conference_bridge=incident_data.conference_bridge,
             ),
             text="",
@@ -705,12 +700,6 @@ async def set_severity(
     action_value = action_parameters.actions["selected_option"]["value"]
 
     # Also updates digest message
-    # Retrieve the existing value of status since we need to put that back
-    formatted_status = extract_attribute(
-        attribute="status",
-        channel=variables.digest_channel_id,
-        oldest=incident_data.dig_message_ts,
-    )
     try:
         slack_web_client.chat_update(
             channel=variables.digest_channel_id,
@@ -719,7 +708,7 @@ async def set_severity(
                 incident_id=incident_data.channel_name,
                 incident_description=incident_data.channel_description,
                 is_security_incident=incident_data.is_security_incident,
-                status=formatted_status,
+                status=incident_data.status,
                 severity=action_value,
                 conference_bridge=incident_data.conference_bridge,
             ),
@@ -821,31 +810,3 @@ def extract_role_owner(message_blocks: Dict[Any, Any], block_id: str) -> str:
     return (
         message_blocks[index]["text"]["text"].split("\n")[1].replace(" ", "")
     )
-
-
-def extract_attribute(
-    attribute: str,
-    channel: str,
-    oldest: Any,
-) -> str:
-    """
-    References existing data in the digest message
-    """
-    try:
-        result = slack_web_client.conversations_history(
-            channel=channel,
-            inclusive=True,
-            oldest=oldest,
-            limit=1,
-        )
-        message = result["messages"][0]
-        index = tools.find_index_in_list(
-            message["blocks"], "block_id", f"digest_channel_{attribute}"
-        )
-        current = message["blocks"][index]["text"]["text"]
-        regex = "\*(.*?)\*"
-        return re.search(regex, current).group(1).replace("*", "").lower()
-    except slack_sdk.errors.SlackApiError as error:
-        logger.error(
-            f"Error retrieving current {attribute} from digest message: {error}"
-        )
