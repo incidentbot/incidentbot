@@ -1,10 +1,10 @@
 import config
 import logging
-import re
 import slack_sdk.errors
 import variables
 
 from bot.audit import log
+from bot.exc import IndexNotFoundError
 from bot.incident.action_parameters import (
     ActionParametersSlack,
     ActionParametersWeb,
@@ -103,6 +103,10 @@ async def assign_role(
                 index = tools.find_index_in_list(
                     blocks, "block_id", f"role_{action_value}"
                 )
+                if index == -1:
+                    raise IndexNotFoundError(
+                        f"Could not find index for block_id role_{action_value}"
+                    )
                 temp_new_role_name = action_value.replace("_", " ")
                 target_role = action_value
                 ts = action_parameters.message_details["ts"]
@@ -128,6 +132,10 @@ async def assign_role(
                 index = tools.find_index_in_list(
                     blocks, "block_id", f"role_{web_data.role}"
                 )
+                if index == -1:
+                    raise IndexNotFoundError(
+                        f"Could not find index for block_id role_{web_data.role}"
+                    )
                 temp_new_role_name = web_data.role.replace("_", " ")
                 target_role = web_data.role
                 ts = web_data.bp_message_ts
@@ -226,6 +234,10 @@ async def claim_role(action_parameters: type[ActionParametersSlack]):
     index = tools.find_index_in_list(
         blocks, "block_id", f"role_{action_value}"
     )
+    if index == -1:
+        raise IndexNotFoundError(
+            f"Could not find index for block_id role_{action_value}"
+        )
     # Replace the "_none_" value in the given block
     temp_new_role_name = action_value.replace("_", " ")
     new_role_name = temp_new_role_name.title()
@@ -573,7 +585,7 @@ async def set_status(
             ),
             text="",
         )
-    except slack_sdk.errors.SlackApiError as e:
+    except slack_sdk.errors.SlackApiError as error:
         logger.error(
             f"Error sending status update to incident channel {incident_data.channel_name}: {error}"
         )
@@ -587,6 +599,8 @@ async def set_status(
     )
     blocks = result["messages"][0]["blocks"]
     status_block_index = tools.find_index_in_list(blocks, "block_id", "status")
+    if status_block_index == -1:
+        raise IndexNotFoundError("Could not find index for block_id status")
     blocks[status_block_index]["accessory"]["initial_option"] = {
         "text": {
             "type": "plain_text",
@@ -643,6 +657,10 @@ async def set_status(
         status_block_index = tools.find_index_in_list(
             blocks, "block_id", "status"
         )
+        if status_block_index == -1:
+            raise IndexNotFoundError(
+                "Could not find index for block_id status"
+            )
         blocks[status_block_index]["accessory"]["confirm"] = {
             "title": {
                 "type": "plain_text",
@@ -727,6 +745,8 @@ async def set_severity(
     )
     blocks = result["messages"][0]["blocks"]
     sev_blocks_index = tools.find_index_in_list(blocks, "block_id", "severity")
+    if sev_blocks_index == -1:
+        raise IndexNotFoundError("Could not find index for block_id severity")
     blocks[sev_blocks_index]["accessory"]["initial_option"] = {
         "text": {
             "type": "plain_text",
@@ -807,6 +827,10 @@ def extract_role_owner(message_blocks: Dict[Any, Any], block_id: str) -> str:
     to one of the role blocks
     """
     index = tools.find_index_in_list(message_blocks, "block_id", block_id)
+    if index == -1:
+        raise IndexNotFoundError(
+            f"Could not find index for block_id {block_id}"
+        )
     return (
         message_blocks[index]["text"]["text"].split("\n")[1].replace(" ", "")
     )

@@ -3,6 +3,7 @@ import datetime
 import json
 import logging
 
+from bot.exc import IndexNotFoundError
 from bot.models.pg import OperationalData, Session
 from bot.shared import tools
 from slack_sdk import WebClient
@@ -86,10 +87,12 @@ def get_channel_history(channel_id: str) -> str:
 def get_digest_channel_id() -> str:
     # Get channel id of the incidents digest channel to send updates to
     channels = return_slack_channel_info()
-    index = tools.find_index_in_list(
-        channels, "name", config.active.digest_channel
-    )
-    return channels[index]["id"]
+    index = tools.find_index_in_list(channels, "name", "incidents")
+    if index == -1:
+        raise IndexNotFoundError(
+            "Could not find index for digest channel in Slack conversations list"
+        )
+    return channels[index].get("id")
 
 
 def get_formatted_channel_history(channel_id: str, channel_name: str) -> str:
@@ -192,14 +195,17 @@ def replace_user_ids(json_string: str, user_list: Dict[str, str]) -> str:
 
 def return_slack_channel_info() -> Dict[str, str]:
     """Return a list of Slack channels"""
+    channels = []
     try:
-        return slack_web_client.conversations_list(
-            exclude_archived=True, limit=500
-        )["channels"]
+        for page in slack_web_client.conversations_list(
+            exclude_archived=True, limit=200
+        ):
+            channels = channels + page.get("channels")
     except Exception as error:
         logger.error(
             f"Error getting channel list from Slack workspace: {error}"
         )
+    return channels
 
 
 def store_slack_user_list():
