@@ -78,38 +78,39 @@ def startup_tasks():
 
     # Integration Tests
     # --------------------
-    if "confluence" in config.active.integrations.get("atlassian"):
-        from bot.confluence.api import ConfluenceApi
+    if "atlassian" in config.active.integrations:
+        if "confluence" in config.active.integrations.get("atlassian"):
+            from bot.confluence.api import ConfluenceApi
 
-        api_test = ConfluenceApi()
-        passes = api_test.test()
-        if not passes:
-            logger.fatal(
-                "Could not verify Confluence parent page exists.\nYou provided: {}/{}".format(
-                    config.active.integrations.get("atlassian")
-                    .get("confluence")
-                    .get("space"),
-                    config.active.integrations.get("atlassian")
-                    .get("confluence")
-                    .get("parent"),
+            api_test = ConfluenceApi()
+            passes = api_test.test()
+            if not passes:
+                logger.fatal(
+                    "Could not verify Confluence parent page exists.\nYou provided: {}/{}".format(
+                        config.active.integrations.get("atlassian")
+                        .get("confluence")
+                        .get("space"),
+                        config.active.integrations.get("atlassian")
+                        .get("confluence")
+                        .get("parent"),
+                    )
                 )
-            )
-            sys.exit(1)
+                sys.exit(1)
 
-    if "jira" in config.active.integrations.get("atlassian"):
-        from bot.jira.api import JiraApi
+        if "jira" in config.active.integrations.get("atlassian"):
+            from bot.jira.api import JiraApi
 
-        api_test = JiraApi()
-        passes = api_test.test()
-        if not passes:
-            logger.fatal(
-                "Could not verify Jira project exists.\nYou provided: {}".format(
-                    config.active.integrations.get("atlassian")
-                    .get("jira")
-                    .get("project"),
+            api_test = JiraApi()
+            passes = api_test.test()
+            if not passes:
+                logger.fatal(
+                    "Could not verify Jira project exists.\nYou provided: {}".format(
+                        config.active.integrations.get("atlassian")
+                        .get("jira")
+                        .get("project"),
+                    )
                 )
-            )
-            sys.exit(1)
+                sys.exit(1)
 
     if "pagerduty" in config.active.integrations:
         from bot.pagerduty.api import PagerDutyAPI

@@ -35,6 +35,8 @@ from datetime import datetime
 
 logger = logging.getLogger("slack.modals")
 
+placeholder_severity = [sev for sev, _ in config.active.severities.items()][-1]
+
 
 @app.event("app_home_opened")
 def update_home_tab(client, event, logger):
@@ -199,6 +201,13 @@ def open_modal(ack, body, client):
                     "type": "plain_text",
                     "text": "Select...",
                 },
+                "initial_option": {
+                    "text": {
+                        "type": "plain_text",
+                        "text": "No",
+                    },
+                    "value": "false",
+                },
                 "options": [
                     {
                         "text": {
@@ -230,6 +239,13 @@ def open_modal(ack, body, client):
                 "placeholder": {
                     "type": "plain_text",
                     "text": "Select...",
+                },
+                "initial_option": {
+                    "text": {
+                        "type": "plain_text",
+                        "text": "No",
+                    },
+                    "value": "false",
                 },
                 "options": [
                     {
@@ -273,6 +289,13 @@ def open_modal(ack, body, client):
                     "type": "plain_text",
                     "text": "Select a severity...",
                     "emoji": True,
+                },
+                "initial_option": {
+                    "text": {
+                        "type": "plain_text",
+                        "text": placeholder_severity.upper(),
+                    },
+                    "value": placeholder_severity,
                 },
                 "options": [
                     {
