@@ -60,7 +60,7 @@ integrations:
       labels:
         - incident-management
   # Simply provide an empty dict to enable PagerDuty
-  pagerduty: {}
+  # pagerduty: {}
   # Enable Statuspage integration
   statuspage:
     # The public URL of the Statuspage.
