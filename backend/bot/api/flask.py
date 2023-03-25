@@ -2,6 +2,7 @@ import config
 import json
 import logging
 import logging.config
+import re
 
 from bot.shared import tools
 from datetime import timedelta
@@ -62,18 +63,23 @@ def basic_authentication():
 
 @app.after_request
 def webserver_logging(response):
-    logger.info(
-        '{} {} [{}] "{} {}" - {} - {} {}'.format(
-            request.headers["host"],
-            request.access_route[-1],
-            tools.fetch_timestamp(short=True),
-            request.method,
-            request.path,
-            request.headers["user_agent"],
-            request.environ.get("SERVER_PROTOCOL"),
-            response.status,
-        )
-    )
+    # If a user agent is in this list, no log will be generated
+    # Useful to skip noise like kube-probe, etc.
+    skip_logs_for_user_agents = ["kube-probe"]
+    for skip in skip_logs_for_user_agents:
+        if not re.search(rf"{skip}\b", request.headers["user_agent"]):
+            logger.info(
+                '{} {} [{}] "{} {}" - {} - {} {}'.format(
+                    request.headers["host"],
+                    request.access_route[-1],
+                    tools.fetch_timestamp(short=True),
+                    request.method,
+                    request.path,
+                    request.headers["user_agent"],
+                    request.environ.get("SERVER_PROTOCOL"),
+                    response.status,
+                )
+            )
     return response
 
 

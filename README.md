@@ -7,6 +7,8 @@ Incident management framework centered around a ChatOps bot for Slack to allow y
 
 [Check out Incident Bot's Documentation](https://docs.incidentbot.io)
 
+Need support or just want to chat with us? Join us in [Slack](https://echoboomer.slack.com/).
+
 Interacting with the bot is incredibly easy through the use of modals and simplified commands:
 
 <img src="https://github.com/echoboomer/incident-bot/blob/main/assets/incident-bot-demo-1.gif" width="700" height="500" />
