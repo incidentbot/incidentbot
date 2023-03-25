@@ -8,6 +8,8 @@ Interacting with the bot is incredibly easy through the use of modals and simpli
 
     We are looking to add support to other platforms in the future.
 
+Need support or just want to chat with us? Join us on [Discord](https://discord.gg/PzqSQUY88c).
+
 ## Features at a Glance
 
 - Create a war-room in Slack to gather resources and handle incidents.
