@@ -60,7 +60,7 @@ Here is the standard layout of the file:
       - sev1
     # rate determines how often reminders are sent to an incident channel
     # This is an int and is interpreted as minutes
-    rate: 5
+    rate: 30
   # Statuses defined here will appear as options for each incident
   statuses:
     - investigating
