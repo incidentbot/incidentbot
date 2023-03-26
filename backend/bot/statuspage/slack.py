@@ -47,6 +47,7 @@ def return_new_statuspage_incident_message(channel_id: str) -> Dict[str, str]:
                     {
                         "type": "button",
                         "style": "primary",
+                        "action_id": "statuspage.open_statuspage",
                         "text": {
                             "type": "plain_text",
                             "text": "Open Statuspage",

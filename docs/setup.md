@@ -79,6 +79,18 @@ configMap:
       sev2: 'This signifies a significant production degradation scenario impacting a large portion of users.'
       sev3: 'This signifies a minor production scenario that may or may not result in degradation. This situation is worth coordination to resolve quickly but does not indicate a critical loss of service for users.'
       sev4: 'This signifies an ongoing investigation. This incident has not been promoted to SEV3 yet, indicating there may be little to no impact, but the situation warrants a closer look. This is diagnostic in nature. This is the default setting for a new incident.'
+    # Whether or not to deliver incident update reminders for critical incidents
+    # This will send out a reminder message to an active incident channel at the supplied
+    # interval
+    incident_reminders:
+      # Any severity in this list will have a scheduled reminder job created
+      # This job will remind the channel to send out updates at the interval
+      # specified rate below
+      qualifying_severities:
+        - sev1
+      # rate determines how often reminders are sent to an incident channel
+      # This is an int and is interpreted as minutes
+      rate: 30
     statuses:
       - investigating
       - identified
@@ -129,7 +141,7 @@ podDisruptionBudget:
 You can now install the application. As an example:
 
 ```bash
-helm install echoboomer-charts/incident-bot --version 1.4.4 --values incident-bot-values.yaml --namespace incident-bot
+helm install echoboomer-charts/incident-bot --version 1.4.5 --values incident-bot-values.yaml --namespace incident-bot
 ```
 
 Everything that needs to be configured has been configured directly in the values file as part of the values file.

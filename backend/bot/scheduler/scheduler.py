@@ -58,7 +58,7 @@ process = TaskScheduler()
 
 
 def add_incident_scheduled_reminder(
-    channel_name: str, channel_id: str, severity: str
+    channel_name: str, channel_id: str, severity: str, rate: int
 ):
     """
     Adds a ~25 minute scheduled reminder for sev1/sev2 incidents that will
@@ -69,16 +69,16 @@ def add_incident_scheduled_reminder(
     process.scheduler.add_job(
         id=f"{channel_name}_updates_reminder",
         func=scheduled_reminder_message,
-        args=[channel_name, channel_id, severity],
+        args=[channel_name, channel_id, severity, rate],
         trigger="interval",
-        name=f"Check every 25 minutes whether {channel_name} has had updates sent out",
-        minutes=25,
+        name=f"Check every {rate} minutes whether {channel_name} has had updates sent out",
+        minutes=rate,
         replace_existing=True,
     )
 
 
 def scheduled_reminder_message(
-    channel_name: str, channel_id: str, severity: str
+    channel_name: str, channel_id: str, severity: str, rate: int
 ):
     """
     Formatting for the message sent for scheduled reminders for ongoing incidents
@@ -104,9 +104,9 @@ def scheduled_reminder_message(
                             "type": "section",
                             "text": {
                                 "type": "mrkdwn",
-                                "text": f"<!channel> :wave: It has been 30 minutes "
+                                "text": f"<!channel> :wave: It has been {rate} minutes "
                                 + "since this incident was opened and no updates "
-                                + "have been sent out regarding this ticket. "
+                                + "have been sent out regarding this incident. "
                                 + f"Since this is a *{severity.upper()}* incident, "
                                 + "updates must be provided every half hour. "
                                 + "Please use the 'provide incident update' shortcut. "
@@ -115,7 +115,7 @@ def scheduled_reminder_message(
                                 + "at the top of your Slack window. "
                                 + "For additional information about my features, "
                                 + "check out my app's home page. "
-                                + "I'll remind this channel every 30 minutes to "
+                                + f"I'll remind this channel every {rate} minutes to "
                                 + "either send out an initial update or provide a new one.",
                             },
                         },
