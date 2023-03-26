@@ -45,7 +45,7 @@ class IncidentRootCauseAnalysis:
         """
         Creates a starting RCA page and returns the create page's URL
         """
-        title = f"{self.today} - {self.title.title()}"
+        title = f"{self.today} - {self.incident_id} - {self.title.title()}"
         parent_page_id = self.exec.get_page_id(self.space, self.parent_page)
         logger.info(
             f"Creating RCA {title} in Confluence space {self.space} under parent {self.parent_page}..."
@@ -80,7 +80,7 @@ class IncidentRootCauseAnalysis:
                 )
                 # If there are images in pinned items
                 # Add them as attachments
-                if len(self.pinned_items) > 0:
+                if self.pinned_items:
                     for item in self.pinned_items:
                         if item.img:
                             try:
@@ -129,7 +129,7 @@ class IncidentRootCauseAnalysis:
         return False, None
 
     def __generate_pinned_messages(self) -> str:
-        if len(self.pinned_items) == 0:
+        if not self.pinned_items:
             return "<p>No items were pinned for this incident.</p>"
         all_items_formatted = ""
         for item in self.pinned_items:

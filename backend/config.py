@@ -8,7 +8,7 @@ from cerberus import Validator
 from dotenv import load_dotenv
 from typing import Dict, List
 
-__version__ = "v1.4.4"
+__version__ = "v1.4.5"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -81,6 +81,21 @@ class Configuration:
                 "valuesrules": {
                     "type": "string",
                     "empty": False,
+                },
+            },
+            "incident_reminders": {
+                "required": False,
+                "type": "dict",
+                "schema": {
+                    "qualifying_severities": {
+                        "required": True,
+                        "type": "list",
+                        "schema": {"type": "string", "empty": False},
+                    },
+                    "rate": {
+                        "required": True,
+                        "type": "integer",
+                    },
                 },
             },
             "statuses": {
@@ -275,35 +290,39 @@ class Configuration:
 
     @property
     def digest_channel(self) -> str:
-        return self.live["digest_channel"]
+        return self.live.get("digest_channel")
+
+    @property
+    def incident_reminders(self) -> Dict:
+        return self.live.get("incident_reminders")
 
     @property
     def integrations(self) -> Dict:
-        return self.live["integrations"]
+        return self.live.get("integrations")
 
     @property
     def links(self) -> Dict:
-        return self.live["links"]
+        return self.live.get("links")
 
     @property
     def options(self) -> Dict:
-        return self.live["options"]
+        return self.live.get("options")
 
     @property
     def platform(self) -> str:
-        return self.live["platform"]
+        return self.live.get("platform")
 
     @property
     def roles(self) -> Dict[str, str]:
-        return self.live["roles"]
+        return self.live.get("roles")
 
     @property
     def severities(self) -> Dict[str, str]:
-        return self.live["severities"]
+        return self.live.get("severities")
 
     @property
     def statuses(self) -> List:
-        return self.live["statuses"]
+        return self.live.get("statuses")
 
 
 active = Configuration()

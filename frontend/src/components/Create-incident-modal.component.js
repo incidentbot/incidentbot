@@ -81,15 +81,9 @@ export default function IncidentCreateModal(props) {
       })
       .catch(function (error) {
         if (error.response) {
-          setFetchStatus('error');
-          setFetchMessage(
-            `Error retrieving severity data from backend: ${error.response.data.error}`
-          );
-          setOpenFetchStatus(true);
+          console.log(`Error retrieving severity data from backend: ${error.response.data.error}`);
         } else if (error.request) {
-          setFetchStatus('error');
-          setFetchMessage(`Error retrieving severity data from backend: ${error}`);
-          setOpenFetchStatus(true);
+          console.log(`Error retrieving severity data from backend: ${error.response.data.error}`);
         }
       });
   }

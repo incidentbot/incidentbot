@@ -53,7 +53,7 @@ async def archive_incident_channel(
     action_parameters -- type[ActionParametersSlack] containing Slack actions data
     """
     incident_data = db_read_incident(
-        channel_id=action_parameters.channel_details["id"]
+        channel_id=action_parameters.channel_details.get("id")
     )
     try:
         logger.info(f"Archiving {incident_data.channel_name}.")
@@ -88,18 +88,18 @@ async def assign_role(
         case "slack":
             try:
                 incident_data = db_read_incident(
-                    channel_id=action_parameters.channel_details["id"]
+                    channel_id=action_parameters.channel_details.get("id")
                 )
                 # Target incident channel
                 target_channel = incident_data.channel_id
                 channel_name = incident_data.channel_name
-                user_id = action_parameters.actions["selected_user"]
+                user_id = action_parameters.actions.get("selected_user")
                 action_value = "_".join(
-                    action_parameters.actions["block_id"].split("_")[1:3]
+                    action_parameters.actions.get("block_id").split("_")[1:3]
                 )
                 # Find the index of the block that contains info on
                 # the role we want to update and format it with the new user later
-                blocks = action_parameters.message_details["blocks"]
+                blocks = action_parameters.message_details.get("blocks")
                 index = tools.find_index_in_list(
                     blocks, "block_id", f"role_{action_value}"
                 )
@@ -109,7 +109,7 @@ async def assign_role(
                     )
                 temp_new_role_name = action_value.replace("_", " ")
                 target_role = action_value
-                ts = action_parameters.message_details["ts"]
+                ts = action_parameters.message_details.get("ts")
             except Exception as error:
                 logger.error(
                     f"Error processing incident user update from Slack: {error}"
@@ -128,7 +128,7 @@ async def assign_role(
                 blocks = get_message_content(
                     conversation_id=web_data.channel_id,
                     ts=web_data.bp_message_ts,
-                )["blocks"]
+                ).get("blocks")
                 index = tools.find_index_in_list(
                     blocks, "block_id", f"role_{web_data.role}"
                 )
@@ -774,18 +774,22 @@ async def set_severity(
         logger.fatal(f"Error updating entry in database: {error}")
 
     # If SEV1/2, we need to start a timer to remind the channel about sending status updates
-    if action_value in ["sev1", "sev2"]:
-        logger.info(f"Adding job because action was {action_value}")
-        scheduler.add_incident_scheduled_reminder(
-            channel_name=incident_data.channel_name,
-            channel_id=incident_data.channel_id,
-            severity=action_value,
-        )
-        # Write audit log
-        log.write(
-            incident_id=incident_data.channel_name,
-            event=f"Scheduled reminder job created.",
-        )
+    if config.active.incident_reminders:
+        if action_value in config.active.incident_reminders.get(
+            "qualifying_severities"
+        ):
+            logger.info(f"Adding job because action was {action_value}")
+            scheduler.add_incident_scheduled_reminder(
+                channel_name=incident_data.channel_name,
+                channel_id=incident_data.channel_id,
+                severity=action_value,
+                rate=config.active.incident_reminders.get("rate"),
+            )
+            # Write audit log
+            log.write(
+                incident_id=incident_data.channel_name,
+                event=f"Scheduled reminder job created.",
+            )
 
     # Final notification
     try:
