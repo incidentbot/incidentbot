@@ -84,10 +84,23 @@ def get_channel_history(channel_id: str) -> str:
     return json.dumps(history_dict_reversed)
 
 
+def get_channel_name(channel_id: str) -> str:
+    # Get channel name by id
+    channels = return_slack_channel_info()
+    index = tools.find_index_in_list(channels, "id", channel_id)
+    if index == -1:
+        raise IndexNotFoundError(
+            "Could not find index for channel in Slack conversations list"
+        )
+    return channels[index].get("name")
+
+
 def get_digest_channel_id() -> str:
     # Get channel id of the incidents digest channel to send updates to
     channels = return_slack_channel_info()
-    index = tools.find_index_in_list(channels, "name", "incidents")
+    index = tools.find_index_in_list(
+        channels, "name", config.active.digest_channel
+    )
     if index == -1:
         raise IndexNotFoundError(
             "Could not find index for digest channel in Slack conversations list"
@@ -262,10 +275,14 @@ def check_bot_user_in_digest_channel():
     ):
         try:
             slack_web_client.conversations_join(channel=digest_channel_id)
-            logger.info("Added bot user to digest channel")
+            logger.info(
+                f"Added bot user to digest channel #{get_channel_name(channel_id=digest_channel_id)}"
+            )
         except SlackApiError as error:
             logger.error(
                 f"Error auto joining bot user to digest channel: {error}"
             )
     else:
-        logger.info("Bot user is present in digest channel")
+        logger.info(
+            f"Bot user is already present in digest channel #{get_channel_name(channel_id=digest_channel_id)}"
+        )
