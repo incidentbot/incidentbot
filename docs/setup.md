@@ -2,7 +2,7 @@
 
 ## Installation
 
-For those who wish to get started quickly without customizing core behavior, there is a public image available based on the latest primary build. The image is available [here](https://hub.docker.com/r/eb129/incident-bot>).
+For those who wish to get started quickly without customizing core behavior, there is a public image available based on the latest primary build. The image is available [here](https://hub.docker.com/r/eb129/incident-bot).
 
 You can run the image however you choose. A Docker Compose file is provided for guidance. It is recommended to use the Helm chart if running in Kubernetes.
 
