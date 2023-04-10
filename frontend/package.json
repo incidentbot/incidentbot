@@ -29,7 +29,7 @@
     "react-spring": "^9.7.1",
     "react-syntax-highlighter": "^15.5.0",
     "recharts": "^2.1.12",
-    "styled-components": "^5.3.6",
+    "styled-components": "^5.3.9",
     "web-vitals": "^3.3.0"
   },
   "scripts": {
