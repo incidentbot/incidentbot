@@ -2,7 +2,6 @@ import config
 import datetime
 import logging
 import slack_sdk
-import tzlocal
 import variables
 
 from apscheduler.job import Job
@@ -14,11 +13,12 @@ from bot.slack.client import (
     slack_web_client,
     store_slack_user_list,
 )
+from pytz import timezone
 from typing import List
 
 logger = logging.getLogger("scheduler")
 
-
+application_timezone = config.active.options.get("timezone")
 jobstores = {"default": SQLAlchemyJobStore(url=config.database_url)}
 
 
@@ -26,7 +26,7 @@ class TaskScheduler:
     def __init__(self):
         self.scheduler = BackgroundScheduler(
             jobstores=jobstores,
-            timezone=str(tzlocal.get_localzone()),
+            timezone=timezone(application_timezone),
         )
 
     def list_jobs(self) -> List[Job]:
