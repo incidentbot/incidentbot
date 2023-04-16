@@ -7,7 +7,7 @@ logger = logging.getLogger("meetings")
 
 
 class ZoomMeeting:
-    """Creates an instant Zoom meeting"""
+    """Creates a Zoom meeting"""
 
     def __init__(self):
         self.endpoint = "https://api.zoom.us/v2"
@@ -37,7 +37,7 @@ class ZoomMeeting:
                 "waiting_room": False,
             },
             "topic": "Incident Discussion",
-            "type": 1,
+            "type": 2,
         }
         try:
             res = requests.post(
