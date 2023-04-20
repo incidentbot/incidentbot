@@ -8,7 +8,7 @@ from cerberus import Validator
 from dotenv import load_dotenv
 from typing import Dict, List
 
-__version__ = "v1.4.8"
+__version__ = "v1.4.9"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
