@@ -25,6 +25,7 @@ class ZoomMeeting:
     def __create(self) -> str:
         meeting_details = {
             "agenda": "Incident Discussion",
+            "default_password": True,
             "settings": {
                 "audio": "voip",
                 "host_video": False,
