@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@emotion/react": "^11.9.3",
+    "@emotion/react": "^11.10.8",
     "@emotion/styled": "^11.10.6",
     "@iconify/icons-mdi": "^1.2.44",
     "@iconify/react": "^4.0.1",
