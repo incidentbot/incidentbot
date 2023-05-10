@@ -441,7 +441,7 @@ async def set_status(
         ]
         # Generate rca template and create rca if enabled
         # Get normalized description as rca title
-        if "confluence" in config.active.integrations.get(
+        if config.active.integrations and "confluence" in config.active.integrations.get(
             "atlassian"
         ) and config.active.integrations.get("atlassian").get(
             "confluence"
