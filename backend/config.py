@@ -8,7 +8,7 @@ from cerberus import Validator
 from dotenv import load_dotenv
 from typing import Dict, List
 
-__version__ = "v1.4.9"
+__version__ = "v1.4.10"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -415,30 +415,29 @@ def env_check(required_envs: List[str]):
                 f"If enabling auto create via react, the reacji field in config.yaml should be set."
             )
             sys.exit(1)
-    if "confluence" in active.integrations and active.integrations.get(
-        "confluence"
-    ).get("auto_create_rca"):
-        for var in [
-            "ATLASSIAN_API_URL",
-            "ATLASSIAN_API_USERNAME",
-            "ATLASSIAN_API_TOKEN",
-        ]:
-            if os.getenv(var) == "":
-                logger.fatal(
-                    f"If enabling the Confluence integration to auto create an RCA, the {var} variable must be set."
-                )
-                sys.exit(1)
-    if "jira" in active.integrations:
-        for var in [
-            "ATLASSIAN_API_URL",
-            "ATLASSIAN_API_USERNAME",
-            "ATLASSIAN_API_TOKEN",
-        ]:
-            if os.getenv(var) == "":
-                logger.fatal(
-                    f"If enabling the Jira integration, the {var} variable must be set."
-                )
-                sys.exit(1)
+    if "atlassian" in active.integrations:
+        if "confluence" in active.integrations.get("atlassian"):
+            for var in [
+                "ATLASSIAN_API_URL",
+                "ATLASSIAN_API_USERNAME",
+                "ATLASSIAN_API_TOKEN",
+            ]:
+                if os.getenv(var) == "":
+                    logger.fatal(
+                        f"If enabling the Confluence integration to auto create an RCA, the {var} variable must be set."
+                    )
+                    sys.exit(1)
+        if "jira" in active.integrations.get("atlassian"):
+            for var in [
+                "ATLASSIAN_API_URL",
+                "ATLASSIAN_API_USERNAME",
+                "ATLASSIAN_API_TOKEN",
+            ]:
+                if os.getenv(var) == "":
+                    logger.fatal(
+                        f"If enabling the Jira integration, the {var} variable must be set."
+                    )
+                    sys.exit(1)
     if "pagerduty" in active.integrations:
         for var in [
             "PAGERDUTY_API_USERNAME",
