@@ -166,6 +166,13 @@ class Configuration:
                             },
                         },
                     },
+                    "skip_logs_for_user_agent": {
+                        "required": False,
+                        "type": "list",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
                 },
             },
             "integrations": {
