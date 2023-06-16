@@ -65,7 +65,7 @@ def basic_authentication():
 def webserver_logging(response):
     # If a user agent is in this list, no log will be generated
     # Useful to skip noise like kube-probe, etc.
-    skip_logs_for_user_agents = ["kube-probe"]
+    skip_logs_for_user_agents = config.active.options.get("skip_logs_for_user_agent")
     for skip in skip_logs_for_user_agents:
         if not re.search(rf"{skip}\b", request.headers["user_agent"]):
             logger.info(

@@ -27,6 +27,9 @@ options:
     enabled: true
     groups:
       - sre-concierge
+  skip_logs_for_user_agent:
+    - kube-probe
+    - ELB-HealthChecker/2.0
 integrations:
   atlassian:
     confluence:
