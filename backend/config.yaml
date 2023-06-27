@@ -55,6 +55,12 @@ options:
     groups:
       - my-slack-group
       - my-other-slack-group
+  # Ignore logging for requests from the following user-agents
+  skip_logs_for_user_agent:
+    # Kubernetes health check user-agent
+    - kube-probe
+    # AWS ELB health check user-agent
+    - ELB-HealthChecker/2.0
 integrations:
   # Secret data is provided as environment variables for integrations
   # Only non-secret data is configured here
