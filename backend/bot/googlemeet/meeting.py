@@ -20,7 +20,7 @@ class GoogleMeet:
 
     def __init__(self):
         self.scopes = ['https://www.googleapis.com/auth/calendar.events']
-        self.service_account_file = 'service-account.json'
+        self.service_account_file = environ.get('SERVICE_ACCOUNT_FILE')
         self.meeting = {}
 
 
@@ -30,7 +30,7 @@ class GoogleMeet:
             credentials = service_account.Credentials.from_service_account_file(self.service_account_file, scopes=self.scopes)
             
             # Update this to pull from config
-            delegated_credentials = credentials.with_subject(environ.get('service_account_email')
+            delegated_credentials = credentials.with_subject(environ.get('SERVICE_ACCOUNT_EMAIL')
             service = build('calendar', 'v3', credentials=delegated_credentials)
 
             # Call the Calendar API
