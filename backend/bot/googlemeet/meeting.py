@@ -20,7 +20,7 @@ class GoogleMeet:
 
     def __init__(self):
         self.scopes = ['https://www.googleapis.com/auth/calendar.events']
-        self.service_account_file = environ.get('SERVICE_ACCOUNT_FILE')
+        self.service_account_file = environ.get('GOOGLE_SERVICE_ACCOUNT_SECRET')
         self.meeting = {}
 
 
@@ -30,7 +30,7 @@ class GoogleMeet:
             credentials = service_account.Credentials.from_service_account_file(self.service_account_file, scopes=self.scopes)
             
             # Update this to pull from config
-            delegated_credentials = credentials.with_subject(environ.get('SERVICE_ACCOUNT_EMAIL')
+            delegated_credentials = credentials.with_subject(environ.get('GOOGLE_ACCOUNT_EMAIL'))
             service = build('calendar', 'v3', credentials=delegated_credentials)
 
             # Call the Calendar API
@@ -85,3 +85,7 @@ class GoogleMeet:
         except HttpError as error:
             print('An error occurred: %s' % error)
 
+
+    @ property
+    def meeting_info(self):
+        return self.meeting
