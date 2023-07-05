@@ -91,6 +91,8 @@ integrations:
   # Enable Zoom integration
   zoom:
     # Set to true to automatically generate a Zoom meeting for each incident
+    auto_create_meeting: false
+  googlehangout:
     auto_create_meeting: true
 links:
   incident_guide: https://changeme.com
