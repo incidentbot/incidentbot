@@ -27,6 +27,7 @@ from bot.templates.incident.digest_notification import (
     IncidentChannelDigestNotification,
 )
 from bot.zoom.meeting import ZoomMeeting
+from bot.googlemeet.meeting import GoogleMeet
 from cerberus import Validator
 from typing import Any, Dict, List
 
@@ -215,7 +216,7 @@ class Incident:
             " ", "-"
         ).lower()
         now = datetime.datetime.now()
-        return f"inc-{now.year}{now.month}{now.day}{now.hour}{now.minute}-{formatted_channel_name_suffix}"
+        return f"inc-{now.year}{now.month}{now.day}-{formatted_channel_name_suffix}"
 
     def __generate_conference_link(self):
         if (
@@ -223,8 +224,16 @@ class Incident:
             and config.active.integrations.get("zoom").get(
                 "auto_create_meeting"
             )
-        ):
+        ):  
             return ZoomMeeting().url
+        elif (
+            "googlehangout" in config.active.integrations
+            and config.active.integrations.get("googlehangout").get(
+                "auto_create_meeting"
+            )
+        ):  
+            GoogleMeet().create_meeting()
+            return GoogleMeet().meeting_info["hangoutLink"]
         else:
             return config.active.options.get("conference_bridge_link")
 
