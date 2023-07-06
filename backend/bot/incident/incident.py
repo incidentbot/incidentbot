@@ -33,7 +33,9 @@ from typing import Any, Dict, List
 logger = logging.getLogger("incident.handler")
 
 # How many total characters are allowed in a Slack channel name?
-channel_name_length_cap = 80
+# Slack has a max char limit of 80, but when creating the RCA channel, we need 4 extra chars for '-rca'
+# Limit the channel name to 76 to take this into account
+channel_name_length_cap = 76
 # How many characters does the incident prefix take up?
 channel_name_prefix_length = len("inc-20211116-")
 # How long can the provided description be?
