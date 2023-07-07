@@ -57,7 +57,13 @@ spec:
           volumeMounts:
             - name: incident-bot-config
               mountPath: /config/incident-bot
+            - name: google-cloud-credentials
+              mountPath: /config/google-cloud-credentials
       volumes:
         - name: incident-bot-config
           configMap:
             name: incident-bot-config
+        - name: google-cloud-credentials
+          secret:
+            secretName: google-cloud-credentials
+            optional: true
