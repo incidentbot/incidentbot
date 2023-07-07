@@ -5,7 +5,6 @@ import time
 import logging
 import config
 
-from os import environ
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google.oauth2 import service_account
@@ -29,7 +28,6 @@ class GoogleMeet:
         try:
             credentials = service_account.Credentials.from_service_account_file(self.service_account_file, scopes=self.scopes)
             
-            # Update this to pull from config
             delegated_credentials = credentials.with_subject(config.google_account_email)
             service = build('calendar', 'v3', credentials=delegated_credentials)
 
@@ -75,12 +73,15 @@ class GoogleMeet:
 
             print(f'Event created: {event.get("hangoutLink")}')
             self.meeting.update({"hangout_link": event.get("hangoutLink")})
+            self.meeting.update({"meeting_id": event.get("id")})
 
             for details in event.get("conferenceData")["entryPoints"]:
                 if details["entryPointType"] == "phone":
                     print(f'{details["uri"]}' +'\npin: '+ details["pin"])
                     self.meeting.update({"phone_number":details["uri"]})
                     self.meeting.update({"pin":details["pin"]})
+
+            print(self.meeting_info)
 
         except HttpError as error:
             print('An error occurred: %s' % error)
@@ -89,3 +90,13 @@ class GoogleMeet:
     @property
     def meeting_info(self):
         return self.meeting
+
+
+    def delete_meeting(self):
+        credentials = service_account.Credentials.from_service_account_file(self.service_account_file, scopes=self.scopes)
+            
+        delegated_credentials = credentials.with_subject(config.google_account_email)
+        service = build('calendar', 'v3', credentials=delegated_credentials)
+        service.events().delete(calendarId='primary', eventId=self.meeting_info["meeting_id"]).execute()
+
+
