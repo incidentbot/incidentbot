@@ -3,7 +3,7 @@ from __future__ import print_function
 import datetime
 import time
 import logging
-# import config
+import config
 
 from os import environ
 from google.auth.transport.requests import Request
@@ -20,7 +20,7 @@ class GoogleMeet:
 
     def __init__(self):
         self.scopes = ['https://www.googleapis.com/auth/calendar.events']
-        self.service_account_file = environ.get('GOOGLE_SERVICE_ACCOUNT_SECRET')
+        self.service_account_file = config.google_service_account_secret
         self.meeting = {}
 
 
@@ -30,7 +30,7 @@ class GoogleMeet:
             credentials = service_account.Credentials.from_service_account_file(self.service_account_file, scopes=self.scopes)
             
             # Update this to pull from config
-            delegated_credentials = credentials.with_subject(environ.get('GOOGLE_ACCOUNT_EMAIL'))
+            delegated_credentials = credentials.with_subject(config.google_account_email)
             service = build('calendar', 'v3', credentials=delegated_credentials)
 
             # Call the Calendar API
@@ -86,6 +86,6 @@ class GoogleMeet:
             print('An error occurred: %s' % error)
 
 
-    @ property
+    @property
     def meeting_info(self):
         return self.meeting
