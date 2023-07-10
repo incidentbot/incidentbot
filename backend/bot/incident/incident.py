@@ -215,12 +215,7 @@ class Incident:
         formatted_channel_name_suffix = formatted_channel_name_suffix.replace(
             " ", "-"
         ).lower()
-<<<<<<< HEAD
-        now = datetime.datetime.now()
-        return f"inc-{now.year}{now.month}{now.day}-{formatted_channel_name_suffix}"
-=======
         return f"{datetime.today().strftime('%Y-%m-%d')}-{formatted_channel_name_suffix}"
->>>>>>> PE-4920
 
     def __generate_conference_link(self):
         if (
