@@ -1,6 +1,6 @@
 import asyncio
 import config
-import datetime
+from datetime import datetime
 import logging
 import re
 import slack_sdk.errors
@@ -36,7 +36,7 @@ logger = logging.getLogger("incident.handler")
 # How many total characters are allowed in a Slack channel name?
 channel_name_length_cap = 80
 # How many characters does the incident prefix take up?
-channel_name_prefix_length = len("inc-20211116-")
+channel_name_prefix_length = len("2023-07-05-")
 # How long can the provided description be?
 incident_description_max_length = (
     channel_name_length_cap - channel_name_prefix_length
@@ -215,8 +215,12 @@ class Incident:
         formatted_channel_name_suffix = formatted_channel_name_suffix.replace(
             " ", "-"
         ).lower()
+<<<<<<< HEAD
         now = datetime.datetime.now()
         return f"inc-{now.year}{now.month}{now.day}-{formatted_channel_name_suffix}"
+=======
+        return f"{datetime.today().strftime('%Y-%m-%d')}-{formatted_channel_name_suffix}"
+>>>>>>> PE-4920
 
     def __generate_conference_link(self):
         if (

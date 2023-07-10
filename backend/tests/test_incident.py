@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 
 from bot.incident.action_parameters import (
     ActionParametersSlack,
@@ -135,8 +136,7 @@ class TestIncidentManagement:
             )
         )
         assert isinstance(inc, Incident)
-
-        assert re.search("^inc.*something-has-broken$", inc.channel_name)
+        assert re.search(f"^{datetime.today().strftime('%Y-%m-%d-')}.*something-has-broken$", inc.channel_name)
 
         assert inc.conference_bridge == "mock"
 
@@ -151,8 +151,7 @@ class TestIncidentManagement:
                 is_security_incident=False,
             )
         )
-
-        assert re.search("^inc.*unallowed-chracter-check$", inc.channel_name)
+        assert re.search(f"^{datetime.today().strftime('%Y-%m-%d-')}.*unallowed-chracter-check$", inc.channel_name)
 
     def test_incident_build_digest_notification(self):
         assert IncidentChannelDigestNotification.create(
