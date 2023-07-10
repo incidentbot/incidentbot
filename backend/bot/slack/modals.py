@@ -273,10 +273,10 @@ def open_modal(ack, body, client):
                 "action_id": "open_incident_modal_set_description",
                 "placeholder": {
                     "type": "plain_text",
-                    "text": "A brief description of the problem.",
+                    "text": "The name of the incident channel (date will be prepended automatically).",
                 },
             },
-            "label": {"type": "plain_text", "text": "Description"},
+            "label": {"type": "plain_text", "text": "Channel Name"},
         },
         {
             "block_id": "severity",
@@ -371,7 +371,7 @@ def handle_submission(ack, body, client):
     try:
         request_parameters = incident.RequestParameters(
             channel="modal",
-            incident_description=parsed.get(
+            incident_description=datetime.today().strftime("%Y-%m-%d-") + parsed.get(
                 "open_incident_modal_set_description"
             ),
             user=user,

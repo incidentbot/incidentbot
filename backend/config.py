@@ -260,6 +260,17 @@ class Configuration:
                             },
                         },
                     },
+                    "googlehangout": {
+                        "required": False,
+                        "type": "dict",
+                        "schema": {
+                            "auto_create_meeting": {
+                                "required": True,
+                                "type": "boolean",
+                                "empty": False,
+                            },
+                        },
+                    },
                 },
             },
             "links": {
@@ -383,6 +394,11 @@ zoom_client_id = os.getenv("ZOOM_CLIENT_ID", default="")
 zoom_client_secret = os.getenv("ZOOM_CLIENT_SECRET", default="")
 
 """
+Google Hangout
+"""
+google_service_account_secret = os.getenv("GOOGLE_SERVICE_ACCOUNT_SECRET", default="")
+google_account_email = os.getenv("GOOGLE_ACCOUNT_EMAIL", default="")
+"""
 Web Application
 """
 default_admin_password = os.getenv("DEFAULT_WEB_ADMIN_PASSWORD")
@@ -477,7 +493,16 @@ def env_check(required_envs: List[str]):
                     f"If enabling Zoom meeting auto-create, the {var} variable must be set."
                 )
                 sys.exit(1)
-
+    if "googlehangout" in active.integrations:
+        for var in [
+            "GOOGLE_SERVICE_ACCOUNT_SECRET",
+            "GOOGLE_ACCOUNT_EMAIL",
+        ]:
+            if os.getenv(var) == "":
+                logger.fatal(
+                    f"If enabling Google Hangout meeting auto-create, the {var} variable must be set."
+                )
+                sys.exit(1)
 
 def startup_message(workspace: str, wrap: bool = False) -> str:
     """

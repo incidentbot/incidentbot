@@ -8,9 +8,9 @@ services:
     depends_on:
       - db
     environment:
-      SLACK_APP_TOKEN: 'xapp-1-...'
-      SLACK_BOT_TOKEN: 'xoxb-...'
-      SLACK_USER_TOKEN: 'xoxp-...'
+      SLACK_APP_TOKEN: '${SLACK_APP_TOKEN}'
+      SLACK_BOT_TOKEN: '${SLACK_BOT_TOKEN}'
+      SLACK_USER_TOKEN: '${SLACK_USER_TOKEN}'
       POSTGRES_HOST: db
       POSTGRES_DB: incident_bot
       POSTGRES_USER: incident_bot
@@ -28,6 +28,8 @@ services:
       FLASK_APP_SECRET_KEY: 'supersecret'
       JWT_SECRET_KEY: 'supersecret'
       CONFIG_FILE_PATH: '/config/incident-bot/config.yaml'
+      GOOGLE_ACCOUNT_EMAIL: ${GOOGLE_ACCOUNT_EMAIL}
+      GOOGLE_SERVICE_ACCOUNT_SECRET: ${GOOGLE_SERVICE_ACCOUNT_SECRET}
     ports:
       - target: 3000
         published: 3000
@@ -36,6 +38,7 @@ services:
     links:
       - db
     volumes:
+      - ${GOOGLE_SERVICE_ACCOUNT_SECRET}:/config/google-creds.json
       # Wherever the config file lives, root by default
       - ./backend/config.yaml:/config/incident-bot/config.yaml
   db:

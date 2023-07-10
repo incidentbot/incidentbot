@@ -40,6 +40,8 @@ integrations:
     url: https://status.echoboomer.net
   zoom:
     auto_create_meeting: false
+  googlehangout:
+    auto_create_meeting: true
 links:
   incident_guide: https://changeme.com
   incident_postmortems: https://changeme.com

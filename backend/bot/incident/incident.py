@@ -1,6 +1,6 @@
 import asyncio
 import config
-import datetime
+from datetime import datetime
 import logging
 import re
 import slack_sdk.errors
@@ -27,6 +27,7 @@ from bot.templates.incident.digest_notification import (
     IncidentChannelDigestNotification,
 )
 from bot.zoom.meeting import ZoomMeeting
+from bot.googlemeet.meeting import GoogleMeet
 from cerberus import Validator
 from typing import Any, Dict, List
 
@@ -35,7 +36,7 @@ logger = logging.getLogger("incident.handler")
 # How many total characters are allowed in a Slack channel name?
 channel_name_length_cap = 80
 # How many characters does the incident prefix take up?
-channel_name_prefix_length = len("inc-20211116-")
+channel_name_prefix_length = len("2023-07-05-")
 # How long can the provided description be?
 incident_description_max_length = (
     channel_name_length_cap - channel_name_prefix_length
@@ -214,8 +215,7 @@ class Incident:
         formatted_channel_name_suffix = formatted_channel_name_suffix.replace(
             " ", "-"
         ).lower()
-        now = datetime.datetime.now()
-        return f"inc-{now.year}{now.month}{now.day}{now.hour}{now.minute}-{formatted_channel_name_suffix}"
+        return f"{datetime.today().strftime('%Y-%m-%d')}-{formatted_channel_name_suffix}"
 
     def __generate_conference_link(self):
         if (
@@ -223,8 +223,17 @@ class Incident:
             and config.active.integrations.get("zoom").get(
                 "auto_create_meeting"
             )
-        ):
+        ):  
             return ZoomMeeting().url
+        elif (
+            "googlehangout" in config.active.integrations
+            and config.active.integrations.get("googlehangout").get(
+                "auto_create_meeting"
+            )
+        ):  
+            GoogleMeet()
+            GoogleMeet.create_meeting()
+            return GoogleMeet.meeting_info["hangoutLink"]
         else:
             return config.active.options.get("conference_bridge_link")
 
