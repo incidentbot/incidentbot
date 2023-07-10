@@ -11,7 +11,7 @@ SLACK_USER_TOKEN)
 function set_vars {
     for secret in ${secrets[@]}
         do 
-        export $secret=$(kubectl get secret incident-bot -o jsonpath="{.data.$secret}" -n incident-bot | base64 -D)
+        export $secret=$(kubectl --context test get secret incident-bot -o jsonpath="{.data.$secret}" -n incident-bot | base64 -D)
     done
 }
 

@@ -36,8 +36,8 @@ class GoogleMeet:
             today = datetime.date.today()
 
             event = {
-            # placeholder for now
-            'summary': str(today)+'-new-incident-title',
+            # The calendar event is merely a placeholder for generating a meeting link since we don't have access to the Google Meet API
+            'summary': str(today)+'-placeholder-meeting-title',
             'location': 'Virtual',
             'description': 'Incident troubleshooting',
             'start': {
@@ -81,15 +81,8 @@ class GoogleMeet:
                     self.meeting.update({"phone_number":details["uri"]})
                     self.meeting.update({"pin":details["pin"]})
 
-            print(self.meeting_info)
-
         except HttpError as error:
             print('An error occurred: %s' % error)
-
-
-    @property
-    def meeting_info(self):
-        return self.meeting
 
 
     def delete_meeting(self):

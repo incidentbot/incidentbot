@@ -232,8 +232,9 @@ class Incident:
                 "auto_create_meeting"
             )
         ):  
-            GoogleMeet().create_meeting()
-            return GoogleMeet().meeting_info["hangoutLink"]
+            GoogleMeet()
+            GoogleMeet.create_meeting()
+            return GoogleMeet.meeting_info["hangoutLink"]
         else:
             return config.active.options.get("conference_bridge_link")
 
