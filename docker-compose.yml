@@ -30,7 +30,6 @@ services:
       CONFIG_FILE_PATH: '/config/incident-bot/config.yaml'
       GOOGLE_ACCOUNT_EMAIL: ${GOOGLE_ACCOUNT_EMAIL}
       GOOGLE_SERVICE_ACCOUNT_SECRET: ${GOOGLE_SERVICE_ACCOUNT_SECRET}
-      LOG_LEVEL: 'DEBUG'
     ports:
       - target: 3000
         published: 3000
