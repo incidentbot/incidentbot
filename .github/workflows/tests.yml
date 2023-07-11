@@ -12,9 +12,9 @@ jobs:
       postgres:
         image: postgres:13
         env:
-          POSTGRES_DB: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: pytest
+          POSTGRES_DB: incident_bot
+          POSTGRES_USER: incident_bot
+          POSTGRES_PASSWORD: somepassword
           POSTGRES_PORT: 5432
         ports:
           - 5432:5432
