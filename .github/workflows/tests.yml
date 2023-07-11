@@ -45,7 +45,7 @@ jobs:
           echo $GOOGLE_SERVICE_ACCOUNT_SECRET
           sudo mkdir /config
           sudo chmod -R 777 /config
-          sudo echo "${{ secrets.GOOGLE_HANGOUT_CREDS }}" > /config/google-creds.json
+          sudo echo "'${{ secrets.GOOGLE_HANGOUT_CREDS }}'" > /config/google-creds.json
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
