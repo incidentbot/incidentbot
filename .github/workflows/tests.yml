@@ -41,6 +41,7 @@ jobs:
         env:
           GOOGLE_SERVICE_ACCOUNT_SECRET: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_SECRET }}
           GOOGLE_HANGOUT_CREDS: ${{ secrets.GOOGLE_HANGOUT_CREDS }}
+          GOOGLE_ACCOUNT_EMAIL: ${{ secrets.GOOGLE_ACCOUNT_EMAIL }}
         run: |
           sudo mkdir /config
           sudo chmod -R 777 /config
