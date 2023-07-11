@@ -205,11 +205,12 @@ class Incident:
         return channel
 
     def __format_channel_name(self) -> str:
+        formatted_channel_name_suffix = self.incident_description
         # Replace any spaces with dashes
         formatted_channel_name_suffix = formatted_channel_name_suffix.replace(
             " ", "-"
         ).lower()
-        # Remove any special characters (allow only alphanumeric)
+        # Remove any special characters (allow only alphanumeric and hyphens)
         formatted_channel_name_suffix = re.sub(
             "[^A-Za-z0-9-\s]",
             "",
