@@ -39,9 +39,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Pull credential file
         env:
-          GOOGLE_SERVICE_ACCOUNT_SECRET: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_SECRET }}
           GOOGLE_HANGOUT_CREDS: ${{ secrets.GOOGLE_HANGOUT_CREDS }}
-          GOOGLE_ACCOUNT_EMAIL: ${{ secrets.GOOGLE_ACCOUNT_EMAIL }}
         run: |
           sudo mkdir /config
           sudo chmod -R 777 /config
@@ -57,5 +55,8 @@ jobs:
           pip3 install "pytest-mock>=3.10.0"
           pip3 install "pytest-env>=0.8.1"
       - name: Run tests
+        env:
+          GOOGLE_SERVICE_ACCOUNT_SECRET: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_SECRET }}
+          GOOGLE_ACCOUNT_EMAIL: ${{ secrets.GOOGLE_ACCOUNT_EMAIL }}
         run: |
           pytest -vv tests/

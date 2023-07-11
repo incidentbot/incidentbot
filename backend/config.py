@@ -397,8 +397,7 @@ zoom_client_secret = os.getenv("ZOOM_CLIENT_SECRET", default="")
 Google Hangout
 """
 google_service_account_secret = os.getenv("GOOGLE_SERVICE_ACCOUNT_SECRET", default="/config/google-creds.json")
-#google_account_email = os.getenv("GOOGLE_ACCOUNT_EMAIL", default="")
-google_account_email = os.environ['GOOGLE_ACCOUNT_EMAIL']
+google_account_email = os.getenv("GOOGLE_ACCOUNT_EMAIL", default="")
 """
 Web Application
 """
