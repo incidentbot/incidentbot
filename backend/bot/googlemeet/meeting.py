@@ -73,14 +73,14 @@ class GoogleMeet:
             event = service.events().insert(calendarId='primary', body=event, conferenceDataVersion = 1).execute()
 
             print(f'Event created: {event.get("hangoutLink")}')
-            self.meeting.update({"hangout_link": event.get("hangoutLink")})
-            self.meeting.update({"meeting_id": event.get("id")})
+            self.meeting_info.update({"hangout_link": event.get("hangoutLink")})
+            self.meeting_info.update({"meeting_id": event.get("id")})
 
             for details in event.get("conferenceData")["entryPoints"]:
                 if details["entryPointType"] == "phone":
                     print(f'{details["uri"]}' +'\npin: '+ details["pin"])
-                    self.meeting.update({"phone_number":details["uri"]})
-                    self.meeting.update({"pin":details["pin"]})
+                    self.meeting_info.update({"phone_number":details["uri"]})
+                    self.meeting_info.update({"pin":details["pin"]})
 
         except HttpError as error:
             print('An error occurred: %s' % error)
