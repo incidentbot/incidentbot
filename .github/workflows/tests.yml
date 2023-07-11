@@ -38,6 +38,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Pull credential file
+        env:
+          GOOGLE_SERVICE_ACCOUNT_SECRET: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_SECRET }}
         run: |
           sudo mkdir /config
           sudo chmod -R 777 /config
