@@ -1,4 +1,5 @@
 from bot.googlemeet.meeting import GoogleMeet
+import os
 import config
 
 class TestIncidentMeeting:
@@ -6,6 +7,7 @@ class TestIncidentMeeting:
 
         if "googlehangout" in config.active.integrations:
             hangout = GoogleMeet()
+            print(os.getenv("GOOGLE_SERVICE_ACCOUNT_SECRET"))
             print(config.google_service_account_secret)
             hangout.create_meeting()
             hangout.delete_meeting()
