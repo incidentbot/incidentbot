@@ -205,17 +205,17 @@ class Incident:
         return channel
 
     def __format_channel_name(self) -> str:
-        # Remove any special characters (allow only alphanumeric)
-        formatted_channel_name_suffix = re.sub(
-            "[^A-Za-z0-9\s]",
-            "",
-            self.incident_description,
-        )
         # Replace any spaces with dashes
         formatted_channel_name_suffix = formatted_channel_name_suffix.replace(
             " ", "-"
         ).lower()
-        return f"{datetime.today().strftime('%Y-%m-%d')}-{formatted_channel_name_suffix}"
+        # Remove any special characters (allow only alphanumeric)
+        formatted_channel_name_suffix = re.sub(
+            "[^A-Za-z0-9-\s]",
+            "",
+            self.incident_description,
+        )
+        return f"{formatted_channel_name_suffix}"
 
     def __generate_conference_link(self):
         if (
