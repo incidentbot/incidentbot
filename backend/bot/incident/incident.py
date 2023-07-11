@@ -233,7 +233,7 @@ class Incident:
         ):  
             hangout = GoogleMeet()
             hangout.create_meeting()
-            return hangout.meeting_info["hangoutLink"]
+            return hangout.meeting_info["hangout_link"]
         else:
             return config.active.options.get("conference_bridge_link")
 
