@@ -221,7 +221,7 @@ class Incident:
         if (
             "zoom" in config.active.integrations
             and config.active.integrations.get("zoom").get(
-                "auto_create_meeting"
+                "auto_create_meeting" 
             )
         ):  
             return ZoomMeeting().url
@@ -231,9 +231,9 @@ class Incident:
                 "auto_create_meeting"
             )
         ):  
-            GoogleMeet()
-            GoogleMeet.create_meeting()
-            return GoogleMeet.meeting_info["hangoutLink"]
+            hangout = GoogleMeet()
+            hangout.create_meeting()
+            return hangout.meeting_info["hangout_link"]
         else:
             return config.active.options.get("conference_bridge_link")
 

@@ -12,6 +12,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
+
 class GoogleMeet:
     """
     Creates a calendar event and returns the Google Meet link, phone number and pin
@@ -20,7 +21,7 @@ class GoogleMeet:
     def __init__(self):
         self.scopes = ['https://www.googleapis.com/auth/calendar.events']
         self.service_account_file = config.google_service_account_secret
-        self.meeting = {}
+        self.meeting_info = {}
 
 
     def create_meeting(self):
@@ -72,14 +73,14 @@ class GoogleMeet:
             event = service.events().insert(calendarId='primary', body=event, conferenceDataVersion = 1).execute()
 
             print(f'Event created: {event.get("hangoutLink")}')
-            self.meeting.update({"hangout_link": event.get("hangoutLink")})
-            self.meeting.update({"meeting_id": event.get("id")})
+            self.meeting_info.update({"hangout_link": event.get("hangoutLink")})
+            self.meeting_info.update({"meeting_id": event.get("id")})
 
             for details in event.get("conferenceData")["entryPoints"]:
                 if details["entryPointType"] == "phone":
                     print(f'{details["uri"]}' +'\npin: '+ details["pin"])
-                    self.meeting.update({"phone_number":details["uri"]})
-                    self.meeting.update({"pin":details["pin"]})
+                    self.meeting_info.update({"phone_number":details["uri"]})
+                    self.meeting_info.update({"pin":details["pin"]})
 
         except HttpError as error:
             print('An error occurred: %s' % error)
