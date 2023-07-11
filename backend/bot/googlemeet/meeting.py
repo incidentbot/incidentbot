@@ -12,6 +12,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
+
 class GoogleMeet:
     """
     Creates a calendar event and returns the Google Meet link, phone number and pin
@@ -20,7 +21,7 @@ class GoogleMeet:
     def __init__(self):
         self.scopes = ['https://www.googleapis.com/auth/calendar.events']
         self.service_account_file = config.google_service_account_secret
-        self.meeting = {}
+        self.meeting_info = {}
 
 
     def create_meeting(self):
