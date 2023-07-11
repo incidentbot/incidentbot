@@ -37,6 +37,9 @@ jobs:
         working-directory: backend
     steps:
       - uses: actions/checkout@v2
+      - name: Pull credential file
+        run: |
+          echo "${{ secrets.GOOGLE_HANGOUT_CREDS }}" > /config/google-creds.json
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
