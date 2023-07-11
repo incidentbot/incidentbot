@@ -40,7 +40,7 @@ jobs:
       - name: Pull credential file
         run: |
           sudo mkdir /config
-          echo "${{ secrets.GOOGLE_HANGOUT_CREDS }}" > /config/google-creds.json
+          sudo echo "${{ secrets.GOOGLE_HANGOUT_CREDS }}" > /config/google-creds.json
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
