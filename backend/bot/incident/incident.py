@@ -216,7 +216,7 @@ class Incident:
             "",
             self.incident_description,
         )
-        return f"{formatted_channel_name_suffix}"
+        return f"{datetime.today().strftime('%Y-%m-%d-')}-{formatted_channel_name_suffix}"
 
     def __generate_conference_link(self):
         if (
