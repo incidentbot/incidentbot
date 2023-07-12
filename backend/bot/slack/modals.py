@@ -371,7 +371,7 @@ def handle_submission(ack, body, client):
     try:
         request_parameters = incident.RequestParameters(
             channel="modal",
-            incident_description=datetime.today().strftime("%Y-%m-%d-") + parsed.get(
+            incident_description=parsed.get(
                 "open_incident_modal_set_description"
             ),
             user=user,

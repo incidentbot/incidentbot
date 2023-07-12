@@ -12,9 +12,9 @@ jobs:
       postgres:
         image: postgres:13
         env:
-          POSTGRES_DB: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: pytest
+          POSTGRES_DB: incident_bot
+          POSTGRES_USER: incident_bot
+          POSTGRES_PASSWORD: somepassword
           POSTGRES_PORT: 5432
         ports:
           - 5432:5432
@@ -37,6 +37,13 @@ jobs:
         working-directory: backend
     steps:
       - uses: actions/checkout@v2
+      - name: Pull credential file
+        env:
+          GOOGLE_HANGOUT_CREDS: ${{ secrets.GOOGLE_HANGOUT_CREDS }}
+        run: |
+          sudo mkdir /config
+          sudo chmod -R 777 /config
+          sudo echo "$GOOGLE_HANGOUT_CREDS" > /config/google-creds.json
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
@@ -48,5 +55,8 @@ jobs:
           pip3 install "pytest-mock>=3.10.0"
           pip3 install "pytest-env>=0.8.1"
       - name: Run tests
+        env:
+          GOOGLE_SERVICE_ACCOUNT_SECRET: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_SECRET }}
+          GOOGLE_ACCOUNT_EMAIL: ${{ secrets.GOOGLE_ACCOUNT_EMAIL }}
         run: |
           pytest -vv tests/
