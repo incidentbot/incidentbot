@@ -214,9 +214,9 @@ class Incident:
         formatted_channel_name_suffix = re.sub(
             "[^A-Za-z0-9-\s]",
             "",
-            self.incident_description,
+            formatted_channel_name_suffix,
         )
-        return f"{datetime.today().strftime('%Y-%m-%d-')}-{formatted_channel_name_suffix}"
+        return f"{datetime.today().strftime('%Y-%m-%d')}-{formatted_channel_name_suffix}"
 
     def __generate_conference_link(self):
         if (
