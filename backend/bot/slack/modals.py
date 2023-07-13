@@ -1603,6 +1603,13 @@ def open_modal(ack, body, client):
                     "text": "Task",
                     "emoji": True,
                 },
+                "initial_option": {
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Task",
+                    },
+                    "value": "Task",
+                },
                 "options": [
                     {
                         "text": {
@@ -1642,6 +1649,13 @@ def open_modal(ack, body, client):
                     "type": "plain_text",
                     "text": "low",
                     "emoji": True,
+                },
+                "initial_option": {
+                    "text": {
+                        "type": "plain_text",
+                        "text": "low",
+                    },
+                    "value": "low",
                 },
                 "options": [
                     {
