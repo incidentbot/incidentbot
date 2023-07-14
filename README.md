@@ -32,6 +32,7 @@ Featuring a rich web management UI:
   - PagerDuty - Automatically invite specific teams to a new incident or page a team at incident creation
   - Statuspage - Create and manage a Statuspage incident directly within the Slack channel
   - Zoom - Create a Zoom meeting for each incident and populate the channel with the link
+  - Google Meet - Create a Google Meet meeting for each incident and populate the channel with the link
 
 New features are being added all the time.
 

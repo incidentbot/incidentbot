@@ -123,6 +123,10 @@ Here is the standard layout of the file:
     zoom:
       # Set to true to automatically generate a Zoom meeting for each incident
       auto_create_meeting: false
+      # Enable Google Meet integration
+    zoom:
+      # Set to true to automatically generate a Google Meet meeting for each incident
+      auto_create_meeting: false
   links:
     incident_guide: https://changeme.com
     incident_postmortems: https://changeme.com
