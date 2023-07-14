@@ -54,9 +54,19 @@ class GoogleMeetMeeting:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    'credentials.json', self.SCOPES)
-                creds = flow.run_local_server(port=0)
+                creds = InstalledAppFlow.from_client_info({
+                    "web": {
+                        "client_id": config.google_client_id,
+                        "project_id": config.google_project_id,
+                        "auth_uri": config.google_auth_uri,
+                        "token_uri": config.google_token_uri,
+                        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",  # Default value
+                        "client_secret": config.google_client_secret,
+                        "redirect_uris": [
+                            config.google_redirect_uri,
+                        ]
+                    }
+                }, self.SCOPES).run_console()
             with open('token.pickle', 'wb') as token:
                 pickle.dump(creds, token)
         return creds

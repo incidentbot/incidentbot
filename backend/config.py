@@ -393,6 +393,13 @@ zoom_account_id = os.getenv("ZOOM_ACCOUNT_ID", default="")
 zoom_client_id = os.getenv("ZOOM_CLIENT_ID", default="")
 zoom_client_secret = os.getenv("ZOOM_CLIENT_SECRET", default="")
 
+ google_client_id = os.getenv("GOOGLE_CLIENT_ID", default="")
+ google_project_id = os.getenv("GOOGLE_PROJECT_ID", default="")
+ google_auth_uri = os.getenv("GOOGLE_AUTH_URI", default="")
+ google_token_uri = os.getenv("GOOGLE_TOKEN_URI", default="")
+ google_client_secret = os.getenv("GOOGLE_CLIENT_SECRET", default="")
+ google_redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", default="")
+
 """
 Web Application
 """
@@ -490,7 +497,12 @@ def env_check(required_envs: List[str]):
                 sys.exit(1)
     if "google_meet" in active.integrations:
         for var in [
-            "GOOGLE_MEET_",
+            "GOOGLE_CLIENT_ID",
+            "GOOGLE_PROJECT_ID",
+            "GOOGLE_AUTH_URI",
+            "GOOGLE_TOKEN_URI",
+            "GOOGLE_CLIENT_SECRET",
+            "GOOGLE_REDIRECT_URI",
         ]:
             if os.getenv(var) == "":
                 logger.fatal(
