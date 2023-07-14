@@ -260,6 +260,17 @@ class Configuration:
                             },
                         },
                     },
+                    "google_meet": {
+                        "required": False,
+                        "type": "dict",
+                        "schema": {
+                            "auto_create_meeting": {
+                                "required": True,
+                                "type": "boolean",
+                                "empty": False,
+                            },
+                        },
+                    },
                 },
             },
             "links": {
@@ -475,6 +486,15 @@ def env_check(required_envs: List[str]):
             if os.getenv(var) == "":
                 logger.fatal(
                     f"If enabling Zoom meeting auto-create, the {var} variable must be set."
+                )
+                sys.exit(1)
+    if "google_meet" in active.integrations:
+        for var in [
+            "GOOGLE_MEET_",
+        ]:
+            if os.getenv(var) == "":
+                logger.fatal(
+                    f"If enabling Google Meet meeting auto-create, the {var} variable must be set."
                 )
                 sys.exit(1)
 
