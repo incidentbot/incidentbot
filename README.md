@@ -9,6 +9,15 @@ Incident management framework centered around a ChatOps bot for Slack to allow y
 
 Need support or just want to chat with us? Join us on [Discord](https://discord.gg/PzqSQUY88c).
 
+- [incident-bot](#incident-bot)
+  - [Features at a Glance](#features-at-a-glance)
+  - [Quick Start](#quick-start)
+    - [Kubernetes](#kubernetes)
+  - [Testing](#testing)
+  - [Feedback](#feedback)
+  - [Contributing](#contributing)
+
+
 Interacting with the bot is incredibly easy through the use of modals and simplified commands:
 
 <img src="https://github.com/echoboomer/incident-bot/blob/main/assets/incident-bot-demo-1.gif" width="700" height="500" />
@@ -65,3 +74,13 @@ make -C backend run-tests
 This application is not meant to solve every problem with regard to incident management. It was created as an open-source alternative to paid solutions that integrate with Slack.
 
 If you encounter issues with functionality or wish to see new features, please open an issue and let us know!
+
+## Contributing
+
+A pull request template will ask required questions for each pull request. Most importantly, you should make sure to bump all version refs throughout the app. There is a script for this:
+
+```bash
+./scripts/version-bump.sh 1.4.8 1.4.9
+```
+
+Check the current version in the `version` file for the current version.
