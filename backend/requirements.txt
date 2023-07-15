@@ -18,7 +18,7 @@ psycopg2-binary==2.9.5
 pytest==7.4.0
 pytest-env==0.8.1
 pytest-mock==3.10.0
-pytest-sqlalchemy-mock==0.1.4
+pytest-sqlalchemy-mock==0.1.5
 python-dotenv==1.0.0
 pytz==2023.2
 PyYAML==6.0
