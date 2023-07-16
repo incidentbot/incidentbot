@@ -371,15 +371,11 @@ def handle_submission(ack, body, client):
     try:
         request_parameters = incident.RequestParameters(
             channel="modal",
-            incident_description=parsed.get(
-                "open_incident_modal_set_description"
-            ),
+            incident_description=parsed.get("open_incident_modal_set_description"),
             user=user,
             severity=parsed.get("open_incident_modal_set_severity"),
             created_from_web=False,
-            is_security_incident=parsed.get(
-                "open_incident_modal_set_security_type"
-            )
+            is_security_incident=parsed.get("open_incident_modal_set_security_type")
             in (
                 "True",
                 "true",
@@ -1275,9 +1271,7 @@ def open_modal(ack, body, client):
 
     # Return modal only if user has permissions
     sp_config = config.active.integrations.get("statuspage")
-    if sp_config.get("permissions") and sp_config.get("permissions").get(
-        "groups"
-    ):
+    if sp_config.get("permissions") and sp_config.get("permissions").get("groups"):
         for gr in sp_config.get("permissions").get("groups"):
             if check_user_in_group(user_id=user, group_name=gr):
                 client.views_open(
@@ -1323,9 +1317,7 @@ def handle_submission(ack, body, client, view):
     Handles open_statuspage_incident_modal
     """
     ack()
-    incident_data = db_read_incident(
-        channel_id=view["blocks"][2].get("block_id")
-    )
+    incident_data = db_read_incident(channel_id=view["blocks"][2].get("block_id"))
 
     # Fetch parameters from modal
     parsed = parse_modal_values(body)
@@ -1458,9 +1450,7 @@ def open_modal(ack, body, client):
 
     # Return modal only if user has permissions
     sp_config = config.active.integrations.get("statuspage")
-    if sp_config.get("permissions") and sp_config.get("permissions").get(
-        "groups"
-    ):
+    if sp_config.get("permissions") and sp_config.get("permissions").get("groups"):
         for gr in sp_config.get("permissions").get("groups"):
             if check_user_in_group(user_id=user, group_name=gr):
                 client.views_open(
@@ -1507,9 +1497,7 @@ def handle_submission(ack, body):
     """
     ack()
 
-    channel_id = (
-        body.get("view").get("blocks")[4].get("block_id").split("_")[-1:][0]
-    )
+    channel_id = body.get("view").get("blocks")[4].get("block_id").split("_")[-1:][0]
     values = body.get("view").get("state").get("values")
     update_message = (
         values.get(f"statuspage_update_message_input_{channel_id}")
@@ -1524,9 +1512,7 @@ def handle_submission(ack, body):
     )
 
     try:
-        StatuspageIncidentUpdate().update(
-            channel_id, update_status, update_message
-        )
+        StatuspageIncidentUpdate().update(channel_id, update_status, update_message)
     except Exception as error:
         logger.error(f"Error updating Statuspage incident: {error}")
 
@@ -1720,12 +1706,8 @@ def handle_submission(ack, body, client, view):
             priority=parsed.get("jira.priority_select"),
             summary=parsed.get("jira.summary_input"),
         ).new()
-        issue_link = "{}/browse/{}".format(
-            config.atlassian_api_url, resp.get("key")
-        )
-        db_update_jira_issues_col(
-            channel_id=incident_id, issue_link=issue_link
-        )
+        issue_link = "{}/browse/{}".format(config.atlassian_api_url, resp.get("key"))
+        db_update_jira_issues_col(channel_id=incident_id, issue_link=issue_link)
         try:
             resp = client.chat_postMessage(
                 channel=incident_id,
@@ -1791,8 +1773,6 @@ def handle_submission(ack, body, client, view):
                 timestamp=resp.get("ts"),
             )
         except Exception as error:
-            logger.error(
-                f"Error sending Jira issue message for {incident_id}: {error}"
-            )
+            logger.error(f"Error sending Jira issue message for {incident_id}: {error}")
     except Exception as error:
         logger.error(error)

@@ -57,9 +57,7 @@ def help_menu(include_header: bool = True) -> List:
     return blocks
 
 
-def incident_list_message(
-    incidents: List, all: bool = False
-) -> List[Dict[str, str]]:
+def incident_list_message(incidents: List, all: bool = False) -> List[Dict[str, str]]:
     """Return a message containing details on incidents
 
     Keyword arguments:
@@ -96,53 +94,23 @@ def incident_list_message(
                 formatted_incidents.append(
                     {
                         "type": "section",
-                        "fields": [
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Incident Name:* <#{inc.channel_id}>",
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Current Severity:* {inc.severity.upper()}",
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Creation Time:* {inc.created_at}",
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Current Status:* {inc.status.title()}",
-                            },
-                        ],
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": f"> <#{inc.channel_id}> *|* _Severity_ *{inc.severity.upper()}* *|* _Status_ *{inc.status.title()}* *|* _Creation Time_ *{inc.created_at}*",
+                        },
                     }
                 )
-                formatted_incidents.append({"type": "divider"})
             elif all == False:
                 if inc.status != "resolved":
                     formatted_incidents.append(
                         {
                             "type": "section",
-                            "fields": [
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f"*Incident Name:* <#{inc.channel_id}>",
-                                },
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f"*Current Severity:* {inc.severity.upper()}",
-                                },
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f"*Creation Time:* {inc.created_at}",
-                                },
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f"*Current Status:* {inc.status.title()}",
-                                },
-                            ],
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": f"> <#{inc.channel_id}> *|* _Severity_ *{inc.severity.upper()}* *|* _Status_ *{inc.status.title()}* *|* _Creation Time_ *{inc.created_at}*",
+                            },
                         }
                     )
-                    formatted_incidents.append({"type": "divider"})
     if len(formatted_incidents) == 0:
         return none_found_block
     else:
@@ -246,9 +214,7 @@ def pd_on_call_message(data: Dict) -> List:
                     {
                         "text": {
                             "type": "plain_text",
-                            "text": "{} {}".format(
-                                v["escalation_level"], v["user"]
-                            ),
+                            "text": "{} {}".format(v["escalation_level"], v["user"]),
                         },
                         "value": user_mention,
                     },
@@ -300,9 +266,7 @@ def pd_on_call_message(data: Dict) -> List:
     return base_block
 
 
-def sp_incident_list_message(
-    incidents: List[Dict[str, str]]
-) -> List[Dict[str, str]]:
+def sp_incident_list_message(incidents: List[Dict[str, str]]) -> List[Dict[str, str]]:
     """Return a message containing details on Statuspage incidents
 
     Keyword arguments:
