@@ -129,9 +129,7 @@ def parse_action(body) -> Dict[str, Any]:
 def handle_incident_export_chat_logs(ack, body):
     logger.debug(body)
     ack()
-    asyncio.run(
-        inc_actions.export_chat_logs(action_parameters=parse_action(body))
-    )
+    asyncio.run(inc_actions.export_chat_logs(action_parameters=parse_action(body)))
 
 
 @app.action("incident.add_on_call_to_channel")
@@ -150,9 +148,7 @@ def handle_incident_archive_incident_channel(ack, body):
     logger.debug(body)
     ack()
     asyncio.run(
-        inc_actions.archive_incident_channel(
-            action_parameters=parse_action(body)
-        )
+        inc_actions.archive_incident_channel(action_parameters=parse_action(body))
     )
 
 
@@ -292,9 +288,7 @@ def reaction_added(event, say):
                         user=get_user_name(user_id=message["user"]),
                     )
             except Exception as error:
-                logger.error(
-                    f"Error when trying to retrieve a message: {error}"
-                )
+                logger.error(f"Error when trying to retrieve a message: {error}")
             finally:
                 try:
                     slack_web_client.reactions_add(
@@ -304,9 +298,7 @@ def reaction_added(event, say):
                     )
                 except Exception as error:
                     if "already_reacted" in str(error):
-                        reason = (
-                            "It looks like I've already pinned that content."
-                        )
+                        reason = "It looks like I've already pinned that content."
                     else:
                         reason = f"Something went wrong: {error}"
                     say(
@@ -389,9 +381,7 @@ def handle_message_events(body, logger):
                 )
                 # Update the sent message with its own timestamp
                 existing_blocks = sent_message["messages"][0]["blocks"]
-                existing_blocks[2]["elements"][1]["value"] = result["message"][
-                    "ts"
-                ]
+                existing_blocks[2]["elements"][1]["value"] = result["message"]["ts"]
                 try:
                     slack_web_client.chat_update(
                         channel=body["event"]["channel"],

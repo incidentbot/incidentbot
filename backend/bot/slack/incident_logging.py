@@ -33,9 +33,7 @@ def read(
         else:
             logger.warning(f"No audit log record for {incident_id}")
     except Exception as error:
-        logger.error(
-            f"Audit log row lookup failed for incident {incident_id}: {error}"
-        )
+        logger.error(f"Audit log row lookup failed for incident {incident_id}: {error}")
     finally:
         database_session.close()
         database_session.remove()
@@ -67,9 +65,7 @@ def write(
         database_session.add(obj)
         database_session.commit()
     except Exception as error:
-        logger.error(
-            f"Audit log row create failed for incident {incident_id}: {error}"
-        )
+        logger.error(f"Audit log row create failed for incident {incident_id}: {error}")
         database_session.rollback()
     finally:
         database_session.close()
