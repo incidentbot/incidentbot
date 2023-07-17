@@ -41,7 +41,7 @@ class JiraIssue:
             resp = self.exec.issue_create(
                 fields={
                     "description": self.description,
-                    "issuetype": {"name": self.issue_type},
+                    "issuetype": {"id": self.issue_type},
                     "labels": self.labels,
                     "priority": {"id": priority_id},
                     "project": {"id": self.project_id},
@@ -63,7 +63,8 @@ class JiraIssue:
                     if pr.get("name") is not None
                     and pr.get("name") == priority.lower().title()
                 ),
-                None,
+                # Set a priority of 3 if the lookup fails
+                "3",
             )
         except requests.exceptions.HTTPError as error:
             logger.error(f"Error finding Jira priority ID: {error}")
