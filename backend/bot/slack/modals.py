@@ -1608,7 +1608,7 @@ def open_modal(ack, body, client):
                         "type": "plain_text",
                         "text": "[System] Incident",
                     },
-                    "value": "10242",
+                    "value": "[System] Incident",
                 },
                 "options": [
                     {
@@ -1617,7 +1617,7 @@ def open_modal(ack, body, client):
                             "text": "[System] Incident",
                             "emoji": True,
                         },
-                        "value": "10242",
+                        "value": "[System] Incident",
                     },
                 ],
             },

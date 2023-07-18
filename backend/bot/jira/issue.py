@@ -21,11 +21,7 @@ class JiraIssue:
 
         self.description = description
         self.issue_type = issue_type
-        self.labels = (
-            config.active.integrations.get("atlassian")
-            .get("jira")
-            .get("labels")
-        ) + [self.incident_data.channel_name]
+        self.labels = None
         self.priority = priority
         self.project_id = self.exec.project(
             config.active.integrations.get("atlassian")
@@ -41,8 +37,7 @@ class JiraIssue:
             resp = self.exec.issue_create(
                 fields={
                     "description": self.description,
-                    "issuetype": {"id": self.issue_type},
-                    "labels": self.labels,
+                    "issuetype": {"name": self.issue_type},
                     "priority": {"id": priority_id},
                     "project": {"id": self.project_id},
                     "summary": self.summary,
@@ -63,7 +58,7 @@ class JiraIssue:
                     if pr.get("name") is not None
                     and pr.get("name") == priority.lower().title()
                 ),
-                # Set a priority of 3 if the lookup fails
+                # Set a priority of 3 if no priorities are found
                 "3",
             )
         except requests.exceptions.HTTPError as error:

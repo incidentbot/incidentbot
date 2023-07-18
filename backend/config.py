@@ -13,7 +13,7 @@ __version__ = "v1.4.11"
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
 load_dotenv(dotenv_path)
-log_level = os.getenv("LOGLEVEL", "DEBUG").upper()
+log_level = os.getenv("LOGLEVEL", "INFO").upper()
 
 # Create the logging object
 # This is used by submodules as well
@@ -214,9 +214,9 @@ class Configuration:
                                         "empty": False,
                                     },
                                     "labels": {
-                                        "required": True,
+                                        "required": False,
                                         "type": "list",
-                                        "empty": False,
+                                        "empty": True,
                                     },
                                 },
                             },
