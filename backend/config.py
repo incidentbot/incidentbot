@@ -214,9 +214,9 @@ class Configuration:
                                         "empty": False,
                                     },
                                     "labels": {
-                                        "required": True,
+                                        "required": False,
                                         "type": "list",
-                                        "empty": False,
+                                        "empty": True,
                                     },
                                 },
                             },

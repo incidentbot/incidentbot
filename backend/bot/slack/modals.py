@@ -1600,33 +1600,24 @@ def open_modal(ack, body, client):
                 "action_id": "jira.type_select",
                 "placeholder": {
                     "type": "plain_text",
-                    "text": "Task",
+                    "text": "[System] Incident",
                     "emoji": True,
+                },
+                "initial_option": {
+                    "text": {
+                        "type": "plain_text",
+                        "text": "[System] Incident",
+                    },
+                    "value": "[System] Incident",
                 },
                 "options": [
                     {
                         "text": {
                             "type": "plain_text",
-                            "text": "Task",
+                            "text": "[System] Incident",
                             "emoji": True,
                         },
-                        "value": "Task",
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Story",
-                            "emoji": True,
-                        },
-                        "value": "Story",
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Bug",
-                            "emoji": True,
-                        },
-                        "value": "Bug",
+                        "value": "[System] Incident",
                     },
                 ],
             },
@@ -1640,33 +1631,56 @@ def open_modal(ack, body, client):
                 "action_id": "jira.priority_select",
                 "placeholder": {
                     "type": "plain_text",
-                    "text": "low",
+                    "text": "P1",
                     "emoji": True,
+                },
+                "initial_option": {
+                    "text": {
+                        "type": "plain_text",
+                        "text": "P1",
+                    },
+                    "value": "P1",
                 },
                 "options": [
                     {
                         "text": {
                             "type": "plain_text",
-                            "text": "low",
+                            "text": "P1",
                             "emoji": True,
                         },
-                        "value": "low",
+                        "value": "P1",
                     },
                     {
                         "text": {
                             "type": "plain_text",
-                            "text": "medium",
+                            "text": "P2",
                             "emoji": True,
                         },
-                        "value": "medium",
+                        "value": "P2",
                     },
                     {
                         "text": {
                             "type": "plain_text",
-                            "text": "high",
+                            "text": "P3",
                             "emoji": True,
                         },
-                        "value": "high",
+                        "value": "P3",
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "P4",
+                            "emoji": True,
+                        },
+                        "value": "P4",
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "P5",
+                            "emoji": True,
+                        },
+                        "value": "P5",
                     },
                 ],
             },
