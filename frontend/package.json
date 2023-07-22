@@ -65,7 +65,7 @@
   },
   "devDependencies": {
     "eslint": "^8.44.0",
-    "eslint-config-prettier": "^8.5.0",
+    "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-prettier": "^4.1.0",
     "eslint-plugin-react": "^7.31.11",
     "prettier": "^2.7.1"
