@@ -68,6 +68,6 @@
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-prettier": "^4.1.0",
     "eslint-plugin-react": "^7.31.11",
-    "prettier": "^2.7.1"
+    "prettier": "^3.0.0"
   }
 }
