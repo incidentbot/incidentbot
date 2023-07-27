@@ -1600,10 +1600,10 @@ def open_modal(ack, body, client):
                     {
                         "text": {
                             "type": "plain_text",
-                            "text": "Task",
+                            "text": "Epic",
                             "emoji": True,
                         },
-                        "value": "Task",
+                        "value": "Epic",
                     },
                     {
                         "text": {
@@ -1612,6 +1612,14 @@ def open_modal(ack, body, client):
                             "emoji": True,
                         },
                         "value": "Story",
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Task",
+                            "emoji": True,
+                        },
+                        "value": "Task",
                     },
                     {
                         "text": {
