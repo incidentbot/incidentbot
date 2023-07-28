@@ -17,7 +17,6 @@ Need support or just want to chat with us? Join us on [Discord](https://discord.
   - [Feedback](#feedback)
   - [Contributing](#contributing)
 
-
 Interacting with the bot is incredibly easy through the use of modals and simplified commands:
 
 <img src="https://github.com/echoboomer/incident-bot/blob/main/assets/incident-bot-demo-1.gif" width="700" height="500" />
@@ -58,8 +57,8 @@ You have the option to download source from the latest release and build your ow
 
 ### Kubernetes
 
-- You can use [kustomize](https://github.com/echoboomer/incident-bot/blob/main/deploy/kustomize/incident-bot/overlays/development/kustomization.yaml). More details available [here](https://incident-bot.readthedocs.io/en/latest/setup.html#kustomize).
-- There's optionally a Helm chart - instructions are available [here](https://incident-bot.readthedocs.io/en/latest/setup.html#helm).
+- You can use [kustomize](https://github.com/echoboomer/incident-bot/blob/main/deploy/kustomize/incident-bot/overlays/development/kustomization.yaml). More details available [here](https://docs.incidentbot.io/setup/#kustomize).
+- There's optionally a Helm chart - instructions are available [here](https://docs.incidentbot.io/setup/#helm).
 
 ## Testing
 
