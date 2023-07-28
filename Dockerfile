@@ -1,4 +1,4 @@
-FROM node:16-bullseye as frontend
+FROM node:20-bullseye as frontend
 
 WORKDIR /app
 COPY ./frontend/public/ ./public
