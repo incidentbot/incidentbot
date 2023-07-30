@@ -9,7 +9,7 @@ from bot.shared import tools
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
-from typing import Dict
+from typing import Any, Dict, List
 
 logger = logging.getLogger("slack.client")
 
@@ -68,12 +68,32 @@ def get_channel_history(channel_id: str) -> str:
     Keyword arguments:
     channel_id -- The ID of the Slack channel to retrieve history from
     """
-    history_dict = slack_web_client.conversations_history(channel=channel_id)[
-        "messages"
-    ]
+    history_dict_list = []
+
+    try:
+        res = slack_web_client.conversations_history(channel=channel_id, limit=200)
+
+        while res:
+            history_dict_list += res.get("messages")
+
+            if res.get("has_more"):
+                res = slack_web_client.conversations_history(
+                    channel=channel_id,
+                    limit=200,
+                    cursor=res.get("response_metadata").get("next_cursor"),
+                )
+            else:
+                res = None
+    except Exception as error:
+        logger.error(
+            f"Error getting conversations history from channel #{get_channel_name(channel_id=channel_id)}: {error}"
+        )
+
     history_dict_reversed = []
-    for item in reversed(history_dict):
+
+    for item in reversed(history_dict_list):
         history_dict_reversed.append(item)
+
     return json.dumps(history_dict_reversed)
 
 
@@ -108,8 +128,10 @@ def get_formatted_channel_history(channel_id: str, channel_name: str) -> str:
     """
     users = slack_web_client.users_list()["members"]
     replaced_messages_string = replace_user_ids(get_channel_history(channel_id), users)
+
     formatted_channel_history = str()
     formatted_channel_history += f"Slack channel history for incident {channel_name}\n"
+
     for message in replaced_messages_string:
         user = message["user"]
         text = message["text"]
@@ -123,6 +145,7 @@ def get_formatted_channel_history(channel_id: str, channel_name: str) -> str:
             pass
         else:
             formatted_channel_history += f"{prefix} {user}: {text}\n"
+
     return formatted_channel_history
 
 
@@ -135,6 +158,7 @@ def get_message_content(conversation_id: str, ts: str):
         result = slack_web_client.conversations_history(
             channel=conversation_id, inclusive=True, oldest=ts, limit=1
         )
+
         return result["messages"][0]
     except SlackApiError as error:
         logger.error(f"Error retrieving Slack message: {error}")
@@ -162,8 +186,7 @@ def invite_user_to_channel(channel_id: str, user: str):
     """
     try:
         if (
-            not user
-            in slack_web_client.conversations_members(channel=channel_id)["members"]
+            not user in get_conversation_members(channel_id)
             and user not in skip_invite_for_users
         ):
             invite = slack_web_client.conversations_invite(
@@ -184,19 +207,34 @@ def replace_user_ids(json_string: str, user_list: Dict[str, str]) -> str:
         real_name = user["profile"]["real_name"]
         user_id = user["id"]
         json_string = json_string.replace(user_id, real_name)
+
     return json.loads(json_string)
 
 
 def return_slack_channel_info() -> Dict[str, str]:
     """Return a list of Slack channels"""
     channels = []
+
     try:
-        for page in slack_web_client.conversations_list(
-            exclude_archived=True, limit=200
-        ):
-            channels = channels + page.get("channels")
+        res = slack_web_client.conversations_list(
+            exclude_archived=True,
+            limit=200,
+        )
+
+        while res:
+            channels += res.get("channels")
+
+            if res.get("response_metadata").get("next_cursor") != "":
+                res = slack_web_client.conversations_list(
+                    exclude_archived=True,
+                    limit=200,
+                    cursor=res.get("response_metadata").get("next_cursor"),
+                )
+            else:
+                res = None
     except Exception as error:
         logger.error(f"Error getting channel list from Slack workspace: {error}")
+
     return channels
 
 
@@ -207,26 +245,19 @@ def store_slack_user_list():
     is desired
     """
     try:
-        users_array = [
-            {
-                "name": user["name"],
-                "real_name": user["profile"]["real_name"],
-                "id": user["id"],
-            }
-            for user in slack_web_client.users_list()["members"]
-        ]
-        jdata = sorted(users_array, key=lambda d: d["name"])
         # Delete if exists
         if Session.query(OperationalData).filter_by(id="slack_users").all():
             existing = Session.query(OperationalData).filter_by(id="slack_users").one()
             Session.delete(existing)
             Session.commit()
+
         # Store
         row = OperationalData(
             id="slack_users",
-            json_data=jdata,
+            json_data=get_slack_users(),
             updated_at=tools.fetch_timestamp(),
         )
+
         Session.add(row)
         Session.commit()
         logger.info("Stored current Slack users in database...")
@@ -259,3 +290,66 @@ def check_bot_user_in_digest_channel():
         logger.info(
             f"Bot user is already present in digest channel #{get_channel_name(channel_id=digest_channel_id)}"
         )
+
+
+def get_slack_users() -> List[Dict[str, Any]]:
+    """
+    Retrieves Slack users from a workspace using pagination
+    """
+    users = []
+
+    try:
+        res = slack_web_client.users_list()
+
+        while res:
+            users += res.get("members")
+
+            if res.get("response_metadata").get("next_cursor") != "":
+                res = slack_web_client.users_list(
+                    cursor=res.get("response_metadata").get("next_cursor")
+                )
+            else:
+                res = None
+    except Exception as error:
+        logger.error(f"Error getting user list from Slack workspace: {error}")
+
+    users_array = [
+        {
+            "name": user["name"],
+            "real_name": user["profile"]["real_name"],
+            "id": user["id"],
+        }
+        for user in users
+    ]
+
+    jdata = sorted(users_array, key=lambda d: d["name"])
+
+    return jdata
+
+
+def get_conversation_members(channel_id: str) -> List[str]:
+    """
+    Retrieves Slack users as members of a channel (conversation)
+    """
+    members = []
+
+    try:
+        res = slack_web_client.conversations_members(channel=channel_id, limit=200)
+
+        while res:
+            members += res.get("members")
+
+            if res.get("response_metadata").get("next_cursor") != "":
+                res = slack_web_client.conversations_members(
+                    channel=channel_id,
+                    cursor=res.get("response_metadata").get("next_cursor"),
+                    limit=200,
+                )
+            else:
+                res = None
+    except Exception as error:
+        logger.error(
+            f"Error getting member list from channel #{get_channel_name(channel_id=channel_id)}: {error}"
+        )
+
+    return members
