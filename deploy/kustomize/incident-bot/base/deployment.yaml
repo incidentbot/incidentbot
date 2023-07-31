@@ -23,7 +23,7 @@ spec:
         - name: incident-bot
           image: eb129/incident-bot
           command: ['./wait-for-it.sh']
-          args: ['db:5432', '--', 'python3', 'main.py']
+          args: ["$(POSTGRES_HOST):$(POSTGRES_PORT)", '--', 'python3', 'main.py']
           envFrom:
             - secretRef:
                 name: incident-bot

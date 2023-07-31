@@ -14,7 +14,7 @@ statuses:
   - monitoring
   - resolved
 options:
-  incident_channel_topic: 'This is the default incident channel topic. You can edit it in settings.'
+  channel_topic: 'This is the default incident channel topic. You can edit it in settings.'
   timezone: UTC
   conference_bridge_link: 'https://zoom.us'
   create_from_reaction:
@@ -26,10 +26,11 @@ options:
       - my-slack-group
       - my-other-slack-group
 integrations:
-  confluence:
-    auto_create_rca: false
-    space: ENG
-    parent: Postmortems
+  atlassian:
+    confluence:
+      auto_create_rca: false
+      space: ENG
+      parent: Postmortems
   zoom:
     auto_create_meeting: false
 links:
