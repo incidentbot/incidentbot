@@ -14,10 +14,5 @@ configMapGenerator:
     files:
       - config.yaml
 
-secretGenerator:
-  - name: incident-bot
-    envs:
-      - .env
-
 generatorOptions:
   disableNameSuffixHash: true
