@@ -8,16 +8,3 @@ bases:
 images:
   - name: eb129/incident-bot
     newTag: v1.4.11
-
-configMapGenerator:
-  - name: incident-bot-config
-    files:
-      - config.yaml
-
-secretGenerator:
-  - name: incident-bot
-    envs:
-      - .env
-
-generatorOptions:
-  disableNameSuffixHash: true
