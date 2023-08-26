@@ -24,15 +24,11 @@ Run Init Tasks
 
 live_api_route = "/api/v1"
 
-app = Flask(
-    __name__, static_folder="../../app/static", template_folder="../../app"
-)
+app = Flask(__name__, static_folder="../../app/static", template_folder="../../app")
 ma = Marshmallow(app)
 swagger = Swagger(app)
 
-cors = CORS(
-    app, supports_credentials=True, resources={r"/api/*": {"origins": "*"}}
-)
+cors = CORS(app, supports_credentials=True, resources={r"/api/*": {"origins": "*"}})
 
 app.config["CORS_HEADERS"] = "Content-Type"
 app.config["JWT_SECRET_KEY"] = config.jwt_secret_key
@@ -65,8 +61,12 @@ def basic_authentication():
 def webserver_logging(response):
     # If a user agent is in this list, no log will be generated
     # Useful to skip noise like kube-probe, etc.
-    skip_logs_for_user_agents = config.active.options.get("skip_logs_for_user_agent")
-    if not re.search(rf"{'|'.join(skip_logs_for_user_agents)}\b", request.headers["user_agent"]):
+    skip_logs_for_user_agents = config.active.options.get(
+        "skip_logs_for_user_agent", []
+    )
+    if not re.search(
+        rf"{'|'.join(skip_logs_for_user_agents)}\b", request.headers["user_agent"]
+    ):
         logger.info(
             '{} {} [{}] "{} {}" - {} - {} {}'.format(
                 request.headers["host"],

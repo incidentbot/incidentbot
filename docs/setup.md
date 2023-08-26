@@ -111,8 +111,13 @@ configMap:
         groups:
           - my-slack-group
           - my-other-slack-group
-    # integrations: {}
-    # Integrations are covered in their own section.
+      skip_logs_for_user_agent:
+        # Kubernetes health check user-agent
+        - kube-probe
+        # AWS ELB health check user-agent
+        - ELB-HealthChecker/2.0
+      # integrations: {}
+      # Integrations are covered in their own section.
     links:
       incident_guide: https://changeme.com
       incident_postmortems: https://changeme.com
