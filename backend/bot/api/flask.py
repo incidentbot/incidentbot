@@ -69,12 +69,12 @@ def webserver_logging(response):
     ):
         logger.info(
             '{} {} [{}] "{} {}" - {} - {} {}'.format(
-                request.headers["host"],
+                request.headers.get("host"),
                 request.access_route[-1],
                 tools.fetch_timestamp(short=True),
                 request.method,
                 request.path,
-                request.headers["user_agent"],
+                request.headers.get("user_agent"),
                 request.environ.get("SERVER_PROTOCOL"),
                 response.status,
             )
