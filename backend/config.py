@@ -8,7 +8,7 @@ from cerberus import Validator
 from dotenv import load_dotenv
 from typing import Dict, List
 
-__version__ = "v1.4.18"
+__version__ = "v1.4.19"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -169,10 +169,8 @@ class Configuration:
                     "skip_logs_for_user_agent": {
                         "required": False,
                         "type": "list",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
+                        "schema": {"type": "string"},
+                    },
                 },
             },
             "integrations": {
