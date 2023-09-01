@@ -68,3 +68,4 @@ spec:
         - name: google-creds
           secret:
             defaultMode: 420
+            secretName: google-creds
