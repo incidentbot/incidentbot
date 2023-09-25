@@ -66,7 +66,7 @@ def find_who_is_on_call(short: bool = False) -> Dict:
     This is stored in the database and will only refresh when this function is
     called to avoid API abuse
     """
-    on_call = defaultdict(list)
+    on_call = {}
     auto_mapping = {}
     try:
         slack_users_from_dict = (
@@ -80,39 +80,37 @@ def find_who_is_on_call(short: bool = False) -> Dict:
     finally:
         Session.close()
         Session.remove()
+
     slack_users = {
-        user["real_name"]: user["id"]
+        user["real_name"]: user.get("id")
         for user in slack_users_from_dict
         if user.__contains__("real_name")
     }
     for oc in session.iter_all("oncalls"):
-        if oc["start"] != None and oc["end"] != None:
-            on_call[oc["escalation_policy"]["summary"]].append(
-                {
-                    "escalation_level": oc["escalation_level"],
-                    "escalation_policy": oc["escalation_policy"]["summary"],
-                    "escalation_policy_id": oc["escalation_policy"]["id"],
-                    "schedule_summary": oc["schedule"]["summary"],
-                    "user": oc["user"]["summary"],
-                    "start": oc["start"],
-                    "end": oc["end"],
-                    "slack_user_id": [
-                        val
-                        for key, val in slack_users.items()
-                        if oc["user"]["summary"] in key
-                    ],
-                }
-            )
-            auto_mapping[oc["schedule"]["summary"]] = oc["escalation_policy"][
-                "summary"
-            ]
-    # Sort values by name, sort dict by escalation_level
-    result = {}
+        if oc.get("start") != None and oc.get("end") != None:
+            on_call[oc.get("escalation_policy").get("summary")] = {
+                "escalation_level": oc.get("escalation_level"),
+                "escalation_policy": oc.get("escalation_policy").get("summary"),
+                "escalation_policy_id": oc.get("escalation_policy").get("id"),
+                "schedule_summary": oc.get("schedule").get("summary"),
+                "user": oc.get("user").get("summary"),
+                "start": oc.get("start"),
+                "end": oc.get("end"),
+                "slack_user_id": [
+                    val
+                    for key, val in slack_users.items()
+                    if oc.get("user").get("summary") in key
+                ],
+            }
+
+            auto_mapping[oc.get("schedule").get("summary")] = oc.get(
+                "escalation_policy"
+            ).get("summary")
+
     if short:
         return auto_mapping
-    for i, j in sorted(dict(on_call).items()):
-        result[i] = sorted(j, key=lambda d: d["escalation_level"])
-    return result
+    else:
+        return on_call
 
 
 def page(
@@ -153,11 +151,7 @@ def page(
             )
         try:
             created_incident = json.loads(response.text)["incident"]
-            incident = (
-                Session.query(Incident)
-                .filter_by(incident_id=channel_name)
-                .one()
-            )
+            incident = Session.query(Incident).filter_by(incident_id=channel_name).one()
             existing_incidents = incident.pagerduty_incidents
             if existing_incidents is None:
                 existing_incidents = [created_incident["id"]]
@@ -187,18 +181,14 @@ def resolve(pd_incident_id: str):
         }
     }
     try:
-        response = session.put(
-            f"/incidents/{pd_incident_id}", json=pd_inc_patch
-        )
+        response = session.put(f"/incidents/{pd_incident_id}", json=pd_inc_patch)
         logger.info(response)
         if not response.ok:
             logger.error(
                 "Error patching PagerDuty incident: {}".format(response.json())
             )
         else:
-            logger.info(
-                f"Successfully resolved PagerDuty incident {pd_incident_id}"
-            )
+            logger.info(f"Successfully resolved PagerDuty incident {pd_incident_id}")
     except PDClientError as error:
         logger.error(f"Error patching PagerDuty incident: {error}")
 
@@ -221,9 +211,7 @@ def store_on_call_data():
                 Session.add(row)
                 Session.commit()
             except Exception as error:
-                logger.error(
-                    f"Opdata row create failed for {record_name}: {error}"
-                )
+                logger.error(f"Opdata row create failed for {record_name}: {error}")
         Session.execute(
             update(OperationalData)
             .where(OperationalData.id == record_name)
@@ -249,9 +237,7 @@ def store_on_call_data():
                 Session.add(row)
                 Session.commit()
             except Exception as error:
-                logger.error(
-                    f"Opdata row create failed for {record_name}: {error}"
-                )
+                logger.error(f"Opdata row create failed for {record_name}: {error}")
         Session.execute(
             update(OperationalData)
             .where(OperationalData.id == record_name)

@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import sys
@@ -8,7 +9,7 @@ from cerberus import Validator
 from dotenv import load_dotenv
 from typing import Dict, List
 
-__version__ = "v1.4.19"
+__version__ = "v1.4.20"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -350,6 +351,9 @@ slack_app_token = os.getenv("SLACK_APP_TOKEN")
 slack_bot_token = os.getenv("SLACK_BOT_TOKEN")
 slack_user_token = os.getenv("SLACK_USER_TOKEN")
 
+# For internal pagination when iterating over collections returned from Slack
+slack_items_pagination_per_page = 5
+
 """
 Statuspage Module
 """
@@ -490,6 +494,9 @@ Core functionality:
     Incidents digest channel:           {active.digest_channel}
     Slack workspace:                    {workspace}
     Logging level:                      {log_level}
+
+Integrations Configuration:                           
+{json.dumps(active.integrations, sort_keys=True, indent=4)}
 --------------------------------------------------------------------------------
     """
     if wrap:

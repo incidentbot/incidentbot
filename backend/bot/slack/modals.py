@@ -20,7 +20,6 @@ from bot.slack.client import check_user_in_group
 from bot.slack.handler import app, help_menu
 from bot.slack.messages import (
     incident_list_message,
-    pd_on_call_message,
 )
 from bot.statuspage.handler import (
     StatuspageComponents,
@@ -132,17 +131,22 @@ def update_home_tab(client, event, logger):
     ]
     help_block = help_menu(include_header=False)
     base_blocks.extend(help_block)
+
     # Also add in open incident info
     database_data = db_read_all_incidents()
     open_incidents = incident_list_message(database_data, all=False)
     base_blocks.extend(open_incidents)
-    # On call info
-    if "pagerduty" in config.active.integrations:
-        from bot.pagerduty import api as pd_api
 
-        pd_oncall_data = pd_api.find_who_is_on_call()
-        on_call_info = pd_on_call_message(data=pd_oncall_data)
-        base_blocks.extend(on_call_info)
+    # On call info
+    # Currently disabled since it contributes to the overloading of app home for teams that have
+    # a large number of schedules.
+    # if "pagerduty" in config.active.integrations:
+    #    from bot.pagerduty import api as pd_api
+    #
+    #    pd_oncall_data = pd_api.find_who_is_on_call()
+    #    on_call_info = pd_on_call_message(data=pd_oncall_data)
+    #    base_blocks.extend(on_call_info)
+
     # Version info
     base_blocks.extend(
         [

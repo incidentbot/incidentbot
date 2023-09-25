@@ -22,7 +22,6 @@ from bot.slack.messages import (
     help_menu,
     incident_list_message,
     job_list_message,
-    pd_on_call_message,
 )
 from slack_bolt import App
 from slack_sdk.errors import SlackApiError
@@ -51,61 +50,146 @@ Handle Mentions
 
 @app.event("app_mention")
 def handle_mention(body, say, logger):
-    message = body["event"]["text"].split(" ")
+    message = body.get("event").get("text").split(" ")
     user = body["event"]["user"]
     logger.debug(body)
 
-    if "help" in message:
-        say(blocks=help_menu(), text="")
-    elif "diag" in message:
-        startup_message = config.startup_message(
-            workspace=slack_workspace_id, wrap=True
-        )
-        say(channel=user, text=startup_message)
-    elif "lsoi" in message:
-        database_data = db_read_all_incidents()
-        resp = incident_list_message(database_data, all=False)
-        say(blocks=resp, text="")
-    elif "lsai" in message:
-        database_data = db_read_all_incidents()
-        resp = incident_list_message(database_data, all=True)
-        say(blocks=resp, text="")
-    elif "pager" in message:
-        if "pagerduty" in config.active.integrations:
-            from bot.pagerduty import api as pd_api
-
-            pd_oncall_data = pd_api.find_who_is_on_call()
-            resp = pd_on_call_message(data=pd_oncall_data)
-            say(blocks=resp, text="")
-        else:
-            say(
-                text="The PagerDuty integration is not enabled. I cannot provide information from PagerDuty as a result."
-            )
-    elif "scheduler" in message:
-        if message[2] == "list":
-            jobs = scheduler.process.list_jobs()
-            resp = job_list_message(jobs)
-            say(blocks=resp, text="")
-        elif message[2] == "delete":
-            if len(message) < 4:
-                say(text="Please provide the ID of a job to delete.")
-            else:
-                job_title = message[3]
-                delete_job = scheduler.process.delete_job(job_title)
-                if delete_job != None:
-                    say(f"Could not delete the job {job_title}: {delete_job}")
-                else:
-                    say(f"Deleted job: *{job_title}*")
-    elif "ping" in message:
-        say(text="pong")
-    elif "version" in message:
-        say(text=f"I am currently running version: {config.__version__}")
-    elif len(message) == 1:
+    if len(message) == 1:
         # This is just a user mention and the bot shouldn't really do anything.
-        pass
-    else:
-        resp = " ".join(message[1:])
-        say(text=f"Sorry, I don't know the command *{resp}* yet.")
+        return
+
+    match message[1]:
+        case "help":
+            say(blocks=help_menu(), text="")
+        case "diag":
+            startup_message = config.startup_message(
+                workspace=slack_workspace_id, wrap=True
+            )
+            say(channel=user, text=startup_message)
+        case "lsoi":
+            database_data = db_read_all_incidents()
+            resp = incident_list_message(database_data, all=False)
+            say(blocks=resp, text="")
+        case "lsai":
+            database_data = db_read_all_incidents()
+            resp = incident_list_message(database_data, all=True)
+            say(blocks=resp, text="")
+        case "pager":
+            if "pagerduty" in config.active.integrations:
+                from bot.pagerduty import api as pd_api
+
+                pd_oncall_data = pd_api.find_who_is_on_call()
+
+                # Header
+                say(
+                    blocks=[
+                        {
+                            "type": "header",
+                            "text": {
+                                "type": "plain_text",
+                                "text": ":pager: Who is on call right now?",
+                            },
+                        },
+                        {"type": "divider"},
+                    ]
+                )
+
+                # Iterate over schedules
+                if pd_oncall_data is not {}:
+                    # Get length of returned objects
+                    # If returned objects is greater than 5, paginate over them 5 at a time and include 5 in each message
+                    # Send a separate message for each grouping of 5 to avoid block limits from the Slack API
+                    for page in tools.paginate_dictionary(
+                        pd_oncall_data.items(), config.slack_items_pagination_per_page
+                    ):
+                        base_block = []
+                        options = []
+
+                        for key, value in page:
+                            if value.get("slack_user_id") != []:
+                                user_mention = value.get("slack_user_id")[0]
+                            else:
+                                user_mention = value.get("user")
+
+                            options.append(
+                                {
+                                    "text": {
+                                        "type": "plain_text",
+                                        "text": "{} {}".format(
+                                            value.get("escalation_level"),
+                                            value.get("user"),
+                                        ),
+                                    },
+                                    "value": user_mention,
+                                },
+                            )
+                            base_block.append(
+                                {
+                                    "type": "section",
+                                    "block_id": "ping_oncall_{}".format(
+                                        value.get("escalation_policy_id")
+                                    ),
+                                    "text": {
+                                        "type": "mrkdwn",
+                                        "text": f"*{key}*",
+                                    },
+                                    "accessory": {
+                                        "type": "overflow",
+                                        "options": options,
+                                        "action_id": "incident.add_on_call_to_channel",
+                                    },
+                                }
+                            )
+                        say(blocks=base_block, text="")
+                else:
+                    say(text="There are no results from PagerDuty to display.")
+
+                # Footer
+                say(
+                    blocks=[
+                        {
+                            "type": "context",
+                            "elements": [
+                                {
+                                    "type": "image",
+                                    "image_url": "https://i.imgur.com/IVvdFCV.png",
+                                    "alt_text": "pagerduty",
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": f"This information is sourced from PagerDuty and is accurate as of {tools.fetch_timestamp()}.",
+                                },
+                            ],
+                        }
+                    ]
+                )
+            else:
+                say(
+                    text="The PagerDuty integration is not enabled. I cannot provide information from PagerDuty as a result."
+                )
+        case "scheduler":
+            match message[2]:
+                case "list":
+                    jobs = scheduler.process.list_jobs()
+                    resp = job_list_message(jobs)
+                    say(blocks=resp, text="")
+                case "delete":
+                    if len(message) < 4:
+                        say(text="Please provide the ID of a job to delete.")
+                    else:
+                        job_title = message[3]
+                        delete_job = scheduler.process.delete_job(job_title)
+                        if delete_job != None:
+                            say(f"Could not delete the job {job_title}: {delete_job}")
+                        else:
+                            say(f"Deleted job: *{job_title}*")
+        case "ping":
+            say(text="pong")
+        case "version":
+            say(text=f"I am currently running version: {config.__version__}")
+        case default:
+            resp = " ".join(message[1:])
+            say(text=f"Sorry, I don't know the command *{resp}* yet.")
 
 
 """

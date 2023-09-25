@@ -90,7 +90,5 @@ class TestUtils:
         assert not is_ip
 
     def test_validate_ip_in_subnet(self):
-        is_in_subnet = tools.validate_ip_in_subnet(
-            "192.168.10.30", "192.168.10.0/24"
-        )
+        is_in_subnet = tools.validate_ip_in_subnet("192.168.10.30", "192.168.10.0/24")
         assert is_in_subnet
