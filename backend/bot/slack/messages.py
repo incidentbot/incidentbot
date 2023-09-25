@@ -30,13 +30,12 @@ def help_menu(include_header: bool = True) -> List:
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"To use any of these commands, simply mention me and then provide the command listed below. For example: `<@{bot_user_id}> lsai`",
+                "text": f"To use any of these commands, simply mention me and then provide the command listed below. For example: `<@{bot_user_id}> lsoi`",
             },
         }
     )
     commands = {
         "help": "This command that explains help options.",
-        "lsai": "List *all* incidents regardless of status.",
         "lsoi": "List only incidents that are still *open* - as in non-resolved.",
         "ls-sp-inc": "List *open* Statuspage incidents.",
         "pager": "Return information from PagerDuty regarding who is currently on call. You may optionally page them.",
@@ -69,7 +68,7 @@ def incident_list_message(incidents: List, all: bool = False) -> List[Dict[str, 
             "type": "header",
             "text": {
                 "type": "plain_text",
-                "text": ":open_file_folder: Open Incidents",
+                "text": ":open_file_folder: Open Incidents (Most Recent)",
             },
         },
         {"type": "divider"},
@@ -116,7 +115,17 @@ def incident_list_message(incidents: List, all: bool = False) -> List[Dict[str, 
     else:
         for inc in formatted_incidents:
             base_block.append(inc)
-
+    base_block.append(
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": f"This list is truncated to the last {config.show_most_recent_incidents_app_home_limit} most recent incidents. Raising this limit beyond the default value could result in errors due to block count limitations in the Slack API.",
+                },
+            ],
+        }
+    )
     return base_block
 
 

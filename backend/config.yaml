@@ -31,13 +31,19 @@ statuses:
   - monitoring
   - resolved
 options:
+  # Automatically invite Slack groups to newly created incidents
+  auto_invite_groups:
+    # Set to true to enable
+    enabled: false
+    # List of group names as configured in Slack
+    groups:
+      - my-slack-group
+      - my-other-slack-group
   # The topic that will be set on all incident channels
   channel_topic:
     default: 'This is the default incident channel topic. You can edit it in settings.'
     # If set to true, set the channel topic to the meeting link. This will override incident_channel_topic.
     set_to_meeting_link: true
-  # Timezone to use for logging, etc.
-  timezone: UTC
   # If not using Zoom auto-create
   conference_bridge_link: 'https://zoom.us'
   # Allow creation of an incident by reacting to a message
@@ -47,20 +53,17 @@ options:
     # The name of the reacji
     # It must exist in your workspace
     reacji: create-incident
-  # Automatically invite Slack groups to newly created incidents
-  auto_invite_groups:
-    # Set to true to enable
-    enabled: false
-    # List of group names as configured in Slack
-    groups:
-      - my-slack-group
-      - my-other-slack-group
   # Ignore logging for requests from the following user-agents
   skip_logs_for_user_agent:
     # Kubernetes health check user-agent
     - kube-probe
     # AWS ELB health check user-agent
     - ELB-HealthChecker/2.0
+  # App home only shows 5 most recent incidents by default - this can be supplied and adjusted
+  # Note that setting it too high may cause errors due to limitations in the Slack API for blocks in messages
+  show_most_recent_incidents_app_home_limit: 2
+  # Timezone to use for logging, etc.
+  timezone: UTC
 integrations:
   # Secret data is provided as environment variables for integrations
   # Only non-secret data is configured here
@@ -72,13 +75,13 @@ integrations:
       space: ENGINEERIN
       parent: RCAs
     # Enable Jira integration
-    jira:
-      project: 'SRE'
-      # Labels to apply to created issues
-      labels:
-        - incident-management
+    #jira:
+    #  project: 'SRE'
+    #  # Labels to apply to created issues
+    #  labels:
+    #    - incident-management
   # Simply provide an empty dict to enable PagerDuty
-  # pagerduty: {}
+  pagerduty: {}
   # Enable Statuspage integration
   statuspage:
     # The public URL of the Statuspage.

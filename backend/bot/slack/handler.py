@@ -8,7 +8,7 @@ import variables
 from bot.exc import ConfigurationError
 from bot.incident import actions as inc_actions, incident
 from bot.incident.action_parameters import ActionParametersSlack
-from bot.models.incident import db_read_all_incidents
+from bot.models.incident import db_read_recent_incidents
 from bot.scheduler import scheduler
 from bot.shared import tools
 from bot.slack.client import (
@@ -67,12 +67,10 @@ def handle_mention(body, say, logger):
             )
             say(channel=user, text=startup_message)
         case "lsoi":
-            database_data = db_read_all_incidents()
+            database_data = db_read_recent_incidents(
+                limit=config.show_most_recent_incidents_app_home_limit
+            )
             resp = incident_list_message(database_data, all=False)
-            say(blocks=resp, text="")
-        case "lsai":
-            database_data = db_read_all_incidents()
-            resp = incident_list_message(database_data, all=True)
             say(blocks=resp, text="")
         case "pager":
             if "pagerduty" in config.active.integrations:
@@ -103,9 +101,10 @@ def handle_mention(body, say, logger):
                         pd_oncall_data.items(), config.slack_items_pagination_per_page
                     ):
                         base_block = []
-                        options = []
 
                         for key, value in page:
+                            options = []
+
                             if value.get("slack_user_id") != []:
                                 user_mention = value.get("slack_user_id")[0]
                             else:

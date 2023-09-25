@@ -97,27 +97,27 @@ configMap:
       - monitoring
       - resolved
     options:
-      channel_topic:
-        default: 'This is the default incident channel topic. You can edit it in settings.'
-        # If set to true, set the channel topic to the meeting link. This will override incident_channel_topic.
-        # set_to_meeting_link: true
-      timezone: UTC
-      conference_bridge_link: 'https://zoom.us'
-      create_from_reaction:
-        enabled: false
-        reacji: create-incident
       auto_invite_groups:
         enabled: false
         groups:
           - my-slack-group
           - my-other-slack-group
+      channel_topic:
+        default: 'This is the default incident channel topic. You can edit it in settings.'
+        # If set to true, set the channel topic to the meeting link. This will override incident_channel_topic.
+        # set_to_meeting_link: true
+      conference_bridge_link: 'https://zoom.us'
+      create_from_reaction:
+        enabled: false
+        reacji: create-incident
+      # integrations: {}
+      # Integrations are covered in their own section.
       skip_logs_for_user_agent:
         # Kubernetes health check user-agent
         - kube-probe
         # AWS ELB health check user-agent
         - ELB-HealthChecker/2.0
-      # integrations: {}
-      # Integrations are covered in their own section.
+      timezone: UTC
     links:
       incident_guide: https://changeme.com
       incident_postmortems: https://changeme.com
@@ -146,7 +146,7 @@ podDisruptionBudget:
 You can now install the application. As an example:
 
 ```bash
-helm install echoboomer-charts/incident-bot --version 1.4.12 --values incident-bot-values.yaml --namespace incident-bot
+helm install echoboomer-charts/incident-bot --version 1.4.21 --values incident-bot-values.yaml --namespace incident-bot
 ```
 
 Everything that needs to be configured has been configured directly in the values file as part of the values file.
