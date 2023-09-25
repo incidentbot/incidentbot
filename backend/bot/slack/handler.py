@@ -50,7 +50,7 @@ Handle Mentions
 
 @app.event("app_mention")
 def handle_mention(body, say, logger):
-    message = body.get("event").get("text").split(" ")[1]
+    message = body.get("event").get("text").split(" ")
     user = body["event"]["user"]
     logger.debug(body)
 
@@ -58,7 +58,7 @@ def handle_mention(body, say, logger):
         # This is just a user mention and the bot shouldn't really do anything.
         return
 
-    match message:
+    match message[1]:
         case "help":
             say(blocks=help_menu(), text="")
         case "diag":
@@ -168,20 +168,21 @@ def handle_mention(body, say, logger):
                     text="The PagerDuty integration is not enabled. I cannot provide information from PagerDuty as a result."
                 )
         case "scheduler":
-            if message[2] == "list":
-                jobs = scheduler.process.list_jobs()
-                resp = job_list_message(jobs)
-                say(blocks=resp, text="")
-            elif message[2] == "delete":
-                if len(message) < 4:
-                    say(text="Please provide the ID of a job to delete.")
-                else:
-                    job_title = message[3]
-                    delete_job = scheduler.process.delete_job(job_title)
-                    if delete_job != None:
-                        say(f"Could not delete the job {job_title}: {delete_job}")
+            match message[2]:
+                case "list":
+                    jobs = scheduler.process.list_jobs()
+                    resp = job_list_message(jobs)
+                    say(blocks=resp, text="")
+                case "delete":
+                    if len(message) < 4:
+                        say(text="Please provide the ID of a job to delete.")
                     else:
-                        say(f"Deleted job: *{job_title}*")
+                        job_title = message[3]
+                        delete_job = scheduler.process.delete_job(job_title)
+                        if delete_job != None:
+                            say(f"Could not delete the job {job_title}: {delete_job}")
+                        else:
+                            say(f"Deleted job: *{job_title}*")
         case "ping":
             say(text="pong")
         case "version":
