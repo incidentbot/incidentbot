@@ -68,13 +68,19 @@ Here is the standard layout of the file:
     - monitoring
     - resolved
   options:
+    # Automatically invite Slack groups to newly created incidents
+    auto_invite_groups:
+      # Set to true to enable
+      enabled: false
+      # List of group names as configured in Slack
+      groups:
+        - my-slack-group
+        - my-other-slack-group
     # The topic that will be set on all incident channels
     channel_topic:
       default: 'This is the default incident channel topic. You can edit it in settings.'
       # If set to true, set the channel topic to the meeting link. This will override incident_channel_topic.
       # set_to_meeting_link: true
-    # Timezone to use for logging, etc.
-    timezone: UTC
     # If not using Zoom auto-create
     conference_bridge_link: 'https://zoom.us'
     # Allow creation of an incident by reacting to a message
@@ -84,14 +90,8 @@ Here is the standard layout of the file:
       # The name of the reacji
       # It must exist in your workspace
       reacji: create-incident
-    # Automatically invite Slack groups to newly created incidents
-    auto_invite_groups:
-      # Set to true to enable
-      enabled: false
-      # List of group names as configured in Slack
-      groups:
-        - my-slack-group
-        - my-other-slack-group
+    # Timezone to use for logging, etc.
+    timezone: UTC
   integrations:
     # Secret data is provided as environment variables for integrations
     # Only non-secret data is configured here

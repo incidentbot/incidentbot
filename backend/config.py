@@ -9,7 +9,7 @@ from cerberus import Validator
 from dotenv import load_dotenv
 from typing import Dict, List
 
-__version__ = "v1.4.20"
+__version__ = "v1.4.21"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -108,6 +108,22 @@ class Configuration:
                 "required": True,
                 "type": "dict",
                 "schema": {
+                    "auto_invite_groups": {
+                        "required": True,
+                        "type": "dict",
+                        "schema": {
+                            "enabled": {
+                                "required": True,
+                                "type": "boolean",
+                                "empty": False,
+                            },
+                            "groups": {
+                                "required": False,
+                                "type": "list",
+                                "empty": True,
+                            },
+                        },
+                    },
                     "channel_topic": {
                         "required": True,
                         "type": "dict",
@@ -123,11 +139,6 @@ class Configuration:
                                 "type": "boolean",
                             },
                         },
-                    },
-                    "timezone": {
-                        "required": True,
-                        "type": "string",
-                        "empty": False,
                     },
                     "conference_bridge_link": {
                         "required": False,
@@ -151,26 +162,19 @@ class Configuration:
                             },
                         },
                     },
-                    "auto_invite_groups": {
-                        "required": True,
-                        "type": "dict",
-                        "schema": {
-                            "enabled": {
-                                "required": True,
-                                "type": "boolean",
-                                "empty": False,
-                            },
-                            "groups": {
-                                "required": False,
-                                "type": "list",
-                                "empty": True,
-                            },
-                        },
+                    "show_most_recent_incidents_app_home_limit": {
+                        "required": False,
+                        "type": "integer",
                     },
                     "skip_logs_for_user_agent": {
                         "required": False,
                         "type": "list",
                         "schema": {"type": "string"},
+                    },
+                    "timezone": {
+                        "required": True,
+                        "type": "string",
+                        "empty": False,
                     },
                 },
             },
@@ -353,6 +357,14 @@ slack_user_token = os.getenv("SLACK_USER_TOKEN")
 
 # For internal pagination when iterating over collections returned from Slack
 slack_items_pagination_per_page = 5
+
+# App home only shows 5 most recent incidents by default - this can be supplied and adjusted
+# Note that setting it too high may cause errors due to limitations in the Slack API for blocks in messages
+show_most_recent_incidents_app_home_limit = (
+    active.options.get("show_most_recent_incidents_app_home_limit")
+    if "show_most_recent_incidents_app_home_limit" in active.options
+    else 5
+)
 
 """
 Statuspage Module

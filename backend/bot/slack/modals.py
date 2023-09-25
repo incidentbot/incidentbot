@@ -7,9 +7,9 @@ from bot.exc import ConfigurationError
 from bot.incident import incident
 from bot.jira.issue import JiraIssue
 from bot.models.incident import (
-    db_read_all_incidents,
     db_read_incident_channel_id,
     db_read_open_incidents,
+    db_read_recent_incidents,
     db_read_incident,
     db_update_incident_last_update_sent_col,
     db_update_jira_issues_col,
@@ -132,8 +132,10 @@ def update_home_tab(client, event, logger):
     help_block = help_menu(include_header=False)
     base_blocks.extend(help_block)
 
-    # Also add in open incident info
-    database_data = db_read_all_incidents()
+    # Show truncated list of most recent incidents
+    database_data = db_read_recent_incidents(
+        limit=config.show_most_recent_incidents_app_home_limit
+    )
     open_incidents = incident_list_message(database_data, all=False)
     base_blocks.extend(open_incidents)
 
