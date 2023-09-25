@@ -1,5 +1,6 @@
 import config
 import ipaddress
+import itertools
 import logging
 import random
 import string
@@ -10,9 +11,7 @@ from typing import Any, List
 
 logger = logging.getLogger("shared")
 
-random_suffix = "".join(
-    random.choices(string.ascii_lowercase + string.digits, k=6)
-)
+random_suffix = "".join(random.choices(string.ascii_lowercase + string.digits, k=6))
 timestamp_fmt = "%Y-%m-%dT%H:%M:%S %Z"
 timestamp_fmt_short = "%d/%m/%Y %H:%M:%S %Z"
 
@@ -41,6 +40,16 @@ def find_index_in_list(lst: List, key: Any, value: Any):
         if dic[key] == value:
             return i
     return -1
+
+
+def paginate_dictionary(d, per_page):
+    """Takes a dictionary and returns per_page items at a time"""
+    iterable = iter(d)
+    while True:
+        p = tuple(itertools.islice(iterable, per_page))
+        if not p:
+            break
+        yield p
 
 
 def validate_ip_address(address: str) -> bool:

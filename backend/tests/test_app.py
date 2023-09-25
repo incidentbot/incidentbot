@@ -50,9 +50,7 @@ class TestBotSlackHandler:
 
     def build_request(self, event_payload: dict) -> BoltRequest:
         timestamp, body = str(int(time.time())), json.dumps(event_payload)
-        return BoltRequest(
-            body=body, headers=self.build_headers(timestamp, body)
-        )
+        return BoltRequest(body=body, headers=self.build_headers(timestamp, body))
 
     def test_message_handler(self):
         app = App(
@@ -141,9 +139,7 @@ class TestBotSlackHandler:
 
         assert_auth_test_count(self, 1)
         time.sleep(1)  # wait a bit after auto ack()
-        assert result["call_count"] == len(calls) and len(mentions) == len(
-            calls
-        )
+        assert result["call_count"] == len(calls) and len(mentions) == len(calls)
 
     # The mock API doesn't like reaction_added for some reason?
     # def test_reaction_added(self):
