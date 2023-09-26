@@ -60,7 +60,7 @@ spec:
             - mountPath: /config/google-creds.json
               name: google-creds
               readOnly: true
-              subPath: google-creds.json
+              subPath: google-creds
       volumes:
         - name: incident-bot-config
           configMap:
