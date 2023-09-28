@@ -5,7 +5,6 @@ import logging
 from bot.models.pg import Incident, OperationalData, Session
 from bot.shared import tools
 from bot.slack.client import slack_workspace_id
-from collections import defaultdict
 from pdpyras import APISession, PDClientError
 from sqlalchemy import update
 from typing import Dict
@@ -86,26 +85,33 @@ def find_who_is_on_call(short: bool = False) -> Dict:
         for user in slack_users_from_dict
         if user.__contains__("real_name")
     }
-    for oc in session.iter_all("oncalls"):
-        if oc.get("start") != None and oc.get("end") != None:
-            on_call[oc.get("escalation_policy").get("summary")] = {
-                "escalation_level": oc.get("escalation_level"),
-                "escalation_policy": oc.get("escalation_policy").get("summary"),
-                "escalation_policy_id": oc.get("escalation_policy").get("id"),
-                "schedule_summary": oc.get("schedule").get("summary"),
-                "user": oc.get("user").get("summary"),
-                "start": oc.get("start"),
-                "end": oc.get("end"),
-                "slack_user_id": [
-                    val
-                    for key, val in slack_users.items()
-                    if oc.get("user").get("summary") in key
-                ],
-            }
 
-            auto_mapping[oc.get("schedule").get("summary")] = oc.get(
-                "escalation_policy"
-            ).get("summary")
+    for oc in session.iter_all("oncalls"):
+        on_call[oc.get("schedule").get("summary")] = sorted(
+            [
+                {
+                    "escalation_level": oc.get("escalation_level"),
+                    "escalation_policy": oc.get("escalation_policy").get("summary"),
+                    "escalation_policy_id": oc.get("escalation_policy").get("id"),
+                    "schedule_summary": oc.get("schedule").get("summary"),
+                    "user": oc.get("user").get("summary"),
+                    "start": oc.get("start"),
+                    "end": oc.get("end"),
+                    "slack_user_id": [
+                        val
+                        for key, val in slack_users.items()
+                        if oc.get("user").get("summary") in key
+                    ],
+                }
+                for oc in session.iter_all("oncalls")
+                if oc.get("start") != None and oc.get("end") != None
+            ],
+            key=lambda x: x["escalation_level"],
+        )
+
+        auto_mapping[oc.get("schedule").get("summary")] = oc.get(
+            "escalation_policy"
+        ).get("summary")
 
     if short:
         return auto_mapping
