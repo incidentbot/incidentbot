@@ -104,29 +104,28 @@ def handle_mention(body, say, logger):
 
                         for key, value in page:
                             options = []
-
-                            if value.get("slack_user_id") != []:
-                                user_mention = value.get("slack_user_id")[0]
-                            else:
-                                user_mention = value.get("user")
-
-                            options.append(
-                                {
-                                    "text": {
-                                        "type": "plain_text",
-                                        "text": "{} {}".format(
-                                            value.get("escalation_level"),
-                                            value.get("user"),
-                                        ),
+                            for item in value:
+                                if item.get("slack_user_id") != []:
+                                    user_mention = item.get("slack_user_id")[0]
+                                else:
+                                    user_mention = item.get("user")
+                                options.append(
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "{} {}".format(
+                                                item.get("escalation_level"),
+                                                item.get("user"),
+                                            ),
+                                        },
+                                        "value": user_mention,
                                     },
-                                    "value": user_mention,
-                                },
-                            )
+                                )
                             base_block.append(
                                 {
                                     "type": "section",
                                     "block_id": "ping_oncall_{}".format(
-                                        value.get("escalation_policy_id")
+                                        tools.random_string_generator()
                                     ),
                                     "text": {
                                         "type": "mrkdwn",
