@@ -33,6 +33,4 @@ class ConfluenceApi:
             )
         except Exception as error:
             logger.error(f"Error authenticating to Confluence: {error}")
-            logger.error(
-                f"Please check Confluence configuration and try again."
-            )
+            logger.error(f"Please check Confluence configuration and try again.")

@@ -2,7 +2,6 @@ import config
 
 from bot.confluence.api import ConfluenceApi, logger
 from bot.models.pg import IncidentLogging
-from bot.shared import tools
 from bot.templates.confluence.rca import RCATemplate
 from typing import Any, Dict, List, Tuple
 
@@ -27,14 +26,10 @@ class IncidentRootCauseAnalysis:
         self.timeline = timeline
 
         self.parent_page = (
-            config.active.integrations.get("atlassian")
-            .get("confluence")
-            .get("parent")
+            config.active.integrations.get("atlassian").get("confluence").get("parent")
         )
         self.space = (
-            config.active.integrations.get("atlassian")
-            .get("confluence")
-            .get("space")
+            config.active.integrations.get("atlassian").get("confluence").get("space")
         )
 
         self.confluence = ConfluenceApi()
@@ -71,9 +66,7 @@ class IncidentRootCauseAnalysis:
                     editor="v2",
                 )
                 created_page_id = self.exec.get_page_id(self.space, title)
-                created_page_info = self.exec.get_page_by_id(
-                    page_id=created_page_id
-                )
+                created_page_info = self.exec.get_page_by_id(page_id=created_page_id)
                 url = (
                     created_page_info["_links"]["base"]
                     + created_page_info["_links"]["webui"]
@@ -85,7 +78,7 @@ class IncidentRootCauseAnalysis:
                         if item.img:
                             try:
                                 logger.info(
-                                    f"Attaching pinned item to {title}..."
+                                    f"Attaching pinned item image to {title}..."
                                 )
                                 # Attach content to rca
                                 self.exec.attach_content(
@@ -93,9 +86,7 @@ class IncidentRootCauseAnalysis:
                                     name=item.title,
                                     content_type=item.mimetype,
                                     page_id=created_page_id,
-                                    space=config.active.integrations.get(
-                                        "atlassian"
-                                    )
+                                    space=config.active.integrations.get("atlassian")
                                     .get("confluence")
                                     .get("space"),
                                     comment=f"This item was pinned to the incident by {item.user} at {item.ts}.",
@@ -108,9 +99,7 @@ class IncidentRootCauseAnalysis:
             except Exception as error:
                 logger.error(error)
         else:
-            logger.error(
-                "Couldn't create RCA page, does the parent page exist?"
-            )
+            logger.error("Couldn't create RCA page, does the parent page exist?")
 
     def __find_user_id(self, user: str) -> Tuple[bool, Any]:
         """
@@ -134,7 +123,10 @@ class IncidentRootCauseAnalysis:
         all_items_formatted = ""
         for item in self.pinned_items:
             if item.content:
-                all_items_formatted += f"<blockquote><p><strong>{item.user} @ {item.ts} - </strong> {item.content}</p></blockquote><p />"
+                all_items_formatted += f"""
+                <blockquote><p><strong>{item.user} @ {item.ts} - </strong> {''.join(letter for letter in item.content if letter.isalnum())}</p></blockquote><p />
+                """
+
         return all_items_formatted
 
     def __generate_timeline(self) -> str:
@@ -184,9 +176,7 @@ class IncidentRootCauseAnalysis:
     ) -> str:
         """Renders HTML for use in Confluence documents"""
         variables = {
-            "incident_commander": self.__user_mention_format(
-                incident_commander
-            ),
+            "incident_commander": self.__user_mention_format(incident_commander),
             "severity": severity.upper(),
             "severity_definition": severity_definition,
             "timeline": timeline,

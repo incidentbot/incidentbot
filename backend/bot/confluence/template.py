@@ -9,9 +9,7 @@ api = ConfluenceApi()
 tplid = next(
     item
     for item in api.get_content_templates(
-        config.active.integrations.get("atlassian")
-        .get("confluence")
-        .get("space")
+        config.active.integrations.get("atlassian").get("confluence").get("space")
     )
     if item["name"] == template_name
 )["templateId"]
