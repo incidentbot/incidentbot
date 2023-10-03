@@ -1534,6 +1534,12 @@ def open_modal(ack, body, client):
     Provides the modal that will display when the shortcut is used to create a Jira issue
     """
     incident_id = body.get("channel").get("id")
+    from bot.jira.api import JiraApi
+
+    j = JiraApi()
+    issue_types = [it.get("name") for it in j.issue_types]
+    # priorities = [pr.get("name") for pr in j.priorities]
+
     blocks = [
         {
             "type": "header",
@@ -1592,99 +1598,61 @@ def open_modal(ack, body, client):
                 "action_id": "jira.type_select",
                 "placeholder": {
                     "type": "plain_text",
-                    "text": "Task",
+                    "text": issue_types[-1],
                     "emoji": True,
                 },
                 "initial_option": {
                     "text": {
                         "type": "plain_text",
-                        "text": "Task",
+                        "text": issue_types[-1],
                     },
-                    "value": "Task",
+                    "value": issue_types[-1],
                 },
                 "options": [
                     {
                         "text": {
                             "type": "plain_text",
-                            "text": "Epic",
+                            "text": issue_type,
                             "emoji": True,
                         },
-                        "value": "Epic",
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Story",
-                            "emoji": True,
-                        },
-                        "value": "Story",
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Task",
-                            "emoji": True,
-                        },
-                        "value": "Task",
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Bug",
-                            "emoji": True,
-                        },
-                        "value": "Bug",
-                    },
+                        "value": issue_type,
+                    }
+                    for issue_type in issue_types
                 ],
             },
         },
-        {
-            "block_id": "jira_issue_priority_select",
-            "type": "section",
-            "text": {"type": "mrkdwn", "text": "*Priority:*"},
-            "accessory": {
-                "type": "static_select",
-                "action_id": "jira.priority_select",
-                "placeholder": {
-                    "type": "plain_text",
-                    "text": "low",
-                    "emoji": True,
-                },
-                "initial_option": {
-                    "text": {
-                        "type": "plain_text",
-                        "text": "low",
-                    },
-                    "value": "low",
-                },
-                "options": [
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "low",
-                            "emoji": True,
-                        },
-                        "value": "low",
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "medium",
-                            "emoji": True,
-                        },
-                        "value": "medium",
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "high",
-                            "emoji": True,
-                        },
-                        "value": "high",
-                    },
-                ],
-            },
-        },
+        # {
+        #     "block_id": "jira_issue_priority_select",
+        #     "type": "section",
+        #     "text": {"type": "mrkdwn", "text": "*Priority:*"},
+        #     "accessory": {
+        #         "type": "static_select",
+        #         "action_id": "jira.priority_select",
+        #         "placeholder": {
+        #             "type": "plain_text",
+        #             "text": priorities[-1],
+        #             "emoji": True,
+        #         },
+        #         "initial_option": {
+        #             "text": {
+        #                 "type": "plain_text",
+        #                 "text": priorities[-1],
+        #             },
+        #             "value": priorities[-1],
+        #         },
+        #         "options": [
+        #             {
+        #                 "text": {
+        #                     "type": "plain_text",
+        #                     "text": priority,
+        #                     "emoji": True,
+        #                 },
+        #                 "value": priority,
+        #             }
+        #             for priority in priorities
+        #         ],
+        #     },
+        # },
     ]
 
     ack()
@@ -1712,81 +1680,94 @@ def handle_submission(ack, body, client, view):
     ack()
     incident_id = body.get("view").get("blocks")[0].get("block_id")
     parsed = parse_modal_values(body)
+
     try:
-        resp = JiraIssue(
+        issue_obj = JiraIssue(
             incident_id=incident_id,
             description=parsed.get("jira.description_input"),
             issue_type=parsed.get("jira.type_select"),
-            priority=parsed.get("jira.priority_select"),
+            # priority=parsed.get("jira.priority_select"),
             summary=parsed.get("jira.summary_input"),
-        ).new()
-        issue_link = "{}/browse/{}".format(config.atlassian_api_url, resp.get("key"))
-        db_update_jira_issues_col(channel_id=incident_id, issue_link=issue_link)
-        try:
+        )
+        resp = issue_obj.new()
+
+        if resp is not None:
+            issue_link = "{}/browse/{}".format(
+                config.atlassian_api_url, resp.get("key")
+            )
+            db_update_jira_issues_col(channel_id=incident_id, issue_link=issue_link)
+            try:
+                resp = client.chat_postMessage(
+                    channel=incident_id,
+                    blocks=[
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": "A Jira issue has been created for this incident.",
+                            },
+                        },
+                        {"type": "divider"},
+                        {
+                            "type": "section",
+                            "fields": [
+                                {
+                                    "type": "mrkdwn",
+                                    "text": "*Key:* {}".format(resp.get("key")),
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": "*Summary:* {}".format(
+                                        parsed.get("jira.summary_input")
+                                    ),
+                                },
+                                # {
+                                #     "type": "mrkdwn",
+                                #     "text": "*Priority:* {}".format(
+                                #         parsed.get("jira.priority_select")
+                                #     ),
+                                # },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": "*Type:* {}".format(
+                                        parsed.get("jira.type_select")
+                                    ),
+                                },
+                            ],
+                        },
+                        {
+                            "type": "actions",
+                            "block_id": "jira_view_issue",
+                            "elements": [
+                                {
+                                    "type": "button",
+                                    "action_id": "jira.view_issue",
+                                    "style": "primary",
+                                    "text": {
+                                        "type": "plain_text",
+                                        "text": "View Issue",
+                                    },
+                                    "url": issue_link,
+                                },
+                            ],
+                        },
+                    ],
+                    text="A Jira issue has been created for this incident: {}".format(
+                        resp.get("self")
+                    ),
+                )
+                client.pins_add(
+                    channel=resp.get("channel"),
+                    timestamp=resp.get("ts"),
+                )
+            except Exception as error:
+                logger.error(
+                    f"Error sending Jira issue message for {incident_id}: {error}"
+                )
+        else:
             resp = client.chat_postMessage(
                 channel=incident_id,
-                blocks=[
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "A Jira issue has been created for this incident.",
-                        },
-                    },
-                    {"type": "divider"},
-                    {
-                        "type": "section",
-                        "fields": [
-                            {
-                                "type": "mrkdwn",
-                                "text": "*Key:* {}".format(resp.get("key")),
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": "*Summary:* {}".format(
-                                    parsed.get("jira.summary_input")
-                                ),
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": "*Priority:* {}".format(
-                                    parsed.get("jira.priority_select")
-                                ),
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": "*Type:* {}".format(
-                                    parsed.get("jira.type_select")
-                                ),
-                            },
-                        ],
-                    },
-                    {
-                        "type": "actions",
-                        "block_id": "jira_view_issue",
-                        "elements": [
-                            {
-                                "type": "button",
-                                "action_id": "jira.view_issue",
-                                "style": "primary",
-                                "text": {
-                                    "type": "plain_text",
-                                    "text": "View Issue",
-                                },
-                                "url": issue_link,
-                            },
-                        ],
-                    },
-                ],
-                text="A Jira issue has been created for this incident: {}".format(
-                    resp.get("self")
-                ),
+                text="Hmmm.. that didn't work. Check my logs for more information.",
             )
-            client.pins_add(
-                channel=resp.get("channel"),
-                timestamp=resp.get("ts"),
-            )
-        except Exception as error:
-            logger.error(f"Error sending Jira issue message for {incident_id}: {error}")
     except Exception as error:
         logger.error(error)
