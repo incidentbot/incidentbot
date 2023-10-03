@@ -113,7 +113,10 @@ def startup_tasks():
     if "pagerduty" in config.active.integrations:
         from bot.pagerduty.api import PagerDutyAPI
 
-        if PagerDutyAPI().test() is None:
+        if len(PagerDutyAPI().test()) == 0:
+            logger.fatal(
+                "PagerDuty test failed: unable to retrieve oncall iterable - either no schedules exist or none were returned",
+            )
             sys.exit(1)
 
         from bot.scheduler.scheduler import update_pagerduty_oc_data

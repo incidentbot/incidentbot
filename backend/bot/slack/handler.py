@@ -77,90 +77,94 @@ def handle_mention(body, say, logger):
                 from bot.pagerduty import api as pd_api
 
                 pd_oncall_data = pd_api.find_who_is_on_call()
-
-                # Header
-                say(
-                    blocks=[
-                        {
-                            "type": "header",
-                            "text": {
-                                "type": "plain_text",
-                                "text": ":pager: Who is on call right now?",
-                            },
-                        },
-                        {"type": "divider"},
-                    ]
-                )
-
-                # Iterate over schedules
-                if pd_oncall_data is not {}:
-                    # Get length of returned objects
-                    # If returned objects is greater than 5, paginate over them 5 at a time and include 5 in each message
-                    # Send a separate message for each grouping of 5 to avoid block limits from the Slack API
-                    for page in tools.paginate_dictionary(
-                        pd_oncall_data.items(), config.slack_items_pagination_per_page
-                    ):
-                        base_block = []
-
-                        for key, value in page:
-                            options = []
-                            for item in value:
-                                if item.get("slack_user_id") != []:
-                                    user_mention = item.get("slack_user_id")[0]
-                                else:
-                                    user_mention = item.get("user")
-                                options.append(
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "{} {}".format(
-                                                item.get("escalation_level"),
-                                                item.get("user"),
-                                            ),
-                                        },
-                                        "value": user_mention,
-                                    },
-                                )
-                            base_block.append(
-                                {
-                                    "type": "section",
-                                    "block_id": "ping_oncall_{}".format(
-                                        tools.random_string_generator()
-                                    ),
-                                    "text": {
-                                        "type": "mrkdwn",
-                                        "text": f"*{key}*",
-                                    },
-                                    "accessory": {
-                                        "type": "overflow",
-                                        "options": options,
-                                        "action_id": "incident.add_on_call_to_channel",
-                                    },
-                                }
-                            )
-                        say(blocks=base_block, text="")
+                if pd_oncall_data == {}:
+                    say(
+                        text="Hmm... I'm unable to get that information from PagerDuty - when I looked for schedules, I couldn't find any. Check my logs for additional information."
+                    )
                 else:
-                    say(text="There are no results from PagerDuty to display.")
+                    # Header
+                    say(
+                        blocks=[
+                            {
+                                "type": "header",
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": ":pager: Who is on call right now?",
+                                },
+                            },
+                            {"type": "divider"},
+                        ]
+                    )
 
-                # Footer
-                say(
-                    blocks=[
-                        {
-                            "type": "context",
-                            "elements": [
-                                {
-                                    "type": "image",
-                                    "image_url": "https://i.imgur.com/IVvdFCV.png",
-                                    "alt_text": "pagerduty",
-                                },
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f"This information is sourced from PagerDuty and is accurate as of {tools.fetch_timestamp()}.",
-                                },
-                            ],
-                        }
-                    ]
-                )
+                    # Iterate over schedules
+                    if pd_oncall_data is not {}:
+                        # Get length of returned objects
+                        # If returned objects is greater than 5, paginate over them 5 at a time and include 5 in each message
+                        # Send a separate message for each grouping of 5 to avoid block limits from the Slack API
+                        for page in tools.paginate_dictionary(
+                            pd_oncall_data.items(),
+                            config.slack_items_pagination_per_page,
+                        ):
+                            base_block = []
+
+                            for key, value in page:
+                                options = []
+                                for item in value:
+                                    if item.get("slack_user_id") != []:
+                                        user_mention = item.get("slack_user_id")[0]
+                                    else:
+                                        user_mention = item.get("user")
+                                    options.append(
+                                        {
+                                            "text": {
+                                                "type": "plain_text",
+                                                "text": "{} {}".format(
+                                                    item.get("escalation_level"),
+                                                    item.get("user"),
+                                                ),
+                                            },
+                                            "value": user_mention,
+                                        },
+                                    )
+                                base_block.append(
+                                    {
+                                        "type": "section",
+                                        "block_id": "ping_oncall_{}".format(
+                                            tools.random_string_generator()
+                                        ),
+                                        "text": {
+                                            "type": "mrkdwn",
+                                            "text": f"*{key}*",
+                                        },
+                                        "accessory": {
+                                            "type": "overflow",
+                                            "options": options,
+                                            "action_id": "incident.add_on_call_to_channel",
+                                        },
+                                    }
+                                )
+                            say(blocks=base_block, text="")
+                    else:
+                        say(text="There are no results from PagerDuty to display.")
+                    # Footer
+                    say(
+                        blocks=[
+                            {
+                                "type": "context",
+                                "elements": [
+                                    {
+                                        "type": "image",
+                                        "image_url": "https://i.imgur.com/IVvdFCV.png",
+                                        "alt_text": "pagerduty",
+                                    },
+                                    {
+                                        "type": "mrkdwn",
+                                        "text": f"This information is sourced from PagerDuty and is accurate as of {tools.fetch_timestamp()}.",
+                                    },
+                                ],
+                            }
+                        ]
+                    )
             else:
                 say(
                     text="The PagerDuty integration is not enabled. I cannot provide information from PagerDuty as a result."

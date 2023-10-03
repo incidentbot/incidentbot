@@ -7,7 +7,7 @@ bases:
 
 images:
   - name: eb129/incident-bot
-    newTag: v1.4.23
+    newTag: v1.4.24
 
 configMapGenerator:
   - name: incident-bot-config
