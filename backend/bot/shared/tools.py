@@ -52,6 +52,16 @@ def paginate_dictionary(d, per_page):
         yield p
 
 
+def random_string_generator() -> str:
+    """Return a random string containing upcase characters and digits"""
+    return "".join(
+        random.choices(
+            string.ascii_uppercase + string.digits,
+            k=8,
+        )
+    )
+
+
 def validate_ip_address(address: str) -> bool:
     """Validate that a provided string is an IP address"""
     try:
@@ -65,13 +75,3 @@ def validate_ip_address(address: str) -> bool:
 def validate_ip_in_subnet(address: str, subnet: str) -> bool:
     """Return whether or not an IP address is within a subnet"""
     return ipaddress.ip_address(address) in ipaddress.ip_network(subnet)
-
-
-def random_string_generator() -> str:
-    """Return a random string containing upcase characters and digits"""
-    return "".join(
-        random.choices(
-            string.ascii_uppercase + string.digits,
-            k=8,
-        )
-    )

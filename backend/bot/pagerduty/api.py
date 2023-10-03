@@ -7,23 +7,23 @@ from bot.shared import tools
 from bot.slack.client import slack_workspace_id
 from pdpyras import APISession, PDClientError
 from sqlalchemy import update
-from typing import Dict
+from typing import Dict, List
 
 logger = logging.getLogger("pagerduty.api")
 
 
 class PagerDutyAPI:
     @classmethod
-    def session(cls) -> APISession:
+    def session(self) -> APISession:
         return APISession(
             config.pagerduty_api_token,
             default_from=config.pagerduty_api_username,
         )
 
     @classmethod
-    def test(cls):
+    def test(self) -> List[Dict]:
         try:
-            return [user for user in cls.session().iter_all("users")]
+            return [sch for sch in self.session().iter_all("oncalls")]
         except Exception as error:
             logger.error(f"Error during validation of PagerDuty auth: {error}")
 
@@ -42,7 +42,7 @@ def find_escalation_policy_id(ep_name: str) -> str:
     eps = session.iter_all("escalation_policies")
     # .find wasn't working for this, no idea why.
     for ep in eps:
-        if ep["name"] == ep_name:
+        if ep.get("name") == ep_name:
             return ep.get("id")
 
 
@@ -53,7 +53,7 @@ def find_service_for_escalation_policy(ep_name: str) -> str:
     eps = session.iter_all("escalation_policies")
     # .find wasn't working for this, no idea why.
     for ep in eps:
-        if ep["name"] == ep_name:
+        if ep("name") == ep_name:
             return ep.get("services")[0].get("id")
 
 
@@ -81,37 +81,46 @@ def find_who_is_on_call(short: bool = False) -> Dict:
         Session.remove()
 
     slack_users = {
-        user["real_name"]: user.get("id")
+        user.get("real_name"): user.get("id")
         for user in slack_users_from_dict
         if user.__contains__("real_name")
     }
 
-    for oc in session.iter_all("oncalls"):
-        on_call[oc.get("schedule").get("summary")] = sorted(
-            [
-                {
-                    "escalation_level": oc.get("escalation_level"),
-                    "escalation_policy": oc.get("escalation_policy").get("summary"),
-                    "escalation_policy_id": oc.get("escalation_policy").get("id"),
-                    "schedule_summary": oc.get("schedule").get("summary"),
-                    "user": oc.get("user").get("summary"),
-                    "start": oc.get("start"),
-                    "end": oc.get("end"),
-                    "slack_user_id": [
-                        val
-                        for key, val in slack_users.items()
-                        if oc.get("user").get("summary") in key
-                    ],
-                }
-                for oc in session.iter_all("oncalls")
-                if oc.get("start") != None and oc.get("end") != None
-            ],
-            key=lambda x: x["escalation_level"],
-        )
+    result = session.iter_all("oncalls")
 
-        auto_mapping[oc.get("schedule").get("summary")] = oc.get(
-            "escalation_policy"
-        ).get("summary")
+    if result is None:
+        logger.warn("PagerDuty schedule information returned as empty")
+
+        return {}
+    else:
+        for oc in result:
+            on_call[oc.get("schedule").get("summary")] = sorted(
+                [
+                    {
+                        "escalation_level": oc.get("escalation_level"),
+                        "escalation_policy": oc.get("escalation_policy").get("summary"),
+                        "escalation_policy_id": oc.get("escalation_policy").get("id"),
+                        "schedule_summary": oc.get("schedule").get("summary"),
+                        "user": oc.get("user").get("summary"),
+                        "start": oc.get("start"),
+                        "end": oc.get("end"),
+                        "slack_user_id": [
+                            val
+                            for key, val in slack_users.items()
+                            if oc.get("user").get("summary") in key
+                        ],
+                    }
+                    for oc in session.iter_all("oncalls")
+                    if oc.get("start") != None and oc.get("end") != None
+                ],
+                key=lambda x: x.get("escalation_level"),
+            )
+
+            auto_mapping[oc.get("schedule").get("summary")] = oc.get(
+                "escalation_policy"
+            ).get("summary")
+
+    logger.info(f"PagerDuty returned {len(on_call)} schedules")
 
     if short:
         return auto_mapping
@@ -131,54 +140,62 @@ def page(
     """
     service_id = find_service_for_escalation_policy(ep_name=ep_name)
     ep_id = find_escalation_policy_id(ep_name=ep_name)
-    pd_inc = {
-        "incident": {
-            "type": "incident",
-            "title": f"Slack incident {channel_name} has been started and a page has been issued for assistance.",
-            "service": {"id": service_id, "type": "service_reference"},
-            "urgency": priority,
-            "incident_key": channel_name,
-            "body": {
-                "type": "incident_body",
-                "details": "An incident has been declared in Slack and this team has been paged as a result. "
-                + f"You were paged by {paging_user}. Link: https://{slack_workspace_id}.slack.com/archives/{channel_id}",
-            },
-            "escalation_policy": {
-                "id": ep_id,
-                "type": "escalation_policy_reference",
-            },
+    if ep_id is not None:
+        pd_inc = {
+            "incident": {
+                "type": "incident",
+                "title": f"Slack incident {channel_name} has been started and a page has been issued for assistance.",
+                "service": {"id": service_id, "type": "service_reference"},
+                "urgency": priority,
+                "incident_key": channel_name,
+                "body": {
+                    "type": "incident_body",
+                    "details": "An incident has been declared in Slack and this team has been paged as a result. "
+                    + f"You were paged by {paging_user}. Link: https://{slack_workspace_id}.slack.com/archives/{channel_id}",
+                },
+                "escalation_policy": {
+                    "id": ep_id,
+                    "type": "escalation_policy_reference",
+                },
+            }
         }
-    }
-    try:
-        response = session.post("/incidents", json=pd_inc)
-        if not response.ok:
-            raise Exception(
-                "Error creating PagerDuty incident: {}".format(response.json())
-            )
         try:
-            created_incident = json.loads(response.text)["incident"]
-            incident = Session.query(Incident).filter_by(incident_id=channel_name).one()
-            existing_incidents = incident.pagerduty_incidents
-            if existing_incidents is None:
-                existing_incidents = [created_incident["id"]]
-            else:
-                existing_incidents.append(created_incident["id"])
-                Session.execute(
-                    update(Incident)
-                    .where(Incident.incident_id == channel_name)
-                    .values(pagerduty_incidents=existing_incidents)
+            response = session.post("/incidents", json=pd_inc)
+            if not response.ok:
+                raise Exception(
+                    "Error creating PagerDuty incident: {}".format(response.json())
                 )
-                Session.commit()
-        except Exception as error:
-            logger.error(f"Error updating incident: {error}")
-        finally:
-            Session.close()
-            Session.remove()
-    except PDClientError as error:
-        logger.error(f"Error creating PagerDuty incident: {error}")
+            try:
+                created_incident = json.loads(response.text)["incident"]
+                incident = (
+                    Session.query(Incident).filter_by(incident_id=channel_name).one()
+                )
+                existing_incidents = incident.pagerduty_incidents
+                if existing_incidents is None:
+                    existing_incidents = [created_incident.get("id")]
+                else:
+                    existing_incidents.append(created_incident.get("id"))
+                    Session.execute(
+                        update(Incident)
+                        .where(Incident.incident_id == channel_name)
+                        .values(pagerduty_incidents=existing_incidents)
+                    )
+                    Session.commit()
+            except Exception as error:
+                logger.error(f"Error updating incident: {error}")
+            finally:
+                Session.close()
+                Session.remove()
+        except PDClientError as error:
+            logger.error(f"Error creating PagerDuty incident: {error}")
+    else:
+        logger.error(
+            f"Error during PagerDuty incident creation - could not find escalation policy id for policy {ep_name}"
+        )
 
 
 def resolve(pd_incident_id: str):
+    """Resolve a PagerDuty incident"""
     pd_inc_patch = {
         "incident": {
             "type": "incident",
