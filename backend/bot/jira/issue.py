@@ -26,9 +26,6 @@ class JiraIssue:
             config.active.integrations.get("atlassian").get("jira").get("labels")
         ) + [self.incident_data.channel_name]
         # self.priority = priority
-        self.project_id = self.jira.api.project(
-            config.active.integrations.get("atlassian").get("jira").get("project")
-        ).get("id")
         self.summary = summary
 
     def new(self):
@@ -41,7 +38,7 @@ class JiraIssue:
                     "issuetype": {"name": self.issue_type},
                     "labels": self.labels,
                     # "priority": {"id": priority_id},
-                    "project": {"id": self.project_id},
+                    "project": {"id": self.jira.project_id},
                     "summary": self.summary,
                 }
             )

@@ -75,11 +75,11 @@ integrations:
       space: ENGINEERIN
       parent: RCAs
     # Enable Jira integration
-    # jira:
-    #   project: 'INC'
-    #   # Labels to apply to created issues
-    #   labels:
-    #     - incident-management
+    jira:
+      project: 'IN'
+      # Labels to apply to created issues
+      labels:
+        - incident-management
   # Simply provide an empty dict to enable PagerDuty
   pagerduty: {}
   # Enable Statuspage integration
