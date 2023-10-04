@@ -22,11 +22,24 @@ class JiraApi:
         return self.jira
 
     @property
+    def project_id(self) -> str:
+        """Returns the configured Jira project's ID"""
+        return self.api.project(
+            config.active.integrations.get("atlassian").get("jira").get("project")
+        ).get("id")
+
+    @property
     def issue_types(self) -> List[Any]:
         """Returns a list of issue types"""
         try:
             resp = self.jira.get_issue_types()
-            return [issue_type for issue_type in resp]
+
+            return [
+                issue_type
+                for issue_type in resp
+                if issue_type.get("scope")
+                and issue_type.get("scope").get("project").get("id") == self.project_id
+            ]
         except requests.exceptions.HTTPError as error:
             logger.error(f"Error finding Jira issue types: {error}")
 
@@ -35,8 +48,8 @@ class JiraApi:
         """Returns a list of priorities for issues"""
         try:
             resp = self.jira.get_all_priorities()
-            return [pr for pr in resp]
 
+            return [pr for pr in resp]
         except requests.exceptions.HTTPError as error:
             logger.error(f"Error finding Jira priorities: {error}")
 
