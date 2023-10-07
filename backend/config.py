@@ -9,7 +9,7 @@ from cerberus import Validator
 from dotenv import load_dotenv
 from typing import Dict, List
 
-__version__ = "v1.4.26"
+__version__ = "v1.4.27"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -214,6 +214,16 @@ class Configuration:
                                     "project": {
                                         "required": True,
                                         "type": "string",
+                                        "empty": False,
+                                    },
+                                    "issue_types": {
+                                        "required": False,
+                                        "type": "list",
+                                        "empty": False,
+                                    },
+                                    "priorities": {
+                                        "required": False,
+                                        "type": "list",
                                         "empty": False,
                                     },
                                     "labels": {

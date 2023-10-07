@@ -1537,8 +1537,22 @@ def open_modal(ack, body, client):
     from bot.jira.api import JiraApi
 
     j = JiraApi()
-    issue_types = [it.get("name") for it in j.issue_types]
-    # priorities = [pr.get("name") for pr in j.priorities]
+
+    issue_types = (
+        [it.get("name") for it in j.issue_types]
+        if config.active.integrations.get("atlassian")
+        and config.active.integrations.get("atlassian").get("jira").get("issue_types")
+        == []
+        else config.active.integrations.get("atlassian").get("jira").get("issue_types")
+    )
+
+    priorities = (
+        [pr.get("name") for pr in j.priorities]
+        if config.active.integrations.get("atlassian")
+        and config.active.integrations.get("atlassian").get("jira").get("priorities")
+        == []
+        else config.active.integrations.get("atlassian").get("jira").get("priorities")
+    )
 
     blocks = [
         {
@@ -1621,38 +1635,38 @@ def open_modal(ack, body, client):
                 ],
             },
         },
-        # {
-        #     "block_id": "jira_issue_priority_select",
-        #     "type": "section",
-        #     "text": {"type": "mrkdwn", "text": "*Priority:*"},
-        #     "accessory": {
-        #         "type": "static_select",
-        #         "action_id": "jira.priority_select",
-        #         "placeholder": {
-        #             "type": "plain_text",
-        #             "text": priorities[-1],
-        #             "emoji": True,
-        #         },
-        #         "initial_option": {
-        #             "text": {
-        #                 "type": "plain_text",
-        #                 "text": priorities[-1],
-        #             },
-        #             "value": priorities[-1],
-        #         },
-        #         "options": [
-        #             {
-        #                 "text": {
-        #                     "type": "plain_text",
-        #                     "text": priority,
-        #                     "emoji": True,
-        #                 },
-        #                 "value": priority,
-        #             }
-        #             for priority in priorities
-        #         ],
-        #     },
-        # },
+        {
+            "block_id": "jira_issue_priority_select",
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": "*Priority:*"},
+            "accessory": {
+                "type": "static_select",
+                "action_id": "jira.priority_select",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": priorities[-1],
+                    "emoji": True,
+                },
+                "initial_option": {
+                    "text": {
+                        "type": "plain_text",
+                        "text": priorities[-1],
+                    },
+                    "value": priorities[-1],
+                },
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": priority,
+                            "emoji": True,
+                        },
+                        "value": priority,
+                    }
+                    for priority in priorities
+                ],
+            },
+        },
     ]
 
     ack()

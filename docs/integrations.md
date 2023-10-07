@@ -18,7 +18,7 @@ Provide the following environment variables:
 - `ATLASSIAN_API_USERNAME` - Username that owns the API token.
 - `ATLASSIAN_API_TOKEN` - The API token.
 
-In the application's `config.yaml`, you can set the Confluence space and parent page and the Jira project using the `integrations` section:
+In the application's `config.yaml`, you can set the Confluence space and parent page and Jira settings using the `integrations` section:
 
 ```yaml
 integrations:
@@ -29,6 +29,8 @@ integrations:
       parent: Postmortems
     jira:
       project: INCMGMT
+      issue_types: []
+      priorities: []
       labels:
         - incident-management
         - etc
@@ -38,11 +40,29 @@ This is only an example - you'll obviously need to provide your own information 
 
 ### Using the Confluence Integration
 
-When enabled, an RCA document will be created in Confluence with start information. In general, no additional participation is required to generate this document.
+When enabled, an RCA document will be created in Confluence with starting information. In general, no additional participation is required to generate this document.
 
 If you use the pinned items feature, those will automatically be added to the document.
 
+There is also a timeline feature accessible using the `/timeline` shortcut in Slack.
+
+All fields are **required** for this section.
+
 ### Using the Jira Integration
+
+In the `jira` section, the `project` field is required. All other fields are optional.
+
+If you do not provide `issue_types` or `priorities`, the bot will attempt to automatically fetch them from Jira. If this fails, you will need to provide them manually.
+
+#### Issue Types
+
+This is a list of strings. This will populate the list of selectable issue types when creating a Jira ticket. These **must** be valid options for issue types in your Jira environment.
+
+#### Priorities
+
+This is a list of strings. This will populate the list of selectable priorities when creating a Jira ticket. These **must** be valid options for priorities in your Jira environment.
+
+#### Additional Information
 
 When an incident is created and the Jira integration is enabled, you'll see an option in the incident channel management section to create a Jira issue:
 
