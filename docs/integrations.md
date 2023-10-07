@@ -29,8 +29,8 @@ integrations:
       parent: Postmortems
     jira:
       project: INCMGMT
-      issue_types: []
-      priorities: []
+      issue_types: ['Task', 'Epic', 'Story']
+      priorities: ['High', 'Medium', 'Low']
       labels:
         - incident-management
         - etc
@@ -52,7 +52,9 @@ All fields are **required** for this section.
 
 In the `jira` section, the `project` field is required. All other fields are optional.
 
-If you do not provide `issue_types` or `priorities`, the bot will attempt to automatically fetch them from Jira. If this fails, you will need to provide them manually.
+If you do not provide `issue_types` or `priorities`, the bot will attempt to automatically fetch them from Jira. If this fails, you will need to provide them manually. Failure is often the result of too many items being returned from the Atlassian API and a limitation in Slack on how many items a single message can contain.
+
+It is recommended to provide these manually if you wish to control them more.
 
 #### Issue Types
 
