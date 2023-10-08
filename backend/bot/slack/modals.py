@@ -1537,8 +1537,6 @@ def open_modal(ack, body, client):
     from bot.jira.api import JiraApi
 
     j = JiraApi()
-    issue_types = [it.get("name") for it in j.issue_types]
-    # priorities = [pr.get("name") for pr in j.priorities]
 
     blocks = [
         {
@@ -1598,15 +1596,15 @@ def open_modal(ack, body, client):
                 "action_id": "jira.type_select",
                 "placeholder": {
                     "type": "plain_text",
-                    "text": issue_types[-1],
+                    "text": j.issue_types[0],
                     "emoji": True,
                 },
                 "initial_option": {
                     "text": {
                         "type": "plain_text",
-                        "text": issue_types[-1],
+                        "text": j.issue_types[0],
                     },
-                    "value": issue_types[-1],
+                    "value": j.issue_types[0],
                 },
                 "options": [
                     {
@@ -1617,7 +1615,7 @@ def open_modal(ack, body, client):
                         },
                         "value": issue_type,
                     }
-                    for issue_type in issue_types
+                    for issue_type in j.issue_types
                 ],
             },
         },
@@ -1630,15 +1628,15 @@ def open_modal(ack, body, client):
         #         "action_id": "jira.priority_select",
         #         "placeholder": {
         #             "type": "plain_text",
-        #             "text": priorities[-1],
+        #             "text": j.priorities[0],
         #             "emoji": True,
         #         },
         #         "initial_option": {
         #             "text": {
         #                 "type": "plain_text",
-        #                 "text": priorities[-1],
+        #                 "text": j.priorities[0],
         #             },
-        #             "value": priorities[-1],
+        #             "value": j.priorities[0],
         #         },
         #         "options": [
         #             {
@@ -1649,7 +1647,7 @@ def open_modal(ack, body, client):
         #                 },
         #                 "value": priority,
         #             }
-        #             for priority in priorities
+        #             for priority in j.priorities
         #         ],
         #     },
         # },
@@ -1689,6 +1687,7 @@ def handle_submission(ack, body, client, view):
             # priority=parsed.get("jira.priority_select"),
             summary=parsed.get("jira.summary_input"),
         )
+
         resp = issue_obj.new()
 
         if resp is not None:

@@ -77,6 +77,10 @@ integrations:
     # Enable Jira integration
     jira:
       project: 'IN'
+      # Issue types that will populate the list of available options when creating a Jira issue.
+      # issue_types: ['Epic', 'Task']
+      # Priorities that will populate the list of available options when creating a Jira issue.
+      # priorities: ['High', 'Low']
       # Labels to apply to created issues
       labels:
         - incident-management

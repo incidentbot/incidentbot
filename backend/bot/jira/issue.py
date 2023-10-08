@@ -54,10 +54,9 @@ class JiraIssue:
 
             return next(
                 (
-                    pr.get("id")
-                    for pr in resp
-                    if pr.get("name") is not None
-                    and pr.get("name") == priority.lower().title()
+                    prid
+                    for prid in resp
+                    if prid is not None and prid == priority.lower().title()
                 ),
                 None,
             )
