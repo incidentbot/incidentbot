@@ -36,7 +36,7 @@ class JiraApi:
 
             issue_types = (
                 [
-                    issue_type
+                    issue_type.get("name")
                     for issue_type in resp
                     if issue_type.get("scope")
                     and issue_type.get("scope").get("project").get("id")
