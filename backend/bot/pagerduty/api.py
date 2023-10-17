@@ -11,6 +11,8 @@ from typing import Dict, List
 
 logger = logging.getLogger("pagerduty.api")
 
+image_url = "https://i.imgur.com/IVvdFCV.png"
+
 
 class PagerDutyAPI:
     @classmethod
