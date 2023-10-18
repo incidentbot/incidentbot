@@ -9,7 +9,7 @@ from cerberus import Validator
 from dotenv import load_dotenv
 from typing import Dict, List
 
-__version__ = "v1.4.27"
+__version__ = "v1.5.0"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -233,6 +233,17 @@ class Configuration:
                                     },
                                 },
                             },
+                            "opsgenie": {
+                                "required": False,
+                                "type": "dict",
+                                "schema": {
+                                    "team": {
+                                        "required": True,
+                                        "type": "string",
+                                        "empty": False,
+                                    },
+                                },
+                            },
                         },
                     },
                     "pagerduty": {
@@ -392,6 +403,10 @@ Atlassian
 atlassian_api_url = os.getenv("ATLASSIAN_API_URL", default="")
 atlassian_api_username = os.getenv("ATLASSIAN_API_USERNAME", default="")
 atlassian_api_token = os.getenv("ATLASSIAN_API_TOKEN", default="")
+atlassian_opsgenie_api_key = os.getenv("ATLASSIAN_OPSGENIE_API_KEY", default="")
+atlassian_opsgenie_api_team_integration_key = os.getenv(
+    "ATLASSIAN_OPSGENIE_API_TEAM_INTEGRATION_KEY", default=""
+)
 
 """
 PagerDuty
@@ -469,7 +484,29 @@ def env_check(required_envs: List[str]):
                         f"If enabling the Jira integration, the {var} variable must be set."
                     )
                     sys.exit(1)
+        if "opsgenie" in active.integrations.get("atlassian"):
+            if "pagerduty" in active.integrations:
+                logger.fatal(f"PagerDuty cannot be enabled with Opsgenie.")
+                sys.exit(1)
+            if active.integrations.get("atlassian").get("opsgenie").get("team"):
+                if os.getenv("ATLASSIAN_OPSGENIE_API_TEAM_INTEGRATION_KEY") == "":
+                    logger.fatal(
+                        f"If enabling the Opsgenie integration and setting a team, you must provide the ATLASSIAN_OPSGENIE_API_TEAM_INTEGRATION_KEY environment variable."
+                    )
+                    sys.exit(1)
+            else:
+                if os.getenv("ATLASSIAN_OPSGENIE_API_KEY") == "":
+                    logger.fatal(
+                        f"If enabling the Opsgenie integration, you must provide the ATLASSIAN_OPSGENIE_API_KEY environment variable."
+                    )
+                    sys.exit(1)
     if "pagerduty" in active.integrations:
+        if active.integrations.get(
+            "atlassian"
+        ) and "opsgenie" in active.integrations.get("atlassian"):
+            logger.fatal(f"PagerDuty cannot be enabled with Opsgenie.")
+            sys.exit(1)
+
         for var in [
             "PAGERDUTY_API_USERNAME",
             "PAGERDUTY_API_TOKEN",
