@@ -13,7 +13,6 @@ flask-login==0.6.2
 flask-marshmallow==0.15.0
 marshmallow==3.19.0
 marshmallow_sqlalchemy==0.29.0
-opsgenie-sdk==2.1.5
 pdpyras==4.5.2
 psycopg2-binary==2.9.6
 pytest==7.4.0

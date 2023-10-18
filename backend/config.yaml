@@ -78,19 +78,14 @@ integrations:
     jira:
       project: 'IN'
       # Issue types that will populate the list of available options when creating a Jira issue.
-      # This will override automatically fetching issue types.
       # issue_types: ['Epic', 'Task']
       # Priorities that will populate the list of available options when creating a Jira issue.
-      # This will override automatically fetching issue priorities.
       # priorities: ['High', 'Low']
       # Labels to apply to created issues
       labels:
         - incident-management
-    opsgenie:
-      # Note that providing the 'team' value here will limit creation of alerts to a single team.
-      team: oncalls
   # Simply provide an empty dict to enable PagerDuty
-  # pagerduty: {}
+  pagerduty: {}
   # Enable Statuspage integration
   statuspage:
     # The public URL of the Statuspage.

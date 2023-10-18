@@ -10,7 +10,7 @@ It is possible to automatically create an RCA/postmortem document when an incide
 
 There is also the ability to create issues in Jira related to an incident.
 
-To start, you'll need an API token for your Atlassian account. The token can be created [here](https://id.atlassian.com/manage-profile/security/api-tokens).
+To start, you'll need an API token for your Atlassian account. The token can be created [here](https://id.atlassian.com/manage-profile/security/api-tokens>).
 
 Provide the following environment variables:
 
@@ -81,36 +81,6 @@ When the issue is created, a message is posted and pinned to the incident channe
 You can view issues in the channel history or from the pinned items menu a tthe top of the incident channel:
 
 ![Issue viewable in pinned items](./assets/jira-issue-create-pinned-shortcut.png)
-
-## Opsgenie
-
-You can integrate with Opsgenie to create incidents. To start, you'll need an API integration key for your Opsgenie account. You should also have at least one Opsgenie [Team](https://echoboomer-test.app.opsgenie.com/teams/list) created to alert for pages.
-
-!!! warning
-
-    If you're using Opsgenie's **Free** or **Essentials** plan or if you’re using Opsgenie with Jira Service Management's Standard plan, you can add this integration from your team dashboard only. The Integrations page under Settings is not available in your plan. 
-
-In short, you can only create an API integration for a team if on one of these plans. The drop down when creating an alert will only ever show this team as the recipient. If you wish to use more than one team, you will need to upgrade to a compatible plan and provide an organization-wide key.
-
-!!! warning
-
-    Note that keys attached to an API integrations created for a specific team are not the same as the API key created for an Opsgenie organization within global settings. While you can create this key, it will not work to provide functionality for creating alerts.
-
-For additional information, review [this](https://support.atlassian.com/opsgenie/docs/create-a-default-api-integration/) article.
-
-Provide the following variables depending on your setup:
-
-- `ATLASSIAN_OPSGENIE_API_KEY` - Required if creating an org-wide API integration.
-- `ATLASSIAN_OPSGENIE_API_TEAM_INTEGRATION_KEY` - Required if if using free or essentials tier plans.
-
-In the application's `config.yaml`, you can set the Opsgenie integration to active by providing a blank dict with the optional `team` field if needed:
-
-```yaml
-integrations:
-  opsgenie: {}
-  # opsgenie:
-  #   team: my-team
-```
 
 ## PagerDuty
 

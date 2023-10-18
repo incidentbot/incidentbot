@@ -563,120 +563,104 @@ def open_modal(ack, body, client):
     if "pagerduty" in config.active.integrations:
         from bot.pagerduty import api as pd_api
 
-        platform = "PagerDuty"
-        oncalls = pd_api.find_who_is_on_call()
-        priorities = ["low", "high"]
-        image_url = pd_api.image_url
-    elif "opsgenie" in config.active.integrations.get("atlassian"):
-        from bot.opsgenie import api as og_api
-
-        platform = "Opsgenie"
-        sess = og_api.OpsgenieAPI()
-        oncalls = sess.list_teams()
-        priorities = sess.priorities
-        image_url = og_api.image_url
-
-    blocks = [
-        {
-            "type": "context",
-            "elements": [
-                {
-                    "type": "image",
-                    "image_url": image_url,
-                    "alt_text": "pagerduty",
+        database_data = db_read_open_incidents()
+        blocks = [
+            {
+                "type": "section",
+                "block_id": "incident_bot_pager_team_select",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "Choose a team to page:",
                 },
-            ],
-        },
-        {
-            "type": "section",
-            "block_id": "incident_bot_pager_team_select",
-            "text": {
-                "type": "mrkdwn",
-                "text": "Choose a team to page:",
-            },
-            "accessory": {
-                "action_id": "update_incident_bot_pager_selected_team",
-                "type": "static_select",
-                "placeholder": {
-                    "type": "plain_text",
-                    "text": "Team...",
+                "accessory": {
+                    "action_id": "update_incident_bot_pager_selected_team",
+                    "type": "static_select",
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": "Team...",
+                    },
+                    "options": [
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": ep,
+                            },
+                            "value": ep,
+                        }
+                        for ep in pd_api.find_who_is_on_call()
+                    ],
                 },
-                "options": [
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": i,
-                        },
-                        "value": i,
-                    }
-                    for i in oncalls
-                ],
             },
-        },
-        {
-            "type": "section",
-            "block_id": "incident_bot_pager_priority_select",
-            "text": {
-                "type": "mrkdwn",
-                "text": "Choose an urgency:",
-            },
-            "accessory": {
-                "action_id": "update_incident_bot_pager_selected_priority",
-                "type": "static_select",
-                "placeholder": {
-                    "type": "plain_text",
-                    "text": "Urgency...",
+            {
+                "type": "section",
+                "block_id": "incident_bot_pager_priority_select",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "Choose an urgency:",
                 },
-                "options": [
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": i,
+                "accessory": {
+                    "action_id": "update_incident_bot_pager_selected_priority",
+                    "type": "static_select",
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": "Urgency...",
+                    },
+                    "options": [
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "low",
+                            },
+                            "value": "low",
                         },
-                        "value": i,
-                    }
-                    for i in priorities
-                ],
-            },
-        },
-        {
-            "type": "section",
-            "block_id": "incident_bot_pager_incident_select",
-            "text": {
-                "type": "mrkdwn",
-                "text": "Choose an incident:",
-            },
-            "accessory": {
-                "action_id": "update_incident_bot_pager_selected_incident",
-                "type": "static_select",
-                "placeholder": {
-                    "type": "plain_text",
-                    "text": "Incident...",
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "high",
+                            },
+                            "value": "high",
+                        },
+                    ],
                 },
-                "options": [
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "None",
-                            "emoji": True,
-                        },
-                        "value": "none",
-                    }
-                    if len(db_read_open_incidents()) == 0
-                    else {
-                        "text": {
-                            "type": "plain_text",
-                            "text": inc.channel_name,
-                            "emoji": True,
-                        },
-                        "value": f"{inc.channel_name}/{inc.channel_id}",
-                    }
-                    for inc in db_read_open_incidents()
-                    if inc.status != "resolved"
-                ],
             },
-        },
-    ]
+            {
+                "type": "section",
+                "block_id": "incident_bot_pager_incident_select",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "Choose an incident:",
+                },
+                "accessory": {
+                    "action_id": "update_incident_bot_pager_selected_incident",
+                    "type": "static_select",
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": "Incident...",
+                    },
+                    "options": [
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "None",
+                                "emoji": True,
+                            },
+                            "value": "none",
+                        }
+                        if len(database_data) == 0
+                        else {
+                            "text": {
+                                "type": "plain_text",
+                                "text": inc.channel_name,
+                                "emoji": True,
+                            },
+                            "value": f"{inc.channel_name}/{inc.channel_id}",
+                        }
+                        for inc in database_data
+                        if inc.status != "resolved"
+                    ],
+                },
+            },
+        ]
     client.views_open(
         # Pass a valid trigger_id within 3 seconds of receiving it
         trigger_id=body["trigger_id"],
@@ -686,18 +670,17 @@ def open_modal(ack, body, client):
             "callback_id": "incident_bot_pager_modal",
             "title": {
                 "type": "plain_text",
-                "text": f"Page a team in {platform}",
+                "text": "Page a team in PagerDuty",
             },
             "blocks": blocks
             if "pagerduty" in config.active.integrations
-            or "opsgenie" in config.active.integrations.get("atlassian")
             else [
                 {
                     "type": "section",
                     "block_id": "incident_bot_pager_disabled",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "No pager integrations are enabled.",
+                        "text": "The PagerDuty integration is not currently enabled.",
                     },
                 },
             ],
@@ -717,13 +700,6 @@ def update_modal(ack, body, client):
     priority = parsed.get("update_incident_bot_pager_selected_priority")
     team = parsed.get("update_incident_bot_pager_selected_team")
 
-    if "pagerduty" in config.active.integrations:
-        platform = "PagerDuty"
-        artifact = "incident"
-    elif "opsgenie" in config.active.integrations.get("atlassian"):
-        platform = "Opsgenie"
-        artifact = "alert"
-
     # Call views_update with the built-in client
     client.views_update(
         # Pass the view_id
@@ -736,7 +712,7 @@ def update_modal(ack, body, client):
             "callback_id": "incident_bot_pager_modal",
             "title": {
                 "type": "plain_text",
-                "text": f"Page a team in {platform}",
+                "text": "Page a team in PagerDuty",
             },
             "submit": {"type": "plain_text", "text": "Page"},
             "blocks": [
@@ -746,7 +722,7 @@ def update_modal(ack, body, client):
                     "text": {
                         "type": "mrkdwn",
                         "text": "*You have selected the following options - please review them carefully.*\n\n"
-                        + f"Once you click Submit, an {artifact} will be created in {platform} for the team listed here and they will be paged. "
+                        + "Once you click Submit, an incident will be created in PagerDuty for the team listed here and they will be paged. "
                         + "They will also be invited to the incident's Slack channel.",
                     },
                 },
@@ -798,6 +774,7 @@ def handle_submission(ack, body, say, view):
     Handles open_incident_bot_pager
     """
     ack()
+    from bot.pagerduty import api as pd_api
 
     team = view["blocks"][2]["block_id"].split("/")[1]
     priority = view["blocks"][3]["block_id"].split("/")[1]
@@ -805,50 +782,28 @@ def handle_submission(ack, body, say, view):
     incident_channel_id = view["blocks"][4]["block_id"].split("/")[2]
     paging_user = body["user"]["name"]
 
-    if "pagerduty" in config.active.integrations:
-        from bot.pagerduty import api as pd_api
-
-        platform = "PagerDuty"
-        artifact = "incident"
-    elif "opsgenie" in config.active.integrations.get("atlassian"):
-        from bot.opsgenie import api as og_api
-
-        platform = "Opsgenie"
-        artifact = "alert"
-
     try:
-        match platform.lower():
-            case "pagerduty":
-                pd_api.page(
-                    ep_name=team,
-                    priority=priority,
-                    channel_name=incident_channel_name,
-                    channel_id=incident_channel_id,
-                    paging_user=paging_user,
-                )
-                msg = f"*NOTICE:* I have paged '{team}' to respond to this {artifact} via {platform} at the request of *{paging_user}*."
-            case "opsgenie":
-                sess = og_api.OpsgenieAPI()
-                sess.create_alert(
-                    channel_name=incident_channel_name,
-                    channel_id=incident_channel_id,
-                    paging_user=paging_user,
-                    priority=priority,
-                    responders=[team],
-                )
-                msg = f"*NOTICE:* I have paged '{team}' to respond to this {artifact} via {platform} at the request of *{paging_user}*."
+        pd_api.page(
+            ep_name=team,
+            priority=priority,
+            channel_name=incident_channel_name,
+            channel_id=incident_channel_id,
+            paging_user=paging_user,
+        )
+        msg = f"*NOTICE:* I have paged the team/escalation policy '{team}' to respond to this incident via PagerDuty at the request of *{paging_user}*."
     except Exception as error:
         msg = f"Looks like I encountered an error issuing that page: {error}"
     finally:
         say(
             channel=incident_channel_id,
-            text=msg,
+            text=f"*NOTICE:* I have paged the team/escalation policy '{team}' "
+            + f"to respond to this incident via PagerDuty at the request of *{paging_user}*.",
             blocks=[
                 {
                     "type": "header",
                     "text": {
                         "type": "plain_text",
-                        "text": f":robot_face: {platform} Page Notification",
+                        "text": f":robot_face: PagerDuty Page Notification",
                     },
                 },
                 {
@@ -862,8 +817,13 @@ def handle_submission(ack, body, say, view):
                     "type": "context",
                     "elements": [
                         {
+                            "type": "image",
+                            "image_url": "https://i.imgur.com/IVvdFCV.png",
+                            "alt_text": "pagerduty",
+                        },
+                        {
                             "type": "mrkdwn",
-                            "text": f"This {platform} action was attempted at: {tools.fetch_timestamp()}",
+                            "text": f"This PagerDuty action was attempted at: {tools.fetch_timestamp()}",
                         },
                     ],
                 },

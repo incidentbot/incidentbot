@@ -146,7 +146,6 @@ def handle_mention(body, say, logger):
                             say(blocks=base_block, text="")
                     else:
                         say(text="There are no results from PagerDuty to display.")
-
                     # Footer
                     say(
                         blocks=[
@@ -155,7 +154,7 @@ def handle_mention(body, say, logger):
                                 "elements": [
                                     {
                                         "type": "image",
-                                        "image_url": pd_api.image_url,
+                                        "image_url": "https://i.imgur.com/IVvdFCV.png",
                                         "alt_text": "pagerduty",
                                     },
                                     {
@@ -166,89 +165,9 @@ def handle_mention(body, say, logger):
                             }
                         ]
                     )
-            elif config.active.integrations.get(
-                "atlassian"
-            ) and config.active.integrations.get("atlassian").get("opsgenie"):
-                from bot.opsgenie import api as og_api
-
-                sess = og_api.OpsgenieAPI()
-                og_oncall_data = sess.list_rotations()
-
-                if og_oncall_data:
-                    # Header
-                    say(
-                        blocks=[
-                            {
-                                "type": "header",
-                                "text": {
-                                    "type": "plain_text",
-                                    "text": ":pager: Who is on call right now?",
-                                },
-                            },
-                            {"type": "divider"},
-                        ]
-                    )
-
-                    base_block = []
-
-                    # Iterate over schedules
-                    for item in og_oncall_data:
-                        options = []
-                        for user in item.get("participants"):
-                            options.append(
-                                {
-                                    "text": {
-                                        "type": "plain_text",
-                                        "text": user.get("username"),
-                                    },
-                                    "value": user.get("username"),
-                                },
-                            )
-                        base_block.append(
-                            {
-                                "type": "section",
-                                "block_id": "ping_oncall_{}".format(
-                                    tools.random_string_generator()
-                                ),
-                                "text": {
-                                    "type": "mrkdwn",
-                                    "text": f"*{item.get('name')}*",
-                                },
-                                "accessory": {
-                                    "type": "overflow",
-                                    "options": options,
-                                    "action_id": "incident.add_on_call_to_channel",
-                                },
-                            }
-                        )
-                    say(blocks=base_block, text="")
-                else:
-                    say(
-                        text="No data regarding schedule rotations was returned from Opsgnie."
-                    )
-
-                # Footer
-                say(
-                    blocks=[
-                        {
-                            "type": "context",
-                            "elements": [
-                                {
-                                    "type": "image",
-                                    "image_url": og_api.image_url,
-                                    "alt_text": "opsgenie",
-                                },
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f"This information is sourced from Opsgenie and is accurate as of {tools.fetch_timestamp()}.",
-                                },
-                            ],
-                        }
-                    ]
-                )
             else:
                 say(
-                    text="No upstream platform configurations are present. I cannot provide information as a result."
+                    text="The PagerDuty integration is not enabled. I cannot provide information from PagerDuty as a result."
                 )
         case "scheduler":
             match message[2]:
