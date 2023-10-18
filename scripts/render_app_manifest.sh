@@ -32,7 +32,7 @@ function renderManifest {
     "      - name: Incident Bot Pager" \
     "        type: global" \
     "        callback_id: open_incident_bot_pager" \
-    "        description: Allows you to page a team in PagerDuty when running incidents via Incident Bot." \
+    "        description: Allows you to page a team in a supported upstream provider when running incidents via Incident Bot." \
     "      - name: Manage Incident Timeline" \
     "        type: global" \
     "        callback_id: open_incident_bot_timeline" \
