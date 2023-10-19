@@ -7,7 +7,11 @@ from flask_jwt_extended import jwt_required
 
 job = Blueprint("job", __name__)
 
-undeletable_jobs = ["update_pagerduty_oc_data", "update_slack_user_list"]
+undeletable_jobs = [
+    "update_opsgenie_oc_data",
+    "update_pagerduty_oc_data",
+    "update_slack_user_list",
+]
 
 
 @job.route("/job", methods=["GET"])
@@ -44,7 +48,28 @@ def get_jobs():
 def post_delete_run_job(job_id):
     if request.method == "POST":
         try:
-            if job_id == "update_pagerduty_oc_data":
+            if job_id == "update_opsgenie_oc_data":
+                if config.active.integrations.get(
+                    "atlassian"
+                ) and config.active.integrations.get("atlassian").get("opsgenie"):
+                    from bot.opsgenie.api import OpsgenieAPI
+
+                    try:
+                        api = OpsgenieAPI()
+                        api.store_on_call_data()
+                    except Exception as error:
+                        return (
+                            jsonify({"error": str(error)}),
+                            500,
+                            {"ContentType": "application/json"},
+                        )
+                else:
+                    return (
+                        jsonify({"error": "opsgenie integration is not enabled"}),
+                        500,
+                        {"ContentType": "application/json"},
+                    )
+            elif job_id == "update_pagerduty_oc_data":
                 if "pagerduty" in config.active.integrations:
                     from bot.pagerduty.api import store_on_call_data
 
@@ -58,9 +83,7 @@ def post_delete_run_job(job_id):
                         )
                 else:
                     return (
-                        jsonify(
-                            {"error": "pagerduty integration is not enabled"}
-                        ),
+                        jsonify({"error": "pagerduty integration is not enabled"}),
                         500,
                         {"ContentType": "application/json"},
                     )
@@ -112,3 +135,9 @@ def post_delete_run_job(job_id):
                     500,
                     {"ContentType": "application/json"},
                 )
+        else:
+            return (
+                jsonify({"error": f"{job_id} cannot be deleted"}),
+                500,
+                {"ContentType": "application/json"},
+            )

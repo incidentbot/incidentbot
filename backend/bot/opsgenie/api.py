@@ -3,7 +3,10 @@ import logging
 import opsgenie_sdk
 import requests
 
+from bot.models.pg import Incident, OperationalData, Session
+from bot.shared import tools
 from bot.slack.client import slack_workspace_id
+from sqlalchemy import update
 from typing import Dict, List
 
 logger = logging.getLogger("opsgenie")
@@ -99,3 +102,38 @@ class OpsgenieAPI:
                 rotations.append(r)
 
         return rotations
+
+    def store_on_call_data(self):
+        """
+        Parses information from Opsgenie regarding on-call information and stores it
+        in the database
+
+        This stores both a comprehensive list of schedule information and a mapping made
+        available to the auto page functions
+        """
+        # Store all data
+        try:
+            record_name = "opsgenie_oc_data"
+
+            # Create the row if it doesn't exist
+            if not Session.query(OperationalData).filter_by(id=record_name).all():
+                try:
+                    row = OperationalData(id=record_name)
+                    Session.add(row)
+                    Session.commit()
+                except Exception as error:
+                    logger.error(f"Opdata row create failed for {record_name}: {error}")
+            Session.execute(
+                update(OperationalData)
+                .where(OperationalData.id == record_name)
+                .values(
+                    json_data=self.list_rotations(),
+                    updated_at=tools.fetch_timestamp(),
+                )
+            )
+            Session.commit()
+        except Exception as error:
+            logger.error(f"Opdata row edit failed for {record_name}: {error}")
+            Session.rollback()
+        finally:
+            Session.close()

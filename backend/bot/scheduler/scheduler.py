@@ -158,9 +158,7 @@ def scheduled_reminder_message(
                 )
                 # Update the sent message with its own timestamp
                 existing_blocks = sent_message["messages"][0]["blocks"]
-                existing_blocks[2]["elements"][1]["value"] = result["message"][
-                    "ts"
-                ]
+                existing_blocks[2]["elements"][1]["value"] = result["message"]["ts"]
                 try:
                     slack_web_client.chat_update(
                         channel=channel_id,
@@ -233,9 +231,7 @@ def scrape_for_aging_incidents():
     open_incidents = db_read_open_incidents()
     formatted_incidents = []
     for inc in open_incidents:
-        created_at = datetime.datetime.strptime(
-            inc.created_at, tools.timestamp_fmt
-        )
+        created_at = datetime.datetime.strptime(inc.created_at, tools.timestamp_fmt)
         now = datetime.datetime.now()
         time_open = now - created_at
         old = datetime.timedelta(days=max_age) < time_open
@@ -318,6 +314,33 @@ process.scheduler.add_job(
     hours=24,
     replace_existing=True,
 )
+
+if config.active.integrations.get("atlassian") and config.active.integrations.get(
+    "atlassian"
+).get("opsgenie"):
+    from bot.opsgenie.api import OpsgenieAPI
+
+    def update_opsgenie_oc_data():
+        """
+        Uses Opsgenie API to fetch information about on-call schedules
+        """
+        try:
+            api = OpsgenieAPI()
+            api.store_on_call_data()
+        except Exception as error:
+            logger.error(
+                f"Error updating Opsgenie on-call information in scheduled job: {error}"
+            )
+
+    process.scheduler.add_job(
+        id="update_opsgenie_oc_data",
+        func=update_opsgenie_oc_data,
+        trigger="interval",
+        name="Update Opsgenie on-call information",
+        minutes=30,
+        replace_existing=True,
+    )
+
 
 if "pagerduty" in config.active.integrations:
     from bot.pagerduty.api import store_on_call_data
