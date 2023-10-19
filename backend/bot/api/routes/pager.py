@@ -10,7 +10,37 @@ pager = Blueprint("pager", __name__)
 @pager.route("/pager", methods=["GET"])
 @jwt_required()
 def get_pager():
-    if "pagerduty" in config.active.integrations:
+    if config.active.integrations.get("atlassian") and config.active.integrations.get(
+        "atlassian"
+    ).get("opsgenie"):
+        try:
+            data = (
+                Session.query(OperationalData)
+                .filter(OperationalData.id == "opsgenie_oc_data")
+                .one()
+                .serialize()
+            )
+            return (
+                jsonify(
+                    {
+                        "platform": "opsgenie",
+                        "data": data["json_data"],
+                        "ts": data["updated_at"],
+                    }
+                ),
+                200,
+                {"ContentType": "application/json"},
+            )
+        except Exception as error:
+            return (
+                jsonify({"error": str(error)}),
+                500,
+                {"ContentType": "application/json"},
+            )
+        finally:
+            Session.close()
+            Session.remove()
+    elif "pagerduty" in config.active.integrations:
         try:
             data = (
                 Session.query(OperationalData)
@@ -19,7 +49,13 @@ def get_pager():
                 .serialize()
             )
             return (
-                jsonify({"data": data["json_data"], "ts": data["updated_at"]}),
+                jsonify(
+                    {
+                        "platform": "pagerduty",
+                        "data": data["json_data"],
+                        "ts": data["updated_at"],
+                    }
+                ),
                 200,
                 {"ContentType": "application/json"},
             )
@@ -84,9 +120,7 @@ def get_patch_pager_automapping():
                     .serialize()
                 )
                 return (
-                    jsonify(
-                        {"data": data["json_data"], "ts": data["updated_at"]}
-                    ),
+                    jsonify({"data": data["json_data"], "ts": data["updated_at"]}),
                     200,
                     {"ContentType": "application/json"},
                 )

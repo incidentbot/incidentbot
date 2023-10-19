@@ -110,6 +110,13 @@ def startup_tasks():
                 )
                 sys.exit(1)
 
+    if config.active.integrations.get("atlassian") and config.active.integrations.get(
+        "atlassian"
+    ).get("opsgenie"):
+        from bot.scheduler.scheduler import update_opsgenie_oc_data
+
+        update_opsgenie_oc_data()
+
     if "pagerduty" in config.active.integrations:
         from bot.pagerduty.api import PagerDutyAPI
 

@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { apiUrl } from '../shared/Variables';
 import useToken from '../hooks/useToken';
-import OnCallTable from './Table';
+import OnCallTableOG from './Table-og';
+import OnCallTablePD from './Table-pd';
 
 import {
   Alert,
@@ -106,30 +107,43 @@ const OnCall = () => {
         {onCallData !== undefined &&
           (onCallData.data !== 'feature_not_enabled' ? (
             !loadingData ? (
-              <>
-                <OnCallTable data={onCallData} />
-                <Divider sx={{ margin: 2 }} />
-                <Box sx={{ marginTop: 4 }}>
-                  <Card>
-                    <CardHeader
-                      title="Auto Page"
-                      subheader="These PagerDuty schedules will automatically be paged on new incidents."
-                    />
-                    <CardContent>
-                      <PagerAutoSelect data={onCallAutoMapData} />
-                    </CardContent>
-                  </Card>
-                </Box>
-              </>
+              onCallData.platform == 'pagerduty' ? (
+                <>
+                  <OnCallTablePD data={onCallData} />
+                  <Divider sx={{ margin: 2 }} />
+                  <Box sx={{ marginTop: 4 }}>
+                    <Card>
+                      <CardHeader
+                        title="Auto Page"
+                        subheader="These PagerDuty schedules will automatically be paged on new incidents."
+                      />
+                      <CardContent>
+                        <PagerAutoSelect data={onCallAutoMapData} />
+                      </CardContent>
+                    </Card>
+                  </Box>
+                </>
+              ) : (
+                <>
+                  <OnCallTableOG data={onCallData} />
+                  <Divider sx={{ margin: 2 }} />
+                  <Box sx={{ marginTop: 4 }}>
+                    <Alert severity="info">
+                      <AlertTitle>Page an Opsgenie Team</AlertTitle>To page an Opsgenie team, use
+                      the Incident Bot Pager shortcut in Slack.
+                    </Alert>
+                  </Box>
+                </>
+              )
             ) : (
               <WaitingBase />
             )
           ) : (
             <Box display="flex" justifyContent="center" alignItems="center">
               <Alert severity="info">
-                <AlertTitle>Integration Not Enabled</AlertTitle>
-                The PagerDuty integration is not enabled. Enable it to see pager data here and
-                integrate it with the rest of the application!
+                <AlertTitle>Integration Not Enabled</AlertTitle>A compatible platform integration is
+                not enabled. Enable one to see pager data here and integrate it with the rest of the
+                application.
               </Alert>
             </Box>
           ))}
