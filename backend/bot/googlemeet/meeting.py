@@ -4,6 +4,7 @@ import datetime
 import time
 import logging
 import config
+import json
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -27,10 +28,11 @@ class GoogleMeet:
     def create_meeting(self):
 
         try:
-            credentials = service_account.Credentials.from_service_account_file(self.service_account_file, scopes=self.scopes)
-            
+            service_account_info = json.load(open(self.service_account_file))
+            credentials = service_account.Credentials.from_service_account_info(service_account_info,scopes=self.scopes)
             delegated_credentials = credentials.with_subject(config.google_account_email)
-            service = build('calendar', 'v3', credentials=delegated_credentials)
+            
+            service = build('calendar', 'v3', credentials=delegated_credentials, always_use_jwt_access=False)
 
             # Call the Calendar API
             now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
@@ -87,8 +89,9 @@ class GoogleMeet:
 
 
     def delete_meeting(self):
-        credentials = service_account.Credentials.from_service_account_file(self.service_account_file, scopes=self.scopes)
-            
+
+        service_account_info = json.load(open(self.service_account_file))
+        credentials = service_account.Credentials.from_service_account_info(service_account_info,scopes=self.scopes)
         delegated_credentials = credentials.with_subject(config.google_account_email)
         service = build('calendar', 'v3', credentials=delegated_credentials)
         service.events().delete(calendarId='primary', eventId=self.meeting_info["meeting_id"]).execute()
