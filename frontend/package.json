@@ -19,7 +19,7 @@
     "framer-motion": "^10.9.1",
     "moment": "^2.29.4",
     "react": "^18.2.0",
-    "react-bootstrap": "^2.7.0",
+    "react-bootstrap": "^2.9.1",
     "react-code-blocks": "^0.1.0",
     "react-dom": "^18.2.0",
     "react-flow-renderer": "^10.3.17",
