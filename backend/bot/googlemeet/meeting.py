@@ -28,7 +28,9 @@ class GoogleMeet:
     def create_meeting(self):
 
         try:
-            service_account_info = json.load(open(self.service_account_file))
+            with open(self.service_account_file) as service_account_file:
+                service_account_info = json.load(service_account_file)
+
             credentials = service_account.Credentials.from_service_account_info(service_account_info,scopes=self.scopes)
             delegated_credentials = credentials.with_subject(config.google_account_email)
             
@@ -90,7 +92,8 @@ class GoogleMeet:
 
     def delete_meeting(self):
 
-        service_account_info = json.load(open(self.service_account_file))
+        with open(self.service_account_file) as service_account_file:
+            service_account_info = json.load(service_account_file)
         credentials = service_account.Credentials.from_service_account_info(service_account_info,scopes=self.scopes)
         delegated_credentials = credentials.with_subject(config.google_account_email)
         service = build('calendar', 'v3', credentials=delegated_credentials)
