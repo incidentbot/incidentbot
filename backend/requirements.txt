@@ -4,7 +4,7 @@ apscheduler==3.10.1
 atlassian-python-api==3.35.0
 cerberus==1.3.4
 flasgger==0.9.5
-flask==2.2.3
+flask==3.0.0
 flask-cors==4.0.0
 flask-debugtoolbar==0.13.1
 flask-jwt-extended==4.4.4
