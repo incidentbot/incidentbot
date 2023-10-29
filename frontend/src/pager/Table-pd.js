@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import PropTypes from 'prop-types';
+import pdlogo from '../img/pagerduty.png';
 
 import {
   Alert,
   Box,
+  Container,
   IconButton,
   LinearProgress,
   Paper,
@@ -60,12 +62,6 @@ function stableSort(array, comparator) {
 }
 
 const headCells = [
-  {
-    id: 'schedule_summary',
-    numeric: false,
-    disablePadding: false,
-    label: 'Schedule'
-  },
   {
     id: 'escalation_policy',
     numeric: false,
@@ -144,9 +140,9 @@ const EnhancedTableToolbar = (props) => {
         pl: { sm: 2 },
         pr: { xs: 1, sm: 1 }
       }}>
-      <Typography sx={{ flex: '1 1 100%' }} variant="h6" id="tableTitle" component="div">
-        On-Call
-      </Typography>
+      <Container sx={{ ml: 0 }}>
+        <img src={pdlogo} alt="PagerDuty" width={30} />
+      </Container>
       <Tooltip title="Refresh">
         <IconButton onClick={() => props.runJob('update_pagerduty_oc_data')}>
           <RefreshIcon />
@@ -163,7 +159,7 @@ const EnhancedTableToolbar = (props) => {
 
 export default function OnCallTablePD(props) {
   const [order, setOrder] = useState('asc');
-  const [orderBy, setOrderBy] = useState('schedule_summary');
+  const [orderBy, setOrderBy] = useState('escalation_level');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(20);
 
@@ -247,10 +243,7 @@ export default function OnCallTablePD(props) {
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((row) => {
                     return (
-                      <TableRow hover tabIndex={-1} key={row.schedule_summary}>
-                        <TableCell align="left" padding="normal">
-                          {row.schedule_summary}
-                        </TableCell>
+                      <TableRow hover tabIndex={-1} key={row.escalation_policy}>
                         <TableCell align="left" padding="normal">
                           {row.escalation_policy}
                         </TableCell>

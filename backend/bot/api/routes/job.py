@@ -8,6 +8,7 @@ from flask_jwt_extended import jwt_required
 job = Blueprint("job", __name__)
 
 undeletable_jobs = [
+    "scrape_for_aging_incidents",
     "update_opsgenie_oc_data",
     "update_pagerduty_oc_data",
     "update_slack_user_list",
