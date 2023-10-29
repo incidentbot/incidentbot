@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import PropTypes from 'prop-types';
+import oglogo from '../img/opsgenie.png';
 
 import {
   Alert,
   Box,
   Chip,
+  Container,
   IconButton,
   LinearProgress,
   Paper,
@@ -134,9 +136,9 @@ const EnhancedTableToolbar = (props) => {
         pl: { sm: 2 },
         pr: { xs: 1, sm: 1 }
       }}>
-      <Typography sx={{ flex: '1 1 100%' }} variant="h6" id="tableTitle" component="div">
-        On-Call
-      </Typography>
+      <Container sx={{ ml: 0 }}>
+        <img src={oglogo} alt="Opsgenie" width={30} />
+      </Container>
       <Tooltip title="Refresh">
         <IconButton onClick={() => props.runJob('update_opsgenie_oc_data')}>
           <RefreshIcon />
@@ -153,7 +155,7 @@ const EnhancedTableToolbar = (props) => {
 
 export default function OnCallTableOG(props) {
   const [order, setOrder] = useState('asc');
-  const [orderBy, setOrderBy] = useState('schedule_summary');
+  const [orderBy, setOrderBy] = useState('escalation_policy');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(20);
 

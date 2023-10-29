@@ -120,7 +120,7 @@ export default function PagerAutoSelect(props) {
       {!loadingData ? (
         <>
           <FormControl sx={{ marginBottom: 2, width: '100%' }}>
-            <InputLabel id="auto-page-chip-input">None</InputLabel>
+            <InputLabel id="auto-page-chip-input">Select</InputLabel>
             <Select
               labelId="auto-page-chip"
               id="auto-page-chip"

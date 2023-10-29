@@ -96,13 +96,12 @@ def find_who_is_on_call(short: bool = False) -> Dict:
         return {}
     else:
         for oc in result:
-            on_call[oc.get("schedule").get("summary")] = sorted(
+            on_call[oc.get("escalation_policy").get("summary")] = sorted(
                 [
                     {
                         "escalation_level": oc.get("escalation_level"),
                         "escalation_policy": oc.get("escalation_policy").get("summary"),
                         "escalation_policy_id": oc.get("escalation_policy").get("id"),
-                        "schedule_summary": oc.get("schedule").get("summary"),
                         "user": oc.get("user").get("summary"),
                         "start": oc.get("start"),
                         "end": oc.get("end"),
@@ -118,7 +117,7 @@ def find_who_is_on_call(short: bool = False) -> Dict:
                 key=lambda x: x.get("escalation_level"),
             )
 
-            auto_mapping[oc.get("schedule").get("summary")] = oc.get(
+            auto_mapping[oc.get("escalation_policy").get("summary")] = oc.get(
                 "escalation_policy"
             ).get("summary")
 
@@ -229,6 +228,7 @@ def store_on_call_data():
     # Store all data
     try:
         record_name = "pagerduty_oc_data"
+
         # Create the row if it doesn't exist
         if not Session.query(OperationalData).filter_by(id=record_name).all():
             try:
@@ -252,7 +252,7 @@ def store_on_call_data():
     finally:
         Session.close()
 
-    # Store all data
+    # Store auto map data
     try:
         record_name = "pagerduty_auto_mapping"
         # Create the row if it doesn't exist
