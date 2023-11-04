@@ -1,7 +1,7 @@
 import config
 
 from bot.scheduler import scheduler
-from bot.slack.client import store_slack_user_list_db
+from bot.slack.client import store_slack_channel_list_db, store_slack_user_list_db
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 
@@ -11,6 +11,7 @@ undeletable_jobs = [
     "scrape_for_aging_incidents",
     "update_opsgenie_oc_data",
     "update_pagerduty_oc_data",
+    "update_slack_channel_list",
     "update_slack_user_list",
 ]
 
@@ -85,6 +86,15 @@ def post_delete_run_job(job_id):
                 else:
                     return (
                         jsonify({"error": "pagerduty integration is not enabled"}),
+                        500,
+                        {"ContentType": "application/json"},
+                    )
+            elif job_id == "update_slack_channel_list":
+                try:
+                    store_slack_channel_list_db()
+                except Exception as error:
+                    return (
+                        jsonify({"error": str(error)}),
                         500,
                         {"ContentType": "application/json"},
                     )
