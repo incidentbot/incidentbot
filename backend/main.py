@@ -66,10 +66,16 @@ Database name:  {config.database_name}
 
 def startup_tasks():
     """Tasks that should be run at each startup"""
-    from bot.scheduler.scheduler import update_slack_user_list
+    from bot.scheduler.scheduler import (
+        update_slack_channel_list,
+        update_slack_user_list,
+    )
 
     # If the init job has already run, skip it
     logger.info("Running startup tasks...")
+
+    # Populate list of Slack channels
+    update_slack_channel_list()
 
     # Populate list of Slack users
     update_slack_user_list()
