@@ -1,7 +1,6 @@
 import config
 import logging
 import slack_sdk.errors
-import variables
 
 from bot.audit import log
 from bot.exc import IndexNotFoundError
@@ -20,10 +19,11 @@ from bot.models.incident import (
 from bot.scheduler import scheduler
 from bot.shared import tools
 from bot.slack.client import (
-    slack_web_client,
+    get_digest_channel_id,
     get_formatted_channel_history,
     get_message_content,
     invite_user_to_channel,
+    slack_web_client,
     slack_workspace_id,
 )
 from bot.slack.incident_logging import read as read_incident_pinned_items
@@ -546,7 +546,7 @@ async def set_status(
     # Also updates digest message
     try:
         slack_web_client.chat_update(
-            channel=variables.digest_channel_id,
+            channel=get_digest_channel_id(),
             ts=incident_data.dig_message_ts,
             blocks=IncidentChannelDigestNotification.update(
                 incident_id=incident_data.channel_name,
@@ -685,7 +685,7 @@ async def set_severity(
     # Also updates digest message
     try:
         slack_web_client.chat_update(
-            channel=variables.digest_channel_id,
+            channel=get_digest_channel_id(),
             ts=incident_data.dig_message_ts,
             blocks=IncidentChannelDigestNotification.update(
                 incident_id=incident_data.channel_name,
