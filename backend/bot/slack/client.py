@@ -8,6 +8,7 @@ from bot.models.pg import OperationalData, Session
 from bot.shared import tools
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
+from sqlalchemy import update
 
 from typing import Any, Dict, List
 
@@ -42,24 +43,9 @@ slack_workspace_id = (
 skip_invite_for_users = ["api", "web"]
 
 
-def check_user_in_group(user_id: str, group_name: str) -> bool:
-    """Provided a user ID and a group name, return a bool indicating
-    whether or not the user is in the group.
-    """
-    all_groups = all_workspace_groups.get("usergroups")
-    try:
-        target_group = [g for g in all_groups if g["handle"] == group_name]
-        if len(target_group) == 0:
-            logger.error(f"Couldn't find group {group_name}")
-            return False
-        target_group_members = slack_web_client.usergroups_users_list(
-            usergroup=target_group[0].get("id"),
-        ).get("users")
-        if user_id in target_group_members:
-            return True
-        return False
-    except Exception as error:
-        logger.error(f"Error looking for user {user_id} in group {group_name}: {error}")
+"""
+Conversations
+"""
 
 
 def get_channel_history(channel_id: str) -> str:
@@ -97,9 +83,37 @@ def get_channel_history(channel_id: str) -> str:
     return json.dumps(history_dict_reversed)
 
 
+def get_channel_list() -> Dict[str, str]:
+    """Return a list of Slack channels"""
+    channels = []
+
+    try:
+        res = slack_web_client.conversations_list(
+            exclude_archived=True,
+            limit=1,
+        )
+
+        while res:
+            channels += res.get("channels")
+
+            if res.get("response_metadata").get("next_cursor") != "":
+                res = slack_web_client.conversations_list(
+                    exclude_archived=True,
+                    limit=1,
+                    cursor=res.get("response_metadata").get("next_cursor"),
+                )
+            else:
+                res = None
+    except Exception as error:
+        logger.error(f"Error getting channel list from Slack workspace: {error}")
+
+    logger.info(f"Found {len(channels)} Slack channels")
+    return channels
+
+
 def get_channel_name(channel_id: str) -> str:
     # Get channel name by id
-    channels = return_slack_channel_info()
+    channels = get_slack_channel_list_db().get("json_data")
     index = tools.find_index_in_list(channels, "id", channel_id)
     if index == -1:
         raise IndexNotFoundError(
@@ -110,7 +124,7 @@ def get_channel_name(channel_id: str) -> str:
 
 def get_digest_channel_id() -> str:
     # Get channel id of the incidents digest channel to send updates to
-    channels = return_slack_channel_info()
+    channels = get_slack_channel_list_db().get("json_data")
     index = tools.find_index_in_list(channels, "name", config.active.digest_channel)
     if index == -1:
         raise IndexNotFoundError(
@@ -149,6 +163,34 @@ def get_formatted_channel_history(channel_id: str, channel_name: str) -> str:
     return formatted_channel_history
 
 
+def get_conversation_members(channel_id: str) -> List[str]:
+    """
+    Retrieves Slack users as members of a channel (conversation)
+    """
+    members = []
+
+    try:
+        res = slack_web_client.conversations_members(channel=channel_id, limit=200)
+
+        while res:
+            members += res.get("members")
+
+            if res.get("response_metadata").get("next_cursor") != "":
+                res = slack_web_client.conversations_members(
+                    channel=channel_id,
+                    cursor=res.get("response_metadata").get("next_cursor"),
+                    limit=200,
+                )
+            else:
+                res = None
+    except Exception as error:
+        logger.error(
+            f"Error getting member list from channel #{get_channel_name(channel_id=channel_id)}: {error}"
+        )
+
+    return members
+
+
 def get_message_content(conversation_id: str, ts: str):
     """
     Given a Slack conversation and a message timestamp,
@@ -164,19 +206,19 @@ def get_message_content(conversation_id: str, ts: str):
         logger.error(f"Error retrieving Slack message: {error}")
 
 
-def get_user_name(user_id: str) -> str:
-    """
-    Get a single user's real_name from a user ID
-
-    This is done against the local database so it won't work unless the job to store
-    slack user data has been run
-    """
-    ulist = Session.query(OperationalData).filter_by(id="slack_users").one()
-    for obj in ulist.json_data:
-        if user_id in obj.values():
-            return obj["real_name"]
-        else:
-            continue
+def get_slack_channel_list_db() -> List[Dict[str, Any]]:
+    try:
+        return (
+            Session.query(OperationalData)
+            .filter(OperationalData.id == "slack_channels")
+            .one()
+            .serialize()
+        )
+    except Exception as error:
+        logger.error(f"Error retrieving list of Slack channels from db: {error}")
+    finally:
+        Session.close()
+        Session.remove()
 
 
 def invite_user_to_channel(channel_id: str, user: str):
@@ -201,71 +243,42 @@ def invite_user_to_channel(channel_id: str, user: str):
         logger.error(f"Error when inviting user {user}: {error}")
 
 
-def replace_user_ids(json_string: str, user_list: Dict[str, str]) -> str:
-    """Replace a user's ID with their name and return a json string object"""
-    for user in user_list:
-        real_name = user["profile"]["real_name"]
-        user_id = user["id"]
-        json_string = json_string.replace(user_id, real_name)
-
-    return json.loads(json_string)
-
-
-def return_slack_channel_info() -> Dict[str, str]:
-    """Return a list of Slack channels"""
-    channels = []
-
-    try:
-        res = slack_web_client.conversations_list(
-            exclude_archived=True,
-            limit=200,
-        )
-
-        while res:
-            channels += res.get("channels")
-
-            if res.get("response_metadata").get("next_cursor") != "":
-                res = slack_web_client.conversations_list(
-                    exclude_archived=True,
-                    limit=200,
-                    cursor=res.get("response_metadata").get("next_cursor"),
-                )
-            else:
-                res = None
-    except Exception as error:
-        logger.error(f"Error getting channel list from Slack workspace: {error}")
-
-    return channels
-
-
-def store_slack_user_list():
+def store_slack_channel_list_db():
     """
-    Retrieves list of users from Slack organization and stores them using a clean format
-    to be retrieved locally to avoid querying the Slack API every time this data
-    is desired
+    Retrieves information about Slack channels for a workspace and stores
+    it in the database
     """
     try:
-        # Delete if exists
-        if Session.query(OperationalData).filter_by(id="slack_users").all():
-            existing = Session.query(OperationalData).filter_by(id="slack_users").one()
-            Session.delete(existing)
-            Session.commit()
+        record_name = "slack_channels"
 
-        # Store
-        row = OperationalData(
-            id="slack_users",
-            json_data=get_slack_users(),
-            updated_at=tools.fetch_timestamp(),
+        # Create the row if it doesn't exist
+        if not Session.query(OperationalData).filter_by(id=record_name).all():
+            try:
+                row = OperationalData(id=record_name)
+                Session.add(row)
+                Session.commit()
+            except Exception as error:
+                logger.error(f"Opdata row create failed for {record_name}: {error}")
+        Session.execute(
+            update(OperationalData)
+            .where(OperationalData.id == record_name)
+            .values(
+                json_data=get_channel_list(),
+                updated_at=tools.fetch_timestamp(),
+            )
         )
-
-        Session.add(row)
         Session.commit()
-        logger.info("Stored current Slack users in database...")
+        logger.info("Stored current Slack channels in database...")
     except Exception as error:
-        logger.error(f"Opdata row create failed for slack_users: {error}")
+        logger.error(f"Opdata row edit failed for {record_name}: {error}")
         Session.rollback()
     finally:
         Session.close()
+
+
+"""
+Users
+"""
 
 
 def check_bot_user_in_digest_channel():
@@ -290,6 +303,41 @@ def check_bot_user_in_digest_channel():
         logger.info(
             f"Bot user is already present in digest channel #{get_channel_name(channel_id=digest_channel_id)}"
         )
+
+
+def check_user_in_group(user_id: str, group_name: str) -> bool:
+    """Provided a user ID and a group name, return a bool indicating
+    whether or not the user is in the group.
+    """
+    all_groups = all_workspace_groups.get("usergroups")
+    try:
+        target_group = [g for g in all_groups if g["handle"] == group_name]
+        if len(target_group) == 0:
+            logger.error(f"Couldn't find group {group_name}")
+            return False
+        target_group_members = slack_web_client.usergroups_users_list(
+            usergroup=target_group[0].get("id"),
+        ).get("users")
+        if user_id in target_group_members:
+            return True
+        return False
+    except Exception as error:
+        logger.error(f"Error looking for user {user_id} in group {group_name}: {error}")
+
+
+def get_user_name(user_id: str) -> str:
+    """
+    Get a single user's real_name from a user ID
+
+    This is done against the local database so it won't work unless the job to store
+    slack user data has been run
+    """
+    ulist = Session.query(OperationalData).filter_by(id="slack_users").one()
+    for obj in ulist.json_data:
+        if user_id in obj.values():
+            return obj["real_name"]
+        else:
+            continue
 
 
 def get_slack_users() -> List[Dict[str, Any]]:
@@ -324,32 +372,46 @@ def get_slack_users() -> List[Dict[str, Any]]:
 
     jdata = sorted(users_array, key=lambda d: d["name"])
 
+    logger.info(f"Found {len(users_array)} Slack users")
+
     return jdata
 
 
-def get_conversation_members(channel_id: str) -> List[str]:
-    """
-    Retrieves Slack users as members of a channel (conversation)
-    """
-    members = []
+def replace_user_ids(json_string: str, user_list: Dict[str, str]) -> str:
+    """Replace a user's ID with their name and return a json string object"""
+    for user in user_list:
+        real_name = user["profile"]["real_name"]
+        user_id = user["id"]
+        json_string = json_string.replace(user_id, real_name)
 
+    return json.loads(json_string)
+
+
+def store_slack_user_list_db():
+    """
+    Retrieves list of users from Slack organization and stores them using a clean format
+    to be retrieved locally to avoid querying the Slack API every time this data
+    is desired
+    """
     try:
-        res = slack_web_client.conversations_members(channel=channel_id, limit=200)
+        # Delete if exists
+        if Session.query(OperationalData).filter_by(id="slack_users").all():
+            existing = Session.query(OperationalData).filter_by(id="slack_users").one()
+            Session.delete(existing)
+            Session.commit()
 
-        while res:
-            members += res.get("members")
-
-            if res.get("response_metadata").get("next_cursor") != "":
-                res = slack_web_client.conversations_members(
-                    channel=channel_id,
-                    cursor=res.get("response_metadata").get("next_cursor"),
-                    limit=200,
-                )
-            else:
-                res = None
-    except Exception as error:
-        logger.error(
-            f"Error getting member list from channel #{get_channel_name(channel_id=channel_id)}: {error}"
+        # Store
+        row = OperationalData(
+            id="slack_users",
+            json_data=get_slack_users(),
+            updated_at=tools.fetch_timestamp(),
         )
 
-    return members
+        Session.add(row)
+        Session.commit()
+        logger.info("Stored current Slack users in database...")
+    except Exception as error:
+        logger.error(f"Opdata row create failed for slack_users: {error}")
+        Session.rollback()
+    finally:
+        Session.close()

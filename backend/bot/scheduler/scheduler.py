@@ -11,7 +11,8 @@ from bot.models.incident import db_read_incident, db_read_open_incidents
 from bot.shared import tools
 from bot.slack.client import (
     slack_web_client,
-    store_slack_user_list,
+    store_slack_channel_list_db,
+    store_slack_user_list_db,
 )
 from pytz import timezone
 from typing import List
@@ -294,12 +295,34 @@ process.scheduler.add_job(
 )
 
 
+def update_slack_channel_list():
+    """
+    Uses Slack API to fetch the list of current channels
+    """
+    try:
+        store_slack_channel_list_db()
+    except Exception as error:
+        logger.error(
+            f"Error updating Slack channel list information in scheduled job: {error}"
+        )
+
+
+process.scheduler.add_job(
+    id="update_slack_channel_list",
+    func=update_slack_channel_list,
+    trigger="interval",
+    name="Update local copy of Slack channels",
+    hours=24,
+    replace_existing=True,
+)
+
+
 def update_slack_user_list():
     """
     Uses Slack API to fetch the list of current users
     """
     try:
-        store_slack_user_list()
+        store_slack_user_list_db()
     except Exception as error:
         logger.error(
             f"Error updating Slack user list information in scheduled job: {error}"

@@ -1,7 +1,7 @@
 import config
 
 from bot.scheduler import scheduler
-from bot.slack.client import store_slack_user_list
+from bot.slack.client import store_slack_user_list_db
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 
@@ -90,7 +90,7 @@ def post_delete_run_job(job_id):
                     )
             elif job_id == "update_slack_user_list":
                 try:
-                    store_slack_user_list()
+                    store_slack_user_list_db()
                 except Exception as error:
                     return (
                         jsonify({"error": str(error)}),
