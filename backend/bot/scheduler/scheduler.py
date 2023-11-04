@@ -2,7 +2,6 @@ import config
 import datetime
 import logging
 import slack_sdk
-import variables
 
 from apscheduler.job import Job
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -10,6 +9,7 @@ from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from bot.models.incident import db_read_incident, db_read_open_incidents
 from bot.shared import tools
 from bot.slack.client import (
+    get_digest_channel_id,
     slack_web_client,
     store_slack_channel_list_db,
     store_slack_user_list_db,
@@ -274,7 +274,7 @@ def scrape_for_aging_incidents():
             base_block.append(inc)
         try:
             slack_web_client.chat_postMessage(
-                channel=variables.digest_channel_id, blocks=base_block
+                channel=get_digest_channel_id(), blocks=base_block
             )
         except Exception as error:
             logger.error(error)

@@ -1,6 +1,5 @@
 import config
 import logging
-import variables
 
 from bot.audit.log import read as read_logs, write as write_log
 from bot.exc import ConfigurationError
@@ -16,7 +15,7 @@ from bot.models.incident import (
 )
 from bot.models.pager import read_pager_auto_page_targets
 from bot.shared import tools
-from bot.slack.client import check_user_in_group
+from bot.slack.client import check_user_in_group, get_digest_channel_id
 from bot.slack.handler import app, help_menu
 from bot.slack.messages import (
     incident_list_message,
@@ -530,7 +529,7 @@ def handle_submission(ack, body, client):
         channel_id = channel_id.replace(character, "")
     try:
         client.chat_postMessage(
-            channel=variables.digest_channel_id,
+            channel=get_digest_channel_id(),
             blocks=IncidentUpdate.public_update(
                 incident_id=channel_id,
                 impacted_resources=parsed.get("impacted_resources"),

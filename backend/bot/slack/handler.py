@@ -3,7 +3,6 @@ import config
 import logging
 import requests
 import slack_sdk
-import variables
 
 from bot.exc import ConfigurationError
 from bot.incident import actions as inc_actions, incident
@@ -12,6 +11,7 @@ from bot.models.incident import db_read_recent_incidents
 from bot.scheduler import scheduler
 from bot.shared import tools
 from bot.slack.client import (
+    get_digest_channel_id,
     get_user_name,
     slack_web_client,
     slack_workspace_id,
@@ -488,7 +488,7 @@ def handle_message_events(body, logger):
     if (
         # The presence of subtype indicates events like message updates, etc.
         # We don't want to act on these.
-        body["event"]["channel"] == variables.digest_channel_id
+        body["event"]["channel"] == get_digest_channel_id()
         and not "subtype" in body["event"].keys()
     ):
         tracking.incr()
