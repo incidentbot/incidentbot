@@ -1,9 +1,13 @@
 import config
+import logging
 
 from bot.confluence.api import ConfluenceApi, logger
 from bot.models.pg import IncidentLogging
 from bot.templates.confluence.rca import RCATemplate
+from html import escape
 from typing import Any, Dict, List, Tuple
+
+logger = logging.getLogger("confluence")
 
 
 class IncidentRootCauseAnalysis:
@@ -124,7 +128,7 @@ class IncidentRootCauseAnalysis:
         for item in self.pinned_items:
             if item.content:
                 all_items_formatted += f"""
-                <blockquote><p><strong>{item.user} @ {item.ts} - </strong> {''.join(letter for letter in item.content if letter.isalnum())}</p></blockquote><p />
+                <blockquote><p><strong>{item.user} @ {item.ts} - </strong> {escape(item.content)}</p></blockquote><p />
                 """
 
         return all_items_formatted
@@ -175,32 +179,13 @@ class IncidentRootCauseAnalysis:
         pinned_messages: str,
     ) -> str:
         """Renders HTML for use in Confluence documents"""
-        variables = {
-            "incident_commander": self.__user_mention_format(incident_commander),
-            "severity": severity.upper(),
-            "severity_definition": severity_definition,
-            "timeline": timeline,
-            "pinned_messages": pinned_messages,
-        }
-        return RCATemplate.template(
-            incident_commander=incident_commander,
-            severity=severity,
-            severity_definition=severity_definition,
-            timeline=timeline,
-            pinned_messages=pinned_messages,
-        )
-
-    def __user_mention_format(self, role: str) -> str:
-        """
-        Determines whether a user mention is a link or a string based on whether or
-        not we could find the user ID
-        """
-        result = self.__find_user_id(role)
-        if result[0]:
-            return f"""
-                <ac:link>
-                    <ri:user ri:userkey="{result[1]}" />
-                </ac:link>
-            """
-        else:
-            return f"@{role}"
+        try:
+            return RCATemplate.template(
+                incident_commander=incident_commander,
+                severity=severity,
+                severity_definition=severity_definition,
+                timeline=timeline,
+                pinned_messages=pinned_messages,
+            )
+        except Exception as error:
+            logger.error(f"Error generating Confluence RCA html: {error}")
