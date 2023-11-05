@@ -312,7 +312,7 @@ process.scheduler.add_job(
     func=update_slack_channel_list,
     trigger="interval",
     name="Update local copy of Slack channels",
-    hours=24,
+    minutes=15,
     replace_existing=True,
 )
 
@@ -334,7 +334,7 @@ process.scheduler.add_job(
     func=update_slack_user_list,
     trigger="interval",
     name="Update local copy of Slack users",
-    hours=24,
+    minutes=15,
     replace_existing=True,
 )
 
