@@ -90,7 +90,7 @@ def get_channel_list() -> Dict[str, str]:
     try:
         res = slack_web_client.conversations_list(
             exclude_archived=True,
-            limit=1,
+            limit=1000,
         )
 
         while res:
@@ -99,7 +99,7 @@ def get_channel_list() -> Dict[str, str]:
             if res.get("response_metadata").get("next_cursor") != "":
                 res = slack_web_client.conversations_list(
                     exclude_archived=True,
-                    limit=1,
+                    limit=1000,
                     cursor=res.get("response_metadata").get("next_cursor"),
                 )
             else:

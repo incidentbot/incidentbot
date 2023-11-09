@@ -147,7 +147,7 @@ podDisruptionBudget:
 You can now install the application. As an example:
 
 ```bash
-helm install echoboomer-charts/incident-bot --version 1.5.7 --values incident-bot-values.yaml --namespace incident-bot
+helm install echoboomer-charts/incident-bot --version 1.5.8 --values incident-bot-values.yaml --namespace incident-bot
 ```
 
 Everything that needs to be configured has been configured directly in the values file as part of the values file.
