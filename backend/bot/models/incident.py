@@ -1,11 +1,7 @@
-import json
-import logging
-
 from bot.models.pg import Incident, Session
+from iblog import logger
 from sqlalchemy import or_
 from typing import List
-
-logger = logging.getLogger("models.incident")
 
 """
 Read
@@ -40,7 +36,9 @@ def db_read_recent_incidents(limit: int, return_json: bool = False) -> List:
     limit defaults to 5
     """
     try:
-        most_recent_incidents = Session.query(Incident).order_by(Incident.created_at)
+        most_recent_incidents = Session.query(Incident).order_by(
+            Incident.created_at
+        )
         recent_incidents_list = []
         for inc in most_recent_incidents:
             if return_json:
@@ -62,7 +60,9 @@ def db_read_open_incidents() -> List:
     Return all rows from incidents table for open (non-resolved) incidents
     """
     try:
-        open_incidents = Session.query(Incident).filter(Incident.status != "resolved")
+        open_incidents = Session.query(Incident).filter(
+            Incident.status != "resolved"
+        )
         open_incidents_list = []
         for inc in open_incidents:
             open_incidents_list.append(inc)
@@ -98,7 +98,9 @@ def db_read_incident(
         else:
             return incident
     except Exception as error:
-        logger.error(f"Incident lookup query failed for {incident_id}: {error}")
+        logger.error(
+            f"Incident lookup query failed for {incident_id}: {error}"
+        )
         raise error
     finally:
         Session.close()
@@ -111,11 +113,15 @@ def db_read_incident_channel_id(incident_id: str) -> str:
     """
     try:
         incident = (
-            Session.query(Incident).filter(Incident.incident_id == incident_id).one()
+            Session.query(Incident)
+            .filter(Incident.incident_id == incident_id)
+            .one()
         )
         return incident.channel_id
     except Exception as error:
-        logger.error(f"Incident lookup query failed for {incident_id}: {error}")
+        logger.error(
+            f"Incident lookup query failed for {incident_id}: {error}"
+        )
         raise error
     finally:
         Session.close()
@@ -178,7 +184,9 @@ def db_update_incident_last_update_sent_col(
         incident.last_update_sent = last_update_sent
         Session.commit()
     except Exception as error:
-        logger.error(f"Incident update failed for {incident.incident_id}: {error}")
+        logger.error(
+            f"Incident update failed for {incident.incident_id}: {error}"
+        )
         Session.rollback()
     finally:
         Session.close()

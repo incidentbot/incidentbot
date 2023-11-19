@@ -1,6 +1,5 @@
 import config
 import json
-import logging
 import requests
 
 from bot.audit import log
@@ -11,9 +10,8 @@ from bot.models.incident import (
     db_update_incident_sp_ts_col,
 )
 from bot.slack.client import slack_web_client
+from iblog import logger
 from typing import Any, Dict, List
-
-logger = logging.getLogger("statuspage.handler")
 
 api = "https://api.statuspage.io/v1/"
 api_key = config.statuspage_api_key

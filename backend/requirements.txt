@@ -21,6 +21,7 @@ pytest-env==0.8.1
 pytest-mock==3.10.0
 pytest-sqlalchemy-mock==0.1.5
 python-dotenv==1.0.0
+python-json-logger==2.0.7
 pytz==2023.2
 PyYAML==6.0
 requests==2.31.0

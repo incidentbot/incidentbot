@@ -1,13 +1,10 @@
-import logging
-
 from bot.models.pg import AuditLog, Session
 from bot.shared import tools
 from bot.slack.client import get_user_name
+from iblog import logger
 from sqlalchemy import update
 from sqlalchemy.orm import scoped_session
 from typing import Dict, List, Tuple
-
-logger = logging.getLogger("audit")
 
 
 def delete(

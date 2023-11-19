@@ -1,6 +1,4 @@
 import config
-import logging
-import logging.config
 import sys
 
 from bot.api.flask import app
@@ -11,11 +9,10 @@ from bot.slack.client import (
     check_bot_user_in_digest_channel,
 )
 from bot.slack.handler import app as slack_app
+from iblog import logger
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 from waitress import serve
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(stream=sys.stdout, level=config.log_level)
 
 """
 Check for required environment variables first
@@ -50,17 +47,10 @@ Startup
 
 def db_check():
     logger.info("Testing the database connection...")
-    db_info = f"""
-------------------------------
-Database host:  {config.database_host}
-Database port:  {config.database_port}
-Database user:  {config.database_user}
-Database name:  {config.database_name}
-------------------------------
-    """
-    print(db_info)
     if not db_verify():
-        logger.fatal("Cannot connect to the database - check settings and try again.")
+        logger.fatal(
+            "Cannot connect to the database - check settings and try again."
+        )
         sys.exit(1)
 
 
@@ -116,9 +106,9 @@ def startup_tasks():
                 )
                 sys.exit(1)
 
-    if config.active.integrations.get("atlassian") and config.active.integrations.get(
+    if config.active.integrations.get(
         "atlassian"
-    ).get("opsgenie"):
+    ) and config.active.integrations.get("atlassian").get("opsgenie"):
         from bot.scheduler.scheduler import update_opsgenie_oc_data
 
         update_opsgenie_oc_data()

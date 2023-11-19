@@ -1,4 +1,3 @@
-import logging
 import secrets
 import sqlalchemy
 
@@ -7,8 +6,7 @@ from bot.shared import tools
 from flask import abort, Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from functools import wraps
-
-logger = logging.getLogger("api.auth")
+from iblog import logger
 
 auth = Blueprint("auth", __name__)
 

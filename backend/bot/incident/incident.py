@@ -1,7 +1,6 @@
 import asyncio
 import config
 import datetime
-import logging
 import re
 import slack_sdk.errors
 
@@ -28,9 +27,8 @@ from bot.templates.incident.digest_notification import (
 )
 from bot.zoom.meeting import ZoomMeeting
 from cerberus import Validator
-from typing import Any, Dict, List
-
-logger = logging.getLogger("incident.handler")
+from iblog import logger
+from typing import Dict
 
 # How many total characters are allowed in a Slack channel name?
 # Slack has a max char limit of 80, but when creating the RCA channel, we need 4 extra chars for '-rca'
@@ -39,7 +37,9 @@ channel_name_length_cap = 76
 # How many characters does the incident prefix take up?
 channel_name_prefix_length = len("inc-20211116-")
 # How long can the provided description be?
-incident_description_max_length = channel_name_length_cap - channel_name_prefix_length
+incident_description_max_length = (
+    channel_name_length_cap - channel_name_prefix_length
+)
 
 if not config.is_test_environment:
     from bot.slack.client import invite_user_to_channel
@@ -106,7 +106,9 @@ class RequestParameters:
             "severity": {
                 "required": True,
                 "type": "string",
-                "allowed": [key for key, _ in config.active.severities.items()],
+                "allowed": [
+                    key for key, _ in config.active.severities.items()
+                ],
                 "empty": False,
             },
             "created_from_web": {
@@ -135,7 +137,9 @@ class RequestParameters:
         }
         v = Validator(schema)
         if not v.validate(self.as_dict, schema):
-            raise ConfigurationError(f"Request parameters has errors: {v.errors}")
+            raise ConfigurationError(
+                f"Request parameters has errors: {v.errors}"
+            )
 
 
 class Incident:
@@ -146,7 +150,9 @@ class Incident:
         # Log transaction
         self.log()
         # Set instance variables
-        self.incident_description = self.request_parameters.incident_description
+        self.incident_description = (
+            self.request_parameters.incident_description
+        )
         self.channel_name = self.__format_channel_name()
         if not config.is_test_environment:
             self.channel = self.__create_incident_channel()
@@ -212,9 +218,12 @@ class Incident:
         return f"inc-{now.year}{now.month}{now.day}{now.hour}{now.minute}-{formatted_channel_name_suffix}"
 
     def __generate_conference_link(self):
-        if "zoom" in config.active.integrations and config.active.integrations.get(
-            "zoom"
-        ).get("auto_create_meeting", False):
+        if (
+            "zoom" in config.active.integrations
+            and config.active.integrations.get("zoom").get(
+                "auto_create_meeting", False
+            )
+        ):
             return ZoomMeeting().url
         else:
             return config.active.options.get("conference_bridge_link")
@@ -266,7 +275,9 @@ def create_incident(
             """
             topic_boilerplate = (
                 incident.conference_bridge
-                if config.active.options.get("channel_topic").get("set_to_meeting_link")
+                if config.active.options.get("channel_topic").get(
+                    "set_to_meeting_link"
+                )
                 else config.active.options.get("channel_topic").get("default")
             )
             try:
@@ -290,7 +301,9 @@ def create_incident(
                 )
                 logger.debug(f"\n{bp_message}\n")
             except slack_sdk.errors.SlackApiError as error:
-                logger.error(f"Error sending message to incident channel: {error}")
+                logger.error(
+                    f"Error sending message to incident channel: {error}"
+                )
             # Pin the boilerplate message to the channel for quick access.
             slack_web_client.pins_add(
                 channel=created_channel_details["id"],
@@ -349,7 +362,9 @@ def create_incident(
                     is_security_incident=created_channel_details[
                         "is_security_incident"
                     ],
-                    channel_description=created_channel_details["incident_description"],
+                    channel_description=created_channel_details[
+                        "incident_description"
+                    ],
                     conference_bridge=incident.conference_bridge,
                 )
             except Exception as error:
@@ -404,7 +419,9 @@ async def handle_incident_optional_features(
     Invite required participants (optional)
     """
     if config.active.options.get("auto_invite_groups").get("enabled"):
-        for gr in config.active.options.get("auto_invite_groups").get("groups"):
+        for gr in config.active.options.get("auto_invite_groups").get(
+            "groups"
+        ):
             all_groups = all_workspace_groups.get("usergroups")
             if len(all_groups) == 0:
                 logger.error(
@@ -442,7 +459,9 @@ async def handle_incident_optional_features(
     Post prompt for creating Statuspage incident if enabled
     """
     if "statuspage" in config.active.integrations:
-        sp_starter_message_content = return_new_statuspage_incident_message(channel_id)
+        sp_starter_message_content = return_new_statuspage_incident_message(
+            channel_id
+        )
         try:
             sp_starter_message = slack_web_client.chat_postMessage(
                 **sp_starter_message_content,
@@ -472,9 +491,13 @@ async def handle_incident_optional_features(
     """
     If this is an internal incident, parse additional values
     """
-    if internal and config.active.options.get("create_from_reaction").get("enabled"):
+    if internal and config.active.options.get("create_from_reaction").get(
+        "enabled"
+    ):
         original_channel = request_parameters.channel
-        original_message_timestamp = request_parameters.original_message_timestamp
+        original_message_timestamp = (
+            request_parameters.original_message_timestamp
+        )
         formatted_timestamp = str.replace(original_message_timestamp, ".", "")
         link_to_message = f"https://{slack_workspace_id}.slack.com/archives/{original_channel}/p{formatted_timestamp}"
         try:

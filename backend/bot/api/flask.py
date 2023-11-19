@@ -1,7 +1,5 @@
 import config
 import json
-import logging
-import logging.config
 import re
 
 from bot.shared import tools
@@ -15,8 +13,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_marshmallow import Marshmallow
 from flask import Flask
-
-logger = logging.getLogger("api")
+from iblog import logger
 
 """
 Run Init Tasks
@@ -24,11 +21,15 @@ Run Init Tasks
 
 live_api_route = "/api/v1"
 
-app = Flask(__name__, static_folder="../../app/static", template_folder="../../app")
+app = Flask(
+    __name__, static_folder="../../app/static", template_folder="../../app"
+)
 ma = Marshmallow(app)
 swagger = Swagger(app)
 
-cors = CORS(app, supports_credentials=True, resources={r"/api/*": {"origins": "*"}})
+cors = CORS(
+    app, supports_credentials=True, resources={r"/api/*": {"origins": "*"}}
+)
 
 app.config["CORS_HEADERS"] = "Content-Type"
 app.config["JWT_SECRET_KEY"] = config.jwt_secret_key
@@ -65,7 +66,8 @@ def webserver_logging(response):
         "skip_logs_for_user_agent", []
     )
     if not re.search(
-        rf"{'|'.join(skip_logs_for_user_agents)}\b", request.headers["user_agent"]
+        rf"{'|'.join(skip_logs_for_user_agents)}\b",
+        request.headers["user_agent"],
     ):
         logger.info(
             '{} {} [{}] "{} {}" - {} - {} {}'.format(

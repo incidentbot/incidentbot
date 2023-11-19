@@ -1,6 +1,5 @@
 import config
 import json
-import logging
 
 from datetime import datetime, timedelta, timezone
 from flask import Blueprint, jsonify, request
@@ -26,11 +25,10 @@ from bot.models.user import (
     db_user_lookup,
     db_user_token_revoke,
 )
+from iblog import logger
 from werkzeug.security import generate_password_hash, check_password_hash
 
 user = Blueprint("user", __name__)
-
-logger = logging.getLogger("api.user")
 
 # jwt
 

@@ -1,6 +1,5 @@
 import config
 import datetime
-import logging
 import slack_sdk
 
 from apscheduler.job import Job
@@ -14,10 +13,10 @@ from bot.slack.client import (
     store_slack_channel_list_db,
     store_slack_user_list_db,
 )
+from iblog import logger
 from pytz import timezone
 from typing import List
 
-logger = logging.getLogger("scheduler")
 
 application_timezone = config.active.options.get("timezone")
 jobstores = {"default": SQLAlchemyJobStore(url=config.database_url)}
@@ -159,7 +158,9 @@ def scheduled_reminder_message(
                 )
                 # Update the sent message with its own timestamp
                 existing_blocks = sent_message["messages"][0]["blocks"]
-                existing_blocks[2]["elements"][1]["value"] = result["message"]["ts"]
+                existing_blocks[2]["elements"][1]["value"] = result["message"][
+                    "ts"
+                ]
                 try:
                     slack_web_client.chat_update(
                         channel=channel_id,
@@ -232,7 +233,9 @@ def scrape_for_aging_incidents():
     open_incidents = db_read_open_incidents()
     formatted_incidents = []
     for inc in open_incidents:
-        created_at = datetime.datetime.strptime(inc.created_at, tools.timestamp_fmt)
+        created_at = datetime.datetime.strptime(
+            inc.created_at, tools.timestamp_fmt
+        )
         now = datetime.datetime.now()
         time_open = now - created_at
         old = datetime.timedelta(days=max_age) < time_open
@@ -338,9 +341,9 @@ process.scheduler.add_job(
     replace_existing=True,
 )
 
-if config.active.integrations.get("atlassian") and config.active.integrations.get(
+if config.active.integrations.get(
     "atlassian"
-).get("opsgenie"):
+) and config.active.integrations.get("atlassian").get("opsgenie"):
     from bot.opsgenie.api import OpsgenieAPI
 
     def update_opsgenie_oc_data():
