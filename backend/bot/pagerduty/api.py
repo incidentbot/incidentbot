@@ -1,15 +1,13 @@
 import config
 import json
-import logging
 
 from bot.models.pg import Incident, OperationalData, Session
 from bot.shared import tools
 from bot.slack.client import slack_workspace_id
+from iblog import logger
 from pdpyras import APISession, PDClientError
 from sqlalchemy import update
 from typing import Dict, List
-
-logger = logging.getLogger("pagerduty.api")
 
 image_url = "https://i.imgur.com/IVvdFCV.png"
 
@@ -100,8 +98,12 @@ def find_who_is_on_call(short: bool = False) -> Dict:
                 [
                     {
                         "escalation_level": oc.get("escalation_level"),
-                        "escalation_policy": oc.get("escalation_policy").get("summary"),
-                        "escalation_policy_id": oc.get("escalation_policy").get("id"),
+                        "escalation_policy": oc.get("escalation_policy").get(
+                            "summary"
+                        ),
+                        "escalation_policy_id": oc.get(
+                            "escalation_policy"
+                        ).get("id"),
                         "user": oc.get("user").get("summary"),
                         "start": oc.get("start"),
                         "end": oc.get("end"),
@@ -164,12 +166,16 @@ def page(
             response = session.post("/incidents", json=pd_inc)
             if not response.ok:
                 raise Exception(
-                    "Error creating PagerDuty incident: {}".format(response.json())
+                    "Error creating PagerDuty incident: {}".format(
+                        response.json()
+                    )
                 )
             try:
                 created_incident = json.loads(response.text)["incident"]
                 incident = (
-                    Session.query(Incident).filter_by(incident_id=channel_name).one()
+                    Session.query(Incident)
+                    .filter_by(incident_id=channel_name)
+                    .one()
                 )
                 existing_incidents = incident.pagerduty_incidents
                 if existing_incidents is None:
@@ -205,14 +211,18 @@ def resolve(pd_incident_id: str):
         }
     }
     try:
-        response = session.put(f"/incidents/{pd_incident_id}", json=pd_inc_patch)
+        response = session.put(
+            f"/incidents/{pd_incident_id}", json=pd_inc_patch
+        )
         logger.info(response)
         if not response.ok:
             logger.error(
                 "Error patching PagerDuty incident: {}".format(response.json())
             )
         else:
-            logger.info(f"Successfully resolved PagerDuty incident {pd_incident_id}")
+            logger.info(
+                f"Successfully resolved PagerDuty incident {pd_incident_id}"
+            )
     except PDClientError as error:
         logger.error(f"Error patching PagerDuty incident: {error}")
 
@@ -236,7 +246,9 @@ def store_on_call_data():
                 Session.add(row)
                 Session.commit()
             except Exception as error:
-                logger.error(f"Opdata row create failed for {record_name}: {error}")
+                logger.error(
+                    f"Opdata row create failed for {record_name}: {error}"
+                )
         Session.execute(
             update(OperationalData)
             .where(OperationalData.id == record_name)
@@ -262,7 +274,9 @@ def store_on_call_data():
                 Session.add(row)
                 Session.commit()
             except Exception as error:
-                logger.error(f"Opdata row create failed for {record_name}: {error}")
+                logger.error(
+                    f"Opdata row create failed for {record_name}: {error}"
+                )
         Session.execute(
             update(OperationalData)
             .where(OperationalData.id == record_name)

@@ -1,13 +1,11 @@
 import config
-import logging
 
 from bot.confluence.api import ConfluenceApi, logger
 from bot.models.pg import IncidentLogging
 from bot.templates.confluence.rca import RCATemplate
 from html import escape
+from iblog import logger
 from typing import Any, Dict, List, Tuple
-
-logger = logging.getLogger("confluence")
 
 
 class IncidentRootCauseAnalysis:
@@ -30,10 +28,14 @@ class IncidentRootCauseAnalysis:
         self.timeline = timeline
 
         self.parent_page = (
-            config.active.integrations.get("atlassian").get("confluence").get("parent")
+            config.active.integrations.get("atlassian")
+            .get("confluence")
+            .get("parent")
         )
         self.space = (
-            config.active.integrations.get("atlassian").get("confluence").get("space")
+            config.active.integrations.get("atlassian")
+            .get("confluence")
+            .get("space")
         )
 
         self.confluence = ConfluenceApi()
@@ -70,7 +72,9 @@ class IncidentRootCauseAnalysis:
                     editor="v2",
                 )
                 created_page_id = self.exec.get_page_id(self.space, title)
-                created_page_info = self.exec.get_page_by_id(page_id=created_page_id)
+                created_page_info = self.exec.get_page_by_id(
+                    page_id=created_page_id
+                )
                 url = (
                     created_page_info["_links"]["base"]
                     + created_page_info["_links"]["webui"]
@@ -90,7 +94,9 @@ class IncidentRootCauseAnalysis:
                                     name=item.title,
                                     content_type=item.mimetype,
                                     page_id=created_page_id,
-                                    space=config.active.integrations.get("atlassian")
+                                    space=config.active.integrations.get(
+                                        "atlassian"
+                                    )
                                     .get("confluence")
                                     .get("space"),
                                     comment=f"This item was pinned to the incident by {item.user} at {item.ts}.",
@@ -103,7 +109,9 @@ class IncidentRootCauseAnalysis:
             except Exception as error:
                 logger.error(error)
         else:
-            logger.error("Couldn't create RCA page, does the parent page exist?")
+            logger.error(
+                "Couldn't create RCA page, does the parent page exist?"
+            )
 
     def __find_user_id(self, user: str) -> Tuple[bool, Any]:
         """

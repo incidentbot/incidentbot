@@ -1,15 +1,13 @@
 import config
-import logging
 import opsgenie_sdk
 import requests
 
-from bot.models.pg import Incident, OperationalData, Session
+from bot.models.pg import OperationalData, Session
 from bot.shared import tools
 from bot.slack.client import slack_workspace_id
+from iblog import logger
 from sqlalchemy import update
 from typing import Dict, List
-
-logger = logging.getLogger("opsgenie")
 
 image_url = "https://i.imgur.com/NjiEBCu.png"
 
@@ -18,14 +16,20 @@ class OpsgenieAPI:
     def __init__(self):
         self.conf = opsgenie_sdk.configuration.Configuration()
 
-        if config.active.integrations.get("atlassian").get("opsgenie").get("team"):
+        if (
+            config.active.integrations.get("atlassian")
+            .get("opsgenie")
+            .get("team")
+        ):
             key = config.atlassian_opsgenie_api_team_integration_key
         else:
             key = config.atlassian_opsgenie_api_key
 
         self.conf.api_key["Authorization"] = key
 
-        self.api_client = opsgenie_sdk.api_client.ApiClient(configuration=self.conf)
+        self.api_client = opsgenie_sdk.api_client.ApiClient(
+            configuration=self.conf
+        )
         self.alert_api = opsgenie_sdk.AlertApi(api_client=self.api_client)
 
         self.endpoint = "https://api.opsgenie.com/v2"
@@ -59,7 +63,9 @@ class OpsgenieAPI:
         )
 
         try:
-            create_response = self.alert_api.create_alert(create_alert_payload=body)
+            create_response = self.alert_api.create_alert(
+                create_alert_payload=body
+            )
 
             return create_response
         except Exception as err:
@@ -71,7 +77,11 @@ class OpsgenieAPI:
 
     def list_teams(self) -> List[str]:
         """List Opsgenie teams"""
-        if not config.active.integrations.get("atlassian").get("opsgenie").get("team"):
+        if (
+            not config.active.integrations.get("atlassian")
+            .get("opsgenie")
+            .get("team")
+        ):
             resp = requests.get(
                 f"{self.endpoint}/teams",
                 headers=self.headers,
@@ -80,7 +90,9 @@ class OpsgenieAPI:
             return [t.get("name") for t in resp.json().get("data")]
         else:
             return [
-                config.active.integrations.get("atlassian").get("opsgenie").get("team")
+                config.active.integrations.get("atlassian")
+                .get("opsgenie")
+                .get("team")
             ]
 
     def list_rotations(self) -> List[Dict]:
@@ -116,13 +128,19 @@ class OpsgenieAPI:
             record_name = "opsgenie_oc_data"
 
             # Create the row if it doesn't exist
-            if not Session.query(OperationalData).filter_by(id=record_name).all():
+            if (
+                not Session.query(OperationalData)
+                .filter_by(id=record_name)
+                .all()
+            ):
                 try:
                     row = OperationalData(id=record_name)
                     Session.add(row)
                     Session.commit()
                 except Exception as error:
-                    logger.error(f"Opdata row create failed for {record_name}: {error}")
+                    logger.error(
+                        f"Opdata row create failed for {record_name}: {error}"
+                    )
             Session.execute(
                 update(OperationalData)
                 .where(OperationalData.id == record_name)

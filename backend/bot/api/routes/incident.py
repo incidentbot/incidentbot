@@ -1,5 +1,4 @@
 import config
-import logging
 
 from bot.api.routes.auth import api_key_required
 from bot.api.schemas.incident import (
@@ -14,8 +13,7 @@ from bot.models.incident import db_read_all_incidents, db_read_incident
 from bot.models.pg import Incident, IncidentLogging, Session
 from flask import Blueprint, jsonify, request, Response
 from flask_jwt_extended import jwt_required
-
-logger = logging.getLogger("api.incident")
+from iblog import logger
 
 incidentrt = Blueprint("incident", __name__)
 

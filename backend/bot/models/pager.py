@@ -1,9 +1,7 @@
-import logging
 import sqlalchemy
 
 from bot.models.pg import OperationalData, Session
-
-logger = logging.getLogger("models.pager")
+from iblog import logger
 
 
 def read_pager_auto_page_targets():

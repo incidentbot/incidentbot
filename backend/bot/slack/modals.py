@@ -1,5 +1,4 @@
 import config
-import logging
 
 from bot.audit.log import read as read_logs, write as write_log
 from bot.exc import ConfigurationError
@@ -29,9 +28,8 @@ from bot.templates.incident.updates import (
     IncidentUpdate,
 )
 from bot.templates.tools import parse_modal_values
+from iblog import logger
 from datetime import datetime
-
-logger = logging.getLogger("slack.modals")
 
 placeholder_severity = [sev for sev, _ in config.active.severities.items()][-1]
 
@@ -376,11 +374,15 @@ def handle_submission(ack, body, client):
     try:
         request_parameters = incident.RequestParameters(
             channel="modal",
-            incident_description=parsed.get("open_incident_modal_set_description"),
+            incident_description=parsed.get(
+                "open_incident_modal_set_description"
+            ),
             user=user,
             severity=parsed.get("open_incident_modal_set_severity"),
             created_from_web=False,
-            is_security_incident=parsed.get("open_incident_modal_set_security_type")
+            is_security_incident=parsed.get(
+                "open_incident_modal_set_security_type"
+            )
             in (
                 "True",
                 "true",
@@ -1316,7 +1318,9 @@ def open_modal(ack, body, client):
 
     # Return modal only if user has permissions
     sp_config = config.active.integrations.get("statuspage")
-    if sp_config.get("permissions") and sp_config.get("permissions").get("groups"):
+    if sp_config.get("permissions") and sp_config.get("permissions").get(
+        "groups"
+    ):
         for gr in sp_config.get("permissions").get("groups"):
             if check_user_in_group(user_id=user, group_name=gr):
                 client.views_open(
@@ -1362,7 +1366,9 @@ def handle_submission(ack, body, client, view):
     Handles open_statuspage_incident_modal
     """
     ack()
-    incident_data = db_read_incident(channel_id=view["blocks"][2].get("block_id"))
+    incident_data = db_read_incident(
+        channel_id=view["blocks"][2].get("block_id")
+    )
 
     # Fetch parameters from modal
     parsed = parse_modal_values(body)
@@ -1495,7 +1501,9 @@ def open_modal(ack, body, client):
 
     # Return modal only if user has permissions
     sp_config = config.active.integrations.get("statuspage")
-    if sp_config.get("permissions") and sp_config.get("permissions").get("groups"):
+    if sp_config.get("permissions") and sp_config.get("permissions").get(
+        "groups"
+    ):
         for gr in sp_config.get("permissions").get("groups"):
             if check_user_in_group(user_id=user, group_name=gr):
                 client.views_open(
@@ -1542,7 +1550,9 @@ def handle_submission(ack, body):
     """
     ack()
 
-    channel_id = body.get("view").get("blocks")[4].get("block_id").split("_")[-1:][0]
+    channel_id = (
+        body.get("view").get("blocks")[4].get("block_id").split("_")[-1:][0]
+    )
     values = body.get("view").get("state").get("values")
     update_message = (
         values.get(f"statuspage_update_message_input_{channel_id}")
@@ -1557,7 +1567,9 @@ def handle_submission(ack, body):
     )
 
     try:
-        StatuspageIncidentUpdate().update(channel_id, update_status, update_message)
+        StatuspageIncidentUpdate().update(
+            channel_id, update_status, update_message
+        )
     except Exception as error:
         logger.error(f"Error updating Statuspage incident: {error}")
 
@@ -1733,7 +1745,9 @@ def handle_submission(ack, body, client, view):
             issue_link = "{}/browse/{}".format(
                 config.atlassian_api_url, resp.get("key")
             )
-            db_update_jira_issues_col(channel_id=incident_id, issue_link=issue_link)
+            db_update_jira_issues_col(
+                channel_id=incident_id, issue_link=issue_link
+            )
             try:
                 resp = client.chat_postMessage(
                     channel=incident_id,
@@ -1751,7 +1765,9 @@ def handle_submission(ack, body, client, view):
                             "fields": [
                                 {
                                     "type": "mrkdwn",
-                                    "text": "*Key:* {}".format(resp.get("key")),
+                                    "text": "*Key:* {}".format(
+                                        resp.get("key")
+                                    ),
                                 },
                                 {
                                     "type": "mrkdwn",

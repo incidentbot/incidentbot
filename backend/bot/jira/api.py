@@ -1,11 +1,9 @@
 import config
-import logging
 import requests
 
 from atlassian import Jira
+from iblog import logger
 from typing import List
-
-logger = logging.getLogger("jira")
 
 
 class JiraApi:
@@ -25,7 +23,9 @@ class JiraApi:
     def project_id(self) -> str:
         """Returns the configured Jira project's ID"""
         return self.api.project(
-            config.active.integrations.get("atlassian").get("jira").get("project")
+            config.active.integrations.get("atlassian")
+            .get("jira")
+            .get("project")
         ).get("id")
 
     @property
@@ -79,7 +79,9 @@ class JiraApi:
     def test(self) -> bool:
         try:
             return self.jira.get_project(
-                config.active.integrations.get("atlassian").get("jira").get("project")
+                config.active.integrations.get("atlassian")
+                .get("jira")
+                .get("project")
             ).get("id")
         except Exception as error:
             logger.error(f"Error authenticating to Jira: {error}")

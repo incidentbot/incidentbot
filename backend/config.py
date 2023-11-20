@@ -1,5 +1,4 @@
 import json
-import logging
 import os
 import sys
 import yaml
@@ -7,18 +6,14 @@ import yaml
 from bot.exc import ConfigurationError
 from cerberus import Validator
 from dotenv import load_dotenv
+from iblog import logger, log_level
 from typing import Dict, List
 
-__version__ = "v1.5.8"
+__version__ = "v1.6.0"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
 load_dotenv(dotenv_path)
-log_level = os.getenv("LOGLEVEL", "INFO").upper()
-
-# Create the logging object
-# This is used by submodules as well
-logger = logging.getLogger("config")
 
 
 """
@@ -403,7 +398,9 @@ Atlassian
 atlassian_api_url = os.getenv("ATLASSIAN_API_URL", default="")
 atlassian_api_username = os.getenv("ATLASSIAN_API_USERNAME", default="")
 atlassian_api_token = os.getenv("ATLASSIAN_API_TOKEN", default="")
-atlassian_opsgenie_api_key = os.getenv("ATLASSIAN_OPSGENIE_API_KEY", default="")
+atlassian_opsgenie_api_key = os.getenv(
+    "ATLASSIAN_OPSGENIE_API_KEY", default=""
+)
 atlassian_opsgenie_api_team_integration_key = os.getenv(
     "ATLASSIAN_OPSGENIE_API_TEAM_INTEGRATION_KEY", default=""
 )
@@ -488,8 +485,15 @@ def env_check(required_envs: List[str]):
             if "pagerduty" in active.integrations:
                 logger.fatal(f"PagerDuty cannot be enabled with Opsgenie.")
                 sys.exit(1)
-            if active.integrations.get("atlassian").get("opsgenie").get("team"):
-                if os.getenv("ATLASSIAN_OPSGENIE_API_TEAM_INTEGRATION_KEY") == "":
+            if (
+                active.integrations.get("atlassian")
+                .get("opsgenie")
+                .get("team")
+            ):
+                if (
+                    os.getenv("ATLASSIAN_OPSGENIE_API_TEAM_INTEGRATION_KEY")
+                    == ""
+                ):
                     logger.fatal(
                         f"If enabling the Opsgenie integration and setting a team, you must provide the ATLASSIAN_OPSGENIE_API_TEAM_INTEGRATION_KEY environment variable."
                     )

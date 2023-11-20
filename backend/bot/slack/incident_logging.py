@@ -1,10 +1,7 @@
-import logging
-
 from bot.models.pg import IncidentLogging, Session
+from iblog import logger
 from sqlalchemy.orm import scoped_session
 from typing import List
-
-logger = logging.getLogger("slack.logging")
 
 
 def read(
@@ -33,7 +30,9 @@ def read(
         else:
             logger.warning(f"No audit log record for {incident_id}")
     except Exception as error:
-        logger.error(f"Audit log row lookup failed for incident {incident_id}: {error}")
+        logger.error(
+            f"Audit log row lookup failed for incident {incident_id}: {error}"
+        )
     finally:
         database_session.close()
         database_session.remove()
@@ -65,7 +64,9 @@ def write(
         database_session.add(obj)
         database_session.commit()
     except Exception as error:
-        logger.error(f"Audit log row create failed for incident {incident_id}: {error}")
+        logger.error(
+            f"Audit log row create failed for incident {incident_id}: {error}"
+        )
         database_session.rollback()
     finally:
         database_session.close()

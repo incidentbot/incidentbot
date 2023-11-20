@@ -1,13 +1,8 @@
 import config
-import logging
 
 from apscheduler.job import Job
-from bot.models.incident import db_read_incident
-from bot.shared import tools
-from typing import Any, Dict, List
+from typing import Dict, List
 from .client import bot_user_name, bot_user_id
-
-logger = logging.getLogger("slack.messages")
 
 
 def help_menu(include_header: bool = True) -> List:
@@ -56,7 +51,9 @@ def help_menu(include_header: bool = True) -> List:
     return blocks
 
 
-def incident_list_message(incidents: List, all: bool = False) -> List[Dict[str, str]]:
+def incident_list_message(
+    incidents: List, all: bool = False
+) -> List[Dict[str, str]]:
     """Return a message containing details on incidents
 
     Keyword arguments:
@@ -195,7 +192,9 @@ def job_list_message(jobs: List[Job]) -> Dict[str, str]:
         return base_block
 
 
-def sp_incident_list_message(incidents: List[Dict[str, str]]) -> List[Dict[str, str]]:
+def sp_incident_list_message(
+    incidents: List[Dict[str, str]]
+) -> List[Dict[str, str]]:
     """Return a message containing details on Statuspage incidents
 
     Keyword arguments:
