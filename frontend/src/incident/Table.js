@@ -317,10 +317,10 @@ export default function EnhancedTable(props) {
                               row.severity === 'sev1'
                                 ? 'error'
                                 : row.severity === 'sev2'
-                                ? 'warning'
-                                : row.severity === 'sev3'
-                                ? 'warning'
-                                : 'success'
+                                  ? 'warning'
+                                  : row.severity === 'sev3'
+                                    ? 'warning'
+                                    : 'success'
                             }
                           />
                         </TableCell>
