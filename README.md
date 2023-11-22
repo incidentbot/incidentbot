@@ -37,7 +37,7 @@ Featuring a rich web management UI:
 - Integrates with your favorite tools
   - Confluence - Automatically format and create a postmortem document in Confluence
   - Jira - Create and associate Issues for your incidents directly from the channel
-  - PagerDuty - Automatically invite specific teams to a new incident or page a team at incident creation
+  - PagerDuty & OpsGenie - Interact with teams and page or invite them to incidents
   - Statuspage - Create and manage a Statuspage incident directly within the Slack channel
   - Zoom - Create a Zoom meeting for each incident and populate the channel with the link
 
@@ -47,18 +47,16 @@ New features are being added all the time.
 
 - [Create a Slack app](https://api.slack.com/apps?new_app=1) for this application. You can name it whatever you'd like, but `incident-bot` seems to make the most sense.
 - Select `from an app manifest` and copy `manifest.yaml` out of this repository and paste it in to automatically configure the app.
-- You'll need the app token, bot token, and user token for your application and provide those as `SLACK_APP_TOKEN`, `SLACK_BOT_TOKEN`, and `SLACK_USER_TOKEN` - these can be found within the app's configuration page in Slack.
+- You'll need the app token, bot token, and user token for your application and provide those as `SLACK_APP_TOKEN`, `SLACK_BOT_TOKEN`, and `SLACK_USER_TOKEN` - these can be found within the app's configuration page in Slack. For more information on Slack tokens, see the documentation [here](https://api.slack.com/authentication/token-types).
 - You'll need a Postgres instance to connect to.
-- Configure the app using `config.yaml` and deploy it to Kubernetes, Docker, or whichever platform you choose.
+- Configure the app using `config.yaml` and deploy it to Kubernetes, Docker, or whichever platform you choose. The structure of the `config.yaml` is explained in the documentation linked below.
 
-[Full setup documentation is available here](https://docs.incidentbot.io/setup/)
-
-You have the option to download source from the latest release and build your own image as well.
+Full setup documentation is available [here](https://docs.incidentbot.io/setup/).
 
 ### Kubernetes
 
+- The Helm chart is the recommended way to deploy - instructions are available [here](https://docs.incidentbot.io/setup/#helm).
 - You can use [kustomize](https://github.com/echoboomer/incident-bot/blob/main/deploy/kustomize/incident-bot/overlays/development/kustomization.yaml). More details available [here](https://docs.incidentbot.io/setup/#kustomize).
-- There's optionally a Helm chart - instructions are available [here](https://docs.incidentbot.io/setup/#helm).
 
 ## Testing
 
@@ -72,14 +70,14 @@ make -C backend run-tests
 
 This application is not meant to solve every problem with regard to incident management. It was created as an open-source alternative to paid solutions that integrate with Slack.
 
-If you encounter issues with functionality or wish to see new features, please open an issue and let us know!
+If you encounter issues with functionality or wish to see new features, please open an issue and let us know.
+
+We encourage you to join the community [Discord](https://discord.gg/PzqSQUY88c) if you wish to interact with us directly.
 
 ## Contributing
 
-A pull request template will ask required questions for each pull request. Most importantly, you should make sure to bump all version refs throughout the app. There is a script for this:
+A pull request template will ask required questions for each pull request. Most importantly, you should make sure to bump all version refs throughout the app. There is a script for this in which the only argument is the version to bump to:
 
 ```bash
-./scripts/version-bump.sh 1.4.8 1.4.9
+./scripts/version-bump.sh v1.6.3
 ```
-
-Check the current version in the `version` file for the current version.
