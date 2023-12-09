@@ -1,5 +1,33 @@
 version: 2
 jobs:
+  build-bot:
+    environment:
+      IMAGE_NAME: eb129/incident-bot
+    docker:
+      - image: cimg/base:current
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Publish amd64 Docker Image to Docker Hub
+          command: |
+            echo 'export IMAGE_TAG=$(cat version)' >> "$BASH_ENV"
+            source "$BASH_ENV"
+            docker build --platform linux/amd64 --tag $IMAGE_NAME:$IMAGE_TAG .
+  build-bot-arm64:
+    environment:
+      IMAGE_NAME: eb129/incident-bot
+    docker:
+      - image: cimg/base:current
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Publish arm64 Docker Image to Docker Hub
+          command: |
+            echo 'export IMAGE_TAG=$(cat version)' >> "$BASH_ENV"
+            source "$BASH_ENV"
+            docker build --platform linux/arm64 --file Dockerfile.arm64 --tag $IMAGE_NAME:$IMAGE_TAG-arm64 .
   publish-bot:
     environment:
       IMAGE_NAME: eb129/incident-bot
@@ -52,6 +80,12 @@ workflows:
   version: 2
   build-main:
     jobs:
+      - build-bot:
+          on:
+            pull_request:
+      - build-bot-arm64:
+          on:
+            pull_request:
       - publish-bot:
           filters:
             branches:
