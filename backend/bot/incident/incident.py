@@ -68,16 +68,19 @@ class RequestParameters:
         self.message_reacted_to_content = message_reacted_to_content
         self.original_message_timestamp = original_message_timestamp
 
+        if self.is_security_incident:
+            self.private_channel = True
+
         self.as_dict = {
-            "channel": channel,
-            "incident_description": incident_description,
-            "user": user,
-            "severity": severity,
-            "created_from_web": created_from_web,
-            "is_security_incident": is_security_incident,
-            "private_channel": private_channel,
-            "message_reacted_to_content": message_reacted_to_content,
-            "original_message_timestamp": original_message_timestamp,
+            "channel": self.channel,
+            "incident_description": self.incident_description,
+            "user": self.user,
+            "severity": self.severity,
+            "created_from_web": self.created_from_web,
+            "is_security_incident": self.is_security_incident,
+            "private_channel": self.private_channel,
+            "message_reacted_to_content": self.message_reacted_to_content,
+            "original_message_timestamp": self.original_message_timestamp,
         }
 
         self.validate()
@@ -570,3 +573,39 @@ async def handle_incident_optional_features(
                         channel_id=created_channel_details["id"],
                         paging_user="auto",
                     )
+    """
+    Provide additional information if this is a security incidents (optional)
+    """
+    if request_parameters.is_security_incident:
+        original_channel = request_parameters.channel
+        original_message_timestamp = (
+            request_parameters.original_message_timestamp
+        )
+        formatted_timestamp = str.replace(original_message_timestamp, ".", "")
+        link_to_message = f"https://{slack_workspace_id}.slack.com/archives/{original_channel}/p{formatted_timestamp}"
+        try:
+            slack_web_client.chat_postMessage(
+                channel=channel_id,
+                text=f":warning: This incident was created via a reaction to a message. Here is a link to the original message: <{link_to_message}>",
+                blocks=[
+                    {
+                        "type": "header",
+                        "text": {
+                            "type": "plain_text",
+                            "text": ":warning: This incident was flagged as a security incident.",
+                        },
+                    },
+                    {"type": "divider"},
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "The channel is private. If you wish to add others, you must invite them.",
+                        },
+                    },
+                ],
+            )
+        except slack_sdk.errors.SlackApiError as error:
+            logger.error(
+                f"Error sending additional information to the incident channel {channel_name}: {error}"
+            )

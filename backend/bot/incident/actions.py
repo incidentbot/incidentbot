@@ -384,7 +384,8 @@ async def set_status(
         rca_channel_name = f"{incident_data.incident_id}-rca"
         try:
             rca_channel = slack_web_client.conversations_create(
-                name=rca_channel_name
+                name=rca_channel_name,
+                is_private=True,
             )
             # Log the result which includes information like the ID of the conversation
             logger.debug(f"\n{rca_channel_name}\n")
