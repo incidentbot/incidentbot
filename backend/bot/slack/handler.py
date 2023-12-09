@@ -7,6 +7,7 @@ from bot.exc import ConfigurationError
 from bot.incident import actions as inc_actions, incident
 from bot.incident.action_parameters import ActionParametersSlack
 from bot.models.incident import db_read_recent_incidents
+from bot.models.pager import read_pager_auto_page_targets
 from bot.scheduler import scheduler
 from bot.shared import tools
 from bot.slack.client import (
@@ -732,6 +733,173 @@ def handle_static_action(ack, body, logger):
 def handle_static_action(ack, body, logger):
     logger.debug(body)
     ack()
+
+    if body.get("actions")[0].get("selected_option").get("value") in (
+        "True",
+        "true",
+        True,
+    ):
+        try:
+            placeholder_severity = [
+                sev for sev, _ in config.active.severities.items()
+            ][-1]
+
+            base_blocks = [
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "This will start a new incident channel and you will "
+                        + "be invited to it. From there, please use our incident "
+                        + "management process to run the incident or coordinate "
+                        + "with others to do so.",
+                    },
+                },
+                {
+                    "type": "section",
+                    "block_id": "is_security_incident",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "*Is this a security incident?*",
+                    },
+                    "accessory": {
+                        "action_id": "open_incident_modal_set_security_type",
+                        "type": "static_select",
+                        "placeholder": {
+                            "type": "plain_text",
+                            "text": "Yes",
+                        },
+                        "initial_option": {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Yes",
+                            },
+                            "value": "true",
+                        },
+                        "options": [
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "Yes",
+                                },
+                                "value": "true",
+                            },
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "No",
+                                },
+                                "value": "false",
+                            },
+                        ],
+                    },
+                },
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": ":lock: *Security incident channels will be created as private channels.*",
+                    },
+                },
+                {
+                    "type": "input",
+                    "block_id": "open_incident_modal_desc",
+                    "element": {
+                        "type": "plain_text_input",
+                        "action_id": "open_incident_modal_set_description",
+                        "placeholder": {
+                            "type": "plain_text",
+                            "text": "A brief description of the problem.",
+                        },
+                    },
+                    "label": {"type": "plain_text", "text": "Description"},
+                },
+                {
+                    "block_id": "severity",
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": "*Severity*"},
+                    "accessory": {
+                        "type": "static_select",
+                        "action_id": "open_incident_modal_set_severity",
+                        "placeholder": {
+                            "type": "plain_text",
+                            "text": "Select a severity...",
+                            "emoji": True,
+                        },
+                        "initial_option": {
+                            "text": {
+                                "type": "plain_text",
+                                "text": placeholder_severity.upper(),
+                            },
+                            "value": placeholder_severity,
+                        },
+                        "options": [
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": sev.upper(),
+                                    "emoji": True,
+                                },
+                                "value": sev,
+                            }
+                            for sev, _ in config.active.severities.items()
+                        ],
+                    },
+                },
+            ]
+
+            """
+            If there are teams that will be auto paged, mention that
+            """
+            if "pagerduty" in config.active.integrations:
+                auto_page_targets = read_pager_auto_page_targets()
+                if len(auto_page_targets) != 0:
+                    base_blocks.extend(
+                        [
+                            {"type": "divider"},
+                            {
+                                "type": "section",
+                                "text": {
+                                    "type": "mrkdwn",
+                                    "text": ":point_right: *The following teams will "
+                                    + "be automatically paged when this incident is created:*",
+                                },
+                            },
+                        ]
+                    )
+                    for i in auto_page_targets:
+                        for k, v in i.items():
+                            base_blocks.extend(
+                                [
+                                    {
+                                        "type": "section",
+                                        "text": {
+                                            "type": "mrkdwn",
+                                            "text": f"_{k}_",
+                                        },
+                                    },
+                                ]
+                            )
+
+            slack_web_client.views_update(
+                # Pass the view_id
+                view_id=body["view"]["id"],
+                # String that represents view state to protect against race conditions
+                hash=body["view"]["hash"],
+                # View payload with updated blocks
+                view={
+                    "type": "modal",
+                    "callback_id": "open_incident_modal",
+                    "title": {
+                        "type": "plain_text",
+                        "text": "Start a new incident",
+                    },
+                    "submit": {"type": "plain_text", "text": "Start"},
+                    "blocks": base_blocks,
+                },
+            )
+        except slack_sdk.errors.SlackApiError as error:
+            logger.error(f"Error deleting message: {error}")
 
 
 @app.action("open_incident_modal_set_private")

@@ -13,9 +13,11 @@ jobs:
           command: |
             echo 'export IMAGE_TAG=$(cat version)' >> "$BASH_ENV"
             source "$BASH_ENV"
-            docker build -t $IMAGE_NAME:$IMAGE_TAG .
+            docker build --platform linux/amd64 -t $IMAGE_NAME:$IMAGE_TAG .
+            docker build --platform linux/arm64 -t $IMAGE_NAME:$IMAGE_TAG-arm64 .
             echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
             docker push $IMAGE_NAME:$IMAGE_TAG
+            docker push $IMAGE_NAME:$IMAGE_TAG-arm64
   publish-docs:
     environment:
       IMAGE_NAME: eb129/incident-bot-docs

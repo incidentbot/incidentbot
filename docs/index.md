@@ -56,6 +56,12 @@ In any incident channel, you can use the `pushpin` emote in Slack to attach mess
 
 By default, the app will look for incidents that are not resolved that are older than 7 days. You may adjust this behavior via the scheduler module if you wish.
 
+#### Security Incidents
+
+When you create a channel via the modal, you have the option to mark an incident as security-related. If selecting this option, the created channel will be private.
+
+This will flag the incident as a security incident in the digest channel. There will also be an alert in the channel letting users know the incident is security-related.
+
 ## Integrations
 
 For more information on integrations, check out the [integrations](/integrations/) documentation.

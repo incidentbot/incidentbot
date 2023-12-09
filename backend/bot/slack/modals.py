@@ -31,8 +31,6 @@ from bot.templates.tools import parse_modal_values
 from iblog import logger
 from datetime import datetime
 
-placeholder_severity = [sev for sev, _ in config.active.severities.items()][-1]
-
 
 @app.event("app_home_opened")
 def update_home_tab(client, event, logger):
@@ -179,6 +177,10 @@ def open_modal(ack, body, client):
     """
     Provides the modal that will display when the shortcut is used to start an incident
     """
+    placeholder_severity = [
+        sev for sev, _ in config.active.severities.items()
+    ][-1]
+
     base_blocks = [
         {
             "type": "section",
@@ -372,30 +374,31 @@ def handle_submission(ack, body, client):
 
     # Create request parameters object
     try:
-        request_parameters = incident.RequestParameters(
-            channel="modal",
-            incident_description=parsed.get(
-                "open_incident_modal_set_description"
-            ),
-            user=user,
-            severity=parsed.get("open_incident_modal_set_severity"),
-            created_from_web=False,
-            is_security_incident=parsed.get(
-                "open_incident_modal_set_security_type"
+        resp = incident.create_incident(
+            incident.RequestParameters(
+                channel="modal",
+                incident_description=parsed.get(
+                    "open_incident_modal_set_description"
+                ),
+                user=user,
+                severity=parsed.get("open_incident_modal_set_severity"),
+                created_from_web=False,
+                is_security_incident=parsed.get(
+                    "open_incident_modal_set_security_type"
+                )
+                in (
+                    "True",
+                    "true",
+                    True,
+                ),
+                private_channel=parsed.get("open_incident_modal_set_private")
+                in (
+                    "True",
+                    "true",
+                    True,
+                ),
             )
-            in (
-                "True",
-                "true",
-                True,
-            ),
-            private_channel=parsed.get("open_incident_modal_set_private")
-            in (
-                "True",
-                "true",
-                True,
-            ),
         )
-        resp = incident.create_incident(request_parameters)
         client.chat_postMessage(channel=user, text=resp)
     except ConfigurationError as error:
         logger.error(error)
