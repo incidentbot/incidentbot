@@ -1,4 +1,4 @@
-FROM --platform=linux/arm64 node:20-bullseye as frontend
+FROM arm64v8/node:20-bullseye as frontend
 
 WORKDIR /app
 COPY ./frontend/public/ ./public
@@ -11,7 +11,7 @@ COPY ./frontend/.prettierrc .
 RUN npm install &&\
   npm run build
 
-FROM --platform=linux/arm64 python:3.11 as base
+FROM arm64v8/python:3.11 as base
 
 # Copy only the relevant Python files into the container.
 COPY --from=frontend /app/build /incident-bot/app
