@@ -14,3 +14,4 @@ logs/
 
 .DS_Store
 deploy/kustomize/incident-bot/base/db.yaml
+.env
