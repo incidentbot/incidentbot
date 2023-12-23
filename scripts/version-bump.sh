@@ -4,7 +4,6 @@ files=(
   "version"
   "./backend/config.py"
   "./deploy/kustomize/incident-bot/overlays/production/kustomization.yaml"
-  "./docs/setup.md"
   "./docs/deploy/overlays/production/kustomization.yaml"
 )
 

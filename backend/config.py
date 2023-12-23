@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from iblog import logger, log_level
 from typing import Dict, List
 
-__version__ = "v1.7.0"
+__version__ = "v1.7.1"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -116,6 +116,23 @@ class Configuration:
                                 "required": False,
                                 "type": "list",
                                 "empty": True,
+                            },
+                        },
+                    },
+                    "channel_naming": {
+                        "required": False,
+                        "type": "dict",
+                        "empty": False,
+                        "schema": {
+                            "channel_name_prefix": {
+                                "required": False,
+                                "type": "string",
+                                "empty": False,
+                            },
+                            "time_format_in_channel_name": {
+                                "required": False,
+                                "type": "string",
+                                "empty": False,
                             },
                         },
                     },

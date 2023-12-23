@@ -39,6 +39,16 @@ options:
     groups:
       - my-slack-group
       - my-other-slack-group
+  # By default, channel names are prefixed inc-YYYYMMDDHM-
+  # You can override this behavior here.
+  channel_naming:
+    # The start of the channel name prefix.
+    # inc by default
+    channel_name_prefix: incd
+    # The formatting for the timestamp
+    # %Y%m%d%H%M by default
+    # The value must follow datetime valid strings.
+    time_format_in_channel_name: '%Y-%m-%d'
   # The topic that will be set on all incident channels
   channel_topic:
     default: 'This is the default incident channel topic. You can edit it in settings.'
@@ -65,45 +75,46 @@ options:
   # Timezone to use for logging, etc.
   timezone: UTC
 integrations:
+  {}
   # Secret data is provided as environment variables for integrations
   # Only non-secret data is configured here
-  atlassian:
-    # Enable Confluence integration
-    confluence:
-      # Set to true to automatically create an RCA doc
-      auto_create_rca: true
-      space: ENGINEERIN
-      parent: RCAs
-    # Enable Jira integration
-    jira:
-      project: 'IN'
-      # Issue types that will populate the list of available options when creating a Jira issue.
-      # This will override automatically fetching issue types.
-      # issue_types: ['Epic', 'Task']
-      # Priorities that will populate the list of available options when creating a Jira issue.
-      # This will override automatically fetching issue priorities.
-      # priorities: ['High', 'Low']
-      # Labels to apply to created issues
-      labels:
-        - incident-management
-    # opsgenie:
-    #   # Note that providing the 'team' value here will limit creation of alerts to a single team.
-    #   team: oncalls
+  # atlassian:
+  # Enable Confluence integration
+  # confluence:
+  #   # Set to true to automatically create an RCA doc
+  #   auto_create_rca: true
+  #   space: ENGINEERIN
+  #   parent: RCAs
+  # Enable Jira integration
+  # jira:
+  #   project: 'IN'
+  #   # Issue types that will populate the list of available options when creating a Jira issue.
+  #   # This will override automatically fetching issue types.
+  #   # issue_types: ['Epic', 'Task']
+  #   # Priorities that will populate the list of available options when creating a Jira issue.
+  #   # This will override automatically fetching issue priorities.
+  #   # priorities: ['High', 'Low']
+  #   # Labels to apply to created issues
+  #   labels:
+  #     - incident-management
+  # opsgenie:
+  #   # Note that providing the 'team' value here will limit creation of alerts to a single team.
+  #   team: oncalls
   # Simply provide an empty dict to enable PagerDuty
   # pagerduty: {}
   # Enable Statuspage integration
-  statuspage:
-    # The public URL of the Statuspage.
-    url: https://status.mydomain
-    # Which Slack groups have permissions to manage Statuspage incidents?
-    # If not provided, everyone can manage Statuspage incidents from Slack.
-    # permissions:
-    #   groups:
-    #     - my-slack-group
-  # Enable Zoom integration
-  zoom:
-    # Set to true to automatically generate a Zoom meeting for each incident
-    auto_create_meeting: true
+  # statuspage:
+  #   # The public URL of the Statuspage.
+  #   url: https://status.mydomain
+  #   # Which Slack groups have permissions to manage Statuspage incidents?
+  #   # If not provided, everyone can manage Statuspage incidents from Slack.
+  #   # permissions:
+  #   #   groups:
+  #   #     - my-slack-group
+  # # Enable Zoom integration
+  # zoom:
+  #   # Set to true to automatically generate a Zoom meeting for each incident
+  #   auto_create_meeting: true
 links:
   incident_guide: https://changeme.com
   incident_postmortems: https://changeme.com

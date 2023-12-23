@@ -107,9 +107,9 @@ In the application's `config.yaml`, you can set the Opsgenie integration to acti
 
 ```yaml
 integrations:
-  opsgenie: {}
-  # opsgenie:
-  #   team: my-team
+  atlassian:
+    opsgenie: {}
+    # team: my-team
 ```
 
 ## PagerDuty
