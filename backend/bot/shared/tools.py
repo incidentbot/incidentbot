@@ -63,6 +63,15 @@ def random_string_generator() -> str:
     )
 
 
+def validate_date_format_string(fmt: str) -> bool:
+    try:
+        placeholder_date = datetime.strftime(datetime.now(), fmt)
+        datetime.strptime(placeholder_date, fmt)
+        return True
+    except Exception:
+        return False
+
+
 def validate_ip_address(address: str) -> bool:
     """Validate that a provided string is an IP address"""
     try:

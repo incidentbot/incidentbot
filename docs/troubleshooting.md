@@ -11,4 +11,4 @@ Restart the application and the issue should be resolved. If not, please file a 
 
 > I've made changes in PagerDuty but the bot is out of date. I don't see my teams/schedules/etc.
 
-The bot runs a job every half-hour to update PagerDuty information. If you need it to run sooner, go to the jobs page in the UI and kick off the job manually.
+The bot runs a job every half-hour to update PagerDuty information. If you need it to run sooner, go to the jobs page in the UI and kick off the job manually. After this, PagerDuty information should be up to date.

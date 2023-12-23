@@ -1,6 +1,5 @@
 import asyncio
 import config
-import datetime
 import re
 import slack_sdk.errors
 
@@ -27,6 +26,7 @@ from bot.templates.incident.digest_notification import (
 )
 from bot.zoom.meeting import ZoomMeeting
 from cerberus import Validator
+from datetime import datetime
 from iblog import logger
 from typing import Dict
 
@@ -217,10 +217,46 @@ class Incident:
         formatted_channel_name_suffix = formatted_channel_name_suffix.replace(
             " ", "-"
         ).lower()
-        now = datetime.datetime.now()
-        return f"inc-{now.year}{now.month}{now.day}{now.hour}{now.minute}-{formatted_channel_name_suffix}"
 
-    def __generate_conference_link(self):
+        datefmt = self.__format_date()
+        prefix = "inc"
+
+        if config.active.options.get("channel_naming"):
+            if config.active.options.get("channel_naming").get(
+                "channel_name_prefix"
+            ):
+                prefix = config.active.options.get("channel_naming").get(
+                    "channel_name_prefix"
+                )
+
+        return f"{prefix}-{datefmt}-{formatted_channel_name_suffix}"
+
+    def __format_date(self) -> str:
+        # Allowed statements for date format
+        default_time_format = "%Y%m%d%H%M"
+        default_timestamp = datetime.now().strftime(default_time_format)
+
+        if config.active.options.get("channel_naming"):
+            if config.active.options.get("channel_naming").get(
+                "time_format_in_channel_name"
+            ):
+                f = config.active.options.get("channel_naming").get(
+                    "time_format_in_channel_name"
+                )
+                if not tools.validate_date_format_string(f):
+                    logger.warning(
+                        "Error setting format for timestamp in incident channel: {} is not valid so the default of {} will be used.".format(
+                            f,
+                            default_time_format,
+                        )
+                    )
+                    return default_timestamp
+                else:
+                    return datetime.strftime(datetime.now(), f)
+        else:
+            return default_timestamp
+
+    def __generate_conference_link(self) -> str:
         if (
             "zoom" in config.active.integrations
             and config.active.integrations.get("zoom").get(

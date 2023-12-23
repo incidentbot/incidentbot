@@ -14,6 +14,7 @@ You can get started quickly by using the Helm chart:
 
 ```bash
 helm repo add echoboomer-charts https://charts.echoboomer.net
+helm repo update
 ```
 
 Sensitive data should come from Kubernetes `Secret` objects at a minimum. 
@@ -147,10 +148,11 @@ podDisruptionBudget:
 You can now install the application. As an example:
 
 ```bash
-helm install echoboomer-charts/incident-bot --version 1.6.1 --values incident-bot-values.yaml --namespace incident-bot
+VERSION=$(helm search repo incident-bot --output=json | jq '.[0].version' | tr -d '"')
+helm install echoboomer-charts/incident-bot --version $VERSION --values incident-bot-values.yaml --namespace incident-bot
 ```
 
-Everything that needs to be configured has been configured directly in the values file as part of the values file.
+Everything that needs to be configured has been configured as part of the values file.
 
 If you'd like to clean everything up:
 
@@ -216,7 +218,13 @@ Please exercise good judgment and caution when deploying this application.
 
 !!! warning
 
-    The application does have an API that can be used to create incidents covered in the configuration section. It is recommended to keep this communication private as well.
+    The application does have an API to support the frontend. It requires authentication on all routes. It should also be considered when running the application somewhere.
+
+!!! warning
+
+    What if I don't want the frontend at all?
+
+    We've gotten this feedback and are considering options. For now, you don't ever have to use it if you don't want to.
 
 ## User Management
 
