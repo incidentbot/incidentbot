@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from iblog import logger, log_level
 from typing import Dict, List
 
-__version__ = "v1.7.1"
+__version__ = "v1.7.2"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -99,25 +99,37 @@ class Configuration:
                 "type": "list",
                 "schema": {"type": "string", "empty": False},
             },
+            "jobs": {
+                "required": False,
+                "type": "dict",
+                "schema": {
+                    "scrape_for_aging_incidents": {
+                        "required": False,
+                        "type": "dict",
+                        "empty": False,
+                        "schema": {
+                            "enabled": {
+                                "required": False,
+                                "type": "boolean",
+                                "empty": False,
+                            },
+                            "ignore_statuses": {
+                                "required": False,
+                                "type": "list",
+                                "schema": {"type": "string", "empty": False},
+                            },
+                        },
+                    },
+                },
+            },
             "options": {
                 "required": True,
                 "type": "dict",
                 "schema": {
                     "auto_invite_groups": {
-                        "required": True,
-                        "type": "dict",
-                        "schema": {
-                            "enabled": {
-                                "required": True,
-                                "type": "boolean",
-                                "empty": False,
-                            },
-                            "groups": {
-                                "required": False,
-                                "type": "list",
-                                "empty": True,
-                            },
-                        },
+                        "required": False,
+                        "type": "list",
+                        "empty": False,
                     },
                     "channel_naming": {
                         "required": False,
@@ -344,6 +356,10 @@ class Configuration:
         return self.live.get("integrations")
 
     @property
+    def jobs(self) -> Dict:
+        return self.live.get("jobs")
+
+    @property
     def links(self) -> Dict:
         return self.live.get("links")
 
@@ -463,18 +479,13 @@ def env_check(required_envs: List[str]):
         if os.getenv(e) == "":
             logger.fatal(f"The environment variable {e} cannot be empty.")
             sys.exit(1)
-    if active.options.get("auto_invite_groups").get("enabled"):
-        if active.options.get("auto_invite_groups").get("groups") is None:
-            logger.fatal(
-                f"If enabling auto group invite, the groups field in config.yaml should be set."
-            )
-            sys.exit(1)
     if active.options.get("create_from_reaction"):
         if active.options.get("create_from_reaction").get("reacji") is None:
             logger.fatal(
                 f"If enabling auto create via react, the reacji field in config.yaml should be set."
             )
             sys.exit(1)
+    # Integrations checks
     if "atlassian" in active.integrations:
         if "confluence" in active.integrations.get("atlassian"):
             for var in [

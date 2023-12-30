@@ -231,6 +231,20 @@ def scrape_for_aging_incidents():
     # Find open incidents and append them to a list to add to the message if they're older
     # than the max age
     open_incidents = db_read_open_incidents()
+
+    # Exclude statuses if provided
+    if config.active.jobs:
+        if "scrape_for_aging_incidents" in config.active.jobs:
+            ignored_statuses = config.active.jobs.get(
+                "scrape_for_aging_incidents"
+            ).get("ignore_statuses")
+            if ignored_statuses is not None or ignored_statuses is not []:
+                open_incidents = [
+                    i
+                    for i in open_incidents
+                    if i.status not in ignored_statuses
+                ]
+
     formatted_incidents = []
     for inc in open_incidents:
         created_at = datetime.datetime.strptime(
@@ -288,14 +302,19 @@ def scrape_for_aging_incidents():
         )
 
 
-process.scheduler.add_job(
-    id="scrape_for_aging_incidents",
-    func=scrape_for_aging_incidents,
-    trigger="interval",
-    name="Look for stale incidents and inform the digest channel",
-    days=2,
-    replace_existing=True,
-)
+if config.active.jobs.get("scrape_for_aging_incidents").get(
+    "enabled"
+) is None or config.active.jobs.get("scrape_for_aging_incidents").get(
+    "enabled"
+):
+    process.scheduler.add_job(
+        id="scrape_for_aging_incidents",
+        func=scrape_for_aging_incidents,
+        trigger="interval",
+        name="Look for stale incidents and inform the digest channel",
+        days=2,
+        replace_existing=True,
+    )
 
 
 def update_slack_channel_list():

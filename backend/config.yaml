@@ -30,15 +30,21 @@ statuses:
   - identified
   - monitoring
   - resolved
+# jobs:
+#   # Customize jobs behavior
+#   scrape_for_aging_incidents:
+#     # Enabled by default - set to false to disable the job
+#     enabled: true
+#     # If the job is enabled, avoid sending updates for incidents with any of these statuses
+#     # This is useful if using customized statuses
+#     ignore_statuses: []
 options:
   # Automatically invite Slack groups to newly created incidents
-  auto_invite_groups:
-    # Set to true to enable
-    enabled: false
-    # List of group names as configured in Slack
-    groups:
-      - my-slack-group
-      - my-other-slack-group
+  # Adding this and providing a list of group names implies enabling the feature
+  # auto_invite_groups:
+  #   # List of group names as configured in Slack
+  #   - my-slack-group
+  #   - my-other-slack-group
   # By default, channel names are prefixed inc-YYYYMMDDHM-
   # You can override this behavior here.
   channel_naming:
@@ -109,8 +115,7 @@ integrations:
   #   # Which Slack groups have permissions to manage Statuspage incidents?
   #   # If not provided, everyone can manage Statuspage incidents from Slack.
   #   # permissions:
-  #   #   groups:
-  #   #     - my-slack-group
+  #   #   - my-slack-group
   # # Enable Zoom integration
   # zoom:
   #   # Set to true to automatically generate a Zoom meeting for each incident

@@ -368,7 +368,7 @@ def create_incident(
                             "type": "section",
                             "text": {
                                 "type": "mrkdwn",
-                                "text": f"{incident.conference_bridge}",
+                                "text": incident.conference_bridge,
                             },
                         },
                     ],
@@ -457,10 +457,8 @@ async def handle_incident_optional_features(
     """
     Invite required participants (optional)
     """
-    if config.active.options.get("auto_invite_groups").get("enabled"):
-        for gr in config.active.options.get("auto_invite_groups").get(
-            "groups"
-        ):
+    if "auto_invite_groups" in config.active.options:
+        for gr in config.active.options.get("auto_invite_groups"):
             all_groups = all_workspace_groups.get("usergroups")
             if len(all_groups) == 0:
                 logger.error(
