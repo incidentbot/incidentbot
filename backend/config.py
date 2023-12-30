@@ -44,6 +44,17 @@ class Configuration:
         Returns bool indicating whether or not the service passes validation
         """
         schema = {
+            "api": {
+                "required": False,
+                "type": "dict",
+                "schema": {
+                    "enabled": {
+                        "required": True,
+                        "type": "boolean",
+                        "empty": False,
+                    },
+                },
+            },
             "platform": {
                 "required": True,
                 "type": "string",
@@ -263,8 +274,8 @@ class Configuration:
                                     "auto_create_incident_type": {
                                         "required": False,
                                         "type": "string",
-                                        "empty": False
-                                    }
+                                        "empty": False,
+                                    },
                                 },
                             },
                             "opsgenie": {
@@ -352,6 +363,10 @@ class Configuration:
     @property
     def all(self) -> Dict:
         return self.live
+
+    @property
+    def api(self) -> Dict:
+        return self.live.get("api")
 
     @property
     def digest_channel(self) -> str:

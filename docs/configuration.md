@@ -36,6 +36,11 @@ Please review the [integrations](/integrations/) documentation for additional in
 Here is the standard layout of the `config.yaml` file and some examples for how to configure integrations and other features.
 
 ```yaml
+# Control whether or not to enable the API for the frontend
+# Disabling the API will disable all functionality for the frontend
+api:
+  # Set to false to disable
+  enabled: true
 # Options: slack
 platform: slack
 # The channel where incident activity is logged
@@ -170,6 +175,31 @@ links:
 Any time you'd like to change these settings, adjust them here and provide them to the app. In most cases this can be done by mounting the config file to a path and then setting that path to the value of the environment variable `CONFIG_FILE_PATH`.
 
 If using the official Helm chart, the data from `config.yaml` can be provided as values and a `ConfigMap` will automatically be created and mounted. See the [Helm](/setup/#helm) documentation for more information.
+
+### Disabling the API
+
+!!! warning
+
+    The API and frontend are enabled by default.
+
+If you choose to run the bot without the API and the frontend, set the following section in `config.yaml`:
+
+```yaml
+api:
+  enabled: false
+```
+
+This will only run the Slack portion of the app and will not serve API routes. This also means the frontend will not work. If you choose to use this option, you should use a version of the image suffixed with `-lite`.
+
+As an example using the official Helm chart:
+
+```yaml
+# values.yaml
+image:
+  suffix: lite
+```
+
+This will automatically suffix the image tag and use the non-API enabled version.
 
 ### Adjusting Channel Naming
 
