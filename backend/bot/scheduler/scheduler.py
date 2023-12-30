@@ -233,7 +233,7 @@ def scrape_for_aging_incidents():
     open_incidents = db_read_open_incidents()
 
     # Exclude statuses if provided
-    if config.active.jobs:
+    if config.active.jobs is not None:
         if "scrape_for_aging_incidents" in config.active.jobs:
             ignored_statuses = config.active.jobs.get(
                 "scrape_for_aging_incidents"
@@ -302,11 +302,11 @@ def scrape_for_aging_incidents():
         )
 
 
-if config.active.jobs.get("scrape_for_aging_incidents").get(
-    "enabled"
-) is None or config.active.jobs.get("scrape_for_aging_incidents").get(
-    "enabled"
-):
+if (
+    config.active.jobs is not None
+    and "scrape_for_aging_incidents" in config.active.jobs
+    and config.active.jobs.get("scrape_for_aging_incidents").get("enabled")
+) or (config.active.jobs is None):
     process.scheduler.add_job(
         id="scrape_for_aging_incidents",
         func=scrape_for_aging_incidents,
