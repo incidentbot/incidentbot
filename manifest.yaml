@@ -1,6 +1,3 @@
-_metadata:
-  major_version: 1
-  minor_version: 1
 display_information:
   name: incident-bot
   description: Incident Bot helps run incidents.

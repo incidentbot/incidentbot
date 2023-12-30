@@ -39,11 +39,11 @@ plugins:
 nav:
   - Home:
       - index.md
-      - Integrations: 'integrations.md'
-      - Usage Guide: 'usage.md'
       - Installation, Setup, and Configuration:
           - Installation and Setup: 'setup.md'
           - Configuration: 'configuration.md'
+      - Integrations: 'integrations.md'
+      - Usage Guide: 'usage.md'
       - Troubleshooting: 'troubleshooting.md'
 extra:
   social:

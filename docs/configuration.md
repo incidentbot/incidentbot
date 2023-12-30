@@ -4,7 +4,7 @@
 
 All application settings are configured using environment variables/secrets for sensitive values and `config.yaml` for everything else.
 
-You can call this file whatever you'd like, but by default it's called `config.yaml`. An example is provided at the backend root.
+There is an example of the `config.yaml` structure available at `backend/config.yaml` - note that this file is also covered in detail below.
 
 You can change the following settings in this file:
 
@@ -29,7 +29,11 @@ You can also enable and configure integrations:
 - Statuspage
 - Zoom
 
-Here is the standard layout of the file and some examples for how to configure integrations and other features.
+Please review the [integrations](/integrations/) documentation for additional information on enabling and configuring integrations.
+
+## Configuration Layout
+
+Here is the standard layout of the `config.yaml` file and some examples for how to configure integrations and other features.
 
 ```yaml
 # Options: slack
@@ -64,15 +68,21 @@ statuses:
   - identified
   - monitoring
   - resolved
+jobs:
+  # Customize jobs behavior
+  scrape_for_aging_incidents:
+    # Enabled by default - set to false to disable the job
+    enabled: true
+    # If the job is enabled, avoid sending updates for incidents with any of these statuses
+    # This is useful if using customized statuses
+    ignore_statuses: []
 options:
   # Automatically invite Slack groups to newly created incidents
-  auto_invite_groups:
-    # Set to true to enable
-    enabled: false
-    # List of group names as configured in Slack
-    groups:
-      - my-slack-group
-      - my-other-slack-group
+  # Adding this and providing a list of group names implies enabling the feature
+  # auto_invite_groups:
+  #   # List of group names as configured in Slack
+  #   - my-slack-group
+  #   - my-other-slack-group
   # By default, channel names are prefixed inc-YYYYMMDDHM-
   # You can override this behavior here.
   channel_naming:
@@ -155,7 +165,7 @@ links:
 
 Any time you'd like to change these settings, adjust them here and provide them to the app. In most cases this can be done by mounting the config file to a path and then setting that path to the value of the environment variable `CONFIG_FILE_PATH`.
 
-If using the official Helm chart, the data from `config.yaml` can be provided as values and a `ConfigMap` will automatically be created and mounted.
+If using the official Helm chart, the data from `config.yaml` can be provided as values and a `ConfigMap` will automatically be created and mounted. See the [Helm](/setup/#helm) documentation for more information.
 
 ### Adjusting Channel Naming
 
@@ -174,3 +184,46 @@ options:
     # The value must follow datetime valid strings.
     time_format_in_channel_name: '%Y-%m-%d'
 ```
+
+By default, channels are named `inc-dateformat-description`.
+
+### Adjusting Statuses and Severities
+
+By default, the following statuses are configured:
+
+```yaml
+- investigating
+- identified
+- monitoring
+- resolved
+```
+
+The following severities are configured:
+
+```yaml
+- sev1
+- sev2
+- sev3
+- sev4
+```
+
+It is up to you to decide which statuses and severities you want to use with the bot, and this file is the soruce of truth for configuring them. Note that severities are a `map` and should establish both names and descriptions.
+
+!!! warning
+
+    It is recommended to keep the investigating and resolved statuses intact. There are dependencies throughout the application that rely on these statuses. You may do what you wish with the rest.
+
+### Adjusting Jobs Behavior
+
+#### Scrape For Aging Incidents
+
+By default, the bot will alert the digest channel regarding incidents that are at least `7` days old and not set to `resolved` status. If you are providing additional statuses in the configuration, you may wish to exclude additional status types from this report:
+
+```yaml
+jobs:
+  scrape_for_aging_incidents:
+    ignore_statuses:
+      - some-custom-status
+```
+
+This would disable sending updates for incidents that have a status set to `some-custom status`.

@@ -5,7 +5,7 @@ ADD mkdocs.yml /docs/mkdocs.yml
 RUN pip install mkdocs-glightbox && \
   mkdocs build -d "/src"
 
-FROM nginx:1.23.3-alpine
+FROM nginx:1.25.3-alpine
 RUN rm -rf /usr/share/nginx/html
 COPY --from=build /src /usr/share/nginx/html
 

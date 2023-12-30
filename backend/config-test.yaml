@@ -24,9 +24,7 @@ options:
     enabled: true
     reacji: create-incident
   auto_invite_groups:
-    enabled: true
-    groups:
-      - sre-concierge
+    - sre-concierge
   skip_logs_for_user_agent:
     - kube-probe
     - ELB-HealthChecker/2.0

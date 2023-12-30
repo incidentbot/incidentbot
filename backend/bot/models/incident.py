@@ -60,13 +60,11 @@ def db_read_open_incidents() -> List:
     Return all rows from incidents table for open (non-resolved) incidents
     """
     try:
-        open_incidents = Session.query(Incident).filter(
-            Incident.status != "resolved"
-        )
-        open_incidents_list = []
-        for inc in open_incidents:
-            open_incidents_list.append(inc)
-        return open_incidents_list
+        all_incidents = Session.query(Incident)
+        all_incidents_list = []
+        for inc in all_incidents:
+            all_incidents_list.append(inc)
+        return all_incidents_list
     except Exception as error:
         logger.error(
             f"Incident lookup query failed when returning open incidents: {error}"

@@ -100,7 +100,6 @@ configMap:
       - resolved
     options:
       auto_invite_groups:
-        enabled: false
         groups:
           - my-slack-group
           - my-other-slack-group
