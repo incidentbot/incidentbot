@@ -13,7 +13,7 @@ jobs:
           command: |
             echo 'export IMAGE_TAG=$(cat version)' >> "$BASH_ENV"
             source "$BASH_ENV"
-            docker build --tag $IMAGE_NAME:$IMAGE_TAG .
+            docker build --file ./build/Dockerfile --tag $IMAGE_NAME:$IMAGE_TAG .
   build-bot-arm64:
     environment:
       IMAGE_NAME: eb129/incident-bot
@@ -71,7 +71,7 @@ jobs:
           command: |
             echo 'export IMAGE_TAG=$(cat version)' >> "$BASH_ENV"
             source "$BASH_ENV"
-            docker build --tag $IMAGE_NAME:$IMAGE_TAG .
+            docker build --file ./build/Dockerfile --tag $IMAGE_NAME:$IMAGE_TAG .
             echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
             docker push $IMAGE_NAME:$IMAGE_TAG
   publish-bot-arm64:
