@@ -30,15 +30,14 @@ statuses:
   - identified
   - monitoring
   - resolved
-jobs:
-  # Customize jobs behavior
-  scrape_for_aging_incidents:
-    # Enabled by default - set to false to disable the job
-    enabled: true
-    # If the job is enabled, avoid sending updates for incidents with any of these statuses
-    # This is useful if using customized statuses
-    ignore_statuses:
-      - investigating
+# jobs:
+#   # Customize jobs behavior
+#   scrape_for_aging_incidents:
+#     # Enabled by default - set to false to disable the job
+#     enabled: true
+#     # If the job is enabled, avoid sending updates for incidents with any of these statuses
+#     # This is useful if using customized statuses
+#     ignore_statuses: []
 options:
   # Automatically invite Slack groups to newly created incidents
   # Adding this and providing a list of group names implies enabling the feature

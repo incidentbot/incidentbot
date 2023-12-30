@@ -238,7 +238,7 @@ def scrape_for_aging_incidents():
             ignored_statuses = config.active.jobs.get(
                 "scrape_for_aging_incidents"
             ).get("ignore_statuses")
-            if ignored_statuses is not None or not []:
+            if ignored_statuses is not None or ignored_statuses is not []:
                 open_incidents = [
                     i
                     for i in open_incidents
