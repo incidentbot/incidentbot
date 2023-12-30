@@ -100,9 +100,8 @@ configMap:
       - resolved
     options:
       auto_invite_groups:
-        groups:
-          - my-slack-group
-          - my-other-slack-group
+        - my-slack-group
+        - my-other-slack-group
       channel_topic:
         default: 'This is the default incident channel topic. You can edit it in settings.'
         # If set to true, set the channel topic to the meeting link. This will override incident_channel_topic.

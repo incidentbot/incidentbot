@@ -115,8 +115,7 @@ integrations:
   #   # Which Slack groups have permissions to manage Statuspage incidents?
   #   # If not provided, everyone can manage Statuspage incidents from Slack.
   #   # permissions:
-  #   #   groups:
-  #   #     - my-slack-group
+  #   #   - my-slack-group
   # # Enable Zoom integration
   # zoom:
   #   # Set to true to automatically generate a Zoom meeting for each incident
