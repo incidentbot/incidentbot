@@ -3,7 +3,7 @@ services:
   bot:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: build/Dockerfile
     command: ['./wait-for-it.sh', 'db:5432', '--', 'python3', 'main.py']
     depends_on:
       - db
