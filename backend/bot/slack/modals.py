@@ -1730,12 +1730,14 @@ def handle_submission(ack, body, client, view):
     Handles open_incident_create_jira_issue_modal
     """
     ack()
-    incident_id = body.get("view").get("blocks")[0].get("block_id")
+    channel_id = body.get("view").get("blocks")[0].get("block_id")
     parsed = parse_modal_values(body)
 
     try:
+        incident_data = db_read_incident(channel_id=channel_id)
+
         issue_obj = JiraIssue(
-            incident_id=incident_id,
+            incident_id=incident_data.incident_id,
             description=parsed.get("jira.description_input"),
             issue_type=parsed.get("jira.type_select"),
             # priority=parsed.get("jira.priority_select"),
@@ -1749,66 +1751,19 @@ def handle_submission(ack, body, client, view):
                 config.atlassian_api_url, resp.get("key")
             )
             db_update_jira_issues_col(
-                channel_id=incident_id, issue_link=issue_link
+                channel_id=channel_id, issue_link=issue_link
             )
             try:
+                from bot.slack.messages import new_jira_message
+
                 resp = client.chat_postMessage(
-                    channel=incident_id,
-                    blocks=[
-                        {
-                            "type": "section",
-                            "text": {
-                                "type": "mrkdwn",
-                                "text": "A Jira issue has been created for this incident.",
-                            },
-                        },
-                        {"type": "divider"},
-                        {
-                            "type": "section",
-                            "fields": [
-                                {
-                                    "type": "mrkdwn",
-                                    "text": "*Key:* {}".format(
-                                        resp.get("key")
-                                    ),
-                                },
-                                {
-                                    "type": "mrkdwn",
-                                    "text": "*Summary:* {}".format(
-                                        parsed.get("jira.summary_input")
-                                    ),
-                                },
-                                # {
-                                #     "type": "mrkdwn",
-                                #     "text": "*Priority:* {}".format(
-                                #         parsed.get("jira.priority_select")
-                                #     ),
-                                # },
-                                {
-                                    "type": "mrkdwn",
-                                    "text": "*Type:* {}".format(
-                                        parsed.get("jira.type_select")
-                                    ),
-                                },
-                            ],
-                        },
-                        {
-                            "type": "actions",
-                            "block_id": "jira_view_issue",
-                            "elements": [
-                                {
-                                    "type": "button",
-                                    "action_id": "jira.view_issue",
-                                    "style": "primary",
-                                    "text": {
-                                        "type": "plain_text",
-                                        "text": "View Issue",
-                                    },
-                                    "url": issue_link,
-                                },
-                            ],
-                        },
-                    ],
+                    channel=channel_id,
+                    blocks=new_jira_message(
+                        key=resp.get("key"),
+                        summary=parsed.get("jira.summary_input"),
+                        type=parsed.get("jira.type_select"),
+                        link=issue_link
+                    ),
                     text="A Jira issue has been created for this incident: {}".format(
                         resp.get("self")
                     ),
@@ -1819,11 +1774,11 @@ def handle_submission(ack, body, client, view):
                 )
             except Exception as error:
                 logger.error(
-                    f"Error sending Jira issue message for {incident_id}: {error}"
+                    f"Error sending Jira issue message for {incident_data.incident_id}: {error}"
                 )
         else:
             resp = client.chat_postMessage(
-                channel=incident_id,
+                channel=channel_id,
                 text="Hmmm.. that didn't work. Check my logs for more information.",
             )
     except Exception as error:
