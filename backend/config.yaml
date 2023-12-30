@@ -1,3 +1,7 @@
+# # Control whether or not to enable the API for the frontend
+# # Disabling the API will disable all functionality for the frontend
+# api:
+#   enabled: true
 # Options: slack
 platform: slack
 # The channel where incident activity is logged

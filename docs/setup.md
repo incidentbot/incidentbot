@@ -6,6 +6,30 @@ For those who wish to get started quickly without customizing core behavior, the
 
 You can run the image however you choose. A Docker Compose file is provided for guidance. It is recommended to use the Helm chart if running in Kubernetes.
 
+### Architecture Support
+
+By default, images are built for `amd64` compatible platforms.
+
+We also build an additional version of each image for use with `arm64`. If you wish to use one of these images, you'll need to suffix them properly.
+
+If using Helm:
+
+```yaml
+# values.yaml
+image:
+  suffix: arm64
+```
+
+or
+
+```yaml
+# values.yaml
+image:
+  suffix: lite-arm64
+```
+
+If using Kustomize, you are responsible for providing the correct version for your use case.
+
 ### Kubernetes
 
 #### Helm
