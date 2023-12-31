@@ -529,6 +529,7 @@ def handle_submission(ack, body, client):
     ack()
     parsed = parse_modal_values(body)
     channel_id = parsed.get("incident_update_modal_select_incident")
+    user_id = body.get("user").get("id")
     # Extract the channel ID without extra characters
     for character in "#<>":
         channel_id = channel_id.replace(character, "")
@@ -540,6 +541,7 @@ def handle_submission(ack, body, client):
                 impacted_resources=parsed.get("impacted_resources"),
                 message=parsed.get("message"),
                 timestamp=tools.fetch_timestamp(),
+                user_id=user_id,
             ),
             text="Incident update for incident <#{}>: {}".format(
                 channel_id, parsed.get("message")
@@ -1762,7 +1764,7 @@ def handle_submission(ack, body, client, view):
                         key=resp.get("key"),
                         summary=parsed.get("jira.summary_input"),
                         type=parsed.get("jira.type_select"),
-                        link=issue_link
+                        link=issue_link,
                     ),
                     text="A Jira issue has been created for this incident: {}".format(
                         resp.get("self")
