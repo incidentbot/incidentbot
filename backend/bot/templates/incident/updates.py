@@ -77,7 +77,11 @@ class IncidentUpdate:
 
     @staticmethod
     def public_update(
-        incident_id: str, impacted_resources: str, message: str, timestamp: str
+        incident_id: str,
+        impacted_resources: str,
+        message: str,
+        timestamp: str,
+        user_id: str,
     ):
         header = ":warning: Incident Update"
         return [
@@ -102,6 +106,10 @@ class IncidentUpdate:
                     {
                         "type": "mrkdwn",
                         "text": f"*Impacted Resources:*\n {impacted_resources}",
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Sent By:*\n <@{user_id}>",
                     },
                 ],
             },
