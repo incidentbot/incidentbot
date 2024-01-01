@@ -687,39 +687,41 @@ class TestIncidentManagement:
             impacted_resources="api",
             message="foobar",
             timestamp=timestamp,
+            user_id="1234",
         ) == [
             {
-                "text": {
-                    "text": ":warning: Incident Update",
-                    "type": "plain_text",
-                },
                 "type": "header",
-            },
-            {
-                "fields": [
-                    {"text": "*Incident:*\n <#mock>", "type": "mrkdwn"},
-                    {
-                        "text": f"*Posted At:*\n {timestamp}",
-                        "type": "mrkdwn",
-                    },
-                    {"text": "*Impacted Resources:*\n api", "type": "mrkdwn"},
-                ],
-                "type": "section",
-            },
-            {
                 "text": {
-                    "text": "*Current Status*\n foobar",
-                    "type": "mrkdwn",
+                    "type": "plain_text",
+                    "text": ":warning: Incident Update",
                 },
-                "type": "section",
             },
             {
+                "type": "section",
+                "fields": [
+                    {"type": "mrkdwn", "text": "*Incident:*\n <#mock>"},
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Posted At:*\n {timestamp}",
+                    },
+                    {"type": "mrkdwn", "text": "*Impacted Resources:*\n api"},
+                    {"type": "mrkdwn", "text": "*Sent By:*\n <@1234>"},
+                ],
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "*Current Status*\n foobar",
+                },
+            },
+            {
+                "type": "context",
                 "elements": [
                     {
-                        "text": "This update was provided by the incident management team in response to an ongoing incident.",
                         "type": "mrkdwn",
+                        "text": "This update was provided by the incident management team in response to an ongoing incident.",
                     }
                 ],
-                "type": "context",
             },
         ]
