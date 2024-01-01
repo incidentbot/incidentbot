@@ -12,7 +12,7 @@
     "@iconify/react": "^4.0.1",
     "@mui/icons-material": "^5.11.16",
     "@mui/material": "^5.14.0",
-    "@testing-library/jest-dom": "^5.16.4",
+    "@testing-library/jest-dom": "^6.1.6",
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.4.3",
     "@uiw/react-textarea-code-editor": "^2.1.9",
