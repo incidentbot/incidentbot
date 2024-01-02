@@ -86,3 +86,36 @@ class JiraApi:
         except Exception as error:
             logger.error(f"Error authenticating to Jira: {error}")
             logger.error(f"Please check Jira configuration and try again.")
+
+    def update_issue_status(self, incident_status: str, incident_name: str):
+        status_mapping = config.active.integrations.get(
+            "atlassian", {}).get("jira", {}).get("status_mapping", [])
+        if not status_mapping:
+            logger.debug("No status mapping found for Jira integration")
+            return
+        jira_status = ""
+        for status in status_mapping:
+            if status.get("incident_status").lower() == incident_status.lower():
+                jira_status = status.get("jira_status")
+                break
+        if not jira_status:
+            logger.debug(
+                f"No Jira status found for incident status {incident_status}")
+            return
+
+        try:
+            project = config.active.integrations.get(
+                "atlassian").get("jira").get("project")
+            labels = [incident_name]
+            issue_type = config.active.integrations.get(
+                "atlassian").get("jira").get("issue_type")
+            logger.info(
+                f"Updating Jira issues with labels {labels} and issue type {issue_type} to status {jira_status}")
+            issues = self.jira.jql_get_list_of_tickets(
+                f"project=\"{project}\" and labels in ({','.join(labels)})")
+            for issue in issues:
+                logger.debug(
+                    f"Updating Jira issue {issue.get('key')} to status {jira_status}")
+                self.jira.set_issue_status(issue.get("key"), jira_status)
+        except requests.exceptions.HTTPError as error:
+            logger.error(f"Error updating Jira issue: {error}")
