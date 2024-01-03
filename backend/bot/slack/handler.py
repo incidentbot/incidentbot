@@ -406,7 +406,12 @@ def reaction_added(event, say):
     # Pinned content for incidents
     if emoji == "pushpin":
         channel_info = slack_web_client.conversations_info(channel=channel_id)
-        if "inc-" in channel_info["channel"]["name"]:
+        channel_prefix = "inc"
+        if config.active.options.get("channel_naming"):
+            channel_prefix = config.active.options.get("channel_naming").get(
+                "channel_name_prefix", channel_prefix
+            )
+        if f"{channel_prefix}-" in channel_info["channel"]["name"]:
             # Retrieve the content of the message that was reacted to
             try:
                 result = slack_web_client.conversations_history(

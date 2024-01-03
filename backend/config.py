@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from iblog import logger, log_level
 from typing import Dict, List
 
-__version__ = "v1.7.7"
+__version__ = "v1.7.8"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
