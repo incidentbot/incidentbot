@@ -276,6 +276,11 @@ class Configuration:
                                         "type": "string",
                                         "empty": False,
                                     },
+                                    "status_mapping": {
+                                        "required": False,
+                                        "type": "list",
+                                        "empty": False,
+                                    }
                                 },
                             },
                             "opsgenie": {
