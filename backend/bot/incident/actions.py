@@ -694,6 +694,15 @@ async def set_status(
         logger.error(
             f"Error sending status update to incident channel {incident_data.channel_name}: {error}"
         )
+
+    # Update jira ticket status last
+    if config.active.integrations.get(
+            "atlassian", {}).get("jira", {}).get("status_mapping", []):
+        from bot.jira.api import JiraApi
+        jira = JiraApi()
+        jira.update_issue_status(incident_status=action_value,
+                                 incident_name=incident_data.channel_name)
+
     # Finally, updated the updated_at column
     db_update_incident_updated_at_col(
         channel_id=incident_data.channel_id,

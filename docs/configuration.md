@@ -149,6 +149,15 @@ integrations:
       auto_create_incident: false
       # If auto_create_incident is true, this is the type of the Jira ticket that will be created.
       auto_create_incident_type: Subtask
+      status_mapping:
+        - incident_status: Investigating
+          jira_status: Open
+        - incident_status: Identified
+          jira_status: In Progress
+        - incident_status: Monitoring
+          jira_status: In Review
+        - incident_status: Resolved
+          jira_status: Done        
     opsgenie:
       # Note that providing the 'team' value here will limit creation of alerts to a single team.
       team: oncalls
