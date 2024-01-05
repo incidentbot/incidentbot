@@ -41,7 +41,7 @@ helm repo add echoboomer-charts https://charts.echoboomer.net
 helm repo update
 ```
 
-Sensitive data should come from Kubernetes `Secret` objects at a minimum. 
+Sensitive data should come from Kubernetes `Secret` objects at a minimum.
 
 !!! warning
 
@@ -63,6 +63,7 @@ Contained with `.env`, you'd want to include the sensitive values for this appli
 SLACK_APP_TOKEN=xapp-1-...
 SLACK_BOT_TOKEN=...
 SLACK_USER_TOKEN=xoxp-...
+SLACK_CHATTER_MESSAGE_ENABLED=true
 POSTGRES_HOST=...
 POSTGRES_DB=incident_bot
 POSTGRES_USER=incident_bot

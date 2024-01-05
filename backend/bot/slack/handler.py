@@ -31,7 +31,7 @@ from typing import Any, Dict
 
 ## The xoxb oauth token for the bot is called here to provide bot privileges.
 app = App(token=config.slack_bot_token)
-
+enabled_chatter_message = config.slack_chatter_message_enabled
 
 @app.error
 def custom_error_handler(error, body, logger):
@@ -516,6 +516,7 @@ def handle_message_events(body, logger):
         # We don't want to act on these.
         body["event"]["channel"] == get_digest_channel_id()
         and not "subtype" in body["event"].keys()
+        and enabled_chatter_message == "true"
     ):
         tracking.incr()
         if tracking.calls > 3:
