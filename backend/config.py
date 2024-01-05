@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from iblog import logger, log_level
 from typing import Dict, List
 
-__version__ = "v1.8.0"
+__version__ = "v1.8.1"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -428,6 +428,9 @@ Slack
 slack_app_token = os.getenv("SLACK_APP_TOKEN")
 slack_bot_token = os.getenv("SLACK_BOT_TOKEN")
 slack_user_token = os.getenv("SLACK_USER_TOKEN")
+
+# Default incident channel name prefix
+default_incident_channel_name_prefix = "inc"
 
 # For internal pagination when iterating over collections returned from Slack
 slack_items_pagination_per_page = 5

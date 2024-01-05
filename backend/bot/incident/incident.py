@@ -219,7 +219,7 @@ class Incident:
         ).lower()
 
         datefmt = self.__format_date()
-        prefix = "inc"
+        prefix = config.default_incident_channel_name_prefix
 
         if config.active.options.get("channel_naming"):
             if config.active.options.get("channel_naming").get(
@@ -647,42 +647,58 @@ async def handle_incident_optional_features(
     """
     If a Jira incident should be created automatically, create it
     """
-    if "atlassian" in config.active.integrations and "jira" in config.active.integrations.get("atlassian"):
+    if (
+        "atlassian" in config.active.integrations
+        and "jira" in config.active.integrations.get("atlassian")
+    ):
         if (
             config.active.integrations.get("atlassian")
             .get("jira")
             .get("auto_create_incident")
         ):
             from bot.jira.issue import JiraIssue
+
             try:
                 issue_obj = JiraIssue(
                     incident_id=channel_name,
                     description=channel_name,
-                    issue_type=config.active.integrations.get("atlassian").get("jira").get("auto_create_incident_type"),
+                    issue_type=config.active.integrations.get("atlassian")
+                    .get("jira")
+                    .get("auto_create_incident_type"),
                     summary=created_channel_details["incident_description"],
                 )
                 resp = issue_obj.new()
                 if resp is not None:
                     from bot.models.incident import db_update_jira_issues_col
-                    issue_link = "{}/browse/{}".format(config.atlassian_api_url, resp.get("key"))
+
+                    issue_link = "{}/browse/{}".format(
+                        config.atlassian_api_url, resp.get("key")
+                    )
                     db_update_jira_issues_col(
                         channel_id=channel_id,
                         issue_link=issue_link,
                     )
 
                     from bot.slack.messages import new_jira_message
+
                     try:
                         resp = slack_web_client.chat_postMessage(
                             channel=channel_id,
                             blocks=new_jira_message(
-                                key = resp.get("key"),
-                                summary=created_channel_details["incident_description"],
-                                type=config.active.integrations.get("atlassian").get("jira").get("auto_create_incident_type"),
+                                key=resp.get("key"),
+                                summary=created_channel_details[
+                                    "incident_description"
+                                ],
+                                type=config.active.integrations.get(
+                                    "atlassian"
+                                )
+                                .get("jira")
+                                .get("auto_create_incident_type"),
                                 link=issue_link,
                             ),
                             text="A Jira issue has been created for this incident: {}".format(
                                 resp.get("self")
-                            )
+                            ),
                         )
                         slack_web_client.pins_add(
                             channel=channel_id,
@@ -694,5 +710,5 @@ async def handle_incident_optional_features(
                         )
             except Exception as error:
                 logger.error(
-                        f"Error creating Jira incident for {channel_name}: {error}"
-                    )
+                    f"Error creating Jira incident for {channel_name}: {error}"
+                )
