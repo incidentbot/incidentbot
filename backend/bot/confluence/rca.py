@@ -40,16 +40,14 @@ class IncidentRootCauseAnalysis:
 
         self.confluence = ConfluenceApi()
         self.exec = self.confluence.api
-        self.today = self.confluence.today
 
     def create(self) -> str:
         """
         Creates a starting RCA page and returns the create page's URL
         """
-        title = f"{self.today} - {self.incident_id} - {self.title.title()}"
         parent_page_id = self.exec.get_page_id(self.space, self.parent_page)
         logger.info(
-            f"Creating RCA {title} in Confluence space {self.space} under parent {self.parent_page}..."
+            f"Creating RCA {self.title} in Confluence space {self.space} under parent {self.parent_page}..."
         )
         # Generate html for rca doc
         body = self.__render_rca_html(
@@ -64,14 +62,14 @@ class IncidentRootCauseAnalysis:
             try:
                 self.exec.create_page(
                     self.space,
-                    title,
+                    self.title,
                     body,
                     parent_id=parent_page_id,
                     type="page",
                     representation="storage",
                     editor="v2",
                 )
-                created_page_id = self.exec.get_page_id(self.space, title)
+                created_page_id = self.exec.get_page_id(self.space, self.title)
                 created_page_info = self.exec.get_page_by_id(
                     page_id=created_page_id
                 )
@@ -86,7 +84,7 @@ class IncidentRootCauseAnalysis:
                         if item.img:
                             try:
                                 logger.info(
-                                    f"Attaching pinned item image to {title}..."
+                                    f"Attaching pinned item image to {self.title}..."
                                 )
                                 # Attach content to rca
                                 self.exec.attach_content(
@@ -103,7 +101,7 @@ class IncidentRootCauseAnalysis:
                                 )
                             except Exception as error:
                                 logger.error(
-                                    f"Error attaching file to {title}: {error}"
+                                    f"Error attaching file to {self.title}: {error}"
                                 )
                 return url
             except Exception as error:

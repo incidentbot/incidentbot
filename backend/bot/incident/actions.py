@@ -32,6 +32,7 @@ from bot.templates.incident.digest_notification import (
 from bot.templates.incident.resolution_message import IncidentResolutionMessage
 from bot.templates.incident.updates import IncidentUpdate
 from bot.templates.incident.user_dm import IncidentUserNotification
+from datetime import datetime
 from iblog import logger
 from typing import Any, Dict
 
@@ -380,35 +381,12 @@ async def set_status(
                         f"Error sending note to {incident_data.incident_id} regarding missing role claim: {error}"
                     )
                 return
-        # Create rca channel
-        rca_channel_name = f"{incident_data.incident_id}-rca"
-        try:
-            rca_channel = slack_web_client.conversations_create(
-                name=rca_channel_name,
-                is_private=True,
-            )
-            # Log the result which includes information like the ID of the conversation
-            logger.debug(f"\n{rca_channel_name}\n")
-            logger.info(f"Creating rca channel: {rca_channel_name}")
-            # Write audit log
-            log.write(
-                incident_id=incident_data.incident_id,
-                event=f"RCA channel was created.",
-                content=rca_channel["channel"]["id"],
-            )
-        except slack_sdk.errors.SlackApiError as error:
-            logger.error(f"Error creating rca channel: {error}")
-        # Invite incident commander and technical lead if they weren't empty
-        rcaChannelDetails = {
-            "id": rca_channel["channel"]["id"],
-            "name": rca_channel["channel"]["name"],
-        }
+
         # We want real user names to tag in the rca doc
         actual_user_names = []
         for person in [incident_commander]:
             if person != "_none_":
                 fmt = person.replace("<", "").replace(">", "").replace("@", "")
-                invite_user_to_channel(rcaChannelDetails["id"], fmt)
                 # Get real name of user to be used to generate RCA
                 actual_user_names.append(
                     slack_web_client.users_info(user=fmt)["user"]["profile"][
@@ -417,27 +395,19 @@ async def set_status(
                 )
             else:
                 actual_user_names.append("Unassigned")
-        # Format boilerplate message to rca channel
+
+        # Format rca message to incident channel
         rca_boilerplate_message_blocks = [
             {"type": "divider"},
             {
                 "type": "header",
                 "text": {
                     "type": "plain_text",
-                    "text": ":white_check_mark: Incident RCA Planning",
-                },
-            },
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "You have been invited to this channel to assist "
-                    + f"with planning the RCA for <#{incident_data.channel_id}>. The Incident Commander "
-                    + "should invite anyone who can help contribute to the RCA"
-                    + " and then use this channel to plan the meeting to go over the incident.",
+                    "text": ":white_check_mark: Incident Root Cause Analysis",
                 },
             },
         ]
+
         # Generate rca template and create rca if enabled
         # Get normalized description as rca title
         if "atlassian" in config.active.integrations:
@@ -448,7 +418,8 @@ async def set_status(
             ):
                 from bot.confluence.rca import IncidentRootCauseAnalysis
 
-                rca_title = " ".join(incident_data.incident_id.split("-")[2:])
+                rca_title = f"{datetime.today().strftime('%Y-%m-%d')} - {incident_data.incident_id}"
+
                 rca = IncidentRootCauseAnalysis(
                     incident_id=incident_data.incident_id,
                     rca_title=rca_title,
@@ -496,52 +467,31 @@ async def set_status(
                                     "url": rca_link,
                                     "action_id": "open_rca",
                                 },
-                                {
-                                    "type": "button",
-                                    "text": {
-                                        "type": "plain_text",
-                                        "text": "View Incident Channel",
-                                    },
-                                    "url": f"https://{slack_workspace_id}.slack.com/archives/{incident_data.channel_id}",
-                                    "action_id": "incident.join_incident_channel",
-                                },
                             ],
                         },
                         {"type": "divider"},
                     ]
                 )
-        else:
-            rca_boilerplate_message_blocks.extend(
-                [
-                    {
-                        "block_id": "buttons",
-                        "type": "actions",
-                        "elements": [
-                            {
-                                "type": "button",
-                                "text": {
-                                    "type": "plain_text",
-                                    "text": "View Incident Channel",
-                                },
-                                "url": f"https://{slack_workspace_id}.slack.com/archives/{incident_data.channel_id}",
-                                "action_id": "incident.join_incident_channel",
-                            },
-                        ],
-                    },
-                    {"type": "divider"},
-                ]
-            )
-        try:
-            blocks = rca_boilerplate_message_blocks
-            result = slack_web_client.chat_postMessage(
-                channel=rcaChannelDetails["id"],
-                blocks=blocks,
-                text="",
-            )
-            logger.debug(f"\n{result}\n")
 
-        except slack_sdk.errors.SlackApiError as error:
-            logger.error(f"Error sending RCA update to RCA channel: {error}")
+            # Send rca message to incident channel
+            try:
+                blocks = rca_boilerplate_message_blocks
+                result = slack_web_client.chat_postMessage(
+                    channel=incident_data.channel_id,
+                    blocks=blocks,
+                    text="",
+                )
+                logger.debug(f"\n{result}\n")
+
+                # Pin the rca message to the channel for quick access.
+                slack_web_client.pins_add(
+                    channel=incident_data.channel_id,
+                    timestamp=result.get("ts"),
+                )
+            except slack_sdk.errors.SlackApiError as error:
+                logger.error(
+                    f"Error sending RCA update to RCA channel: {error}"
+                )
 
         # Send message to incident channel
         try:
