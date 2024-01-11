@@ -16,6 +16,6 @@ if [[ "$CURRENT" == "$NEXT" ]]; then
 fi
 
 for file in ${files[@]}; do
-  sed -i "s/$CURRENT/$NEXT/g" ${file}
+  sed -i '' "s/$CURRENT/$NEXT/g" ${file}
   echo "updated ${file}"
 done
