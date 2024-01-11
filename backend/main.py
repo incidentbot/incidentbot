@@ -69,10 +69,6 @@ def startup_tasks():
     # Populate list of Slack users
     update_slack_user_list()
 
-    logger.info(
-        "create_rca_channel: " + str(config.create_rca_channel),
-    )
-
     # Integration Tests
     # --------------------
     if "atlassian" in config.active.integrations:
