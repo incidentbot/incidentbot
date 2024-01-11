@@ -13,7 +13,6 @@ class ConfluenceApi:
             password=config.atlassian_api_token,
             cloud=True,
         )
-        self.today = datetime.datetime.today().strftime("%Y-%m-%d")
 
     @property
     def api(self) -> Confluence:

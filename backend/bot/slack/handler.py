@@ -43,6 +43,13 @@ from . import modals
 
 tracking = DigestMessageTracking()
 
+
+@app.event("message")
+def handle_message_events(body, logger):
+    # This generates errors if absent. I don't know why.
+    pass
+
+
 """
 Handle Mentions
 """
@@ -462,7 +469,7 @@ def reaction_added(event, say):
                                 )
                             except SlackApiError as error:
                                 logger.error(
-                                    f"Error preparing pinned file for copy: {error}"
+                                    f"Error preparing pinned file for copy during public url revoke: {error}"
                                 )
                         else:
                             say(

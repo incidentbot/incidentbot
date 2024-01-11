@@ -85,16 +85,16 @@ options:
   # Timezone to use for logging, etc.
   timezone: UTC
 integrations:
-  {}
+  # {}
   # Secret data is provided as environment variables for integrations
   # Only non-secret data is configured here
-  # atlassian:
-  # Enable Confluence integration
-  # confluence:
-  #   # Set to true to automatically create an RCA doc
-  #   auto_create_rca: true
-  #   space: ENGINEERIN
-  #   parent: RCAs
+  atlassian:
+    # Enable Confluence integration
+    confluence:
+      #   # Set to true to automatically create an RCA doc
+      auto_create_rca: true
+      space: ENGINEERIN
+      parent: RCAs
   # Enable Jira integration
   # jira:
   #   project: 'IN'
