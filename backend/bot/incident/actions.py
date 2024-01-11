@@ -472,18 +472,26 @@ async def set_status(
                         {"type": "divider"},
                     ]
                 )
-        # Send rca message to incident channel
-        try:
-            blocks = rca_boilerplate_message_blocks
-            result = slack_web_client.chat_postMessage(
-                channel=incident_data.channel_id,
-                blocks=blocks,
-                text="",
-            )
-            logger.debug(f"\n{result}\n")
 
-        except slack_sdk.errors.SlackApiError as error:
-            logger.error(f"Error sending RCA update to RCA channel: {error}")
+            # Send rca message to incident channel
+            try:
+                blocks = rca_boilerplate_message_blocks
+                result = slack_web_client.chat_postMessage(
+                    channel=incident_data.channel_id,
+                    blocks=blocks,
+                    text="",
+                )
+                logger.debug(f"\n{result}\n")
+
+                # Pin the rca message to the channel for quick access.
+                slack_web_client.pins_add(
+                    channel=incident_data.channel_id,
+                    timestamp=result.get("ts"),
+                )
+            except slack_sdk.errors.SlackApiError as error:
+                logger.error(
+                    f"Error sending RCA update to RCA channel: {error}"
+                )
 
         # Send message to incident channel
         try:
