@@ -197,6 +197,10 @@ class Configuration:
                             },
                         },
                     },
+                    "create_rca_channel": {
+                        "required": False,
+                        "type": "boolean",
+                    },
                     "show_most_recent_incidents_app_home_limit": {
                         "required": False,
                         "type": "integer",
@@ -280,7 +284,7 @@ class Configuration:
                                         "required": False,
                                         "type": "list",
                                         "empty": False,
-                                    }
+                                    },
                                 },
                             },
                             "opsgenie": {
@@ -446,6 +450,12 @@ show_most_recent_incidents_app_home_limit = (
     active.options.get("show_most_recent_incidents_app_home_limit")
     if "show_most_recent_incidents_app_home_limit" in active.options
     else 5
+)
+
+create_rca_channel = (
+    active.options.get("create_rca_channel")
+    if "create_rca_channel" in active.options
+    else True
 )
 
 """

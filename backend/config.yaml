@@ -73,6 +73,9 @@ options:
     # The name of the reacji
     # It must exist in your workspace
     reacji: create-incident
+  # If enabled, a separate channel will be created for the RCA
+  # Otherwise it will be posted to the existing incident channel.
+  create_rca_channel: true
   # Ignore logging for requests from the following user-agents
   skip_logs_for_user_agent:
     # Kubernetes health check user-agent
@@ -85,16 +88,15 @@ options:
   # Timezone to use for logging, etc.
   timezone: UTC
 integrations:
-  {}
   # Secret data is provided as environment variables for integrations
   # Only non-secret data is configured here
-  # atlassian:
+  atlassian:
   # Enable Confluence integration
-  # confluence:
-  #   # Set to true to automatically create an RCA doc
-  #   auto_create_rca: true
-  #   space: ENGINEERIN
-  #   parent: RCAs
+    confluence:
+    #   # Set to true to automatically create an RCA doc
+      auto_create_rca: true
+      space: ENGINEERIN
+      parent: RCAs
   # Enable Jira integration
   # jira:
   #   project: 'IN'
