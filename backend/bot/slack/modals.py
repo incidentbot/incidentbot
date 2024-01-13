@@ -966,7 +966,7 @@ def update_modal(ack, body, client):
             "text": {
                 "type": "mrkdwn",
                 "text": "Add a new event to the incident's timeline. This will "
-                + "be automatically added to the RCA when the incident is resolved.\n",
+                + "be automatically added to the postmortem when the incident is resolved.\n",
             },
         },
         {"type": "divider"},

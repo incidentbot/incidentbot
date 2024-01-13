@@ -126,20 +126,30 @@ def ratelimit_handler(e):
 
 """
 API Route Definitions
+
+The health check route will always be served
+Other routes are served depending on configuration
 """
 
-from .routes.auth import auth
-from .routes.health import health_check
-from .routes.incident import incidentrt
-from .routes.job import job
-from .routes.pager import pager
-from .routes.setting import setting
-from .routes.user import user
+if (config.active.api is not None and config.active.api.get("enabled")) or (
+    config.active.api is None
+):
+    from .routes.auth import auth
+    from .routes.health import health_check
+    from .routes.incident import incidentrt
+    from .routes.job import job
+    from .routes.pager import pager
+    from .routes.setting import setting
+    from .routes.user import user
 
-app.register_blueprint(auth, url_prefix=live_api_route)
-app.register_blueprint(health_check, url_prefix=live_api_route)
-app.register_blueprint(incidentrt, url_prefix=live_api_route)
-app.register_blueprint(job, url_prefix=live_api_route)
-app.register_blueprint(pager, url_prefix=live_api_route)
-app.register_blueprint(setting, url_prefix=live_api_route)
-app.register_blueprint(user, url_prefix=live_api_route)
+    app.register_blueprint(auth, url_prefix=live_api_route)
+    app.register_blueprint(health_check, url_prefix=live_api_route)
+    app.register_blueprint(incidentrt, url_prefix=live_api_route)
+    app.register_blueprint(job, url_prefix=live_api_route)
+    app.register_blueprint(pager, url_prefix=live_api_route)
+    app.register_blueprint(setting, url_prefix=live_api_route)
+    app.register_blueprint(user, url_prefix=live_api_route)
+else:
+    from .routes.health import health_check
+
+    app.register_blueprint(health_check, url_prefix=live_api_route)

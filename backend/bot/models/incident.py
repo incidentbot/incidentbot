@@ -256,13 +256,13 @@ def db_update_incident_updated_at_col(
         Session.remove()
 
 
-def db_update_incident_rca_col(
-    rca: str,
+def db_update_incident_postmortem_col(
+    postmortem: str,
     incident_id: str = "",
     channel_id: str = "",
 ):
     """
-    Update an incident's rca column
+    Update an incident's postmortem column
     """
     try:
         incident = (
@@ -275,7 +275,7 @@ def db_update_incident_rca_col(
             )
             .one()
         )
-        incident.rca = rca
+        incident.postmortem = postmortem
         Session.commit()
     except Exception as error:
         logger.error(f"Incident update failed for {incident_id}: {error}")

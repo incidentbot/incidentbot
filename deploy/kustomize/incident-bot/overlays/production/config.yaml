@@ -25,7 +25,7 @@ options:
     - my-other-slack-group
 integrations:
   confluence:
-    auto_create_rca: false
+    auto_create_postmortem: false
     space: ENG
     parent: Postmortems
   zoom:

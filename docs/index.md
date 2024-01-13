@@ -19,7 +19,7 @@ Need support or just want to chat with us? Join us on [Discord](https://discord.
 - Automatically generate unique Zoom meetings for each incident and tell everyone about them.
 - Create Statuspage incidents.
 - Page teams in PagerDuty.
-- Automatically create an RCA/postmortem document in Confluence.
+- Automatically create a postmortem document in Confluence.
 - Create issues in Jira related to an incident.
 - Notify participants when they are assigned a role.
 - Automatically generate and manage a timeline of events.
@@ -49,8 +49,8 @@ These will automatically be populated in the table and added to the postmortem d
 
 In any incident channel, you can use the `pushpin` emote in Slack to attach messages to the incident. This are viewable in the web UI where you can optionally delete them if you no longer want them. These are automatically added to the postmortem document when the incident is resolved. You can attach the following items:
 
-- Messages - these are timestamped and added to the RCA showing which user sent the message
-- Images - these are added to the RCA as attachments - note that if an image is attached with a message, only the image is attached to the incident
+- Messages - these are timestamped and added to the postmortem showing which user sent the message
+- Images - these are added to the postmortem as attachments - note that if an image is attached with a message, only the image is attached to the incident
 
 #### Scheduled Actions
 

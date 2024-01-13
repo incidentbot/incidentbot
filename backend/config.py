@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from iblog import logger, log_level
 from typing import Dict, List
 
-__version__ = "v1.8.4"
+__version__ = "v1.9.0"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -225,7 +225,7 @@ class Configuration:
                                 "required": False,
                                 "type": "dict",
                                 "schema": {
-                                    "auto_create_rca": {
+                                    "auto_create_postmortem": {
                                         "required": True,
                                         "type": "boolean",
                                         "empty": False,
@@ -280,7 +280,7 @@ class Configuration:
                                         "required": False,
                                         "type": "list",
                                         "empty": False,
-                                    }
+                                    },
                                 },
                             },
                             "opsgenie": {
@@ -528,7 +528,7 @@ def env_check(required_envs: List[str]):
             ]:
                 if os.getenv(var) == "":
                     logger.fatal(
-                        f"If enabling the Confluence integration to auto create an RCA, the {var} variable must be set."
+                        f"If enabling the Confluence integration to auto create a postmortem, the {var} variable must be set."
                     )
                     sys.exit(1)
         if "jira" in active.integrations.get("atlassian"):

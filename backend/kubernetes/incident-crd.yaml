@@ -64,7 +64,7 @@ spec:
                   type: boolean
                 last_update_sent:
                   type: string
-                rca:
+                postmortem:
                   type: string
                 roles:
                   type: object

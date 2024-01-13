@@ -2,17 +2,17 @@ import config
 
 from bot.confluence.api import ConfluenceApi, logger
 from bot.models.pg import IncidentLogging
-from bot.templates.confluence.rca import RCATemplate
+from bot.templates.confluence.postmortem import PostmortemTemplate
 from html import escape
 from iblog import logger
 from typing import Any, Dict, List, Tuple
 
 
-class IncidentRootCauseAnalysis:
+class IncidentPostmortem:
     def __init__(
         self,
         incident_id: str,
-        rca_title: str,
+        postmortem_title: str,
         incident_commander: str,
         severity: str,
         severity_definition: str,
@@ -20,7 +20,7 @@ class IncidentRootCauseAnalysis:
         timeline: List[Dict],
     ):
         self.incident_id = incident_id
-        self.title = rca_title
+        self.title = postmortem_title
         self.incident_commander = incident_commander
         self.severity = severity
         self.severity_definition = severity_definition
@@ -43,21 +43,21 @@ class IncidentRootCauseAnalysis:
 
     def create(self) -> str:
         """
-        Creates a starting RCA page and returns the create page's URL
+        Creates a starting postmortem page and returns the create page's URL
         """
         parent_page_id = self.exec.get_page_id(self.space, self.parent_page)
         logger.info(
-            f"Creating RCA {self.title} in Confluence space {self.space} under parent {self.parent_page}..."
+            f"Creating postmortem {self.title} in Confluence space {self.space} under parent {self.parent_page}..."
         )
-        # Generate html for rca doc
-        body = self.__render_rca_html(
+        # Generate html for postmortem doc
+        body = self.__render_postmortem_html(
             incident_commander=self.incident_commander,
             severity=self.severity,
             severity_definition=self.severity_definition,
             timeline=self.__generate_timeline(),
             pinned_messages=self.__generate_pinned_messages(),
         )
-        # Create rca doc
+        # Create postmortem doc
         if self.exec.page_exists(space=self.space, title=self.parent_page):
             try:
                 self.exec.create_page(
@@ -86,7 +86,7 @@ class IncidentRootCauseAnalysis:
                                 logger.info(
                                     f"Attaching pinned item image to {self.title}..."
                                 )
-                                # Attach content to rca
+                                # Attach content to postmortem document
                                 self.exec.attach_content(
                                     item.img,
                                     name=item.title,
@@ -108,7 +108,7 @@ class IncidentRootCauseAnalysis:
                 logger.error(error)
         else:
             logger.error(
-                "Couldn't create RCA page, does the parent page exist?"
+                "Couldn't create postmortem page, does the parent page exist?"
             )
 
     def __find_user_id(self, user: str) -> Tuple[bool, Any]:
@@ -176,7 +176,7 @@ class IncidentRootCauseAnalysis:
     """
         return all_items_formatted
 
-    def __render_rca_html(
+    def __render_postmortem_html(
         self,
         incident_commander: str,
         severity: str,
@@ -186,7 +186,7 @@ class IncidentRootCauseAnalysis:
     ) -> str:
         """Renders HTML for use in Confluence documents"""
         try:
-            return RCATemplate.template(
+            return PostmortemTemplate.template(
                 incident_commander=incident_commander,
                 severity=severity,
                 severity_definition=severity_definition,
@@ -194,4 +194,6 @@ class IncidentRootCauseAnalysis:
                 pinned_messages=pinned_messages,
             )
         except Exception as error:
-            logger.error(f"Error generating Confluence RCA html: {error}")
+            logger.error(
+                f"Error generating Confluence postmortem html: {error}"
+            )

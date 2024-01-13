@@ -154,26 +154,14 @@ if __name__ == "__main__":
     startup_message = config.startup_message(workspace=slack_workspace_id)
     print(startup_message)
 
-    if (
-        config.active.api is not None and config.active.api.get("enabled")
-    ) or (config.active.api is None):
-        from bot.api.flask import app
+    from bot.api.flask import app
 
-        # Serve Slack Bolt app
-        handler = SocketModeHandler(slack_app, config.slack_app_token)
-        handler.connect()
+    # Serve Slack Bolt app
+    handler = SocketModeHandler(slack_app, config.slack_app_token)
+    handler.connect()
 
-        # Make sure bot user is always present in incident digest channel
-        check_bot_user_in_digest_channel()
+    # Make sure bot user is always present in incident digest channel
+    check_bot_user_in_digest_channel()
 
-        # Serve Flask app
-        serve(app, host="0.0.0.0", port=3000)
-    else:
-        logger.info(
-            "The API has been disabled and the application will not serve its routes."
-        )
-        # Serve Slack Bolt app
-        SocketModeHandler(slack_app, config.slack_app_token).start()
-
-        # Make sure bot user is always present in incident digest channel
-        check_bot_user_in_digest_channel()
+    # Serve Flask app
+    serve(app, host="0.0.0.0", port=3000)
