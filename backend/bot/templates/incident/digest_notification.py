@@ -120,6 +120,7 @@ class IncidentChannelDigestNotification:
         status: str,
         severity: str,
         conference_bridge: str,
+        postmortem_link: str = None,
     ):
         incident_reacji_header = (
             ":fire::lock::fire_engine:"
@@ -135,7 +136,63 @@ class IncidentChannelDigestNotification:
         else:
             header = f"{incident_reacji_header} Ongoing {incident_type}"
             message = "This incident is in progress. Current status is listed here. Join the channel for more information."
-        return [
+
+        action_el = [
+            {
+                "type": "button",
+                "text": {
+                    "type": "plain_text",
+                    "text": "Join Incident Channel",
+                },
+                "style": "primary",
+                "url": f"https://{slack_workspace_id}.slack.com/archives/{incident_id}",
+                "action_id": "incident.join_incident_channel",
+            },
+            {
+                "type": "button",
+                "text": {
+                    "type": "plain_text",
+                    "text": "Conference",
+                },
+                "url": conference_bridge,
+                "action_id": "incident.click_conference_bridge_link",
+            },
+            {
+                "type": "button",
+                "text": {
+                    "type": "plain_text",
+                    "text": "Incident Guide",
+                },
+                "url": config.active.links.get("incident_guide"),
+                "action_id": "incident.incident_guide_link",
+            },
+            {
+                "type": "button",
+                "text": {
+                    "type": "plain_text",
+                    "text": "Incident Postmortems",
+                },
+                "url": config.active.links.get("incident_postmortems"),
+                "action_id": "incident.incident_postmortem_link",
+            },
+        ]
+
+        if postmortem_link is not None:
+            action_el.insert(
+                1,
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Postmortem",
+                    },
+                    "style": "danger",
+                    "url": postmortem_link,
+                    "action_id": "open_postmortem",
+                },
+            )
+
+        base = [
             {
                 "type": "header",
                 "text": {
@@ -177,44 +234,8 @@ class IncidentChannelDigestNotification:
             {
                 "type": "actions",
                 "block_id": "incchannelbuttons",
-                "elements": [
-                    {
-                        "type": "button",
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Join Incident Channel",
-                        },
-                        "style": "primary",
-                        "url": f"https://{slack_workspace_id}.slack.com/archives/{incident_id}",
-                        "action_id": "incident.join_incident_channel",
-                    },
-                    {
-                        "type": "button",
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Conference",
-                        },
-                        "url": conference_bridge,
-                        "action_id": "incident.click_conference_bridge_link",
-                    },
-                    {
-                        "type": "button",
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Incident Guide",
-                        },
-                        "url": config.active.links.get("incident_guide"),
-                        "action_id": "incident.incident_guide_link",
-                    },
-                    {
-                        "type": "button",
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Incident Postmortems",
-                        },
-                        "url": config.active.links.get("incident_postmortems"),
-                        "action_id": "incident.incident_postmortem_link",
-                    },
-                ],
+                "elements": action_el,
             },
         ]
+
+        return base

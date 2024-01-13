@@ -642,7 +642,7 @@ def handle_static_action(ack, body, logger):
     ack()
 
 
-@app.action("open_rca")
+@app.action("open_postmortem")
 def handle_static_action(ack, body, logger):
     logger.debug(body)
     ack()

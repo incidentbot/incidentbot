@@ -577,7 +577,7 @@ const ViewSingleIncident = () => {
                   <Card variant="outlined" sx={{ marginTop: 2, marginBottom: 2, height: '100%' }}>
                     <StyledCardHeader
                       avatar={<QueryStatsIcon sx={{ marginRight: 1 }} />}
-                      title={`RCA`}
+                      title={`Postmortem`}
                       titleTypographyProps={{
                         variant: 'h6',
                         fontFamily: 'Roboto',
@@ -587,19 +587,19 @@ const ViewSingleIncident = () => {
                     />
                     <List>
                       <ListItem
-                        key="rca"
+                        key="postmortem"
                         sx={{
                           width: '100%'
                         }}>
-                        {incident.rca !== null ? (
-                          <Button variant="outlined" href={incident.rca} target="new">
-                            View RCA in Confluence
+                        {incident.postmortem !== null ? (
+                          <Button variant="outlined" href={incident.postmortem} target="new">
+                            View Postmortem in Confluence
                           </Button>
                         ) : (
                           <>
                             <Alert color="info" variant="outlined" sx={{ width: '100%' }}>
-                              A link to the RCA will appear here once the incident is resolved and
-                              one has been generated.
+                              A link to the postmortem will appear here once the incident is
+                              resolved and one has been generated.
                             </Alert>
                           </>
                         )}

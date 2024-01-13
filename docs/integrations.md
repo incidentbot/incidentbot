@@ -6,7 +6,7 @@ Check out these sections to learn more about the integrations, how to enable and
 
 ## Jira and Confluence
 
-It is possible to automatically create an RCA/postmortem document when an incident is transitioned to `resolved` status. This only works with Confluence Cloud at this time.
+It is possible to automatically create a postmortem document when an incident is transitioned to `resolved` status. This only works with Confluence Cloud at this time.
 
 There is also the ability to create issues in Jira related to an incident.
 
@@ -24,7 +24,7 @@ In the application's `config.yaml`, you can set the Confluence space and parent 
 integrations:
   atlassian:
     confluence:
-      auto_create_rca: true
+      auto_create_postmortem: true
       space: ENG
       parent: Postmortems
     jira:
@@ -40,7 +40,7 @@ This is only an example - you'll obviously need to provide your own information 
 
 ### Using the Confluence Integration
 
-When enabled, an RCA document will be created in Confluence with starting information. In general, no additional participation is required to generate this document.
+When enabled, a postmortem document will be created in Confluence with starting information. In general, no additional participation is required to generate this document.
 
 If you use the pinned items feature, those will automatically be added to the document.
 

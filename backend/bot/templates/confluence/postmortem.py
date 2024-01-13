@@ -1,7 +1,7 @@
 import uuid
 
 
-class RCATemplate:
+class PostmortemTemplate:
     @staticmethod
     def template(
         incident_commander: str,

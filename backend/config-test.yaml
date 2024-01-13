@@ -31,9 +31,9 @@ options:
 integrations:
   atlassian:
     confluence:
-      auto_create_rca: true
+      auto_create_postmortem: true
       space: ENGINEERIN
-      parent: RCAs
+      parent: Postmortems
   statuspage:
     url: https://status.echoboomer.net
   zoom:

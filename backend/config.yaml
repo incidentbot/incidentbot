@@ -91,10 +91,10 @@ integrations:
   # atlassian:
   # Enable Confluence integration
   # confluence:
-  #   # Set to true to automatically create an RCA doc
-  #   auto_create_rca: true
+  #   # Set to true to automatically create an postmortem doc
+  #   auto_create_postmortem: true
   #   space: ENGINEERIN
-  #   parent: RCAs
+  #   parent: Postmortems
   # Enable Jira integration
   # jira:
   #   project: 'IN'

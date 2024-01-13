@@ -9,7 +9,7 @@ from bot.incident.action_parameters import (
 )
 from bot.models.incident import (
     db_read_incident,
-    db_update_incident_rca_col,
+    db_update_incident_postmortem_col,
     db_update_incident_role,
     db_update_incident_status_col,
     db_update_incident_severity_col,
@@ -23,7 +23,6 @@ from bot.slack.client import (
     get_message_content,
     invite_user_to_channel,
     slack_web_client,
-    slack_workspace_id,
 )
 from bot.slack.incident_logging import read as read_incident_pinned_items
 from bot.templates.incident.digest_notification import (
@@ -358,7 +357,6 @@ async def set_status(
 
     # If set to resolved, send additional information.
     if action_value == "resolved":
-        # Set up steps for RCA channel
         message_blocks = action_parameters.message_details["blocks"]
         # Extract names of required roles
         incident_commander = extract_role_owner(
@@ -382,12 +380,12 @@ async def set_status(
                     )
                 return
 
-        # We want real user names to tag in the rca doc
+        # We want real user names to tag in the postmortem doc
         actual_user_names = []
         for person in [incident_commander]:
             if person != "_none_":
                 fmt = person.replace("<", "").replace(">", "").replace("@", "")
-                # Get real name of user to be used to generate RCA
+                # Get real name of user to be used to generate postmortem
                 actual_user_names.append(
                     slack_web_client.users_info(user=fmt)["user"]["profile"][
                         "real_name"
@@ -396,33 +394,33 @@ async def set_status(
             else:
                 actual_user_names.append("Unassigned")
 
-        # Format rca message to incident channel
-        rca_boilerplate_message_blocks = [
+        # Format postmortem message to incident channel
+        postmortem_boilerplate_message_blocks = [
             {"type": "divider"},
             {
                 "type": "header",
                 "text": {
                     "type": "plain_text",
-                    "text": ":white_check_mark: Incident Root Cause Analysis",
+                    "text": ":white_check_mark: Incident Postmortem",
                 },
             },
         ]
 
-        # Generate rca template and create rca if enabled
-        # Get normalized description as rca title
+        # Generate postmortem template and create postmortem if enabled
+        # Get normalized description as postmortem title
         if "atlassian" in config.active.integrations:
             if (
                 config.active.integrations.get("atlassian")
                 .get("confluence")
-                .get("auto_create_rca")
+                .get("auto_create_postmortem")
             ):
-                from bot.confluence.rca import IncidentRootCauseAnalysis
+                from bot.confluence.postmortem import IncidentPostmortem
 
-                rca_title = f"{datetime.today().strftime('%Y-%m-%d')} - {incident_data.incident_id}"
+                postmortem_title = f"{datetime.today().strftime('%Y-%m-%d')} - {incident_data.incident_id}"
 
-                rca = IncidentRootCauseAnalysis(
+                postmortem = IncidentPostmortem(
                     incident_id=incident_data.incident_id,
-                    rca_title=rca_title,
+                    postmortem_title=postmortem_title,
                     incident_commander=actual_user_names[0],
                     severity=incident_data.severity,
                     severity_definition=config.active.severities[
@@ -433,23 +431,23 @@ async def set_status(
                     ),
                     timeline=log.read(incident_id=incident_data.incident_id),
                 )
-                rca_link = rca.create()
-                db_update_incident_rca_col(
+                postmortem_link = postmortem.create()
+                db_update_incident_postmortem_col(
                     channel_id=incident_data.channel_id,
-                    rca=rca_link,
+                    postmortem=postmortem_link,
                 )
                 # Write audit log
                 log.write(
                     incident_id=incident_data.incident_id,
-                    event=f"RCA was automatically created: {rca_link}",
+                    event=f"Postmortem was automatically created: {postmortem_link}",
                 ),
-                rca_boilerplate_message_blocks.extend(
+                postmortem_boilerplate_message_blocks.extend(
                     [
                         {
                             "type": "section",
                             "text": {
                                 "type": "mrkdwn",
-                                "text": "*I have created a base RCA document that"
+                                "text": "*I have created a base postmortem document that"
                                 " you can build on. You can open it using the button below.*",
                             },
                         },
@@ -461,11 +459,11 @@ async def set_status(
                                     "type": "button",
                                     "text": {
                                         "type": "plain_text",
-                                        "text": "View RCA In Confluence",
+                                        "text": "View Postmortem In Confluence",
                                     },
                                     "style": "primary",
-                                    "url": rca_link,
-                                    "action_id": "open_rca",
+                                    "url": postmortem_link,
+                                    "action_id": "open_postmortem",
                                 },
                             ],
                         },
@@ -473,9 +471,9 @@ async def set_status(
                     ]
                 )
 
-            # Send rca message to incident channel
+            # Send postmortem message to incident channel
             try:
-                blocks = rca_boilerplate_message_blocks
+                blocks = postmortem_boilerplate_message_blocks
                 result = slack_web_client.chat_postMessage(
                     channel=incident_data.channel_id,
                     blocks=blocks,
@@ -483,14 +481,14 @@ async def set_status(
                 )
                 logger.debug(f"\n{result}\n")
 
-                # Pin the rca message to the channel for quick access.
+                # Pin the postmortem message to the channel for quick access.
                 slack_web_client.pins_add(
                     channel=incident_data.channel_id,
                     timestamp=result.get("ts"),
                 )
             except slack_sdk.errors.SlackApiError as error:
                 logger.error(
-                    f"Error sending RCA update to RCA channel: {error}"
+                    f"Error sending postmortem update to incident channel: {error}"
                 )
 
         # Send message to incident channel
@@ -530,6 +528,15 @@ async def set_status(
                 status=action_value,
                 severity=incident_data.severity,
                 conference_bridge=incident_data.conference_bridge,
+                postmortem_link=postmortem_link
+                if action_value == "resolved"
+                and ("atlassian" in config.active.integrations)
+                and (
+                    config.active.integrations.get("atlassian")
+                    .get("confluence")
+                    .get("auto_create_postmortem")
+                )
+                else None,
             ),
             text="",
         )

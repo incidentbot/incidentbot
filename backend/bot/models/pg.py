@@ -85,7 +85,7 @@ class Incident(Base, MutableBase, Serializer):
     last_update_sent = Column(VARCHAR(50))
     tags = Column(MutableList.as_mutable(JSONB))
     roles = Column(MutableDict.as_mutable(JSONB))
-    rca = Column(VARCHAR)
+    postmortem = Column(VARCHAR)
     is_security_incident = Column(Boolean)
     channel_description = Column(String())
     conference_bridge = Column(String())
