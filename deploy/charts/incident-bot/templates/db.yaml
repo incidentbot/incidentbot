@@ -1,0 +1,57 @@
+{{- if .Values.database.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: db
+  name: db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+        - name: db
+          image: postgres:13
+          env:
+            - name: POSTGRES_USER
+              value: incident_bot
+            - name: POSTGRES_PASSWORD
+              value: {{ .Values.database.password }}
+          ports:
+            - name: db
+              containerPort: 5432
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512M
+            requests:
+              cpu: 250m
+              memory: 256M
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+spec:
+  type: ClusterIP
+  ports:
+    - name: db
+      port: 5432
+      targetPort: db
+      protocol: TCP
+  selector:
+    app: db
+{{- end }}
