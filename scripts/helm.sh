@@ -54,6 +54,6 @@ if [ "$CIRCLE_BRANCH" = "main" ]; then
     echo -e "${cGreen}[!] Packaging charts...${cNone}"
     for f in $(ls .); do
         CHART_VERSION=$(helm show chart $f | grep '^version' | sed 's/^version: //')
-        helm cm-push "$f" $CHART_REPOSITORY_NAME
+        helm cm-push --force "$f" $CHART_REPOSITORY_NAME
     done
 fi
