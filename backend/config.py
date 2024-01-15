@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from iblog import logger, log_level
 from typing import Dict, List
 
-__version__ = "v1.9.0"
+__version__ = "v1.9.1"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -182,7 +182,7 @@ class Configuration:
                         "regex": self.url_regex,
                     },
                     "create_from_reaction": {
-                        "required": True,
+                        "required": False,
                         "type": "dict",
                         "schema": {
                             "enabled": {
@@ -337,20 +337,22 @@ class Configuration:
                 },
             },
             "links": {
-                "required": True,
-                "type": "dict",
+                "required": False,
+                "type": "list",
                 "schema": {
-                    "incident_guide": {
-                        "required": True,
-                        "type": "string",
-                        "empty": False,
-                        "regex": self.url_regex,
-                    },
-                    "incident_postmortems": {
-                        "required": False,
-                        "type": "string",
-                        "empty": False,
-                        "regex": self.url_regex,
+                    "type": "dict",
+                    "schema": {
+                        "title": {
+                            "required": True,
+                            "type": "string",
+                            "empty": False,
+                        },
+                        "url": {
+                            "required": True,
+                            "type": "string",
+                            "empty": False,
+                            "regex": self.url_regex,
+                        },
                     },
                 },
             },

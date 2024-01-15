@@ -62,7 +62,7 @@ options:
   # The topic that will be set on all incident channels
   channel_topic:
     default: 'This is the default incident channel topic. You can edit it in settings.'
-    # If set to true, set the channel topic to the meeting link. This will override incident_channel_topic.
+    # If set to true, set the channel topic to the meeting link. This will override channel_topic.
     set_to_meeting_link: true
   # If not using Zoom auto-create
   conference_bridge_link: 'https://zoom.us'
@@ -124,6 +124,9 @@ integrations:
   # zoom:
   #   # Set to true to automatically generate a Zoom meeting for each incident
   #   auto_create_meeting: true
+# Links are optional
+# Whatever is added here is appended to incident management context messages
 links:
-  incident_guide: https://changeme.com
-  incident_postmortems: https://changeme.com
+  []
+  # - title: My Neato Link
+  #   url: https://cool.com

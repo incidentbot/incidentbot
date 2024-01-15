@@ -38,9 +38,9 @@ Here is the standard layout of the `config.yaml` file and some examples for how 
 ```yaml
 # Control whether or not to enable the API for the frontend
 # Disabling the API will disable all functionality for the frontend
-api:
+# api:
   # Set to false to disable
-  enabled: true
+  # enabled: true
 # Options: slack
 platform: slack
 # The channel where incident activity is logged
@@ -101,7 +101,7 @@ options:
   # The topic that will be set on all incident channels
   channel_topic:
     default: 'This is the default incident channel topic.'
-    # If set to true, set the channel topic to the meeting link. This will override incident_channel_topic.
+    # If set to true, set the channel topic to the meeting link. This will override channel_topic.
     set_to_meeting_link: true
   # If not using Zoom auto-create
   conference_bridge_link: 'https://zoom.us'
@@ -157,7 +157,7 @@ integrations:
         - incident_status: Monitoring
           jira_status: In Review
         - incident_status: Resolved
-          jira_status: Done        
+          jira_status: Done
     opsgenie:
       # Note that providing the 'team' value here will limit creation of alerts to a single team.
       team: oncalls
@@ -176,9 +176,11 @@ integrations:
   zoom:
     # Set to true to automatically generate a Zoom meeting for each incident
     auto_create_meeting: true
+# Links are optional
+# Whatever is added here is appended to incident management context messages
 links:
-  incident_guide: https://changeme.com
-  incident_postmortems: https://changeme.com
+  - title: Incident Guide
+    url: https://mycompany.com/incidents
 ```
 
 Any time you'd like to change these settings, adjust them here and provide them to the app. In most cases this can be done by mounting the config file to a path and then setting that path to the value of the environment variable `CONFIG_FILE_PATH`.

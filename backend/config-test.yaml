@@ -20,24 +20,12 @@ options:
     set_to_meeting_link: false
   timezone: UTC
   conference_bridge_link: 'https://zoom.us'
-  create_from_reaction:
-    enabled: true
-    reacji: create-incident
-  auto_invite_groups:
-    - sre-concierge
   skip_logs_for_user_agent:
     - kube-probe
     - ELB-HealthChecker/2.0
-integrations:
-  atlassian:
-    confluence:
-      auto_create_postmortem: true
-      space: ENGINEERIN
-      parent: Postmortems
-  statuspage:
-    url: https://status.echoboomer.net
-  zoom:
-    auto_create_meeting: false
+integrations: {}
 links:
-  incident_guide: https://changeme.com
-  incident_postmortems: https://changeme.com
+  - title: Incident Guide
+    url: https://mycompany.com/incidents
+  - title: My Neato Link
+    url: https://cool.com
