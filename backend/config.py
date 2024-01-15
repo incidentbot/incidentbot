@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from iblog import logger, log_level
 from typing import Dict, List
 
-__version__ = "v1.9.1"
+__version__ = "v1.9.3"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -183,19 +183,8 @@ class Configuration:
                     },
                     "create_from_reaction": {
                         "required": False,
-                        "type": "dict",
-                        "schema": {
-                            "enabled": {
-                                "required": True,
-                                "type": "boolean",
-                                "empty": False,
-                            },
-                            "reacji": {
-                                "required": True,
-                                "type": "string",
-                                "empty": False,
-                            },
-                        },
+                        "type": "string",
+                        "empty": False,
                     },
                     "show_most_recent_incidents_app_home_limit": {
                         "required": False,
@@ -514,12 +503,7 @@ def env_check(required_envs: List[str]):
         if os.getenv(e) == "":
             logger.fatal(f"The environment variable {e} cannot be empty.")
             sys.exit(1)
-    if active.options.get("create_from_reaction"):
-        if active.options.get("create_from_reaction").get("reacji") is None:
-            logger.fatal(
-                f"If enabling auto create via react, the reacji field in config.yaml should be set."
-            )
-            sys.exit(1)
+
     # Integrations checks
     if "atlassian" in active.integrations:
         if "confluence" in active.integrations.get("atlassian"):

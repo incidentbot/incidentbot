@@ -41,31 +41,29 @@ class IncidentResolutionMessage:
                     ]
                 )
 
-        blocks = (
-            [
-                {"type": "divider"},
-                {
-                    "type": "header",
-                    "text": {
-                        "type": "plain_text",
-                        "text": ":white_check_mark: Incident Resolved",
-                    },
+        blocks = [
+            {"type": "divider"},
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": ":white_check_mark: Incident Resolved",
                 },
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": "This incident has been marked as resolved.",
-                    },
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "This incident has been marked as resolved.",
                 },
-                {
-                    "block_id": "resolution_buttons",
-                    "type": "actions",
-                    "elements": button_el,
-                },
-                {"type": "divider"},
-            ],
-        )
+            },
+            {
+                "block_id": "resolution_buttons",
+                "type": "actions",
+                "elements": button_el,
+            },
+            {"type": "divider"},
+        ]
 
         return {
             "channel": channel,

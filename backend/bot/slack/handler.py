@@ -373,45 +373,51 @@ Reactions
 
 @app.event("reaction_added")
 def reaction_added(event, say):
-    emoji = event["reaction"]
-    channel_id = event["item"]["channel"]
-    ts = event["item"]["ts"]
-    # Automatically create incident based on reaction with specific emoji
-    if emoji == config.active.options.get("create_from_reaction").get(
-        "reacji"
-    ) and config.active.options.get("create_from_reaction").get("enabled"):
-        # Retrieve the content of the message that was reacted to
-        try:
-            result = slack_web_client.conversations_history(
-                channel=channel_id, inclusive=True, oldest=ts, limit=1
-            )
-            message = result["messages"][0]
-            message_reacted_to_content = message["text"]
-        except Exception as error:
-            logger.error(f"Error when trying to retrieve a message: {error}")
-        # Create request parameters object
-        try:
-            request_parameters = incident.RequestParameters(
-                channel=channel_id,
-                incident_description=f"auto-{tools.random_suffix}",
-                user="internal_auto_create",
-                severity="sev4",
-                message_reacted_to_content=message_reacted_to_content,
-                original_message_timestamp=ts,
-                is_security_incident=False,
-                private_channel=False,
-            )
-        except ConfigurationError as error:
-            logger.error(error)
-        # Create an incident based on the message using the internal path
-        try:
-            incident.create_incident(
-                internal=True, request_parameters=request_parameters
-            )
-        except Exception as error:
-            logger.error(f"Error when trying to create an incident: {error}")
+    reacji = event.get("reaction")
+    channel_id = event.get("item").get("channel")
+    ts = event.get("item").get("ts")
+
+    # Automatically create incident based on reaction with specific reacji if enabled
+    if config.active.options.get("create_from_reaction"):
+        if reacji == config.active.options.get("create_from_reaction"):
+            # Retrieve the content of the message that was reacted to
+            try:
+                result = slack_web_client.conversations_history(
+                    channel=channel_id, inclusive=True, oldest=ts, limit=1
+                )
+                message = result["messages"][0]
+                message_reacted_to_content = message["text"]
+            except Exception as error:
+                logger.error(
+                    f"Error when trying to retrieve a message: {error}"
+                )
+
+            # Create request parameters object
+            try:
+                request_parameters = incident.RequestParameters(
+                    channel=channel_id,
+                    incident_description=f"auto-{tools.random_suffix}",
+                    user=event.get("user"),
+                    severity="sev4",
+                    message_reacted_to_content=message_reacted_to_content,
+                    original_message_timestamp=ts,
+                    is_security_incident=False,
+                    private_channel=False,
+                )
+            except ConfigurationError as error:
+                logger.error(error)
+
+            # Create an incident based on the message using the internal path
+            try:
+                incident.create_incident(
+                    internal=True, request_parameters=request_parameters
+                )
+            except Exception as error:
+                logger.error(
+                    f"Error when trying to create an incident: {error}"
+                )
     # Pinned content for incidents
-    if emoji == "pushpin":
+    if reacji == "pushpin":
         channel_info = slack_web_client.conversations_info(channel=channel_id)
 
         prefix = config.default_incident_channel_name_prefix
@@ -476,18 +482,6 @@ def reaction_added(event, say):
                                 channel=channel_id,
                                 text=f":wave: Hey there! It looks like that's not an image. I can currently only attach images.",
                             )
-                else:
-                    write_content(
-                        incident_id=channel_info["channel"]["name"],
-                        content=message["text"],
-                        ts=tools.fetch_timestamp(short=True),
-                        user=get_user_name(user_id=message["user"]),
-                    )
-            except Exception as error:
-                logger.error(
-                    f"Error when trying to retrieve a message: {error}"
-                )
-            finally:
                 try:
                     slack_web_client.reactions_add(
                         channel=channel_id,
@@ -505,6 +499,17 @@ def reaction_added(event, say):
                         channel=channel_id,
                         text=f":wave: Hey there! I was unable to pin that message. {reason}",
                     )
+                else:
+                    write_content(
+                        incident_id=channel_info["channel"]["name"],
+                        content=message["text"],
+                        ts=tools.fetch_timestamp(short=True),
+                        user=get_user_name(user_id=message["user"]),
+                    )
+            except Exception as error:
+                logger.error(
+                    f"Error when trying to retrieve a message: {error}"
+                )
 
 
 """
