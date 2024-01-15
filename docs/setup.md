@@ -128,23 +128,17 @@ configMap:
         - my-other-slack-group
       channel_topic:
         default: 'This is the default incident channel topic. You can edit it in settings.'
-        # If set to true, set the channel topic to the meeting link. This will override incident_channel_topic.
+        # If set to true, set the channel topic to the meeting link. This will override channel_topic.
         # set_to_meeting_link: true
       conference_bridge_link: 'https://zoom.us'
-      create_from_reaction:
-        enabled: false
-        reacji: create-incident
-      # integrations: {}
-      # Integrations are covered in their own section.
       skip_logs_for_user_agent:
         # Kubernetes health check user-agent
         - kube-probe
         # AWS ELB health check user-agent
         - ELB-HealthChecker/2.0
       timezone: UTC
-    links:
-      incident_guide: https://changeme.com
-      incident_postmortems: https://changeme.com
+    # Integrations are covered in their own section.
+    integrations: {}
 envFromSecret:
   enabled: true
   secretName: incident-bot-secret

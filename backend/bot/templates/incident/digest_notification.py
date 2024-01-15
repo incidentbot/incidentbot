@@ -15,101 +15,98 @@ class IncidentChannelDigestNotification:
             header = ":fire::lock::fire_engine: New Security Incident"
         else:
             header = ":fire::fire_engine: New Incident"
+
+        button_el = [
+            {
+                "type": "button",
+                "text": {
+                    "type": "plain_text",
+                    "text": "🚀 Join",
+                },
+                "style": "primary",
+                "url": "https://{}.slack.com/archives/{}".format(
+                    slack_workspace_id,
+                    incident_channel_details.get("name"),
+                ),
+                "action_id": "incident.join_incident_channel",
+            },
+            {
+                "type": "button",
+                "text": {
+                    "type": "plain_text",
+                    "text": "☎️ Conference",
+                },
+                "url": conference_bridge,
+                "action_id": "incident.clicked_conference_link",
+            },
+        ]
+        if config.active.links:
+            for l in config.active.links:
+                button_el.extend(
+                    [
+                        {
+                            "type": "button",
+                            "text": {
+                                "type": "plain_text",
+                                "text": l.get("title"),
+                            },
+                            "url": l.get("url"),
+                            "action_id": f"incident.clicked_link_{l.get('title').lower().replace(' ', '_')}",
+                        },
+                    ]
+                )
+        blocks = [
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": header,
+                },
+            },
+            {
+                "block_id": "digest_channel_title",
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": ":mag_right: Description:\n *{}*".format(
+                        incident_channel_details.get("incident_description")
+                    ),
+                },
+            },
+            {
+                "block_id": "digest_channel_status",
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": ":grey_question: Current Status:\n *Investigating*",
+                },
+            },
+            {
+                "block_id": "digest_channel_severity",
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f":grey_exclamation: Severity:\n *{severity.upper()}*",
+                },
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "A new incident has been declared. "
+                    + "Please use the buttons here to participate.",
+                },
+            },
+            {
+                "type": "actions",
+                "block_id": "incchannelbuttons",
+                "elements": button_el,
+            },
+        ]
+
         return {
-            "channel": f"{config.active.digest_channel}",
-            "blocks": [
-                {
-                    "type": "header",
-                    "text": {
-                        "type": "plain_text",
-                        "text": header,
-                    },
-                },
-                {
-                    "block_id": "digest_channel_title",
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": ":mag_right: Description:\n *{}*".format(
-                            incident_channel_details.get(
-                                "incident_description"
-                            )
-                        ),
-                    },
-                },
-                {
-                    "block_id": "digest_channel_status",
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": ":grey_question: Current Status:\n *Investigating*",
-                    },
-                },
-                {
-                    "block_id": "digest_channel_severity",
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": f":grey_exclamation: Severity:\n *{severity.upper()}*",
-                    },
-                },
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": "A new incident has been declared. "
-                        + "Please use the buttons here to participate.",
-                    },
-                },
-                {
-                    "type": "actions",
-                    "block_id": "incchannelbuttons",
-                    "elements": [
-                        {
-                            "type": "button",
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Join Incident Channel",
-                            },
-                            "style": "primary",
-                            "url": "https://{}.slack.com/archives/{}".format(
-                                slack_workspace_id,
-                                incident_channel_details.get("name"),
-                            ),
-                            "action_id": "incident.join_incident_channel",
-                        },
-                        {
-                            "type": "button",
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Conference",
-                            },
-                            "url": conference_bridge,
-                            "action_id": "incident.click_conference_bridge_link",
-                        },
-                        {
-                            "type": "button",
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Incident Guide",
-                            },
-                            "url": config.active.links.get("incident_guide"),
-                            "action_id": "incident.incident_guide_link",
-                        },
-                        {
-                            "type": "button",
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Incident Postmortems",
-                            },
-                            "url": config.active.links.get(
-                                "incident_postmortems"
-                            ),
-                            "action_id": "incident.incident_postmortem_link",
-                        },
-                    ],
-                },
-            ],
+            "channel": config.active.digest_channel,
+            "blocks": blocks,
         }
 
     @staticmethod
@@ -137,12 +134,12 @@ class IncidentChannelDigestNotification:
             header = f"{incident_reacji_header} Ongoing {incident_type}"
             message = "This incident is in progress. Current status is listed here. Join the channel for more information."
 
-        action_el = [
+        button_el = [
             {
                 "type": "button",
                 "text": {
                     "type": "plain_text",
-                    "text": "Join Incident Channel",
+                    "text": "🚀 Join",
                 },
                 "style": "primary",
                 "url": f"https://{slack_workspace_id}.slack.com/archives/{incident_id}",
@@ -152,33 +149,31 @@ class IncidentChannelDigestNotification:
                 "type": "button",
                 "text": {
                     "type": "plain_text",
-                    "text": "Conference",
+                    "text": "☎️ Conference",
                 },
                 "url": conference_bridge,
-                "action_id": "incident.click_conference_bridge_link",
-            },
-            {
-                "type": "button",
-                "text": {
-                    "type": "plain_text",
-                    "text": "Incident Guide",
-                },
-                "url": config.active.links.get("incident_guide"),
-                "action_id": "incident.incident_guide_link",
-            },
-            {
-                "type": "button",
-                "text": {
-                    "type": "plain_text",
-                    "text": "Incident Postmortems",
-                },
-                "url": config.active.links.get("incident_postmortems"),
-                "action_id": "incident.incident_postmortem_link",
+                "action_id": "incident.clicked_conference_link",
             },
         ]
 
+        if config.active.links:
+            for l in config.active.links:
+                button_el.extend(
+                    [
+                        {
+                            "type": "button",
+                            "text": {
+                                "type": "plain_text",
+                                "text": l.get("title"),
+                            },
+                            "url": l.get("url"),
+                            "action_id": f"incident.clicked_link_{l.get('title').lower().replace(' ', '_')}",
+                        },
+                    ]
+                )
+
         if postmortem_link is not None:
-            action_el.insert(
+            button_el.insert(
                 1,
                 {
                     "type": "button",
@@ -234,7 +229,7 @@ class IncidentChannelDigestNotification:
             {
                 "type": "actions",
                 "block_id": "incchannelbuttons",
-                "elements": action_el,
+                "elements": button_el,
             },
         ]
 

@@ -285,47 +285,50 @@ def sp_incident_list_message(
 
     return base_block
 
-def new_jira_message(key: str, summary: str, type: str, link: str) -> List[Dict]:
+
+def new_jira_message(
+    key: str, summary: str, type: str, link: str
+) -> List[Dict]:
     return [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "A Jira issue has been created for this incident.",
+            },
+        },
+        {"type": "divider"},
+        {
+            "type": "section",
+            "fields": [
                 {
-                    "type": "section",
+                    "type": "mrkdwn",
+                    "text": "*Key:* {}".format(key),
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": "*Summary:* {}".format(summary),
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": "*Type:* {}".format(type),
+                },
+            ],
+        },
+        {
+            "type": "actions",
+            "block_id": "jira_view_issue",
+            "elements": [
+                {
+                    "type": "button",
+                    "action_id": "jira.view_issue",
+                    "style": "primary",
                     "text": {
-                        "type": "mrkdwn",
-                        "text": "A Jira issue has been created for this incident.",
+                        "type": "plain_text",
+                        "text": "View Issue",
                     },
+                    "url": link,
                 },
-                {"type": "divider"},
-                {
-                    "type": "section",
-                    "fields": [
-                        {
-                            "type": "mrkdwn",
-                            "text": "*Key:* {}".format(key),
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": "*Summary:* {}".format(summary),
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": "*Type:* {}".format(type),
-                        },
-                    ],
-                },
-                {
-                    "type": "actions",
-                    "block_id": "jira_view_issue",
-                    "elements": [
-                        {
-                            "type": "button",
-                            "action_id": "jira.view_issue",
-                            "style": "primary",
-                            "text": {
-                                "type": "plain_text",
-                                "text": "View Issue",
-                            },
-                            "url": link,
-                        },
-                    ],
-                },
-            ]
+            ],
+        },
+    ]

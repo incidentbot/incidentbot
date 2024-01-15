@@ -179,28 +179,21 @@ class IncidentChannelBoilerplateMessage:
                     "style": "primary",
                 },
             )
-        button_el.extend(
-            [
-                {
-                    "type": "button",
-                    "text": {
-                        "type": "plain_text",
-                        "text": "Incident Guide",
-                    },
-                    "url": config.active.links.get("incident_guide"),
-                    "action_id": "incident.incident_guide_link",
-                },
-                {
-                    "type": "button",
-                    "text": {
-                        "type": "plain_text",
-                        "text": "Incident Postmortems",
-                    },
-                    "url": config.active.links.get("incident_postmortems"),
-                    "action_id": "incident.incident_postmortem_link",
-                },
-            ]
-        )
+        if config.active.links:
+            for l in config.active.links:
+                button_el.extend(
+                    [
+                        {
+                            "type": "button",
+                            "text": {
+                                "type": "plain_text",
+                                "text": l.get("title"),
+                            },
+                            "url": l.get("url"),
+                            "action_id": f"incident.clicked_link_{l.get('title').lower().replace(' ', '_')}",
+                        },
+                    ]
+                )
         blocks.extend(
             [
                 {

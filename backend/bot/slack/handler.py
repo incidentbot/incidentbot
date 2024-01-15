@@ -600,22 +600,21 @@ def handle_dismiss_message(ack, body):
         logger.error(f"Error deleting message: {error}")
 
 
-@app.action("incident.incident_postmortem_link")
+@app.action("incident.clicked_conference_link")
 def handle_static_action(ack, body, logger):
     logger.debug(body)
     ack()
 
 
-@app.action("incident.click_conference_bridge_link")
-def handle_static_action(ack, body, logger):
-    logger.debug(body)
-    ack()
+if config.active.links:
+    for l in config.active.links:
 
-
-@app.action("incident.incident_guide_link")
-def handle_static_action(ack, body, logger):
-    logger.debug(body)
-    ack()
+        @app.action(
+            f"incident.clicked_link_{l.get('title').lower().replace(' ', '_')}"
+        )
+        def handle_static_action(ack, body, logger):
+            logger.debug(body)
+            ack()
 
 
 @app.action("incident.join_incident_channel")
