@@ -179,7 +179,7 @@ class IncidentChannelDigestNotification:
                     "type": "button",
                     "text": {
                         "type": "plain_text",
-                        "text": "Postmortem",
+                        "text": "🩺 Postmortem",
                     },
                     "style": "danger",
                     "url": postmortem_link,

@@ -106,12 +106,9 @@ options:
   # If not using Zoom auto-create
   conference_bridge_link: 'https://zoom.us'
   # Allow creation of an incident by reacting to a message
-  create_from_reaction:
-    # Set to true to enable
-    enabled: false
-    # The name of the reacji
-    # It must exist in your workspace
-    reacji: create-incident
+  # The value is the name of the reacji that will trigger the action
+  # It must exist in your workspace
+  create_from_reaction: create-incident
   # Ignore logging for requests from the following user-agents
   skip_logs_for_user_agent:
     # Kubernetes health check user-agent
@@ -272,3 +269,13 @@ jobs:
 ```
 
 This would disable sending updates for incidents that have a status set to `some-custom status`.
+
+### Creating Via Reactions
+
+It is possible to create an incident by reacting to a Slack message with the reacji specified by the `create_from_reaction` field of the `options` section in `config.yaml`.
+
+By setting this field and then reacting using the reacji, an incident will be created and the message that was reacted to will be automatically quoted in the incident channel.
+
+!!! warning
+
+    If you wish to monitor for these reactions, the bot must be present in channels where the reaction will be applied.

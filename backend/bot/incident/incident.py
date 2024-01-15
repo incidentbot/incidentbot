@@ -527,9 +527,7 @@ async def handle_incident_optional_features(
     """
     If this is an internal incident, parse additional values
     """
-    if internal and config.active.options.get("create_from_reaction").get(
-        "enabled"
-    ):
+    if internal and config.active.options.get("create_from_reaction"):
         original_channel = request_parameters.channel
         original_message_timestamp = (
             request_parameters.original_message_timestamp
@@ -553,7 +551,7 @@ async def handle_incident_optional_features(
                         "type": "section",
                         "text": {
                             "type": "mrkdwn",
-                            "text": f"Here is a link to the original message: <{link_to_message}>",
+                            "text": f"Here is a link to the original message: <{link_to_message}>\nThe reaction was added by <@{request_parameters.user}>.",
                         },
                     },
                 ],
