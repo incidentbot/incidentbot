@@ -12,20 +12,6 @@ CHART_REPOSITORY_NAME="echoboomer-charts"
 # Directory for chart source.
 cd deploy/charts
 
-# Enable helm cm-push.
-helm plugin install https://github.com/chartmuseum/helm-push.git
-echo
-
-echo -e "${cGreen}[!] Analyzing and packaging Helm charts..."
-
-echo -e "${cGreen}[!] Adding Helm repository...${cNone}"
-
-# Add repo.
-helm repo add $CHART_REPOSITORY_NAME $CHART_REPOSITORY_URL --username "$HELM_REPO_USER" --password "$HELM_REPO_PASS"
-echo
-helm repo update
-echo
-
 # Lint all charts and add dependencies if there are any.
 if [ "$CIRCLE_BRANCH" != "main" ]; then
     echo -e "${cGreen}[!] Linting charts...${cNone}"
@@ -59,11 +45,15 @@ fi
 
 # Package on merge.
 if [ "$CIRCLE_BRANCH" = "main" ]; then
+    # Enable helm cm-push.
+    helm plugin install https://github.com/chartmuseum/helm-push.git
+    echo -e "${cGreen}[!] Analyzing and packaging Helm charts..."
+    echo -e "${cGreen}[!] Adding Helm repository...${cNone}"
+    helm repo add $CHART_REPOSITORY_NAME $CHART_REPOSITORY_URL --username "$HELM_REPO_USER" --password "$HELM_REPO_PASS"
+    helm repo update
     echo -e "${cGreen}[!] Packaging charts...${cNone}"
     for f in $(ls .); do
         CHART_VERSION=$(helm show chart $f | grep '^version' | sed 's/^version: //')
         helm cm-push "$f" $CHART_REPOSITORY_NAME
-        echo
     done
-    echo
 fi
