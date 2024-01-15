@@ -1,0 +1,110 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "incident-bot.fullname" . }}
+  labels:
+    {{- include "incident-bot.labels" . | nindent 4 }}
+  {{- with .Values.deploymentAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "incident-bot.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "incident-bot.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "incident-bot.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ include "incident-bot.image.rendered" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.args }}
+          args:
+            {{- . | toYaml | nindent 12 }}
+          {{- end }}
+          {{- with .Values.command }}
+          command:
+            {{- . | toYaml | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.port | default 3000 }}
+              protocol: TCP
+          {{- if .Values.envVars }}
+          env:
+          {{- include "incident-bot.envVars.rendered" (list . .Values) | indent 12 }}
+          {{- end }}
+          {{- if and .Values.envFromSecret.enabled (not (empty .Values.envFromSecret.secretName)) }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.envFromSecret.secretName }}
+          {{- end }}
+          {{- if .Values.healthCheck.enabled }}
+          {{- with .Values.healthCheck }}
+          livenessProbe:
+            httpGet:
+              path: {{ .path }}
+              port: {{ .port | default 3000 }}
+              scheme: {{ .scheme | default "HTTP" }}
+            initialDelaySeconds: {{ .initialDelaySeconds | default 30 }}
+            periodSeconds: {{ .periodSeconds | default 30 }}
+            timeoutSeconds: {{ .timeoutSeconds | default 1 }}
+          readinessProbe:
+            httpGet:
+              path: {{ .path }}
+              port: {{ .port | default 3000 }}
+              scheme: {{ .scheme | default "HTTP" }}
+            initialDelaySeconds: {{ .initialDelaySeconds | default 30 }}
+            periodSeconds: {{ .periodSeconds | default 30 }}
+            timeoutSeconds: {{ .timeoutSeconds | default 1 }}
+          {{- end }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.configMap.create }}
+          volumeMounts:
+            - name: {{ include "incident-bot.fullname" . }}-config
+              mountPath: /config/{{ include "incident-bot.fullname" . }}
+          {{- end }}
+      {{- if .Values.configMap.create }}
+      volumes:
+        - name: {{ include "incident-bot.fullname" . }}-config
+          configMap:
+            name: {{ include "incident-bot.fullname" . }}-config
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

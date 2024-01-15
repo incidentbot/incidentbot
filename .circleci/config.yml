@@ -140,6 +140,12 @@ jobs:
             docker build --tag $IMAGE_NAME:$IMAGE_TAG --file ./docs/Dockerfile .
             echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
             docker push $IMAGE_NAME:$IMAGE_TAG
+  helm:
+    docker:
+      - image: eb129/docker-kubectl:v1.0.1
+    steps:
+      - checkout
+      - run: scripts/helm.sh
 workflows:
   version: 2
   main:
@@ -180,3 +186,5 @@ workflows:
           filters:
             branches:
               only: main
+      - helm:
+          context: helm-charts-repository

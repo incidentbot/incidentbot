@@ -2,9 +2,9 @@
 # renders a manifest file for the Slack app
 
 function renderManifest {
-  out="slack_app_manifest.yaml"
-
-  printf '%s\n' \
+    out="slack_app_manifest.yaml"
+    
+    printf '%s\n' \
     "_metadata:" \
     "  major_version: 1" \
     "  minor_version: 1" \
@@ -78,8 +78,8 @@ function renderManifest {
 }
 
 function main {
-  renderManifest
-  echo "Wrote manifest to: ${out}"
+    renderManifest
+    echo "Wrote manifest to: ${out}"
 }
 
 main
