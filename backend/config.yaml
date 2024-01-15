@@ -69,7 +69,7 @@ options:
   # Allow creation of an incident by reacting to a message
   # The value is the name of the reacji that will trigger the action
   # It must exist in your workspace
-  create_from_reaction: create-incident
+  # create_from_reaction: create-incident
   # Ignore logging for requests from the following user-agents
   skip_logs_for_user_agent:
     # Kubernetes health check user-agent
@@ -82,16 +82,16 @@ options:
   # Timezone to use for logging, etc.
   timezone: UTC
 integrations:
-  # {}
+  {}
   # Secret data is provided as environment variables for integrations
   # Only non-secret data is configured here
-  atlassian:
-    # Enable Confluence integration
-    confluence:
-      #   # Set to true to automatically create an postmortem doc
-      auto_create_postmortem: true
-      space: ENGINEERIN
-      parent: Postmortems
+  # atlassian:
+  # Enable Confluence integration
+  # confluence:
+  #   # Set to true to automatically create an postmortem doc
+  #   auto_create_postmortem: true
+  #   space: ENGINEERIN
+  #   parent: Postmortems
   # Enable Jira integration
   # jira:
   #   project: 'IN'
