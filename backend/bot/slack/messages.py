@@ -31,13 +31,13 @@ def help_menu(include_header: bool = True) -> List:
     )
     commands = {
         "help": "This command that explains help options.",
+        "edit": "Adjust incident settings directly in the databaase. Please read the documentation regarding the use of this command.",
         "lsoi": "List only incidents that are still *open* - as in non-resolved.",
         "ls-sp-inc": "List *open* Statuspage incidents.",
         "pager": "Return information from PagerDuty regarding who is currently on call. You may optionally page them.",
         "ping": "Ping the bot to check and see if it's alive and responding.",
         "scheduler list": "List any jobs tasked to the scheduler.",
         "scheduler delete <job_id>": "Delete a job using the ID returned by scheduler list.",
-        "version": "Have the bot respond with current application version.",
     }
     txt = ""
     for key, value in commands.items():
@@ -48,6 +48,7 @@ def help_menu(include_header: bool = True) -> List:
             "text": {"type": "mrkdwn", "text": txt.strip()},
         },
     )
+
     return blocks
 
 
@@ -92,7 +93,7 @@ def incident_list_message(
                         "type": "section",
                         "text": {
                             "type": "mrkdwn",
-                            "text": f"> <#{inc.channel_id}> *|* _Severity_ *{inc.severity.upper()}* *|* _Status_ *{inc.status.title()}* *|* _Creation Time_ *{inc.created_at}*",
+                            "text": f"> <#{inc.channel_id}> *|* _ID_ *{inc.incident_id}* *|* _Severity_ *{inc.severity.upper()}* *|* _Status_ *{inc.status.title()}* *|* _Creation Time_ *{inc.created_at}*",
                         },
                     }
                 )
@@ -103,7 +104,7 @@ def incident_list_message(
                             "type": "section",
                             "text": {
                                 "type": "mrkdwn",
-                                "text": f"> <#{inc.channel_id}> *|* _Severity_ *{inc.severity.upper()}* *|* _Status_ *{inc.status.title()}* *|* _Creation Time_ *{inc.created_at}*",
+                                "text": f"> <#{inc.channel_id}> *|* _ID_ *{inc.incident_id}* *|* _Severity_ *{inc.severity.upper()}* *|* _Status_ *{inc.status.title()}* *|* _Creation Time_ *{inc.created_at}*",
                             },
                         }
                     )
@@ -123,6 +124,7 @@ def incident_list_message(
             ],
         }
     )
+
     return base_block
 
 
