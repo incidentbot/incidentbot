@@ -142,7 +142,7 @@ jobs:
             docker push $IMAGE_NAME:$IMAGE_TAG
   helm:
     docker:
-      - image: eb129/docker-kubectl:v1.0.1
+      - image: eb129/docker-kubectl:v1.2.0
     steps:
       - checkout
       - run: scripts/helm.sh
