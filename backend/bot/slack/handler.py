@@ -6,12 +6,15 @@ import slack_sdk
 from bot.exc import ConfigurationError
 from bot.incident import actions as inc_actions, incident
 from bot.incident.action_parameters import ActionParametersSlack
-from bot.models.incident import db_read_recent_incidents
+from bot.models.incident import (
+    db_read_incident,
+    db_read_recent_incidents,
+    db_update_incident_status_col,
+)
 from bot.models.pager import read_pager_auto_page_targets
 from bot.scheduler import scheduler
 from bot.shared import tools
 from bot.slack.client import (
-    get_digest_channel_id,
     get_user_name,
     slack_web_client,
     slack_workspace_id,
@@ -73,6 +76,77 @@ def handle_mention(body, say, logger):
                 workspace=slack_workspace_id, wrap=True
             )
             say(channel=user, text=startup_message)
+        case "edit":
+            if len(message) > 2:
+                match message[2]:
+                    case "incident":
+                        if len(message) > 3:
+                            inc = message[3]
+                            try:
+                                incd = db_read_incident(
+                                    incident_id=inc,
+                                    return_json=True,
+                                )
+                            except Exception:
+                                say(f"Incident *{inc}* does not exist.")
+
+                                return
+
+                            if len(message) > 4:
+                                match message[4]:
+                                    case "set-status":
+                                        if len(message) > 5:
+                                            st = message[5]
+                                            if st in config.active.statuses:
+                                                if incd.get("status") == st:
+                                                    say(
+                                                        f"*{inc}* is already `{st}`."
+                                                    )
+
+                                                    return
+                                                try:
+                                                    db_update_incident_status_col(
+                                                        st,
+                                                        incident_id=incd.get(
+                                                            "incident_id"
+                                                        ),
+                                                    )
+                                                except Exception as error:
+                                                    say(
+                                                        f"Error updating *{inc}*: {error}"
+                                                    )
+
+                                                    return
+
+                                                say(
+                                                    f"*{inc}* status updated to `{st}`."
+                                                )
+                                            else:
+                                                say(
+                                                    f"`{st}` is not a valid status. Try: `{config.active.statuses}`"
+                                                )
+                                        else:
+                                            say(
+                                                f"The command `edit incident <incident-id> set-status` requires at least one argument."
+                                            )
+                                    case _:
+                                        say(
+                                            f"The command `edit incident <incident-id>` does not have a subcommand `{message[4]}`."
+                                        )
+                            else:
+                                say(
+                                    f"The command `edit incident <incident-id>` requires at least one argument."
+                                )
+                        else:
+                            say(
+                                f"The command `edit incident` requires at least one argument."
+                            )
+                    case _:
+                        say(
+                            f"The command `edit` does not have a subcommand `{message[2]}`."
+                        )
+            else:
+                say(f"The command `edit` requires at least one argument.")
         case "lsoi":
             database_data = db_read_recent_incidents(
                 limit=config.show_most_recent_incidents_app_home_limit
@@ -281,13 +355,17 @@ def handle_mention(body, say, logger):
                             )
                         else:
                             say(f"Deleted job: *{job_title}*")
+                case _:
+                    say(
+                        f"The command `scheduler` does not have a subcommand `{message[2]}`"
+                    )
         case "ping":
             say(text="pong")
         case "version":
             say(text=f"I am currently running version: {config.__version__}")
-        case default:
+        case _:
             resp = " ".join(message[1:])
-            say(text=f"Sorry, I don't know the command *{resp}* yet.")
+            say(text=f"Sorry, I don't know the command `{resp}` yet.")
 
 
 """
