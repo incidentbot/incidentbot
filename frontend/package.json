@@ -10,7 +10,7 @@
     "@emotion/styled": "^11.10.6",
     "@iconify/icons-mdi": "^1.2.47",
     "@iconify/react": "^4.0.1",
-    "@mui/icons-material": "^5.11.16",
+    "@mui/icons-material": "^5.15.5",
     "@mui/material": "^5.14.0",
     "@testing-library/jest-dom": "^6.2.0",
     "@testing-library/react": "^14.0.0",
