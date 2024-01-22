@@ -71,6 +71,6 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.0.0",
     "eslint-plugin-react": "^7.33.2",
-    "prettier": "^3.0.0"
+    "prettier": "^3.2.4"
   }
 }
