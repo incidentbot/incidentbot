@@ -11,7 +11,7 @@ flask-jwt-extended==4.6.0
 flask-limiter==3.5.0
 flask-login==0.6.3
 flask-marshmallow==0.15.0
-marshmallow==3.20.1
+marshmallow==3.20.2
 marshmallow_sqlalchemy==0.29.0
 opsgenie-sdk==2.1.5
 pdpyras==5.2.0
