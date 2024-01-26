@@ -152,6 +152,7 @@ class IncidentPostmortem:
     </tr>
     """
         all_items_formatted = ""
+        self.timeline.sort(key=lambda x: x["ts"])
         for item in self.timeline:
             all_items_formatted += f"""
     <tr>
