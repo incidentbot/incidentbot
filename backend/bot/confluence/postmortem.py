@@ -19,6 +19,7 @@ class IncidentPostmortem:
         severity_definition: str,
         pinned_items: list[IncidentLogging],
         timeline: list[dict],
+        confluence: ConfluenceApi | None = None,
     ) -> None:
         self.incident_id = incident_id
         self.title = postmortem_title
@@ -39,7 +40,7 @@ class IncidentPostmortem:
             .get("space")
         )
 
-        self.confluence = ConfluenceApi()
+        self.confluence = confluence or ConfluenceApi()
         self.exec = self.confluence.api
 
     def create(self) -> str :
@@ -64,14 +65,15 @@ class IncidentPostmortem:
                 timeline=self.__generate_timeline(),
                 pinned_messages=self.__generate_pinned_messages(),
             )
-            self.exec.create_page(
-                self.space,
-                self.title,
-                body,
+            self.confluence.create_page(
+                space = self.space,
+                title = self.title,
+                body = body,
                 parent_id=parent_page_id,
                 type="page",
                 representation="storage",
                 editor="v2",
+                labels=["postmortem"],
             )
             created_page_id = self.exec.get_page_id(self.space, self.title)
             created_page_info = self.exec.get_page_by_id(
@@ -188,6 +190,12 @@ class IncidentPostmortem:
         pinned_messages: str,
     ) -> str:
         """Renders HTML for use in Confluence documents"""
+        template_id = (
+            config.active.integrations.get("atlassian")
+            .get("confluence")
+            .get("postmortem_template_id")
+        )
+        template_body = self.confluence.fetch_template_body(template_id) if template_id else None
         try:
             return PostmortemTemplate.template(
                 incident_commander=incident_commander,
@@ -195,6 +203,7 @@ class IncidentPostmortem:
                 severity_definition=severity_definition,
                 timeline=timeline,
                 pinned_messages=pinned_messages,
+                template_body=template_body
             )
         except Exception as error:
             msg = f"Error generating Confluence postmortem html: {error}"

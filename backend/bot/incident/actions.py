@@ -1,4 +1,4 @@
-from backend.bot.incident.incident import Incident
+from bot.incident.incident import Incident
 import config
 import slack_sdk.errors
 
@@ -395,6 +395,7 @@ async def set_status(
             else:
                 actual_user_names.append("Unassigned")
 
+        postmortem_link = None
         # Generate postmortem template and create postmortem if enabled
         # Get normalized description as postmortem title
         if "atlassian" in config.active.integrations:
@@ -403,7 +404,7 @@ async def set_status(
                 .get("confluence")
                 .get("auto_create_postmortem")
             ):
-                create_post_mortem_block(incident_data, incident_commander=actual_user_names[0])
+                postmortem_link = await create_post_mortem_block(incident_data, incident_commander=actual_user_names[0])
         # Send message to incident channel
         try:
             result = slack_web_client.chat_postMessage(
@@ -586,7 +587,7 @@ async def set_status(
     )
 
 
-async def create_post_mortem_block(incident_data: Incident, incident_commander: str) -> None:
+async def create_post_mortem_block(incident_data: Incident, incident_commander: str) -> str | None:
     """Generates a postmortem template and creates the postmortem"""
     from bot.confluence.postmortem import IncidentPostmortem
 
@@ -680,6 +681,7 @@ async def create_post_mortem_block(incident_data: Incident, incident_commander: 
         logger.error(
             f"Error sending postmortem update to incident channel: {error}"
         )
+    return postmortem_link
 
 async def set_severity(
     action_parameters: type[ActionParametersSlack] = None,

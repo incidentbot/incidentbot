@@ -134,12 +134,13 @@ class PostmortemTemplate:
         severity_definition: str,
         timeline: str,
         pinned_messages: str,
-        template_str: str = default_template,
+        template_body: str | None = None,
     ):
+        template_body = template_body or default_template
         # For each {uuid} replace with a new uuid.uuid4()
-        while "{uuid}" in template_str:
-            template_str = template_str.replace("{uuid}", str(uuid.uuid4()), 1)
-        return template_str.format(
+        while "{uuid}" in template_body:
+            template_body = template_body.replace("{uuid}", str(uuid.uuid4()), 1)
+        return template_body.format(
             incident_commander=incident_commander,
             severity=severity,
             severity_definition=severity_definition,

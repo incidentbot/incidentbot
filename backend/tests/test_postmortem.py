@@ -8,7 +8,7 @@ from bot.templates.confluence.postmortem import PostmortemTemplate
 
 class TestPostMortem:
     def test_template_replacement_uuid(self):
-        template_str = "{uuid}"
+        template_body = "{uuid}"
 
         result = PostmortemTemplate.template(
             incident_commander="",
@@ -16,13 +16,13 @@ class TestPostMortem:
             severity_definition="",
             timeline="",
             pinned_messages="",
-            template_str=template_str,
+            template_body=template_body,
         )
 
         assert uuid.UUID(result), "{uuid} was not replaced with a valid UUID"
 
     def test_template_replaces_each_uuid_with_unique_uuid(self):
-        template_str = "{uuid}\n{uuid}"
+        template_body = "{uuid}\n{uuid}"
 
         result = PostmortemTemplate.template(
             incident_commander="",
@@ -30,7 +30,7 @@ class TestPostMortem:
             severity_definition="",
             timeline="",
             pinned_messages="",
-            template_str=template_str,
+            template_body=template_body,
         )
 
         assert (
