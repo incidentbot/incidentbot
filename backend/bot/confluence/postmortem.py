@@ -1,8 +1,12 @@
+import datetime
 import config
 
 from bot.confluence.api import ConfluenceApi, logger
 from bot.models.pg import IncidentLogging
-from bot.templates.confluence.postmortem import PostmortemTemplate
+from bot.templates.confluence.postmortem import (
+    PostmortemContext,
+    PostmortemTemplate,
+)
 from bot.exc import PostmortemException
 from html import escape
 from iblog import logger
@@ -13,21 +17,25 @@ class IncidentPostmortem:
     def __init__(
         self,
         incident_id: str,
-        postmortem_title: str,
+        incident_date: datetime.date,
+        incident_description: str,
         incident_commander: str,
         severity: str,
         severity_definition: str,
         pinned_items: list[IncidentLogging],
         timeline: list[dict],
+        roles: dict | None = None,
         confluence: ConfluenceApi | None = None,
     ) -> None:
         self.incident_id = incident_id
-        self.title = postmortem_title
+        self.incident_date = incident_date
+        self.incident_description = incident_description
         self.incident_commander = incident_commander
         self.severity = severity
         self.severity_definition = severity_definition
         self.pinned_items = pinned_items
         self.timeline = timeline
+        self.roles = roles
 
         self.parent_page = (
             config.active.integrations.get("atlassian")
@@ -43,39 +51,39 @@ class IncidentPostmortem:
         self.confluence = confluence or ConfluenceApi()
         self.exec = self.confluence.api
 
-    def create(self) -> str :
+    def create(self) -> str:
         """
         Creates a starting postmortem page and returns the create page's URL
         """
         parent_page_id = self.exec.get_page_id(self.space, self.parent_page)
         logger.info(
-            f"Creating postmortem {self.title} in Confluence space {self.space} under parent {self.parent_page}..."
+            f"Creating postmortem {self.incident_id} in Confluence space {self.space} under parent {self.parent_page}..."
         )
         # Generate html for postmortem doc
         # Create postmortem doc
         if not self.exec.page_exists(space=self.space, title=self.parent_page):
-            msg = "Couldn't create postmortem page, does the parent page exist?"
+            msg = (
+                "Couldn't create postmortem page, does the parent page exist?"
+            )
             logger.error(msg)
             raise PostmortemException(msg)
         try:
+            context = self._generate_incident_context()
+            title = self.__render_postmortem_title(context)
             body = self.__render_postmortem_html(
-                incident_commander=self.incident_commander,
-                severity=self.severity,
-                severity_definition=self.severity_definition,
-                timeline=self.__generate_timeline(),
-                pinned_messages=self.__generate_pinned_messages(),
+                context=context,
             )
             self.confluence.create_page(
-                space = self.space,
-                title = self.title,
-                body = body,
+                space=self.space,
+                title=title,
+                body=body,
                 parent_id=parent_page_id,
                 type="page",
                 representation="storage",
                 editor="v2",
                 labels=["postmortem"],
             )
-            created_page_id = self.exec.get_page_id(self.space, self.title)
+            created_page_id = self.exec.get_page_id(self.space, title)
             created_page_info = self.exec.get_page_by_id(
                 page_id=created_page_id
             )
@@ -90,7 +98,7 @@ class IncidentPostmortem:
                     if item.img:
                         try:
                             logger.info(
-                                f"Attaching pinned item image to {self.title}..."
+                                f"Attaching pinned item image to {title}..."
                             )
                             # Attach content to postmortem document
                             self.exec.attach_content(
@@ -107,13 +115,13 @@ class IncidentPostmortem:
                             )
                         except Exception as error:
                             logger.error(
-                                f"Error attaching file to {self.title}: {error}"
+                                f"Error attaching file to {title}: {error}"
                             )
             return url
         except Exception as error:
             msg = "Something unexpected happened and we couldn't create the postmortem."
             logger.error(msg)
-            raise PostmortemException(msg)
+            raise PostmortemException(msg) from error
 
     def __find_user_id(self, user: str) -> tuple[bool, Any]:
         """
@@ -183,11 +191,7 @@ class IncidentPostmortem:
 
     def __render_postmortem_html(
         self,
-        incident_commander: str,
-        severity: str,
-        severity_definition: str,
-        timeline: str,
-        pinned_messages: str,
+        context: PostmortemContext,
     ) -> str:
         """Renders HTML for use in Confluence documents"""
         template_id = (
@@ -195,17 +199,67 @@ class IncidentPostmortem:
             .get("confluence")
             .get("postmortem_template_id")
         )
-        template_body = self.confluence.fetch_template_body(template_id) if template_id else None
+        template_body = (
+            self.confluence.fetch_template(template_id)['body']
+            if template_id
+            else None
+        )
         try:
             return PostmortemTemplate.template(
-                incident_commander=incident_commander,
-                severity=severity,
-                severity_definition=severity_definition,
-                timeline=timeline,
-                pinned_messages=pinned_messages,
-                template_body=template_body
+                context=context,
+                template_body=template_body,
             )
         except Exception as error:
             msg = f"Error generating Confluence postmortem html: {error}"
             logger.error(msg)
             raise PostmortemException(msg) from error
+
+    def __render_postmortem_title(
+        self,
+        context: PostmortemContext,
+    ) -> str:
+        """Renders HTML for use in Confluence documents"""
+        template_id = (
+            config.active.integrations.get("atlassian")
+            .get("confluence")
+            .get("postmortem_template_id")
+        )
+        if template_id:
+            template_response = (
+                self.confluence.fetch_template(template_id)
+            )
+            if template_response:
+                template_title = template_response["name"]
+        else:
+            template_title = config.active.integrations.get("atlassian").get("confluence").get("postmortem_title")
+
+        if not template_title:
+            # defaulting to %Y-%m-%d - {incident_id}
+            template_title = "{incident_date} - {incident_id}"
+
+        for k, v in context.items():
+            if v is not None:
+                template_title = template_title.replace(f"{{{k}}}", str(v))
+        return template_title
+
+    def __generate_roles(self) -> str:
+        # TODO
+        return ""
+
+    def _generate_incident_context(self) -> PostmortemContext:
+        context = PostmortemContext(
+            incident_commander=self.incident_commander,
+            severity=self.severity,
+            severity_definition=self.severity_definition,
+            timeline_html=self.__generate_timeline(),
+            pinned_messages_html=self.__generate_pinned_messages(),
+            incident_id=self.incident_id,
+            severity_html="",
+            # TODO: This should be whoever clicked the button to create the postmortem
+            description=self.incident_description,
+            author=self.incident_commander,
+            postmortem_date=datetime.datetime.now().strftime("%Y-%m-%d"),
+            roles_html=self.__generate_roles(),
+            incident_date=self.incident_date.strftime("%Y-%m-%d"),
+        )
+        return context

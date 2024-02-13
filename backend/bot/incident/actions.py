@@ -404,7 +404,9 @@ async def set_status(
                 .get("confluence")
                 .get("auto_create_postmortem")
             ):
-                postmortem_link = await create_post_mortem_block(incident_data, incident_commander=actual_user_names[0])
+                postmortem_link = await create_post_mortem_block(
+                    incident_data, incident_commander=actual_user_names[0]
+                )
         # Send message to incident channel
         try:
             result = slack_web_client.chat_postMessage(
@@ -442,15 +444,17 @@ async def set_status(
                 status=action_value,
                 severity=incident_data.severity,
                 conference_bridge=incident_data.conference_bridge,
-                postmortem_link=postmortem_link
-                if action_value == "resolved"
-                and ("atlassian" in config.active.integrations)
-                and (
-                    config.active.integrations.get("atlassian")
-                    .get("confluence")
-                    .get("auto_create_postmortem")
-                )
-                else None,
+                postmortem_link=(
+                    postmortem_link
+                    if action_value == "resolved"
+                    and ("atlassian" in config.active.integrations)
+                    and (
+                        config.active.integrations.get("atlassian")
+                        .get("confluence")
+                        .get("auto_create_postmortem")
+                    )
+                    else None
+                ),
             ),
             text="",
         )
@@ -587,7 +591,9 @@ async def set_status(
     )
 
 
-async def create_post_mortem_block(incident_data: Incident, incident_commander: str) -> str | None:
+async def create_post_mortem_block(
+    incident_data: Incident, incident_commander: str
+) -> str | None:
     """Generates a postmortem template and creates the postmortem"""
     from bot.confluence.postmortem import IncidentPostmortem
 
@@ -682,6 +688,7 @@ async def create_post_mortem_block(incident_data: Incident, incident_commander: 
             f"Error sending postmortem update to incident channel: {error}"
         )
     return postmortem_link
+
 
 async def set_severity(
     action_parameters: type[ActionParametersSlack] = None,

@@ -17,7 +17,7 @@ class ConfluenceApi:
             cloud=True,
         )
 
-    def fetch_template_body(self, template_id: int) -> str | None:
+    def fetch_template(self, template_id: int) -> dict | None:
         """Fetches the body of a Confluence template"""
         try:
             response = self.confluence.get_content_template(template_id)
@@ -25,22 +25,28 @@ class ConfluenceApi:
             logger.error(f"Could not find template with id: {template_id}")
             return None
         except requests.HTTPError as error:
-            logger.error(f"Error fetching template body from confluence: {error}")
+            logger.error(
+                f"Error fetching template body from confluence: {error}"
+            )
             return None
-        return response["body"]["storage"]["value"]
+        return {
+            "name": response['name'],
+            "labels": [l['label'] for l in response.get('labels', [])],
+            "body": response["body"]["storage"]["value"],
+        }
 
     def create_page(
         self,
         space: str,
         title: str,
         body: str,
-        parent_id: str | None= None,
+        parent_id: str | None = None,
         type: str = "page",
-        representation: str="storage",
+        representation: str = "storage",
         editor: str | None = None,
-        full_width: bool=False,
+        full_width: bool = False,
         labels: list[str] | None = None,
-        status: Literal['draft'] | None = None,
+        status: Literal["draft"] | None = None,
     ) -> dict:
         """
         Unfortunately the atlassian-python-api does not support creating pages
@@ -60,11 +66,19 @@ class ConfluenceApi:
         if editor is not None and editor in ["v1", "v2"]:
             data["metadata"]["properties"]["editor"] = {"value": editor}
         if full_width is True:
-            data["metadata"]["properties"]["content-appearance-draft"] = {"value": "full-width"}
-            data["metadata"]["properties"]["content-appearance-published"] = {"value": "full-width"}
+            data["metadata"]["properties"]["content-appearance-draft"] = {
+                "value": "full-width"
+            }
+            data["metadata"]["properties"]["content-appearance-published"] = {
+                "value": "full-width"
+            }
         else:
-            data["metadata"]["properties"]["content-appearance-draft"] = {"value": "fixed-width"}
-            data["metadata"]["properties"]["content-appearance-published"] = {"value": "fixed-width"}
+            data["metadata"]["properties"]["content-appearance-draft"] = {
+                "value": "fixed-width"
+            }
+            data["metadata"]["properties"]["content-appearance-published"] = {
+                "value": "fixed-width"
+            }
 
         # https://community.atlassian.com/t5/Answers-Developer-Questions/Creating-a-confluence-page-via-rest-api-with-a-label/qaq-p/469849
         if labels:
@@ -72,7 +86,7 @@ class ConfluenceApi:
 
         try:
             response = self.api.post(url, data=data)
-        except atlassian.errors.HTTPError as e:
+        except requests.HTTPError as e:
             if e.response.status_code == 404:
                 raise ApiPermissionError(
                     "The calling user does not have permission to view the content",

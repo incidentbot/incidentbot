@@ -3,7 +3,7 @@ import uuid
 
 from bot.shared import tools
 from bot.confluence.postmortem import IncidentPostmortem
-from bot.templates.confluence.postmortem import PostmortemTemplate
+from bot.templates.confluence.postmortem import PostmortemTemplate, PostmortemContext
 
 
 class TestPostMortem:
@@ -11,11 +11,7 @@ class TestPostMortem:
         template_body = "{uuid}"
 
         result = PostmortemTemplate.template(
-            incident_commander="",
-            severity="",
-            severity_definition="",
-            timeline="",
-            pinned_messages="",
+            context=PostmortemContext(),
             template_body=template_body,
         )
 
@@ -25,11 +21,7 @@ class TestPostMortem:
         template_body = "{uuid}\n{uuid}"
 
         result = PostmortemTemplate.template(
-            incident_commander="",
-            severity="",
-            severity_definition="",
-            timeline="",
-            pinned_messages="",
+            context=PostmortemContext(),
             template_body=template_body,
         )
 
@@ -39,10 +31,12 @@ class TestPostMortem:
 
     def test_default_template(self):
         result = PostmortemTemplate.template(
-            incident_commander="INCIDENT_COMMANDER",
-            severity="SEV1",
-            severity_definition="SEV1_DESCRIPTION",
-            timeline="TIMELINE",
+            context=PostmortemContext(
+                incident_commander="INCIDENT_COMMANDER",
+                severity="SEV1",
+                severity_definition="SEV1_DESCRIPTION",
+                timeline_html="TIMELINE",
+            ),
             pinned_messages="PINNED_MESSAGES",
         )
 

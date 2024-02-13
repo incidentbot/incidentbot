@@ -1,4 +1,5 @@
 import uuid
+from typing import TypedDict
 
 
 default_template = """
@@ -126,24 +127,37 @@ default_template = """
 <ac:structured-macro ac:name="attachments" ac:schema-version="1" data-layout="wide"
   ac:local-id="{uuid}" ac:macro-id="{uuid}" />
 """
+
+
+class PostmortemContext(TypedDict):
+    incident_id: str
+    incident_commander: str | None
+    severity: str | None
+    severity_html: str | None
+    severity_definition: str | None
+    timeline_html: str | None
+    pinned_messages_html: str | None
+    author: str | None
+    incident_date: str | None
+    postmortem_date: str | None
+    roles_html: str | None
+    description: str | None
+
+
 class PostmortemTemplate:
     @staticmethod
     def template(
-        incident_commander: str,
-        severity: str,
-        severity_definition: str,
-        timeline: str,
-        pinned_messages: str,
+        context: PostmortemContext,
         template_body: str | None = None,
     ):
         template_body = template_body or default_template
         # For each {uuid} replace with a new uuid.uuid4()
         while "{uuid}" in template_body:
-            template_body = template_body.replace("{uuid}", str(uuid.uuid4()), 1)
-        return template_body.format(
-            incident_commander=incident_commander,
-            severity=severity,
-            severity_definition=severity_definition,
-            timeline=timeline,
-            pinned_messages=pinned_messages,
-        )
+            template_body = template_body.replace(
+                "{uuid}", str(uuid.uuid4()), 1
+            )
+
+        for k, v in context.items():
+            if v is not None:
+                template_body = template_body.replace(f"{{{k}}}", str(v))
+        return template_body
