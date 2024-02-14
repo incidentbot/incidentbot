@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Literal
 import requests
 import atlassian.errors
@@ -116,3 +117,28 @@ class ConfluenceApi:
                 "Please check Confluence configuration and try again."
             )
         return False
+
+
+    @lru_cache
+    def _fetch_users(self) -> list[dict]:
+        """
+        Fetches all users in the Atlassian Cloud instance
+
+        This is cached but this is fine because this instance does not last forever.
+        """
+        groups = self.api.get_all_groups(start=0, limit=50)
+        users = []
+        for g in groups:
+            users += self.api.get_group_members(
+                group_name=g["name"], start=0, limit=1000
+            )
+        return users
+
+    def get_user_id(self, name: str, email: str) -> int | None:
+        """
+        Finds the account id of a user by their public name or email
+        """
+        for user in self._fetch_users():
+            if user["publicName"] == name or user["email"] == email:
+                return user["accountId"]
+        return None
