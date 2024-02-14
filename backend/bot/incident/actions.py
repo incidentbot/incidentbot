@@ -16,6 +16,7 @@ from bot.models.incident import (
     db_update_incident_severity_col,
     db_update_incident_updated_at_col,
 )
+from bot.models.pg import Incident as IncidentModel
 from bot.scheduler import scheduler
 from bot.shared import tools
 from bot.slack.client import (
@@ -405,7 +406,7 @@ async def set_status(
                 .get("auto_create_postmortem")
             ):
                 postmortem_link = await create_post_mortem_block(
-                    incident_data, incident_commander=actual_user_names[0]
+                    incident_data
                 )
         # Send message to incident channel
         try:
@@ -592,7 +593,7 @@ async def set_status(
 
 
 async def create_post_mortem_block(
-    incident_data: Incident, incident_commander: str
+    incident_data: IncidentModel,
 ) -> str | None:
     """Generates a postmortem template and creates the postmortem"""
     from bot.confluence.postmortem import IncidentPostmortem
@@ -609,21 +610,23 @@ async def create_post_mortem_block(
         },
     ]
 
-    postmortem_title = f"{datetime.today().strftime('%Y-%m-%d')} - {incident_data.incident_id}"
 
     try:
         postmortem = IncidentPostmortem(
             incident_id=incident_data.incident_id,
-            postmortem_title=postmortem_title,
-            incident_commander=incident_commander,
+            incident_created_at=incident_data.created_at,
+            incident_description=incident_data.channel_description,
             severity=incident_data.severity,
             severity_definition=config.active.severities[
                 incident_data.severity
             ],
+            channel_id=incident_data.channel_id,
+            channel_name=incident_data.channel_name,
             pinned_items=read_incident_pinned_items(
                 incident_id=incident_data.incident_id
             ),
             timeline=log.read(incident_id=incident_data.incident_id),
+            roles=incident_data.roles,
         )
         postmortem_link = postmortem.create()
 
@@ -666,7 +669,7 @@ async def create_post_mortem_block(
             ]
         )
     except PostmortemException as error:
-        return
+        return None
 
     # Send postmortem message to incident channel
     try:

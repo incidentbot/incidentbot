@@ -68,23 +68,7 @@ default_template = """
 </ac:structured-macro>
 
 <h1>Timeline</h1>
-<table data-layout="default" ac:local-id="{uuid}">
-  <colgroup>
-    <col style="width: 340.0px;" />
-    <col style="width: 340.0px;" />
-  </colgroup>
-  <tbody>
-    <tr>
-      <td data-highlight-colour="#f4f5f7">
-        <p><strong>Time</strong></p>
-      </td>
-      <td data-highlight-colour="#f4f5f7">
-        <p><strong>Event</strong></p>
-      </td>
-    </tr>
-    {timeline}
-  </tbody>
-</table>
+{timeline_table_html}
 
 <h1>Incident Description</h1>
 <ac:structured-macro ac:name="note" ac:schema-version="1" ac:macro-id="{uuid}">
@@ -123,7 +107,7 @@ default_template = """
     <p>This information is useful for establishing the incident timeline and providing diagnostic data.</p>
   </ac:rich-text-body>
 </ac:structured-macro>
-{pinned_messages}
+{pinned_messages_html}
 <ac:structured-macro ac:name="attachments" ac:schema-version="1" data-layout="wide"
   ac:local-id="{uuid}" ac:macro-id="{uuid}" />
 """
@@ -133,15 +117,15 @@ class PostmortemContext(TypedDict):
     incident_id: str
     incident_commander: str | None
     severity: str | None
-    severity_html: str | None
     severity_definition: str | None
-    timeline_html: str | None
+    timeline_table_html: str | None
     pinned_messages_html: str | None
     author: str | None
     incident_date: str | None
     postmortem_date: str | None
     roles_html: str | None
     description: str | None
+    channel_link: str | None
 
 
 class PostmortemTemplate:

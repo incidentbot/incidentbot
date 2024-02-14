@@ -1,4 +1,6 @@
 import datetime
+import uuid
+from bot.shared.tools import parse_timestamp
 import config
 from bot.slack.client import get_slack_user, slack_workspace_id
 
@@ -18,10 +20,11 @@ class IncidentPostmortem:
     def __init__(
         self,
         incident_id: str,
-        incident_date: datetime.date,
+        incident_created_at: str,
         incident_description: str,
-        incident_commander: str,
         severity: str,
+        channel_id: str,
+        channel_name: str,
         severity_definition: str,
         pinned_items: list[IncidentLogging],
         timeline: list[dict],
@@ -29,14 +32,16 @@ class IncidentPostmortem:
         confluence: ConfluenceApi | None = None,
     ) -> None:
         self.incident_id = incident_id
-        self.incident_date = incident_date
+        self.incident_datetime = parse_timestamp(incident_created_at)
         self.incident_description = incident_description
-        self.incident_commander = incident_commander
         self.severity = severity
         self.severity_definition = severity_definition
         self.pinned_items = pinned_items
         self.timeline = timeline
-        self.roles = roles
+        self.roles = roles or {}
+        self.incident_commander = self.roles.get('incident_commander', 'Unknown')
+        self.channel_id = channel_id
+        self.channel_name = channel_name
 
         self.parent_page = (
             config.active.integrations.get("atlassian")
@@ -121,24 +126,8 @@ class IncidentPostmortem:
             return url
         except Exception as error:
             msg = "Something unexpected happened and we couldn't create the postmortem."
-            logger.error(msg)
+            logger.exception(msg)
             raise PostmortemException(msg) from error
-
-    def __find_user_id(self, user: str) -> tuple[bool, Any]:
-        """
-        Accepts the publicName of a user in Atlassian Cloud and returns the ID if it exists
-        """
-        groups = self.exec.get_all_groups(start=0, limit=50)
-        for g in groups:
-            users = self.exec.get_group_members(
-                group_name=g["name"], start=0, limit=1000
-            )
-            for u in users:
-                if user in u["publicName"]:
-                    return True, u["accountId"]
-                else:
-                    pass
-        return False, None
 
     def __generate_pinned_messages(self) -> str:
         if not self.pinned_items:
@@ -157,7 +146,7 @@ class IncidentPostmortem:
             return """
     <tr>
         <td>
-            <p>None.</p>
+            <p></p>
         </td>
         <td>
             <p>No items were added to this incident's timeline.</p>
@@ -244,23 +233,66 @@ class IncidentPostmortem:
         return template_title
 
     def __generate_roles(self) -> str:
-        # TODO
-        return ""
+        html = ""
+        if self.roles:
+            for role, user in self.roles.items():
+                confluence_user = self.convert_slack_name_to_confluence_html(user)
+                html += f"<b>{role}</b>: {confluence_user} <br />"
+        return html
+
+    def convert_slack_name_to_confluence_html(self, user_name: str) -> str:
+        """Converts a Slack username to a Confluence username reference"""
+        user = get_slack_user(user_name)
+        if user:
+            user['email'] = 'chudood@gmail.com'
+            confluence_account_id = self.confluence.get_user_id(name=user['real_name'], email=user['email'])
+            if confluence_account_id:
+                return f'<ac:link><ri:user ri:account-id="{confluence_account_id}"/></ac:link>'
+            else:
+                return f"{user['real_name']}"
+        else:
+            return user_name
 
     def _generate_incident_context(self) -> PostmortemContext:
+        channel_link =  f'<b><a href="https://{slack_workspace_id}.slack.com/archives/{self.channel_id}">#{self.channel_name}</a></b>'
+
+        incident_commander=self.convert_slack_name_to_confluence_html(self.incident_commander)
+        print(incident_commander)
+
         context = PostmortemContext(
-            incident_commander=self.incident_commander,
+            incident_commander=incident_commander,
             severity=self.severity,
             severity_definition=self.severity_definition,
-            timeline_html=self.__generate_timeline(),
+            timeline_table_html=self.__generate_timeline_table_html(),
             pinned_messages_html=self.__generate_pinned_messages(),
             incident_id=self.incident_id,
-            severity_html="",
             # TODO: This should be whoever clicked the button to create the postmortem
             description=self.incident_description,
-            author=self.incident_commander,
+            author=incident_commander,
             postmortem_date=datetime.datetime.now().strftime("%Y-%m-%d"),
             roles_html=self.__generate_roles(),
-            incident_date=self.incident_date.strftime("%Y-%m-%d"),
+            incident_date=self.incident_datetime.strftime("%Y-%m-%d"),
+            channel_link=channel_link
         )
         return context
+
+    def __generate_timeline_table_html(self) -> str:
+        return f"""
+        <table data-layout="default" ac:local-id="{uuid.uuid4()}">
+        <colgroup>
+            <col style="width: 340.0px;" />
+            <col style="width: 340.0px;" />
+        </colgroup>
+        <tbody>
+            <tr>
+            <td data-highlight-colour="#f4f5f7">
+                <p><strong>Time</strong></p>
+            </td>
+            <td data-highlight-colour="#f4f5f7">
+                <p><strong>Event</strong></p>
+            </td>
+            </tr>
+            {self.__generate_timeline()}
+        </tbody>
+        </table>
+        """

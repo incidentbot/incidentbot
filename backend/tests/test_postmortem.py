@@ -35,9 +35,9 @@ class TestPostMortem:
                 incident_commander="INCIDENT_COMMANDER",
                 severity="SEV1",
                 severity_definition="SEV1_DESCRIPTION",
-                timeline_html="TIMELINE",
+                timeline_table_html="TIMELINE",
+                pinned_messages_html="PINNED_MESSAGES",
             ),
-            pinned_messages="PINNED_MESSAGES",
         )
 
         assert "INCIDENT_COMMANDER" in result
