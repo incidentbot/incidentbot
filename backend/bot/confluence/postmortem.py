@@ -1,5 +1,6 @@
 import datetime
 import config
+from bot.slack.client import get_slack_user, slack_workspace_id
 
 from bot.confluence.api import ConfluenceApi, logger
 from bot.models.pg import IncidentLogging
