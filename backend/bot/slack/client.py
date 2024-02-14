@@ -392,6 +392,7 @@ def get_slack_users() -> List[Dict[str, Any]]:
         {
             "name": user["name"],
             "real_name": user["profile"]["real_name"],
+            "email": user['profile'].get("email"), # this requires user:read.email scope
             "id": user["id"],
         }
         for user in users
