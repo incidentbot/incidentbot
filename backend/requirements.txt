@@ -28,6 +28,6 @@ requests==2.31.0
 requests-mock==1.11.0
 slack_bolt==1.18.1
 slack_sdk==3.26.2
-sqlalchemy==1.4.50
+sqlalchemy==2.0.27
 waitress==2.1.2
 werkzeug==2.3.8
