@@ -5,13 +5,17 @@
 
 version: 2
 updates:
-  - package-ecosystem: "npm"
-    directory: "/frontend"
+  - package-ecosystem: 'npm'
+    directory: '/frontend'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     versioning-strategy: auto
-  - package-ecosystem: "pip"
-    directory: "/backend"
+  - package-ecosystem: 'pip'
+    directory: '/backend'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
+    ignore:
+      - dependency-name: 'sqlalchemy'
+        update-types:
+          - 'version-update:semver-major'
     versioning-strategy: auto
