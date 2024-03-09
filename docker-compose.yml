@@ -24,10 +24,16 @@ services:
       ATLASSIAN_API_URL: ''
       ATLASSIAN_API_USERNAME: ''
       ATLASSIAN_API_TOKEN: ''
+      ATLASSIAN_OPSGENIE_API_KEY: ''
+      ATLASSIAN_OPSGENIE_API_TEAM_INTEGRATION_KEY: ''
       DEFAULT_WEB_ADMIN_PASSWORD: 'foobar1234'
       FLASK_APP_SECRET_KEY: 'supersecret'
       JWT_SECRET_KEY: 'supersecret'
+      ZOOM_ACCOUNT_ID: ''
+      ZOOM_CLIENT_ID: ''
+      ZOOM_CLIENT_SECRET: ''
       CONFIG_FILE_PATH: '/config/incident-bot/config.yaml'
+      LOGLEVEL: 'debug'
     ports:
       - target: 3000
         published: 3000
