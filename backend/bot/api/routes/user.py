@@ -26,7 +26,7 @@ from bot.models.user import (
     db_user_token_revoke,
 )
 from iblog import logger
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 user = Blueprint("user", __name__)
 
@@ -68,7 +68,7 @@ def refresh_expiring_jwts(response):
                 response.data = jsonify(data)
         return response
     except (RuntimeError, KeyError):
-        # Case where there is not a valid JWT. Just return the original respone
+        # Case where there is not a valid JWT. Just return the original response.
         return response
 
 
@@ -240,7 +240,7 @@ def patch_delete_user(user_id):
                     success, error = db_user_change_password(
                         email=user.email,
                         new=generate_password_hash(
-                            data["password"], method="sha256"
+                            data["password"], method="pbkdf2:sha256"
                         ),
                     )
                     if success:
@@ -264,7 +264,9 @@ def create_user():
     success, error = db_user_create(
         email=data["email"],
         name=data["name"],
-        password=generate_password_hash(data["password"], method="sha256"),
+        password=generate_password_hash(
+            data["password"], method="pbkdf2:sha256"
+        ),
         role="user",
     )
     if success:
@@ -310,7 +312,7 @@ if not admin_user:
     success, error = db_user_create(
         email=default_account_email,
         password=generate_password_hash(
-            config.default_admin_password, method="sha256"
+            config.default_admin_password, method="pbkdf2:sha256"
         ),
         name="administrator",
         role="administrator",

@@ -2,7 +2,7 @@
   "name": "incident-bot",
   "version": "0.1.0",
   "engines": {
-    "node": ">=20.5.0"
+    "node": ">=21.7.0"
   },
   "private": true,
   "dependencies": {
