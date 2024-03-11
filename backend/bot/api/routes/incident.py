@@ -1,3 +1,4 @@
+import asyncio
 import config
 
 from bot.api.routes.auth import api_key_required
@@ -166,9 +167,12 @@ def post_incident_ext():
         )
 
 
-@incidentrt.route("/incident/<incident_id>/audit", methods=["GET", "DELETE"])
+@incidentrt.route(
+    "/incident/<incident_id>/audit",
+    methods=["GET", "DELETE", "PATCH", "POST", "OPTIONS"],
+)
 @jwt_required()
-def get_incident_audit_log(incident_id):
+def get_delete_post_incident_audit_log(incident_id):
     if request.method == "GET":
         try:
             audit_logs = log.read(incident_id)
@@ -188,8 +192,8 @@ def get_incident_audit_log(incident_id):
         try:
             success, error = log.delete(
                 incident_id=incident_id,
+                id=request_data["id"],
                 log=request_data["log"],
-                ts=request_data["ts"],
             )
             if success:
                 return (
@@ -203,6 +207,51 @@ def get_incident_audit_log(incident_id):
                     500,
                     {"ContentType": "application/json"},
                 )
+        except Exception as error:
+            return (
+                jsonify({"error": str(error)}),
+                500,
+                {"ContentType": "application/json"},
+            )
+    elif request.method == "POST":
+        request_data = request.json
+        try:
+            audit_logs = log.write(
+                incident_id=incident_id,
+                event=request_data["event"],
+                ts=request_data["timestamp"],
+                user=request_data["user"],
+            )
+            return (
+                jsonify({"success": True}),
+                200,
+                {"ContentType": "application/json"},
+            )
+        except Exception as error:
+            return (
+                jsonify({"error": str(error)}),
+                500,
+                {"ContentType": "application/json"},
+            )
+    elif request.method == "PATCH":
+        request_data = request.json
+        try:
+            create, msg = log.edit(
+                incident_id=incident_id,
+                id=request_data["id"],
+                new_log=request_data["event"],
+            )
+            if not create:
+                return (
+                    jsonify({"error": str(msg)}),
+                    500,
+                    {"ContentType": "application/json"},
+                )
+            return (
+                jsonify({"success": True}),
+                200,
+                {"ContentType": "application/json"},
+            )
         except Exception as error:
             return (
                 jsonify({"error": str(error)}),
@@ -241,15 +290,15 @@ def get_incident_pinned_items(incident_id):
 
 
 @incidentrt.route(
-    "/incident/<incident_id>/pinned/<id>", methods=["GET", "DELETE"]
+    "/incident/<incident_id>/pinned/<id>", methods=["GET", "PATCH", "DELETE"]
 )
 @jwt_required()
-def get_delete_item_by_id(incident_id, id):
+def get_patch_delete_item_by_id(id):
     try:
-        img = Session.query(IncidentLogging).filter_by(id=id).first()
+        obj = Session.query(IncidentLogging).filter_by(id=id).first()
         match request.method:
             case "GET":
-                if not img:
+                if not obj:
                     return (
                         jsonify({"error": "object not found"}),
                         500,
@@ -257,13 +306,13 @@ def get_delete_item_by_id(incident_id, id):
                     )
                 return (
                     Response(
-                        img.img,
-                        mimetype=img.mimetype,
+                        obj.img,
+                        mimetype=obj.mimetype,
                     ),
                     200,
                 )
             case "DELETE":
-                Session.delete(img)
+                Session.delete(obj)
                 Session.commit()
                 return (
                     jsonify({"success": True}),
@@ -293,7 +342,11 @@ def post_set_incident_role(incident_id):
             bp_message_ts=request_data["bp_message_ts"],
             user=request_data["user"],
         )
-        actions.assign_role(web_data=inc_request_data, request_origin="web")
+        asyncio.run(
+            actions.assign_role(
+                web_data=inc_request_data, request_origin="web"
+            )
+        )
         return (
             jsonify({"success": True}),
             200,

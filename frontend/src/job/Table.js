@@ -333,43 +333,56 @@ export default function EnhancedTable(props) {
               {' '}
             </EnhancedTableHead>
             <TableBody>
-              {stableSort(filteredJobsData, getComparator(order, orderBy))
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((row) => {
-                  return (
-                    <TableRow hover tabIndex={-1} key={row.id}>
-                      <TableCell align="left" padding="normal">
-                        {row.id}
-                      </TableCell>
-                      <TableCell align="left" padding="normal">
-                        {row.name}
-                      </TableCell>
-                      <TableCell align="left" padding="normal">
-                        {row.function}
-                      </TableCell>
-                      <TableCell align="left" padding="normal">
-                        {row.trigger}
-                      </TableCell>
-                      <TableCell align="left" padding="normal">
-                        {row.next_run}
-                      </TableCell>
-                      <TableCell align="left" padding="normal">
-                        <Tooltip title="Run Now">
-                          <IconButton onClick={() => runJob(row.id)}>
-                            <PowerSettingsNewIcon fontSize="medium" />
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
-                      <TableCell align="left" padding="normal">
-                        <Tooltip title="Delete">
-                          <IconButton onClick={() => deleteJob(row.id)}>
-                            <DeleteIcon fontSize="medium" />
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+              {filteredJobsData.length > 0 ? (
+                stableSort(filteredJobsData, getComparator(order, orderBy))
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((row) => {
+                    return (
+                      <TableRow hover tabIndex={-1} key={row.id}>
+                        <TableCell align="left" padding="normal">
+                          {row.id}
+                        </TableCell>
+                        <TableCell align="left" padding="normal">
+                          {row.name}
+                        </TableCell>
+                        <TableCell align="left" padding="normal">
+                          {row.function}
+                        </TableCell>
+                        <TableCell align="left" padding="normal">
+                          {row.trigger}
+                        </TableCell>
+                        <TableCell align="left" padding="normal">
+                          {row.next_run}
+                        </TableCell>
+                        <TableCell align="left" padding="normal">
+                          <Tooltip title="Run Now">
+                            <IconButton onClick={() => runJob(row.id)}>
+                              <PowerSettingsNewIcon fontSize="medium" />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                        <TableCell align="left" padding="normal">
+                          <Tooltip title="Delete">
+                            <IconButton onClick={() => deleteJob(row.id)}>
+                              <DeleteIcon fontSize="medium" />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+              ) : (
+                <>
+                  <TableRow
+                    style={{
+                      height: (dense ? 33 : 53) * emptyRows
+                    }}>
+                    <TableCell colSpan={7}>
+                      No jobs found. Try adjusting the search terms.
+                    </TableCell>
+                  </TableRow>
+                </>
+              )}
               {emptyRows > 0 && (
                 <TableRow
                   style={{

@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import {
   Alert,
+  AppBar,
   Box,
   Breadcrumbs,
   Button,
@@ -11,7 +12,6 @@ import {
   CardHeader,
   Chip,
   Container,
-  Divider,
   FormControl,
   Grid,
   IconButton,
@@ -28,40 +28,29 @@ import {
   MenuItem,
   Select,
   Snackbar,
-  Stack,
+  Toolbar,
   Typography
 } from '@mui/material';
 
-import { styled } from '@mui/material/styles';
 import { alpha } from '@mui/material/styles';
-
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import AnnouncementIcon from '@mui/icons-material/Announcement';
-import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
-import FindReplaceIcon from '@mui/icons-material/FindReplace';
-import LabelIcon from '@mui/icons-material/Label';
-import MeetingRoomRoundedIcon from '@mui/icons-material/MeetingRoomRounded';
-import MilitaryTechIcon from '@mui/icons-material/MilitaryTech';
-import NavigateNextIcon from '@mui/icons-material/NavigateNext';
-import PeopleIcon from '@mui/icons-material/People';
-import QueryStatsIcon from '@mui/icons-material/QueryStats';
-import UpdateIcon from '@mui/icons-material/Update';
-import WarningIcon from '@mui/icons-material/Warning';
-
-import { Icon } from '@iconify/react';
-
 import { apiUrl } from '../shared/Variables';
-import useToken from '../hooks/useToken';
+import { formatRoleName } from '../shared/formatRoleName';
+import { styled } from '@mui/material/styles';
+import { titleCase } from '../shared/titleCase';
+
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 
 import moment from 'moment';
-import AddTagButton from './components/Add-tag.component';
+import useToken from '../hooks/useToken';
+
 import AttachmentImage from './components/Attachment-image.component';
-import TagStack from './components/Tag-stack.component';
 import Timeline from './components/Timeline.component';
 import WaitingBase from '../components/Waiting-base.component';
 
 const StyledCardHeader = styled(CardHeader)(({ theme }) => ({
-  backgroundColor: alpha(theme.palette.primary.dark, 0.2)
+  backgroundColor: alpha(theme.palette.primary.dark, 0),
+  color: theme.palette.primary.light
 }));
 
 const ViewSingleIncident = () => {
@@ -332,39 +321,82 @@ const ViewSingleIncident = () => {
         <Container maxWidth="xl" sx={{ paddingTop: '2vh', paddingBottom: '5vh' }}>
           {incident !== undefined ? (
             <>
-              <Breadcrumbs
-                aria-label="breadcrumb"
-                separator={<NavigateNextIcon fontSize="small" />}
-                sx={{ paddingBottom: 2 }}>
-                <Link
-                  underline="hover"
-                  sx={{ display: 'flex', alignItems: 'center' }}
-                  color="inherit"
-                  href="/app/incidents">
-                  <Typography
-                    variant="h7"
-                    sx={{
-                      fontFamily: 'Roboto',
-                      fontWeight: 100,
-                      letterSpacing: '.1rem',
-                      color: 'inherit',
-                      textDecoration: 'none'
-                    }}>
-                    INCIDENTS
-                  </Typography>
-                </Link>
-                <Typography
-                  variant="subtitle2"
-                  sx={{
-                    fontFamily: 'Roboto',
-                    fontWeight: 100,
-                    letterSpacing: '.1rem',
-                    color: 'inherit',
-                    textDecoration: 'none'
-                  }}>
-                  {incident.incident_id}
-                </Typography>
-              </Breadcrumbs>
+              <Box sx={{ flexGrow: 1 }}>
+                <AppBar color="transparent" elevation={0} position="static">
+                  <Toolbar>
+                    <Breadcrumbs
+                      aria-label="breadcrumb"
+                      separator={<NavigateNextIcon fontSize="small" />}
+                      sx={{ flexGrow: 1 }}>
+                      <Link
+                        underline="hover"
+                        sx={{ display: 'flex', alignItems: 'center' }}
+                        color="inherit"
+                        href="/app/incidents">
+                        <Typography
+                          variant="h7"
+                          sx={{
+                            fontFamily: 'Roboto',
+                            letterSpacing: '.09rem',
+                            color: 'inherit'
+                          }}>
+                          INCIDENTS
+                        </Typography>
+                      </Link>
+                      <Typography
+                        variant="subtitle2"
+                        sx={{
+                          fontFamily: 'Roboto',
+                          fontWeight: 100,
+                          color: 'inherit',
+                          textDecoration: 'none'
+                        }}>
+                        {incident.incident_id}
+                      </Typography>
+                    </Breadcrumbs>
+                    <Box sx={{ paddingRight: 1 }}>
+                      {incident.postmortem === null ? (
+                        <Button
+                          size="small"
+                          variant="contained"
+                          key={`${incident.incident_id}-postmortem-link`}
+                          href={incident.postmortem}
+                          target="new">
+                          Postmortem
+                        </Button>
+                      ) : (
+                        <>
+                          <Alert color="info" variant="standard" sx={{ width: '100%' }}>
+                            A link to the postmortem will appear here once the incident is resolved
+                            and one has been generated.
+                          </Alert>
+                        </>
+                      )}
+                    </Box>
+                    <Box sx={{ paddingRight: 1 }}>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        key={`${incident.incident_id}-slack-link`}
+                        href={`https://${slackWorkspaceID}.slack.com/archives/${incident.channel_id}`}
+                        target="new">
+                        Channel
+                      </Button>
+                    </Box>
+                    <Box>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        key={`${incident.incident_id}-conference-link`}
+                        href={`${incident.conference_bridge}`}
+                        target="new">
+                        Join Meeting
+                      </Button>
+                    </Box>
+                  </Toolbar>
+                </AppBar>
+              </Box>
+              <hr style={{ opacity: '0.2' }} />
               {incident.is_security_incident && (
                 <Alert severity="error" sx={{ marginBottom: 2 }}>
                   This incident has been flagged as a security incident.
@@ -376,98 +408,52 @@ const ViewSingleIncident = () => {
                   new issue, please create a new incident.
                 </Alert>
               )}
-              <Grid container columns={2} spacing={2}>
+              <Grid container columns={2} spacing={1}>
                 <Grid item xs={12} md={1}>
-                  <Card variant="outlined" sx={{ marginBottom: 2, height: '100%' }}>
+                  <Card
+                    variant="elevation"
+                    sx={{ border: 'none', boxShadow: 'none', marginBottom: 1, height: '100%' }}>
                     <StyledCardHeader
-                      avatar={<AnnouncementIcon fontSize="medium" sx={{ marginRight: 1 }} />}
                       title={`DETAILS`}
                       titleTypographyProps={{
-                        variant: 'h6',
-                        fontFamily: 'Roboto',
-                        fontWeight: 500,
-                        letterSpacing: '.1rem'
+                        variant: 'h7',
+                        fontFamily: 'Roboto'
                       }}
                     />
                     <List>
                       <ListItem dense key="created_at">
-                        <ListItemIcon>
-                          <AccessTimeIcon fontSize="large" />
-                        </ListItemIcon>
                         <ListItemText
                           primary="Created"
                           secondary={`${moment(incident.created_at, 'YYYY-MM-DDTHH:mm:ss TZ')}`}
                         />
                       </ListItem>
-                      <Divider component="li" />
                       <ListItem dense key="updated_at">
-                        <ListItemIcon>
-                          <UpdateIcon fontSize="large" />
-                        </ListItemIcon>
                         <ListItemText
                           primary="Last Update"
                           secondary={`${moment(incident.updated_at, 'YYYY-MM-DDTHH:mm:ss TZ')}`}
                         />
                       </ListItem>
-                      <Divider component="li" />
                       <ListItem dense key="status">
-                        <ListItemIcon>
-                          <FindReplaceIcon fontSize="large" />
-                        </ListItemIcon>
-                        <Stack direction="row" spacing={1}>
-                          <Chip label={incident.status} color="primary" />
-                        </Stack>
+                        <ListItemText primary="Status" secondary={titleCase(incident.status)} />
                       </ListItem>
-                      <Divider component="li" />
                       <ListItem dense key="severity">
-                        <ListItemIcon>
-                          <WarningIcon fontSize="large" />
-                        </ListItemIcon>
-                        <Stack direction="row" spacing={1}>
-                          <Chip label={incident.severity} color="primary" />
-                        </Stack>
-                      </ListItem>
-                      <Divider component="li" />
-                      <ListItem dense key="slack-channel">
-                        <ListItemIcon>
-                          <Icon icon="bxl:slack" width="35" height="35" />
-                        </ListItemIcon>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          key={`${incident.incident_id}-slack-link`}
-                          href={`https://${slackWorkspaceID}.slack.com/archives/${incident.channel_id}`}
-                          target="new">
-                          Open Slack Channel
-                        </Button>
-                      </ListItem>
-                      <Divider component="li" />
-                      <ListItem dense key="conference-bridge">
-                        <ListItemIcon>
-                          <MeetingRoomRoundedIcon fontSize="large" />
-                        </ListItemIcon>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          key={`${incident.incident_id}-conference-link`}
-                          href={`${incident.conference_bridge}`}
-                          target="new">
-                          Join Meeting
-                        </Button>
+                        <ListItemText
+                          primary="Severity"
+                          secondary={incident.severity.toUpperCase()}
+                        />
                       </ListItem>
                     </List>
                   </Card>
                 </Grid>
                 <Grid item xs={12} md={1}>
-                  <Card variant="outlined" sx={{ marginBottom: 2, height: '100%' }}>
+                  <Card
+                    variant="elevation"
+                    sx={{ border: 'none', boxShadow: 'none', marginBottom: 1, height: '100%' }}>
                     <StyledCardHeader
-                      avatar={<PeopleIcon fontSize="medium" sx={{ marginRight: 1 }} />}
                       title={`ROLES`}
                       titleTypographyProps={{
-                        variant: 'h6',
-                        fontFamily: 'Roboto',
-                        fontWeight: 500,
-                        letterSpacing: '.1rem'
+                        variant: 'h7',
+                        fontFamily: 'Roboto'
                       }}
                     />
                     {waitingForSomething && (
@@ -479,19 +465,15 @@ const ViewSingleIncident = () => {
                       {roles.map((role, i) => (
                         <>
                           <ListItem key={i}>
-                            <ListItemIcon>
-                              <MilitaryTechIcon fontSize="large" />
-                            </ListItemIcon>
                             <FormControl
                               variant="standard"
+                              fullWidth
                               sx={{
                                 marginLeft: 1,
                                 minWidth: 220,
                                 display: 'flex'
                               }}>
-                              <InputLabel id={`${role}-select`}>
-                                {role.replace('_', ' ')}
-                              </InputLabel>
+                              <InputLabel id={`${role}-select`}>{formatRoleName(role)}</InputLabel>
                               <Select
                                 labelId={`${role}-select`}
                                 id={`${role}-select`}
@@ -515,95 +497,8 @@ const ViewSingleIncident = () => {
                               </Select>
                             </FormControl>
                           </ListItem>
-                          <Divider component="li" />
                         </>
                       ))}
-                    </List>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} md={1}>
-                  <Card variant="outlined" sx={{ marginTop: 2, marginBottom: 2, height: '100%' }}>
-                    <StyledCardHeader
-                      avatar={<LabelIcon sx={{ marginRight: 1 }} />}
-                      title={`TAGS`}
-                      titleTypographyProps={{
-                        variant: 'h6',
-                        fontFamily: 'Roboto',
-                        fontWeight: 500,
-                        letterSpacing: '.1rem'
-                      }}
-                    />
-                    <List>
-                      <ListItem
-                        key="tags"
-                        sx={{
-                          width: '100%'
-                        }}>
-                        {incident.tags !== null ? (
-                          <>
-                            <TagStack
-                              apiUrl={apiUrl}
-                              incidentID={incident.incident_id}
-                              tags={incident.tags}
-                              setRefreshData={setRefreshData.bind()}
-                            />
-                            <AddTagButton
-                              apiUrl={apiUrl}
-                              incidentID={incident.incident_id}
-                              setRefreshData={setRefreshData.bind()}
-                            />
-                          </>
-                        ) : (
-                          <>
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                displayDirection: 'row',
-                                flexGrow: 1
-                              }}>
-                              <AddTagButton
-                                apiUrl={apiUrl}
-                                incidentID={incident.incident_id}
-                                setRefreshData={setRefreshData.bind()}
-                              />
-                            </Box>
-                          </>
-                        )}
-                      </ListItem>
-                    </List>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} md={1}>
-                  <Card variant="outlined" sx={{ marginTop: 2, marginBottom: 2, height: '100%' }}>
-                    <StyledCardHeader
-                      avatar={<QueryStatsIcon sx={{ marginRight: 1 }} />}
-                      title={`Postmortem`}
-                      titleTypographyProps={{
-                        variant: 'h6',
-                        fontFamily: 'Roboto',
-                        fontWeight: 500,
-                        letterSpacing: '.1rem'
-                      }}
-                    />
-                    <List>
-                      <ListItem
-                        key="postmortem"
-                        sx={{
-                          width: '100%'
-                        }}>
-                        {incident.postmortem !== null ? (
-                          <Button variant="outlined" href={incident.postmortem} target="new">
-                            View Postmortem in Confluence
-                          </Button>
-                        ) : (
-                          <>
-                            <Alert color="info" variant="outlined" sx={{ width: '100%' }}>
-                              A link to the postmortem will appear here once the incident is
-                              resolved and one has been generated.
-                            </Alert>
-                          </>
-                        )}
-                      </ListItem>
                     </List>
                   </Card>
                 </Grid>
@@ -706,7 +601,6 @@ const ViewSingleIncident = () => {
                               </ListItemIcon>
                               <ListItemText primary={item.ts} secondary={item.content} />
                             </ListItem>
-                            <Divider component="li" />
                           </>
                         ))}
                       </List>

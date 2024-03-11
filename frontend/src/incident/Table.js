@@ -4,11 +4,9 @@ import PropTypes from 'prop-types';
 import {
   Badge,
   Box,
-  Chip,
   IconButton,
   Link,
   Paper,
-  Stack,
   Table,
   TableBody,
   TableCell,
@@ -18,20 +16,18 @@ import {
   TableRow,
   TableSortLabel,
   Toolbar,
-  Tooltip,
   Typography
 } from '@mui/material';
 
-import AddAlertIcon from '@mui/icons-material/AddAlert';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import CircleNotificationsIcon from '@mui/icons-material/CircleNotifications';
-import EditIcon from '@mui/icons-material/Edit';
-import { visuallyHidden } from '@mui/utils';
-import { styled } from '@mui/material/styles';
 
+import { styled } from '@mui/material/styles';
+import { visuallyHidden } from '@mui/utils';
 import { Icon } from '@iconify/react';
 import { titleCase } from '../shared/titleCase';
+
 import moment from 'moment';
+
 import TableFilterOptions from './components/Table-filter.component';
 import SearchBox from '../components/Search.component';
 
@@ -85,7 +81,7 @@ const headCells = [
     id: 'incident_id',
     numeric: false,
     disablePadding: false,
-    label: 'Incident ID'
+    label: 'Name'
   },
   {
     id: 'severity',
@@ -112,22 +108,10 @@ const headCells = [
     label: 'Updated'
   },
   {
-    id: 'last_comms',
-    numeric: false,
-    disablePadding: false,
-    label: 'Last Comms'
-  },
-  {
     id: 'slack_channel',
     numeric: false,
     disablePadding: false,
-    label: 'Slack Channel'
-  },
-  {
-    id: 'tags',
-    numeric: false,
-    disablePadding: false,
-    label: 'Tags'
+    label: 'Channel'
   }
 ];
 
@@ -174,6 +158,11 @@ const StyledToolbar = styled(Toolbar)(() => ({
   backgroundColor: ''
 }));
 
+const FormattedText = styled('div')(({ theme }) => ({
+  ...theme.typography.button,
+  padding: theme.spacing(0)
+}));
+
 const EnhancedTableToolbar = (props) => {
   const { dense, handleChangeDense, handleChangeHideResolved, hideResolved, setQuery } = props;
   return (
@@ -216,7 +205,7 @@ export default function EnhancedTable(props) {
   const [order, setOrder] = useState('desc');
   const [orderBy, setOrderBy] = useState('created_at');
   const [page, setPage] = useState(0);
-  const [dense, setDense] = useState(true);
+  const [dense, setDense] = useState(false);
   const [hideResolved, setHideResolved] = useState(false);
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const [query, setQuery] = useState('');
@@ -256,9 +245,7 @@ export default function EnhancedTable(props) {
       r = r.filter((incident) => incident.status !== 'resolved');
     }
     if (query !== null) {
-      r = r.filter(
-        (incident) => incident.incident_id.includes(query) || incident.tags.includes(query)
-      );
+      r = r.filter((incident) => incident.incident_id.includes(query));
     }
     return r;
   }
@@ -294,42 +281,23 @@ export default function EnhancedTable(props) {
                     return (
                       <TableRow hover tabIndex={-1} key={row.incident_id}>
                         <TableCell align="left" padding="normal">
-                          <Tooltip title="Edit this Incident">
-                            <Link
-                              href={`/app/incidents/${row.incident_id}`}
-                              underline="hover"
-                              sx={{
-                                color: 'default',
-                                '&:hover': {
-                                  color: 'info.light'
-                                }
-                              }}>
-                              <EditIcon fontSize="small" sx={{ marginRight: 0.5 }} />
-                              {row.incident_id}
-                            </Link>
-                          </Tooltip>
+                          <Link
+                            href={`/app/incidents/${row.incident_id}`}
+                            underline="hover"
+                            sx={{
+                              color: 'default',
+                              '&:hover': {
+                                color: 'info.light'
+                              }
+                            }}>
+                            {row.incident_id}
+                          </Link>
                         </TableCell>
                         <TableCell align="left" padding="normal">
-                          <Chip
-                            label={row.severity.toUpperCase()}
-                            size="small"
-                            color={
-                              row.severity === 'sev1'
-                                ? 'error'
-                                : row.severity === 'sev2'
-                                  ? 'warning'
-                                  : row.severity === 'sev3'
-                                    ? 'warning'
-                                    : 'success'
-                            }
-                          />
+                          <FormattedText>{row.severity.toUpperCase()}</FormattedText>
                         </TableCell>
                         <TableCell align="left" padding="normal">
-                          <Chip
-                            label={titleCase(row.status)}
-                            size="small"
-                            color={row.status === 'resolved' ? 'success' : 'warning'}
-                          />
+                          <FormattedText>{titleCase(row.status)}</FormattedText>
                         </TableCell>
                         <TableCell align="left" padding="normal">
                           {row.created_at !== null && (
@@ -364,38 +332,6 @@ export default function EnhancedTable(props) {
                           )}
                         </TableCell>
                         <TableCell align="left" padding="normal">
-                          {row.severity === 'sev2' || row.severity === 'sev1' ? (
-                            row.last_update_sent !== null ? (
-                              <>
-                                <Box>
-                                  <Badge
-                                    color={row.status === 'resolved' ? 'success' : 'error'}
-                                    variant="dot"
-                                    sx={{ mr: 1 }}
-                                  />
-                                  {`${row.last_update_sent} (${timeSinceLastUpdate(
-                                    row.last_update_sent
-                                  )} hours)`}
-                                </Box>
-                              </>
-                            ) : (
-                              <>
-                                <Tooltip
-                                  title={`Required for ${row.severity.toUpperCase()} incidents.`}>
-                                  <AddAlertIcon fontSize="small" color="error" />
-                                </Tooltip>
-                              </>
-                            )
-                          ) : (
-                            <>
-                              <Tooltip
-                                title={`Optional for ${row.severity.toUpperCase()} incidents.`}>
-                                <CircleNotificationsIcon fontSize="small" color="info" />
-                              </Tooltip>
-                            </>
-                          )}
-                        </TableCell>
-                        <TableCell align="left" padding="normal">
                           <IconButton
                             key={`${row.incident_id}-slack-link`}
                             component="a"
@@ -403,14 +339,6 @@ export default function EnhancedTable(props) {
                             target="new">
                             <Icon icon="bxl:slack" width="20" height="20" />
                           </IconButton>
-                        </TableCell>
-                        <TableCell align="left" padding="normal">
-                          <Stack direction="row" spacing={1}>
-                            {row.tags !== null &&
-                              row.tags.map((tag, i) => (
-                                <Chip key={i} label={tag} color="primary" />
-                              ))}
-                          </Stack>
                         </TableCell>
                       </TableRow>
                     );
@@ -421,7 +349,9 @@ export default function EnhancedTable(props) {
                     style={{
                       height: (dense ? 33 : 53) * emptyRows
                     }}>
-                    <TableCell colSpan={8}>No results.</TableCell>
+                    <TableCell colSpan={7}>
+                      No incidents found. To get started, create one!
+                    </TableCell>
                   </TableRow>
                 </>
               )}

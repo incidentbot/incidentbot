@@ -12,11 +12,11 @@ flask-limiter==3.5.1
 flask-login==0.6.3
 flask-marshmallow==1.2.0
 marshmallow==3.21.1
-marshmallow_sqlalchemy==0.29.0
+marshmallow_sqlalchemy==1.0.0
 opsgenie-sdk==2.1.5
 pdpyras==5.2.0
 psycopg2-binary==2.9.9
-pytest==8.1.0
+pytest==8.1.1
 pytest-env==1.1.3
 pytest-mock==3.12.0
 pytest-sqlalchemy-mock==0.1.5

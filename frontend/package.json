@@ -12,6 +12,7 @@
     "@iconify/react": "^4.0.1",
     "@mui/icons-material": "^5.15.12",
     "@mui/material": "^5.15.11",
+    "@mui/x-date-pickers": "^6.19.6",
     "@testing-library/jest-dom": "^6.2.0",
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.4.3",
@@ -19,6 +20,7 @@
     "axios": "^1.4.0",
     "bootstrap": "^5.3.2",
     "buffer": "^6.0.3",
+    "dayjs": "^1.11.10",
     "framer-motion": "^10.9.1",
     "moment": "^2.29.4",
     "react": "^18.2.0",
@@ -67,6 +69,7 @@
     "autoprefixer": "10.4.5"
   },
   "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "eslint": "^8.50.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.0.0",

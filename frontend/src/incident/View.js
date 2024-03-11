@@ -89,7 +89,7 @@ const Incidents = () => {
 
   return (
     <div className="incidents-page">
-      <Container maxWidth="" sx={{ width: '70%', paddingTop: '5vh' }}>
+      <Container maxWidth="" sx={{ width: '75%', paddingTop: '4vh' }}>
         {!loadingData ? (
           <Table incidents={incidents} slackWorkspaceID={slackWorkspaceID} />
         ) : (
