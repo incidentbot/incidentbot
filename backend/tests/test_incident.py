@@ -543,6 +543,16 @@ class TestIncidentManagement:
                             "type": "button",
                             "text": {
                                 "type": "plain_text",
+                                "text": "Provide Update",
+                                "emoji": True,
+                            },
+                            "action_id": "open_incident_general_update_modal",
+                            "style": "primary",
+                        },
+                        {
+                            "type": "button",
+                            "text": {
+                                "type": "plain_text",
                                 "text": "Incident Guide",
                             },
                             "url": "https://mycompany.com/incidents",

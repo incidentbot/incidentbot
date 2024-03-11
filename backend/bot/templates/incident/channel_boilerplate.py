@@ -162,6 +162,16 @@ class IncidentChannelBoilerplateMessage:
                 "action_id": "open_incident_bot_timeline",
                 "style": "primary",
             },
+            {
+                "type": "button",
+                "text": {
+                    "type": "plain_text",
+                    "text": "Provide Update",
+                    "emoji": True,
+                },
+                "action_id": "open_incident_general_update_modal",
+                "style": "primary",
+            },
         ]
         if (
             "atlassian" in config.active.integrations

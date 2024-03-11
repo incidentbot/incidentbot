@@ -66,6 +66,7 @@ export default function AddTagButton(props) {
       setFetchStatus('success');
       setFetchMessage('Tag added successfully!');
       setOpenFetchStatus(true);
+      props.setRefreshData(true);
     }
   };
 

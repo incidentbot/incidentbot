@@ -420,98 +420,102 @@ def open_modal(ack, body, client):
         "callback_id": "open_incident_general_update_modal",
         "title": {"type": "plain_text", "text": "Provide incident update"},
         "submit": {"type": "plain_text", "text": "Submit"},
-        "blocks": [
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "This will send a formatted, timestamped message "
-                    + "to the public incidents channel to provide an update "
-                    + "on the status of an incident. Use this to keep those "
-                    + "outside the incident process informed.",
-                },
-            },
-            {
-                "block_id": "open_incident_general_update_modal_incident_channel",
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "Associated Incident:",
-                },
-                "accessory": {
-                    "type": "static_select",
-                    "action_id": "incident_update_modal_select_incident",
-                    "placeholder": {
-                        "type": "plain_text",
-                        "text": "Select an ongoing incident...",
-                        "emoji": True,
-                    },
-                    "options": [
-                        {
-                            "text": {
-                                "type": "plain_text",
-                                "text": "None",
-                                "emoji": True,
-                            },
-                            "value": "none",
-                        }
-                        if len(database_data) == 0
-                        else {
-                            "text": {
-                                "type": "plain_text",
-                                "text": f"<#{inc.channel_id}>",
-                                "emoji": True,
-                            },
-                            "value": f"<#{inc.channel_id}>",
-                        }
-                        for inc in database_data
-                        if inc.status != "resolved"
-                    ],
-                },
-            },
-            {
-                "type": "input",
-                "block_id": "open_incident_general_update_modal_impacted_resources",
-                "element": {
-                    "type": "plain_text_input",
-                    "action_id": "impacted_resources",
-                    "placeholder": {
-                        "type": "plain_text",
-                        "text": "e.g. API, Authentication, Dashboards",
+        "blocks": (
+            [
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "This will send a formatted, timestamped message "
+                        + "to the public incidents channel to provide an update "
+                        + "on the status of an incident. Use this to keep those "
+                        + "outside the incident process informed.",
                     },
                 },
-                "label": {
-                    "type": "plain_text",
-                    "text": "Impacted Resources:",
-                },
-            },
-            {
-                "type": "input",
-                "block_id": "open_incident_general_update_modal_update_msg",
-                "element": {
-                    "type": "plain_text_input",
-                    "action_id": "message",
-                    "placeholder": {
-                        "type": "plain_text",
-                        "text": "A brief message to include with this update.",
+                {
+                    "block_id": "open_incident_general_update_modal_incident_channel",
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "Associated Incident:",
+                    },
+                    "accessory": {
+                        "type": "static_select",
+                        "action_id": "incident_update_modal_select_incident",
+                        "placeholder": {
+                            "type": "plain_text",
+                            "text": "Select an ongoing incident...",
+                            "emoji": True,
+                        },
+                        "options": [
+                            (
+                                {
+                                    "text": {
+                                        "type": "plain_text",
+                                        "text": "None",
+                                        "emoji": True,
+                                    },
+                                    "value": "none",
+                                }
+                                if len(database_data) == 0
+                                else {
+                                    "text": {
+                                        "type": "plain_text",
+                                        "text": f"<#{inc.channel_id}>",
+                                        "emoji": True,
+                                    },
+                                    "value": f"<#{inc.channel_id}>",
+                                }
+                            )
+                            for inc in database_data
+                            if inc.status != "resolved"
+                        ],
                     },
                 },
-                "label": {
-                    "type": "plain_text",
-                    "text": "Message to Include:",
+                {
+                    "type": "input",
+                    "block_id": "open_incident_general_update_modal_impacted_resources",
+                    "element": {
+                        "type": "plain_text_input",
+                        "action_id": "impacted_resources",
+                        "placeholder": {
+                            "type": "plain_text",
+                            "text": "e.g. API, Authentication, Dashboards",
+                        },
+                    },
+                    "label": {
+                        "type": "plain_text",
+                        "text": "Impacted Resources:",
+                    },
                 },
-            },
-        ]
-        if len(database_data) != 0
-        else [
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "There are currently no open incidents.",
+                {
+                    "type": "input",
+                    "block_id": "open_incident_general_update_modal_update_msg",
+                    "element": {
+                        "type": "plain_text_input",
+                        "action_id": "message",
+                        "placeholder": {
+                            "type": "plain_text",
+                            "text": "A brief message to include with this update.",
+                        },
+                    },
+                    "label": {
+                        "type": "plain_text",
+                        "text": "Message to Include:",
+                    },
                 },
-            },
-        ],
+            ]
+            if len(database_data) != 0
+            else [
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "There are currently no open incidents.",
+                    },
+                },
+            ]
+        ),
     }
     client.views_open(
         trigger_id=body["trigger_id"],
@@ -521,21 +525,27 @@ def open_modal(ack, body, client):
 
 @app.view("open_incident_general_update_modal")
 def handle_submission(ack, body, client):
-    import sys
-
     """
     Handles open_incident_general_update_modal
     """
     ack()
+
+    # Get values from modal submission
     parsed = parse_modal_values(body)
     channel_id = parsed.get("incident_update_modal_select_incident")
     user_id = body.get("user").get("id")
+
     # Extract the channel ID without extra characters
     for character in "#<>":
         channel_id = channel_id.replace(character, "")
+
+    # We need the ts for the digest message so this will be a thread
+    inc = db_read_incident(channel_id=channel_id)
+
     try:
         client.chat_postMessage(
             channel=get_digest_channel_id(),
+            thread_ts=inc.dig_message_ts,
             blocks=IncidentUpdate.public_update(
                 incident_id=channel_id,
                 impacted_resources=parsed.get("impacted_resources"),
@@ -660,23 +670,25 @@ def open_modal(ack, body, client):
                     "text": "Incident...",
                 },
                 "options": [
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "None",
-                            "emoji": True,
-                        },
-                        "value": "none",
-                    }
-                    if len(db_read_open_incidents()) == 0
-                    else {
-                        "text": {
-                            "type": "plain_text",
-                            "text": inc.channel_name,
-                            "emoji": True,
-                        },
-                        "value": f"{inc.channel_name}/{inc.channel_id}",
-                    }
+                    (
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "None",
+                                "emoji": True,
+                            },
+                            "value": "none",
+                        }
+                        if len(db_read_open_incidents()) == 0
+                        else {
+                            "text": {
+                                "type": "plain_text",
+                                "text": inc.channel_name,
+                                "emoji": True,
+                            },
+                            "value": f"{inc.channel_name}/{inc.channel_id}",
+                        }
+                    )
                     for inc in db_read_open_incidents()
                     if inc.status != "resolved"
                 ],
@@ -694,19 +706,21 @@ def open_modal(ack, body, client):
                 "type": "plain_text",
                 "text": f"Page a team in {platform}",
             },
-            "blocks": blocks
-            if "pagerduty" in config.active.integrations
-            or "opsgenie" in config.active.integrations.get("atlassian")
-            else [
-                {
-                    "type": "section",
-                    "block_id": "incident_bot_pager_disabled",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": "No pager integrations are enabled.",
+            "blocks": (
+                blocks
+                if "pagerduty" in config.active.integrations
+                or "opsgenie" in config.active.integrations.get("atlassian")
+                else [
+                    {
+                        "type": "section",
+                        "block_id": "incident_bot_pager_disabled",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "No pager integrations are enabled.",
+                        },
                     },
-                },
-            ],
+                ]
+            ),
         },
     )
 
@@ -901,43 +915,45 @@ def open_modal(ack, body, client):
             "callback_id": "incident_bot_timeline_modal",
             "title": {"type": "plain_text", "text": "Incident timeline"},
             "blocks": [
-                {
-                    "type": "section",
-                    "block_id": "incident_bot_timeline_incident_select",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": "Choose an incident to add an event to:",
-                    },
-                    "accessory": {
-                        "action_id": "update_incident_bot_timeline_selected_incident",
-                        "type": "static_select",
-                        "placeholder": {
-                            "type": "plain_text",
-                            "text": "Incident...",
+                (
+                    {
+                        "type": "section",
+                        "block_id": "incident_bot_timeline_incident_select",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "Choose an incident to add an event to:",
                         },
-                        "options": [
-                            {
-                                "text": {
-                                    "type": "plain_text",
-                                    "text": inc.channel_name,
-                                    "emoji": True,
-                                },
-                                "value": f"{inc.channel_name}/{inc.channel_id}",
-                            }
-                            for inc in database_data
-                            if inc.status != "resolved"
-                        ],
-                    },
-                }
-                if len(database_data) != 0
-                else {
-                    "type": "section",
-                    "block_id": "no_incidents",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": "There are currently no open incidents.\n\nYou can only add timeline events to open incidents.",
-                    },
-                }
+                        "accessory": {
+                            "action_id": "update_incident_bot_timeline_selected_incident",
+                            "type": "static_select",
+                            "placeholder": {
+                                "type": "plain_text",
+                                "text": "Incident...",
+                            },
+                            "options": [
+                                {
+                                    "text": {
+                                        "type": "plain_text",
+                                        "text": inc.channel_name,
+                                        "emoji": True,
+                                    },
+                                    "value": f"{inc.channel_name}/{inc.channel_id}",
+                                }
+                                for inc in database_data
+                                if inc.status != "resolved"
+                            ],
+                        },
+                    }
+                    if len(database_data) != 0
+                    else {
+                        "type": "section",
+                        "block_id": "no_incidents",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "There are currently no open incidents.\n\nYou can only add timeline events to open incidents.",
+                        },
+                    }
+                )
             ],
         },
     )

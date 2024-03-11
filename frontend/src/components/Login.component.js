@@ -2,31 +2,34 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Alert,
-  Backdrop,
   Box,
   Button,
-  Card,
-  CardActions,
-  FilledInput,
-  FormControl,
-  Grid,
-  IconButton,
-  InputAdornment,
-  InputLabel,
-  Snackbar
+  Container,
+  Link,
+  Snackbar,
+  TextField,
+  Typography
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
-import { lightBlue } from '@mui/material/colors';
-//import HiveRoundedIcon from '@mui/icons-material/HiveRounded';
-import LoginIcon from '@mui/icons-material/Login';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { apiUrl } from '../shared/Variables';
-import Move from '../shared/Move';
+
+import CssBaseline from '@mui/material/CssBaseline';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+
+import AnimatedAppLogo from './Animated-app-logo.component';
 import useToken from '../hooks/useToken';
 import useUserData from '../hooks/useUserData';
-import AnimatedAppLogo from './Animated-app-logo.component';
+
+const defaultTheme = createTheme();
+
+function Copyright(props) {
+  return (
+    <Typography variant="body2" color="text.secondary" align="center" {...props}>
+      <Link color="inherit" href="https://incidentbot.io/" target="new">
+        incidentbot.io
+      </Link>
+    </Typography>
+  );
+}
 
 async function loginUser(credentials) {
   return fetch(`${apiUrl}/user/login`, {
@@ -52,17 +55,6 @@ const LoginPage = () => {
     setValues({ ...values, [prop]: event.target.value });
   };
 
-  const handleClickShowPassword = () => {
-    setValues({
-      ...values,
-      showPassword: !values.showPassword
-    });
-  };
-
-  const handleMouseDownPassword = (event) => {
-    event.preventDefault();
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     const token = await loginUser({
@@ -79,123 +71,62 @@ const LoginPage = () => {
     }
   };
 
-  const LoginButton = styled(Button)(({ theme }) => ({
-    color: theme.palette.getContrastText(lightBlue[600]),
-    backgroundColor: lightBlue[700],
-    '&:hover': {
-      backgroundColor: lightBlue[500]
-    }
-  }));
-
-  const SignupButton = styled(Button)(({ theme }) => ({
-    color: theme.palette.getContrastText(lightBlue[600]),
-    backgroundColor: lightBlue[700],
-    '&:hover': {
-      backgroundColor: lightBlue[500]
-    }
-  }));
-
   const [loginMessage, setLoginMessage] = useState('');
   const [openLoginStatus, setOpenLoginStatus] = useState(false);
 
   return (
     <div>
-      <form onSubmit={handleSubmit}>
-        <Backdrop sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }} open={true}>
-          <Card sx={{ minWidth: '40vh', minHeight: '20vh' }}>
-            <Box display="flex" justifyContent="center" sx={{ paddingBottom: 1, paddingTop: 8 }}>
-              <AnimatedAppLogo width={80} height={80} duration={1000} />
+      <ThemeProvider theme={defaultTheme}>
+        <Container component="main" maxWidth="xs">
+          <CssBaseline />
+          <Box
+            sx={{
+              marginTop: 8,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center'
+            }}>
+            <AnimatedAppLogo />
+            <Typography component="h1" variant="h6" sx={{ margin: 1 }}>
+              INCIDENT BOT
+            </Typography>
+            <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                id="email"
+                label="Email Address"
+                name="email"
+                autoComplete="email"
+                autoFocus
+                onChange={handleChange('email')}
+              />
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="password"
+                label="Password"
+                type="password"
+                id="password"
+                autoComplete="current-password"
+                onChange={handleChange('password')}
+              />
+              <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }}>
+                Sign In
+              </Button>
             </Box>
-            <Grid item>
-              <Box display="flex" justifyContent="center" alignItems="center">
-                <FormControl sx={{ m: 2, width: '70%' }} variant="outlined">
-                  <InputLabel htmlFor="email">Email</InputLabel>
-                  <FilledInput
-                    required
-                    id="email"
-                    type="email"
-                    value={values.email}
-                    onChange={handleChange('email')}
-                    label="Email"
-                  />
-                </FormControl>
-              </Box>
-              <Box display="flex" justifyContent="center" alignItems="center">
-                <FormControl sx={{ m: 2, width: '70%' }} variant="outlined">
-                  <InputLabel htmlFor="password">Password</InputLabel>
-                  <FilledInput
-                    required
-                    id="password"
-                    type={values.showPassword ? 'text' : 'password'}
-                    value={values.password}
-                    onChange={handleChange('password')}
-                    endAdornment={
-                      <InputAdornment position="end">
-                        <IconButton
-                          aria-label="toggle password visibility"
-                          onClick={handleClickShowPassword}
-                          onMouseDown={handleMouseDownPassword}
-                          edge="end">
-                          {values.showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    }
-                    label="Password"
-                  />
-                </FormControl>
-              </Box>
-              <Grid item>
-                <Box
-                  display="flex"
-                  justifyContent="center"
-                  alignItem="center"
-                  sx={{ paddingBottom: 2 }}>
-                  <CardActions>
-                    <FormControl>
-                      <Box sx={{ display: 'flex', flexDirection: 'row', flexGrow: 1 }}>
-                        <Move
-                          rotation={0}
-                          timing={1000}
-                          scale={1.2}
-                          springConfig={{ tension: 150, friction: 20 }}>
-                          <LoginButton
-                            size="large"
-                            endIcon={<LoginIcon />}
-                            type="submit"
-                            sx={{ margin: 2 }}>
-                            LOGIN
-                          </LoginButton>
-                        </Move>
-                        <Move
-                          rotation={0}
-                          timing={1000}
-                          scale={1.2}
-                          springConfig={{ tension: 150, friction: 20 }}>
-                          <SignupButton
-                            disabled
-                            size="large"
-                            endIcon={<PersonAddIcon />}
-                            onClick={() => console.log('sign up')}
-                            sx={{ margin: 2 }}>
-                            SIGN UP
-                          </SignupButton>
-                        </Move>
-                      </Box>
-                    </FormControl>
-                  </CardActions>
-                </Box>
-              </Grid>
-            </Grid>
-          </Card>
-        </Backdrop>
-      </form>
-
+          </Box>
+          <Copyright sx={{ mt: 4, mb: 4 }} />
+        </Container>
+      </ThemeProvider>
       {openLoginStatus && (
         <Snackbar
           open={openLoginStatus}
           autoHideDuration={6000}
           anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-          onClose={(event, reason) => {
+          onClose={(reason) => {
             if (reason === 'clickaway') {
               return;
             }

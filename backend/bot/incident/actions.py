@@ -528,15 +528,17 @@ async def set_status(
                 status=action_value,
                 severity=incident_data.severity,
                 conference_bridge=incident_data.conference_bridge,
-                postmortem_link=postmortem_link
-                if action_value == "resolved"
-                and ("atlassian" in config.active.integrations)
-                and (
-                    config.active.integrations.get("atlassian")
-                    .get("confluence")
-                    .get("auto_create_postmortem")
-                )
-                else None,
+                postmortem_link=(
+                    postmortem_link
+                    if action_value == "resolved"
+                    and ("atlassian" in config.active.integrations)
+                    and (
+                        config.active.integrations.get("atlassian")
+                        .get("confluence")
+                        .get("auto_create_postmortem")
+                    )
+                    else None
+                ),
             ),
             text="",
         )

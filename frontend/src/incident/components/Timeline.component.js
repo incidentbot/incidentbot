@@ -10,6 +10,7 @@ import {
   IconButton,
   Paper,
   Snackbar,
+  Stack,
   Table,
   TableBody,
   TableCell,
@@ -18,15 +19,17 @@ import {
   TableRow,
   TableSortLabel,
   Toolbar,
-  Tooltip,
-  Typography
+  Tooltip
 } from '@mui/material';
 
-// import AddIcon from '@mui/icons-material/Add';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 
-import { visuallyHidden } from '@mui/utils';
 import { apiUrl } from '../../shared/Variables';
+import { styled } from '@mui/material/styles';
+import { visuallyHidden } from '@mui/utils';
+
+import AddTimelineEventModal from './Add-timeline-event-modal.component';
+import { EditableField } from './Editable-field.component.js';
 import useToken from '../../hooks/useToken';
 import WaitingBase from '../../components/Waiting-base.component';
 
@@ -65,7 +68,8 @@ const headCells = [
     id: 'timestamp',
     numeric: false,
     disablePadding: false,
-    label: 'Timestamp'
+    label: 'Timestamp',
+    width: '15%'
   },
   {
     id: 'event',
@@ -81,11 +85,16 @@ const headCells = [
   },
   {
     id: 'manage',
-    numeric: true,
+    numeric: false,
     disablePadding: false,
-    label: ''
+    label: 'Manage'
   }
 ];
+
+const FormattedText = styled('div')(({ theme }) => ({
+  ...theme.typography.button,
+  padding: theme.spacing(0)
+}));
 
 function EnhancedTableHead(props) {
   const { order, orderBy, onRequestSort } = props;
@@ -101,6 +110,7 @@ function EnhancedTableHead(props) {
             key={headCell.id}
             align={headCell.numeric ? 'right' : 'left'}
             padding={headCell.disablePadding ? 'none' : 'normal'}
+            width={headCell.width ? headCell.width : null}
             sortDirection={orderBy === headCell.id ? order : false}>
             <TableSortLabel
               active={orderBy === headCell.id}
@@ -134,9 +144,7 @@ const EnhancedTableToolbar = () => {
         pr: { xs: 1, sm: 1 },
         bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity)
       }}>
-      <Typography sx={{ flex: '1 1 100%' }} variant="h6" id="tableTitle" component="div">
-        Timeline
-      </Typography>
+      <FormattedText>Timeline</FormattedText>
     </Toolbar>
   );
 };
@@ -187,13 +195,13 @@ export default function Timeline(props) {
       });
   }
 
-  async function deleteFromIncidentAuditLog(log, ts) {
+  async function deleteFromIncidentAuditLog(incident_id, id, log) {
     var url = apiUrl + '/incident/' + props.incidentName + '/audit';
     await axios({
       method: 'DELETE',
       responseType: 'json',
       url: url,
-      data: JSON.stringify({ log: log, ts: ts }),
+      data: JSON.stringify({ incident_id: incident_id, id: id, log: log }),
       headers: {
         Authorization: 'Bearer ' + token,
         'Content-Type': 'application/json'
@@ -239,7 +247,7 @@ export default function Timeline(props) {
             <Paper sx={{ width: '100%', mb: 2 }}>
               <EnhancedTableToolbar />
               <TableContainer>
-                <Table sx={{ minWidth: 750 }} aria-labelledby="tableTitle" size={'small'}>
+                <Table sx={{ minWidth: 750 }} aria-labelledby="timeline" size={'small'}>
                   <EnhancedTableHead
                     order={order}
                     orderBy={orderBy}
@@ -251,30 +259,32 @@ export default function Timeline(props) {
                       stableSort(auditLogData, getComparator(order, orderBy)).map((row, i) => {
                         return (
                           <TableRow hover tabIndex={-1} key={i}>
-                            <TableCell align="left" padding="normal">
+                            <TableCell align="left" padding="normal" sx={{ maxWidth: '0' }}>
                               {row.ts}
                             </TableCell>
-                            <TableCell
-                              align="left"
-                              padding="normal"
-                              style={{
-                                whiteSpace: 'normal',
-                                wordBreak: 'break-word'
-                              }}>
-                              {row.log}
-                            </TableCell>
                             <TableCell align="left" padding="normal">
+                              <EditableField
+                                event={row.log}
+                                id={row.id}
+                                incidentName={props.incidentName}
+                                setRefreshData={setRefreshData.bind()}
+                              />
+                            </TableCell>
+                            <TableCell align="left" padding="checkbox">
                               {row.user}
                             </TableCell>
-                            <TableCell align="right" padding="normal">
-                              <Tooltip title="Delete">
-                                <IconButton
-                                  edge="end"
-                                  aria-label="delete"
-                                  onClick={() => deleteFromIncidentAuditLog(row.log, row.ts)}>
-                                  <DeleteForeverIcon fontSize="small" color="error" />
-                                </IconButton>
-                              </Tooltip>
+                            <TableCell padding="checkbox">
+                              <Stack direction="row">
+                                <Tooltip title="Delete">
+                                  <IconButton
+                                    aria-label="delete"
+                                    onClick={() =>
+                                      deleteFromIncidentAuditLog(row.incident_id, row.id, row.log)
+                                    }>
+                                    <DeleteForeverIcon fontSize="small" color="error" />
+                                  </IconButton>
+                                </Tooltip>
+                              </Stack>
                             </TableCell>
                           </TableRow>
                         );
@@ -282,10 +292,19 @@ export default function Timeline(props) {
                     ) : (
                       <>
                         <TableRow>
-                          <TableCell colSpan={8}>No events.</TableCell>
+                          <TableCell colSpan={4}>No events.</TableCell>
                         </TableRow>
                       </>
                     )}
+                    <TableRow>
+                      <TableCell colSpan={4}>
+                        <AddTimelineEventModal
+                          apiUrl={apiUrl}
+                          incidentName={props.incidentName}
+                          setRefreshData={setRefreshData.bind()}
+                        />
+                      </TableCell>
+                    </TableRow>
                   </TableBody>
                 </Table>
               </TableContainer>

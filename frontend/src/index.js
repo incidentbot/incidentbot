@@ -15,8 +15,9 @@ import Settings from './settings/View';
 import ViewSingleIncident from './incident/Single-incident';
 
 import LoginPage from './components/Login.component';
-import PersistentDrawerLeft from './components/AppDrawer.component';
 import { PrivateRoute } from './shared/PrivateRoute';
+
+import { WithNav } from './shared/WithNav';
 
 import 'bootstrap/dist/css/bootstrap.css';
 import './App.css';
@@ -30,13 +31,14 @@ root.render(
     <BrowserRouter basename="/app">
       <ThemeProvider theme={setThemeParameters()}>
         <CssBaseline />
-        <PersistentDrawerLeft />
         <Routes>
           <Route
             path="/"
             element={
               <PrivateRoute>
-                <App />
+                <WithNav>
+                  <App />
+                </WithNav>
               </PrivateRoute>
             }
           />
@@ -44,7 +46,9 @@ root.render(
             path="/incidents"
             element={
               <PrivateRoute>
-                <Incidents />
+                <WithNav>
+                  <Incidents />
+                </WithNav>
               </PrivateRoute>
             }
           />
@@ -52,7 +56,9 @@ root.render(
             path="/incidents/:incidentName"
             element={
               <PrivateRoute>
-                <ViewSingleIncident />
+                <WithNav>
+                  <ViewSingleIncident />
+                </WithNav>
               </PrivateRoute>
             }
           />
@@ -60,7 +66,9 @@ root.render(
             path="/on-call"
             element={
               <PrivateRoute>
-                <OnCall />
+                <WithNav>
+                  <OnCall />
+                </WithNav>
               </PrivateRoute>
             }
           />
@@ -68,7 +76,9 @@ root.render(
             path="/jobs"
             element={
               <PrivateRoute>
-                <Jobs />
+                <WithNav>
+                  <Jobs />
+                </WithNav>
               </PrivateRoute>
             }
           />
@@ -76,7 +86,9 @@ root.render(
             path="/settings"
             element={
               <PrivateRoute>
-                <Settings />
+                <WithNav>
+                  <Settings />
+                </WithNav>
               </PrivateRoute>
             }
           />
