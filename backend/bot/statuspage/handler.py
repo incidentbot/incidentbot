@@ -86,21 +86,30 @@ class StatuspageIncidentUpdate:
         # Update incident
         # If resolved, return components to operational
         # If not resolved, preserve original statuses
+        components = None
+        incident_updates = sp_incident_data.get("incident_updates")
+        if status == "resolved":
+            components = sp_components.formatted_components_update(
+                sp_components.list_of_names, "operational"
+            )
+        elif incident_updates:
+            affected_components = incident_updates[-1:][0].get(
+                "affected_components", []
+            )
+            if affected_components:
+                components = {
+                    obj.get("code"): obj.get("new_status")
+                    for obj in sp_incident_data.get("incident_updates", [])[
+                        -1:
+                    ][0].get("affected_components")
+                }
         update_data = {
             "id": incident_data.sp_incident_id,
             "body": message,
             "status": status,
-            "components": sp_components.formatted_components_update(
-                sp_components.list_of_names, "operational"
-            )
-            if status == "resolved"
-            else {
-                obj.get("code"): obj.get("new_status")
-                for obj in sp_incident_data.get("incident_updates")[-1:][
-                    0
-                ].get("affected_components")
-            },
+            "components": components,
         }
+
         payload = {
             "incident": {
                 "status": update_data.get("status"),
