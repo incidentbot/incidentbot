@@ -1631,15 +1631,15 @@ def open_modal(ack, body, client):
                 "action_id": "jira.priority_select",
                 "placeholder": {
                     "type": "plain_text",
-                    "text": "P1",
+                    "text": "P3",
                     "emoji": True,
                 },
                 "initial_option": {
                     "text": {
                         "type": "plain_text",
-                        "text": "P1",
+                        "text": "P3",
                     },
-                    "value": "P1",
+                    "value": "P3",
                 },
                 "options": [
                     {
