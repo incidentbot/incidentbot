@@ -293,9 +293,13 @@ def get_incident_pinned_items(incident_id):
     "/incident/<incident_id>/pinned/<id>", methods=["GET", "PATCH", "DELETE"]
 )
 @jwt_required()
-def get_patch_delete_item_by_id(id):
+def get_patch_delete_item_by_id(incident_id, id):
     try:
-        obj = Session.query(IncidentLogging).filter_by(id=id).first()
+        obj = (
+            Session.query(IncidentLogging)
+            .filter_by(incident_id=incident_id, id=id)
+            .first()
+        )
         match request.method:
             case "GET":
                 if not obj:

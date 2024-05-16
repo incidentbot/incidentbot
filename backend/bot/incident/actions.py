@@ -408,7 +408,9 @@ async def set_status(
 
         # Generate postmortem template and create postmortem if enabled
         # Get normalized description as postmortem title
-        if "atlassian" in config.active.integrations:
+        if ("atlassian" in config.active.integrations) and (
+            "confluence" in config.active.integrations.get("atlassian")
+        ):
             if (
                 config.active.integrations.get("atlassian")
                 .get("confluence")
@@ -417,7 +419,6 @@ async def set_status(
                 from bot.confluence.postmortem import IncidentPostmortem
 
                 postmortem_title = f"{datetime.today().strftime('%Y-%m-%d')} - {incident_data.incident_id}"
-
                 postmortem = IncidentPostmortem(
                     incident_id=incident_data.incident_id,
                     postmortem_title=postmortem_title,
