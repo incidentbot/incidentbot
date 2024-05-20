@@ -27,7 +27,7 @@ PyYAML==6.0.1
 requests==2.31.0
 requests-mock==1.11.0
 slack_bolt==1.18.1
-slack_sdk==3.27.1
+slack_sdk==3.27.2
 sqlalchemy==1.4.52
 waitress==3.0.0
 werkzeug==3.0.3
