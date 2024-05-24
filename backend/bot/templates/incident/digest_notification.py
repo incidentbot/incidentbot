@@ -95,7 +95,7 @@ class IncidentChannelDigestNotification:
                     "type": "mrkdwn",
                     "text": "A new incident has been declared. "
                     + "Please use the buttons here to participate."
-                    + f"\n#{incident_channel_details.get("name")}",
+                    + f"\n#{incident_channel_details.get('name')}",
                 },
             },
             {
