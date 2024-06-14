@@ -39,11 +39,12 @@ services:
         published: 3000
         protocol: tcp
         mode: host
-    links:
-      - db
     volumes:
       # Wherever the config file lives, root by default
       - ./backend/config.yaml:/config/incident-bot/config.yaml
+    networks:
+      - inc_bot_network
+
   db:
     image: postgres:13
     command:
@@ -54,3 +55,9 @@ services:
       POSTGRES_USER: 'incident_bot'
     ports:
       - 5432:5432
+    networks:
+      - inc_bot_network
+
+networks:
+  inc_bot_network:
+    driver: bridge
