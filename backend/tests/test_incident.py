@@ -645,7 +645,7 @@ class TestIncidentManagement:
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": "This incident is in progress. Current status is listed here. Join the channel for more information.",
+                    "text": "This incident is in progress. Current status is listed here. Join the channel for more information.\n#mock",
                 },
             },
             {
