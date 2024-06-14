@@ -11,7 +11,7 @@
     "@iconify/icons-mdi": "^1.2.47",
     "@iconify/react": "^4.0.1",
     "@mui/icons-material": "^5.15.17",
-    "@mui/material": "^5.15.16",
+    "@mui/material": "^5.15.19",
     "@mui/x-date-pickers": "^6.19.6",
     "@testing-library/jest-dom": "^6.2.0",
     "@testing-library/react": "^15.0.7",
