@@ -8,7 +8,7 @@ flask==3.0.3
 flask-cors==4.0.1
 flask-debugtoolbar==0.15.1
 flask-jwt-extended==4.6.0
-flask-limiter==3.6.0
+flask-limiter==3.7.0
 flask-login==0.6.3
 flask-marshmallow==1.2.1
 marshmallow==3.21.2
@@ -16,7 +16,7 @@ marshmallow_sqlalchemy==1.0.0
 opsgenie-sdk==2.1.5
 pdpyras==5.2.0
 psycopg2-binary==2.9.9
-pytest==8.2.0
+pytest==8.2.2
 pytest-env==1.1.3
 pytest-mock==3.14.0
 pytest-sqlalchemy-mock==0.1.5
@@ -24,10 +24,10 @@ python-dotenv==1.0.1
 python-json-logger==2.0.7
 pytz==2024.1
 PyYAML==6.0.1
-requests==2.31.0
-requests-mock==1.11.0
+requests==2.32.3
+requests-mock==1.12.1
 slack_bolt==1.18.1
-slack_sdk==3.27.1
+slack_sdk==3.27.2
 sqlalchemy==1.4.52
 waitress==3.0.0
 werkzeug==3.0.3

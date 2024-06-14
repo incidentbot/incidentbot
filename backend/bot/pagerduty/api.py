@@ -53,7 +53,7 @@ def find_service_for_escalation_policy(ep_name: str) -> str:
     eps = session.iter_all("escalation_policies")
     # .find wasn't working for this, no idea why.
     for ep in eps:
-        if ep("name") == ep_name:
+        if ep.get("name") == ep_name:
             return ep.get("services")[0].get("id")
 
 
