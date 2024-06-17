@@ -13,7 +13,7 @@
     "@mui/icons-material": "^5.15.17",
     "@mui/material": "^5.15.19",
     "@mui/x-date-pickers": "^6.19.6",
-    "@testing-library/jest-dom": "^6.2.0",
+    "@testing-library/jest-dom": "^6.4.6",
     "@testing-library/react": "^15.0.7",
     "@testing-library/user-event": "^14.4.3",
     "@uiw/react-textarea-code-editor": "^3.0.2",
