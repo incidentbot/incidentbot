@@ -26,7 +26,7 @@ pytz==2024.1
 PyYAML==6.0.1
 requests==2.32.3
 requests-mock==1.12.1
-slack_bolt==1.18.1
+slack_bolt==1.19.0
 slack_sdk==3.29.0
 sqlalchemy==1.4.52
 waitress==3.0.0
