@@ -5,7 +5,7 @@ COPY ./backend/bot /incident-bot/bot
 COPY ./backend/requirements.txt /incident-bot
 COPY ./backend/config.py /incident-bot
 COPY ./backend/main.py /incident-bot
-COPY ./backend/iblog.py /incident-bot
+COPY ./backend/logger.py /incident-bot
 COPY ./scripts/wait-for-it.sh /incident-bot/wait-for-it.sh
 
 # Set the work directory to the app folder.

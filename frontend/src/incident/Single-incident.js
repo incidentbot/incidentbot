@@ -355,23 +355,15 @@ const ViewSingleIncident = () => {
                       </Typography>
                     </Breadcrumbs>
                     <Box sx={{ paddingRight: 1 }}>
-                      {incident.postmortem === null ? (
-                        <Button
-                          size="small"
-                          variant="contained"
-                          key={`${incident.incident_id}-postmortem-link`}
-                          href={incident.postmortem}
-                          target="new">
-                          Postmortem
-                        </Button>
-                      ) : (
-                        <>
-                          <Alert color="info" variant="standard" sx={{ width: '100%' }}>
-                            A link to the postmortem will appear here once the incident is resolved
-                            and one has been generated.
-                          </Alert>
-                        </>
-                      )}
+                      <Button
+                        size="small"
+                        disabled={incident.postmortem === null ? true : false}
+                        variant="contained"
+                        key={`${incident.incident_id}-postmortem-link`}
+                        href={incident.postmortem}
+                        target="new">
+                        Postmortem
+                      </Button>
                     </Box>
                     <Box sx={{ paddingRight: 1 }}>
                       <Button
@@ -390,13 +382,12 @@ const ViewSingleIncident = () => {
                         key={`${incident.incident_id}-conference-link`}
                         href={`${incident.conference_bridge}`}
                         target="new">
-                        Join Meeting
+                        Meeting
                       </Button>
                     </Box>
                   </Toolbar>
                 </AppBar>
               </Box>
-              <hr style={{ opacity: '0.2' }} />
               {incident.is_security_incident && (
                 <Alert severity="error" sx={{ marginBottom: 2 }}>
                   This incident has been flagged as a security incident.
@@ -410,9 +401,7 @@ const ViewSingleIncident = () => {
               )}
               <Grid container columns={2} spacing={1}>
                 <Grid item xs={12} md={1}>
-                  <Card
-                    variant="elevation"
-                    sx={{ border: 'none', boxShadow: 'none', marginBottom: 1, height: '100%' }}>
+                  <Card variant="elevation" sx={{ marginBottom: 1, height: '100%' }}>
                     <StyledCardHeader
                       title={`DETAILS`}
                       titleTypographyProps={{
@@ -446,9 +435,7 @@ const ViewSingleIncident = () => {
                   </Card>
                 </Grid>
                 <Grid item xs={12} md={1}>
-                  <Card
-                    variant="elevation"
-                    sx={{ border: 'none', boxShadow: 'none', marginBottom: 1, height: '100%' }}>
+                  <Card variant="elevation" sx={{ marginBottom: 1, height: '100%' }}>
                     <StyledCardHeader
                       title={`ROLES`}
                       titleTypographyProps={{
@@ -503,8 +490,17 @@ const ViewSingleIncident = () => {
                   </Card>
                 </Grid>
               </Grid>
-              <Box sx={{ marginTop: 4 }}>
-                <Timeline incidentName={incident.incident_id} />
+              <Box sx={{ marginTop: 2 }}>
+                <Card variant="elevation" sx={{ marginBottom: 1, height: '100%' }}>
+                  <StyledCardHeader
+                    title={`TIMELINE`}
+                    titleTypographyProps={{
+                      variant: 'h7',
+                      fontFamily: 'Roboto'
+                    }}
+                  />
+                  <Timeline incidentName={incident.incident_id} />
+                </Card>
               </Box>
               <Box sx={{ marginTop: 2 }}>
                 {pinnedItemsData !== null &&

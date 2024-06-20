@@ -2,7 +2,7 @@ import config
 import json
 import requests
 
-from iblog import logger
+from logger import logger
 
 
 class ZoomMeeting:

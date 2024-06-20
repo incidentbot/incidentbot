@@ -10,7 +10,7 @@ from bot.models.incident import (
     db_update_incident_sp_ts_col,
 )
 from bot.slack.client import slack_web_client
-from iblog import logger
+from logger import logger
 from typing import Any, Dict, List
 
 api = "https://api.statuspage.io/v1/"

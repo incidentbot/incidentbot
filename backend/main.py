@@ -8,7 +8,7 @@ from bot.slack.client import (
     check_bot_user_in_digest_channel,
 )
 from bot.slack.handler import app as slack_app
-from iblog import logger
+from logger import logger
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 from waitress import serve
 
@@ -113,9 +113,11 @@ def startup_tasks():
         update_opsgenie_oc_data()
 
     if "pagerduty" in config.active.integrations:
-        from bot.pagerduty.api import PagerDutyAPI
+        from bot.pagerduty.api import PagerDutyInterface
 
-        if len(PagerDutyAPI().test()) == 0:
+        pagerduty_interface = PagerDutyInterface()
+
+        if len(pagerduty_interface.test()) == 0:
             logger.fatal(
                 "PagerDuty test failed: unable to retrieve oncall iterable - either no schedules exist or none were returned",
             )
@@ -124,6 +126,7 @@ def startup_tasks():
         from bot.scheduler.scheduler import update_pagerduty_oc_data
 
         update_pagerduty_oc_data()
+
         try:
             if (
                 not Session.query(OperationalData)

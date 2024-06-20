@@ -27,7 +27,7 @@ from bot.templates.incident.digest_notification import (
 from bot.zoom.meeting import ZoomMeeting
 from cerberus import Validator
 from datetime import datetime
-from iblog import logger
+from logger import logger
 from typing import Dict
 
 # How many total characters are allowed in a Slack channel name?
@@ -585,7 +585,7 @@ async def handle_incident_optional_features(
     Page groups that are required to be automatically paged (optional)
     """
     if "pagerduty" in config.active.integrations:
-        from bot.pagerduty import api as pd_api
+        from bot.pagerduty.api import PagerDutyInterface
 
         auto_page_targets = read_pager_auto_page_targets()
         if len(auto_page_targets) != 0:
@@ -597,8 +597,12 @@ async def handle_incident_optional_features(
                         incident_id=created_channel_details["name"],
                         event=f"Created PagerDuty incident for team {k}.",
                     )
-                    pd_api.page(
-                        ep_name=v,
+
+                    pagerduty_interface = PagerDutyInterface(
+                        escalation_policy=v
+                    )
+
+                    pagerduty_interface.page(
                         priority="low",
                         channel_name=created_channel_details["name"],
                         channel_id=created_channel_details["id"],

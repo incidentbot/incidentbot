@@ -25,7 +25,7 @@ from bot.models.user import (
     db_user_lookup,
     db_user_token_revoke,
 )
-from iblog import logger
+from logger import logger
 from werkzeug.security import check_password_hash, generate_password_hash
 
 user = Blueprint("user", __name__)

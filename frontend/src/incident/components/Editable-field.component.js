@@ -77,7 +77,7 @@ export const EditableField = (props) => {
         <>
           <TextField
             variant="standard"
-            placeholder={props.event}
+            defaultValue={props.event}
             fullWidth
             onChange={handleChange('event')}
           />

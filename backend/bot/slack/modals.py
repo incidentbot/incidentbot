@@ -13,6 +13,7 @@ from bot.models.incident import (
     db_update_jira_issues_col,
 )
 from bot.models.pager import read_pager_auto_page_targets
+from bot.models.pg import OperationalData, Session
 from bot.shared import tools
 from bot.slack.client import check_user_in_group, get_digest_channel_id
 from bot.slack.handler import app, help_menu
@@ -28,7 +29,7 @@ from bot.templates.incident.updates import (
     IncidentUpdate,
 )
 from bot.templates.tools import parse_modal_values
-from iblog import logger
+from logger import logger
 from datetime import datetime
 
 
@@ -133,16 +134,6 @@ def update_home_tab(client, event, logger):
     )
     open_incidents = incident_list_message(database_data, all=False)
     base_blocks.extend(open_incidents)
-
-    # On call info
-    # Currently disabled since it contributes to the overloading of app home for teams that have
-    # a large number of schedules.
-    # if "pagerduty" in config.active.integrations:
-    #    from bot.pagerduty import api as pd_api
-    #
-    #    pd_oncall_data = pd_api.find_who_is_on_call()
-    #    on_call_info = pd_on_call_message(data=pd_oncall_data)
-    #    base_blocks.extend(on_call_info)
 
     # Version info
     base_blocks.extend(
@@ -577,12 +568,18 @@ def open_modal(ack, body, client):
     ack()
 
     if "pagerduty" in config.active.integrations:
-        from bot.pagerduty import api as pd_api
+        from bot.pagerduty.api import image_url
 
         platform = "PagerDuty"
-        oncalls = pd_api.find_who_is_on_call()
+        oncalls = (
+            Session.query(OperationalData)
+            .filter(OperationalData.id == "pagerduty_oc_data")
+            .one()
+            .serialize()
+            .get("json_data")
+        )
         priorities = ["low", "high"]
-        image_url = pd_api.image_url
+        image_url = image_url
     elif "opsgenie" in config.active.integrations.get("atlassian"):
         from bot.opsgenie import api as og_api
 
@@ -826,7 +823,9 @@ def handle_submission(ack, body, say, view):
     paging_user = body["user"]["name"]
 
     if "pagerduty" in config.active.integrations:
-        from bot.pagerduty import api as pd_api
+        from bot.pagerduty.api import PagerDutyInterface
+
+        pagerduty_interface = PagerDutyInterface(escalation_policy=team)
 
         platform = "PagerDuty"
         artifact = "incident"
@@ -839,8 +838,7 @@ def handle_submission(ack, body, say, view):
     try:
         match platform.lower():
             case "pagerduty":
-                pd_api.page(
-                    ep_name=team,
+                pagerduty_interface.page(
                     priority=priority,
                     channel_name=incident_channel_name,
                     channel_id=incident_channel_id,

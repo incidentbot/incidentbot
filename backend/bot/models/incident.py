@@ -1,5 +1,5 @@
 from bot.models.pg import Incident, Session
-from iblog import logger
+from logger import logger
 from sqlalchemy import or_
 from typing import List
 

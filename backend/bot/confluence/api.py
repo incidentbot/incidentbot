@@ -2,7 +2,7 @@ import config
 import datetime
 
 from atlassian import Confluence
-from iblog import logger
+from logger import logger
 
 
 class ConfluenceApi:

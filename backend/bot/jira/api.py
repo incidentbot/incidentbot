@@ -2,7 +2,7 @@ import config
 import requests
 
 from atlassian import Jira
-from iblog import logger
+from logger import logger
 from typing import List
 
 

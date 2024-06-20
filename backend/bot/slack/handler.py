@@ -26,7 +26,7 @@ from bot.slack.messages import (
     incident_list_message,
     job_list_message,
 )
-from iblog import logger
+from logger import logger
 from slack_bolt import App
 from slack_sdk.errors import SlackApiError
 from typing import Any, Dict
@@ -155,9 +155,11 @@ def handle_mention(body, say, logger):
             say(blocks=resp, text="")
         case "pager":
             if "pagerduty" in config.active.integrations:
-                from bot.pagerduty import api as pd_api
+                from bot.pagerduty.api import PagerDutyInterface, image_url
 
-                pd_oncall_data = pd_api.find_who_is_on_call()
+                pagerduty_interface = PagerDutyInterface()
+
+                pd_oncall_data = pagerduty_interface.get_on_calls()
                 if pd_oncall_data == {}:
                     say(
                         text="Hmm... I'm unable to get that information from PagerDuty - when I looked for schedules, I couldn't find any. Check my logs for additional information."
@@ -242,7 +244,7 @@ def handle_mention(body, say, logger):
                                 "elements": [
                                     {
                                         "type": "image",
-                                        "image_url": pd_api.image_url,
+                                        "image_url": image_url,
                                         "alt_text": "pagerduty",
                                     },
                                     {

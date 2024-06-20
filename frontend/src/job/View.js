@@ -48,7 +48,7 @@ const Jobs = () => {
 
   return (
     <div className="jobs-page" style={{ paddingTop: '5vh' }}>
-      <Container maxWidth="" sx={{ width: '70%' }}>
+      <Container maxWidth="md">
         <Table jobs={jobs} setRefreshData={setRefreshData.bind()} />
       </Container>
     </div>

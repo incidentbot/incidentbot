@@ -4,7 +4,7 @@ from bot.confluence.api import ConfluenceApi, logger
 from bot.models.pg import IncidentLogging
 from bot.templates.confluence.postmortem import PostmortemTemplate
 from html import escape
-from iblog import logger
+from logger import logger
 from typing import Any, Dict, List, Tuple
 
 

@@ -14,7 +14,7 @@ from bot.models.incident import db_read_all_incidents, db_read_incident
 from bot.models.pg import Incident, IncidentLogging, Session
 from flask import Blueprint, jsonify, request, Response
 from flask_jwt_extended import jwt_required
-from iblog import logger
+from logger import logger
 
 incidentrt = Blueprint("incident", __name__)
 
@@ -173,91 +173,92 @@ def post_incident_ext():
 )
 @jwt_required()
 def get_delete_post_incident_audit_log(incident_id):
-    if request.method == "GET":
-        try:
-            audit_logs = log.read(incident_id)
-            return (
-                jsonify({"data": audit_logs}),
-                200,
-                {"ContentType": "application/json"},
-            )
-        except Exception as error:
-            return (
-                jsonify({"error": str(error)}),
-                500,
-                {"ContentType": "application/json"},
-            )
-    elif request.method == "DELETE":
-        request_data = request.json
-        try:
-            success, error = log.delete(
-                incident_id=incident_id,
-                id=request_data["id"],
-                log=request_data["log"],
-            )
-            if success:
+    match request.method:
+        case "GET":
+            try:
+                audit_logs = log.read(incident_id)
                 return (
-                    jsonify({"success": True}),
+                    jsonify({"data": audit_logs}),
                     200,
                     {"ContentType": "application/json"},
                 )
-            else:
+            except Exception as error:
                 return (
                     jsonify({"error": str(error)}),
                     500,
                     {"ContentType": "application/json"},
                 )
-        except Exception as error:
-            return (
-                jsonify({"error": str(error)}),
-                500,
-                {"ContentType": "application/json"},
-            )
-    elif request.method == "POST":
-        request_data = request.json
-        try:
-            audit_logs = log.write(
-                incident_id=incident_id,
-                event=request_data["event"],
-                ts=request_data["timestamp"],
-                user=request_data["user"],
-            )
-            return (
-                jsonify({"success": True}),
-                200,
-                {"ContentType": "application/json"},
-            )
-        except Exception as error:
-            return (
-                jsonify({"error": str(error)}),
-                500,
-                {"ContentType": "application/json"},
-            )
-    elif request.method == "PATCH":
-        request_data = request.json
-        try:
-            create, msg = log.edit(
-                incident_id=incident_id,
-                id=request_data["id"],
-                new_log=request_data["event"],
-            )
-            if not create:
+        case "DELETE":
+            request_data = request.json
+            try:
+                success, error = log.delete(
+                    incident_id=incident_id,
+                    id=request_data["id"],
+                    log=request_data["log"],
+                )
+                if success:
+                    return (
+                        jsonify({"success": True}),
+                        200,
+                        {"ContentType": "application/json"},
+                    )
+                else:
+                    return (
+                        jsonify({"error": str(error)}),
+                        500,
+                        {"ContentType": "application/json"},
+                    )
+            except Exception as error:
                 return (
-                    jsonify({"error": str(msg)}),
+                    jsonify({"error": str(error)}),
                     500,
                     {"ContentType": "application/json"},
                 )
-            return (
-                jsonify({"success": True}),
-                200,
-                {"ContentType": "application/json"},
-            )
-        except Exception as error:
-            return (
-                jsonify({"error": str(error)}),
-                500,
-                {"ContentType": "application/json"},
-            )
+        case "POST":
+            request_data = request.json
+            try:
+                audit_logs = log.write(
+                    incident_id=incident_id,
+                    event=request_data["event"],
+                    ts=request_data["timestamp"],
+                    user=request_data["user"],
+                )
+                return (
+                    jsonify({"success": True}),
+                    200,
+                    {"ContentType": "application/json"},
+                )
+            except Exception as error:
+                return (
+                    jsonify({"error": str(error)}),
+                    500,
+                    {"ContentType": "application/json"},
+                )
+        case "PATCH":
+            request_data = request.json
+            try:
+                create, msg = log.edit(
+                    incident_id=incident_id,
+                    id=request_data["id"],
+                    new_log=request_data["event"],
+                )
+                if not create:
+                    return (
+                        jsonify({"error": str(msg)}),
+                        500,
+                        {"ContentType": "application/json"},
+                    )
+                return (
+                    jsonify({"success": True}),
+                    200,
+                    {"ContentType": "application/json"},
+                )
+            except Exception as error:
+                return (
+                    jsonify({"error": str(error)}),
+                    500,
+                    {"ContentType": "application/json"},
+                )
 
 
 @incidentrt.route("/incident/<incident_id>/pinned", methods=["GET"])
