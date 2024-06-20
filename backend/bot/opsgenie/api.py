@@ -5,7 +5,7 @@ import requests
 from bot.models.pg import OperationalData, Session
 from bot.shared import tools
 from bot.slack.client import slack_workspace_id
-from iblog import logger
+from logger import logger
 from sqlalchemy import update
 from typing import Dict, List
 

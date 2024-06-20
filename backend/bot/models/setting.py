@@ -1,7 +1,7 @@
 import sqlalchemy
 
 from bot.models.pg import Setting, Session
-from iblog import logger
+from logger import logger
 from typing import Dict
 
 

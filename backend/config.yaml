@@ -82,7 +82,7 @@ options:
   # Timezone to use for logging, etc.
   timezone: UTC
 integrations:
-  {}
+  # {}
   # Secret data is provided as environment variables for integrations
   # Only non-secret data is configured here
   # atlassian:
@@ -108,7 +108,7 @@ integrations:
   #   # Note that providing the 'team' value here will limit creation of alerts to a single team.
   #   team: oncalls
   # Simply provide an empty dict to enable PagerDuty
-  # pagerduty: {}
+  pagerduty: {}
   # Enable Statuspage integration
   # statuspage:
   #   # The public URL of the Statuspage.

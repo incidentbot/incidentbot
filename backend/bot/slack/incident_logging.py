@@ -1,5 +1,5 @@
 from bot.models.pg import IncidentLogging, Session
-from iblog import logger
+from logger import logger
 from sqlalchemy.orm import scoped_session
 from typing import List
 

@@ -1,5 +1,5 @@
 from bot.models.pg import Session, TokenBlocklist, User
-from iblog import logger
+from logger import logger
 from typing import Tuple
 
 

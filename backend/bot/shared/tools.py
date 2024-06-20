@@ -5,7 +5,7 @@ import random
 import string
 
 from datetime import datetime
-from iblog import logger
+from logger import logger
 from pytz import timezone
 from typing import Any, List
 

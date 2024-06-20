@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import PropTypes from 'prop-types';
-import { alpha } from '@mui/material/styles';
 
 import {
   Alert,
@@ -18,14 +17,12 @@ import {
   TableHead,
   TableRow,
   TableSortLabel,
-  Toolbar,
   Tooltip
 } from '@mui/material';
 
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 
 import { apiUrl } from '../../shared/Variables';
-import { styled } from '@mui/material/styles';
 import { visuallyHidden } from '@mui/utils';
 
 import AddTimelineEventModal from './Add-timeline-event-modal.component';
@@ -91,11 +88,6 @@ const headCells = [
   }
 ];
 
-const FormattedText = styled('div')(({ theme }) => ({
-  ...theme.typography.button,
-  padding: theme.spacing(0)
-}));
-
 function EnhancedTableHead(props) {
   const { order, orderBy, onRequestSort } = props;
   const createSortHandler = (property) => (event) => {
@@ -134,19 +126,6 @@ EnhancedTableHead.propTypes = {
   onRequestSort: PropTypes.func.isRequired,
   order: PropTypes.oneOf(['asc', 'desc']).isRequired,
   orderBy: PropTypes.string.isRequired
-};
-
-const EnhancedTableToolbar = () => {
-  return (
-    <Toolbar
-      sx={{
-        pl: { sm: 2 },
-        pr: { xs: 1, sm: 1 },
-        bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity)
-      }}>
-      <FormattedText>Timeline</FormattedText>
-    </Toolbar>
-  );
 };
 
 export default function Timeline(props) {
@@ -245,7 +224,6 @@ export default function Timeline(props) {
         <>
           <Box sx={{ width: '100%' }}>
             <Paper sx={{ width: '100%', mb: 2 }}>
-              <EnhancedTableToolbar />
               <TableContainer>
                 <Table sx={{ minWidth: 750 }} aria-labelledby="timeline" size={'small'}>
                   <EnhancedTableHead

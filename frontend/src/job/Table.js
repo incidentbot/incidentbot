@@ -68,18 +68,6 @@ const headCells = [
     label: 'ID'
   },
   {
-    id: 'job_name',
-    numeric: false,
-    disablePadding: false,
-    label: 'Job Name'
-  },
-  {
-    id: 'function',
-    numeric: false,
-    disablePadding: false,
-    label: 'Function'
-  },
-  {
     id: 'trigger',
     numeric: false,
     disablePadding: false,
@@ -341,12 +329,6 @@ export default function EnhancedTable(props) {
                       <TableRow hover tabIndex={-1} key={row.id}>
                         <TableCell align="left" padding="normal">
                           {row.id}
-                        </TableCell>
-                        <TableCell align="left" padding="normal">
-                          {row.name}
-                        </TableCell>
-                        <TableCell align="left" padding="normal">
-                          {row.function}
                         </TableCell>
                         <TableCell align="left" padding="normal">
                           {row.trigger}

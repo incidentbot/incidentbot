@@ -6,10 +6,10 @@ import yaml
 from bot.exc import ConfigurationError
 from cerberus import Validator
 from dotenv import load_dotenv
-from iblog import logger, log_level
+from logger import logger, log_level
 from typing import Dict, List
 
-__version__ = "v1.10.9"
+__version__ = "v1.12.0"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")

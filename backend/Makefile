@@ -1,6 +1,6 @@
 VENV := venv
 
-all: venv
+setup: venv
 
 $(VENV)/bin/activate: requirements.txt
 	python3 -m venv $(VENV)
@@ -28,4 +28,4 @@ clean:
 run-tests: venv
 	./$(VENV)/bin/python -m pytest -vv tests/
 
-.PHONY: all venv run stage_migration run_migrations clean run-tests
+.PHONY: setup venv run stage_migration run_migrations clean run-tests

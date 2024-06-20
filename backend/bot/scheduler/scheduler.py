@@ -13,7 +13,7 @@ from bot.slack.client import (
     store_slack_channel_list_db,
     store_slack_user_list_db,
 )
-from iblog import logger
+from logger import logger
 from pytz import timezone
 from typing import List
 
@@ -388,14 +388,16 @@ if config.active.integrations.get(
 
 
 if "pagerduty" in config.active.integrations:
-    from bot.pagerduty.api import store_on_call_data
+    from bot.pagerduty.api import PagerDutyInterface
+
+    pagerduty_interface = PagerDutyInterface()
 
     def update_pagerduty_oc_data():
         """
         Uses PagerDuty API to fetch information about on-call schedules
         """
         try:
-            store_on_call_data()
+            pagerduty_interface.store_on_call_data()
         except Exception as error:
             logger.error(
                 f"Error updating PagerDuty on-call information in scheduled job: {error}"

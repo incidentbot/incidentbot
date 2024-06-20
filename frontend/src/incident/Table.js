@@ -81,37 +81,43 @@ const headCells = [
     id: 'incident_id',
     numeric: false,
     disablePadding: false,
-    label: 'Name'
+    label: 'Name',
+    width: '15%'
   },
   {
     id: 'severity',
     numeric: false,
     disablePadding: false,
-    label: 'Severity'
+    label: 'Severity',
+    width: '5%'
   },
   {
     id: 'status',
     numeric: false,
     disablePadding: false,
-    label: 'Status'
+    label: 'Status',
+    width: '10%'
   },
   {
     id: 'created_at',
     numeric: false,
     disablePadding: false,
-    label: 'Created'
+    label: 'Created',
+    width: '20%'
   },
   {
     id: 'updated_at',
     numeric: false,
     disablePadding: false,
-    label: 'Updated'
+    label: 'Updated',
+    width: '20%'
   },
   {
     id: 'slack_channel',
     numeric: false,
     disablePadding: false,
-    label: 'Channel'
+    label: 'Channel',
+    width: '5%'
   }
 ];
 
@@ -129,7 +135,8 @@ function EnhancedTableHead(props) {
             key={headCell.id}
             align={headCell.numeric ? 'right' : 'left'}
             padding={headCell.disablePadding ? 'none' : 'normal'}
-            sortDirection={orderBy === headCell.id ? order : false}>
+            sortDirection={orderBy === headCell.id ? order : false}
+            width={headCell.width}>
             <TableSortLabel
               active={orderBy === headCell.id}
               direction={orderBy === headCell.id ? order : 'asc'}
@@ -205,7 +212,7 @@ export default function EnhancedTable(props) {
   const [order, setOrder] = useState('desc');
   const [orderBy, setOrderBy] = useState('created_at');
   const [page, setPage] = useState(0);
-  const [dense, setDense] = useState(false);
+  const [dense, setDense] = useState(true);
   const [hideResolved, setHideResolved] = useState(false);
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const [query, setQuery] = useState('');
@@ -349,9 +356,7 @@ export default function EnhancedTable(props) {
                     style={{
                       height: (dense ? 33 : 53) * emptyRows
                     }}>
-                    <TableCell colSpan={7}>
-                      No incidents found. To get started, create one!
-                    </TableCell>
+                    <TableCell colSpan={7}>No incidents found.</TableCell>
                   </TableRow>
                 </>
               )}

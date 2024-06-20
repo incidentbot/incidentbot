@@ -6,7 +6,7 @@ from bot.shared import tools
 from flask import abort, Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from functools import wraps
-from iblog import logger
+from logger import logger
 
 auth = Blueprint("auth", __name__)
 

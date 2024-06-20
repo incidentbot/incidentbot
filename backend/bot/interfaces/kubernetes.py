@@ -1,4 +1,4 @@
-from iblog import logger
+from logger import logger
 from kubernetes import client, config
 from typing import Dict, List
 

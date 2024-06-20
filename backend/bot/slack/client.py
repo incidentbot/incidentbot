@@ -5,7 +5,7 @@ import json
 from bot.exc import IndexNotFoundError
 from bot.models.pg import OperationalData, Session
 from bot.shared import tools
-from iblog import logger
+from logger import logger
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 from sqlalchemy import update

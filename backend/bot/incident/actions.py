@@ -32,7 +32,7 @@ from bot.templates.incident.resolution_message import IncidentResolutionMessage
 from bot.templates.incident.updates import IncidentUpdate
 from bot.templates.incident.user_dm import IncidentUserNotification
 from datetime import datetime
-from iblog import logger
+from logger import logger
 from typing import Any, Dict
 
 
@@ -511,11 +511,18 @@ async def set_status(
 
         # If PagerDuty incident(s) exist, attempt to resolve them
         if "pagerduty" in config.active.integrations:
-            from bot.pagerduty.api import resolve
+            from bot.pagerduty.api import PagerDutyInterface
+
+            pagerduty_interface = PagerDutyInterface()
 
             if incident_data.pagerduty_incidents is not None:
                 for inc in incident_data.pagerduty_incidents:
-                    resolve(pd_incident_id=inc)
+                    try:
+                        pagerduty_interface.resolve(pagerduty_incident_id=inc)
+                    except Exception as error:
+                        logger.error(
+                            f"error resolving pagerduty incident: {error}"
+                        )
 
     # Also updates digest message
     try:
@@ -533,6 +540,8 @@ async def set_status(
                     postmortem_link
                     if action_value == "resolved"
                     and ("atlassian" in config.active.integrations)
+                    and "confluence"
+                    in config.active.integrations.get("atlassian")
                     and (
                         config.active.integrations.get("atlassian")
                         .get("confluence")
