@@ -240,10 +240,6 @@ export default function EnhancedTable(props) {
     setHideResolved(event.target.checked);
   };
 
-  // Avoid a layout jump when reaching the last page with empty rows.
-  const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - filteredIncidentsData.length) : 0;
-
   // Render incidents based on requested options
   // i.e. hide resolved, etc.
   function filterData(hideResolved, query, incidents) {
@@ -258,6 +254,10 @@ export default function EnhancedTable(props) {
   }
 
   const filteredIncidentsData = filterData(hideResolved, query, props.incidents);
+
+  // Avoid a layout jump when reaching the last page with empty rows.
+  const emptyRows =
+    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - filteredIncidentsData.length) : 0;
 
   return (
     <Box sx={{ width: '100%' }}>

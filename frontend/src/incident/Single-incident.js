@@ -533,27 +533,25 @@ const ViewSingleIncident = () => {
                         subheader="Messages that were pinned and contain attachments"
                       />
                       <CardContent>
-                        {
-                          <ImageList sx={{ width: '100%' }} cols={4}>
-                            {imgData.map((item, i) => (
-                              <ImageListItem key={i}>
-                                <AttachmentImage item={item} token={token} />
-                                <ImageListItemBar
-                                  title={item.title}
-                                  subtitle={`${item.author} - ${item.ts}`}
-                                  actionIcon={
-                                    <IconButton
-                                      sx={{ color: 'rgba(255, 255, 255, 0.44)' }}
-                                      aria-label={`info about ${item.title}`}
-                                      onClick={() => deletePinnedItem(item.id)}>
-                                      <DeleteForeverIcon color="error" />
-                                    </IconButton>
-                                  }
-                                />
-                              </ImageListItem>
-                            ))}
-                          </ImageList>
-                        }
+                        <ImageList sx={{ width: '100%' }} cols={4}>
+                          {imgData.map((item, i) => (
+                            <ImageListItem key={i}>
+                              <AttachmentImage item={item} token={token} />
+                              <ImageListItemBar
+                                title={item.title}
+                                subtitle={`${item.author} - ${item.ts}`}
+                                actionIcon={
+                                  <IconButton
+                                    sx={{ color: 'rgba(255, 255, 255, 0.44)' }}
+                                    aria-label={`info about ${item.title}`}
+                                    onClick={() => deletePinnedItem(item.id)}>
+                                    <DeleteForeverIcon color="error" />
+                                  </IconButton>
+                                }
+                              />
+                            </ImageListItem>
+                          ))}
+                        </ImageList>
                       </CardContent>
                     </Card>
                   </>
