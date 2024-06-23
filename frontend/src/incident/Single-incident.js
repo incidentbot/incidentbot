@@ -379,8 +379,8 @@ const ViewSingleIncident = () => {
                       <Button
                         size="small"
                         variant="contained"
-                        key={`${incident.incident_id}-conference-link`}
-                        href={`${incident.conference_bridge}`}
+                        key={`${incident.incident_id}-meeting-link`}
+                        href={`${incident.meeting_link}`}
                         target="new">
                         Meeting
                       </Button>

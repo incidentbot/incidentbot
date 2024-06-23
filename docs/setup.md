@@ -130,7 +130,7 @@ configMap:
         default: 'This is the default incident channel topic. You can edit it in settings.'
         # If set to true, set the channel topic to the meeting link. This will override channel_topic.
         # set_to_meeting_link: true
-      conference_bridge_link: 'https://zoom.us'
+      meeting_link: 'https://zoom.us'
       skip_logs_for_user_agent:
         # Kubernetes health check user-agent
         - kube-probe

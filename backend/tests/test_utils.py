@@ -1,18 +1,50 @@
 import datetime
 
-from bot.shared import tools
+from bot.utils import utils
 
 
 class TestUtils:
     def test_fetch_timestamp(self):
-        ts = tools.fetch_timestamp()
-        assert len(ts) == 23
+        ny_ts = utils.fetch_timestamp(tz="America/New_York")
+        ch_ts = utils.fetch_timestamp(tz="Europe/Copenhagen")
+        utc_ts = utils.fetch_timestamp(tz="UTC")
 
-        time = datetime.datetime.strptime(ts, tools.timestamp_fmt)
-        assert type(time) == datetime.datetime
+        parsed_ny = datetime.datetime.strptime(ny_ts, utils.timestamp_fmt)
+        parsed_ch = datetime.datetime.strptime(ch_ts, utils.timestamp_fmt)
+        parsed_utc = datetime.datetime.strptime(utc_ts, utils.timestamp_fmt)
+
+        assert (
+            parsed_ny.hour != parsed_utc.hour
+        ), "Fetched timestamps should be timezone aware"
+
+        assert (
+            parsed_ch.hour != parsed_utc.hour
+        ), "Fetched timestamps should be timezone aware"
+
+        assert parsed_ny.astimezone()
+
+    def test_fetch_timestamp_short(self):
+        ts = utils.fetch_timestamp(short=True, tz="UTC")
+
+        assert datetime.datetime.strptime(
+            ts, utils.timestamp_fmt_short
+        ), "Shortened timestamp format should parse properly"
+
+    def test_fetch_timestamp_from_time_obj(self):
+        now = datetime.datetime.now(datetime.UTC)
+        now_as_ny = utils.fetch_timestamp_from_time_obj(
+            now, tz="America/New_York"
+        )
+        now_as_ny_datetime = datetime.datetime.strptime(
+            now_as_ny, utils.timestamp_fmt
+        )
+
+        assert (
+            now_as_ny_datetime.hour != now.hour
+        ), "Fetched timestamps from datetime objects should be timezone aware"
 
     def test_find_index_in_list(self):
-        index = tools.find_index_in_list(
+        index = utils.find_index_in_list(
             [
                 {
                     "token": "verification-token",
@@ -80,15 +112,25 @@ class TestUtils:
             "event_id",
             "Ev222",
         )
-        assert index == 1
+        assert index == 1, "find_index_in_list should return the correct index"
 
     def test_validate_ip_address(self):
-        is_ip = tools.validate_ip_address("127.0.0.1")
-        assert is_ip
+        is_ip = utils.validate_ip_address("127.0.0.1")
 
-        is_ip = tools.validate_ip_address("300.0.0.2")
-        assert not is_ip
+        assert (
+            is_ip
+        ), "validate_ip_address should return True for valid ip addresses"
+
+        is_ip = utils.validate_ip_address("300.0.0.2")
+
+        assert (
+            not is_ip
+        ), "validate_ip_address should return False for invalid ip addresses"
 
     def test_validate_ip_in_subnet(self):
-        is_in_subnet = tools.validate_ip_in_subnet("192.168.10.30", "192.168.10.0/24")
-        assert is_in_subnet
+        is_in_subnet = utils.validate_ip_in_subnet(
+            "192.168.10.30", "192.168.10.0/24"
+        )
+        assert (
+            is_in_subnet
+        ), "validate_ip_in_subnet should return True if an IP address is valid within a subnet"

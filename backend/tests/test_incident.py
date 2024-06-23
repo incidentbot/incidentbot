@@ -5,7 +5,7 @@ from bot.incident.action_parameters import (
     ActionParametersWeb,
 )
 from bot.incident.incident import Incident, RequestParameters
-from bot.shared import tools
+from bot.utils import utils
 from bot.templates.incident.channel_boilerplate import (
     IncidentChannelBoilerplateMessage,
 )
@@ -138,7 +138,7 @@ class TestIncidentManagement:
 
         assert re.search("^inc.*something-has-broken$", inc.channel_name)
 
-        assert inc.conference_bridge == "mock"
+        assert inc.meeting_link == "mock"
 
     def test_incident_channel_name_create(self):
         inc = Incident(
@@ -162,7 +162,7 @@ class TestIncidentManagement:
                 "name": "mock",
                 "is_security_incident": False,
             },
-            conference_bridge="mock",
+            meeting_link="mock",
             severity="sev4",
         ) == {
             "channel": "incidents",
@@ -223,10 +223,10 @@ class TestIncidentManagement:
                             "type": "button",
                             "text": {
                                 "type": "plain_text",
-                                "text": "☎️ Conference",
+                                "text": "☎️ Meeting",
                             },
                             "url": "mock",
-                            "action_id": "incident.clicked_conference_link",
+                            "action_id": "incident.clicked_meeting_link",
                         },
                         {
                             "type": "button",
@@ -550,6 +550,16 @@ class TestIncidentManagement:
                             "style": "primary",
                         },
                         {
+                            "action_id": "open_incident_create_jira_issue_modal",
+                            "style": "primary",
+                            "text": {
+                                "emoji": True,
+                                "text": "Create Jira Issue",
+                                "type": "plain_text",
+                            },
+                            "type": "button",
+                        },
+                        {
                             "type": "button",
                             "text": {
                                 "type": "plain_text",
@@ -607,7 +617,7 @@ class TestIncidentManagement:
             is_security_incident=is_security_incident,
             status=status,
             severity=severity,
-            conference_bridge="mock",
+            meeting_link="mock",
         )
         assert msg == [
             {
@@ -666,10 +676,10 @@ class TestIncidentManagement:
                         "type": "button",
                         "text": {
                             "type": "plain_text",
-                            "text": "☎️ Conference",
+                            "text": "☎️ Meeting",
                         },
                         "url": "mock",
-                        "action_id": "incident.clicked_conference_link",
+                        "action_id": "incident.clicked_meeting_link",
                     },
                     {
                         "type": "button",
@@ -694,7 +704,7 @@ class TestIncidentManagement:
         ]
 
     def test_build_public_status_update(self):
-        timestamp = tools.fetch_timestamp()
+        timestamp = utils.fetch_timestamp()
         assert IncidentUpdate.public_update(
             incident_id="mock",
             impacted_resources="api",

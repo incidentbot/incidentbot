@@ -14,7 +14,7 @@ from bot.models.incident import (
 )
 from bot.models.pager import read_pager_auto_page_targets
 from bot.models.pg import OperationalData, Session
-from bot.shared import tools
+from bot.utils import utils
 from bot.slack.client import check_user_in_group, get_digest_channel_id
 from bot.slack.handler import app, help_menu
 from bot.slack.messages import (
@@ -541,7 +541,7 @@ def handle_submission(ack, body, client):
                 incident_id=channel_id,
                 impacted_resources=parsed.get("impacted_resources"),
                 message=parsed.get("message"),
-                timestamp=tools.fetch_timestamp(),
+                timestamp=utils.fetch_timestamp(),
                 user_id=user_id,
             ),
             text="Incident update for incident <#{}>: {}".format(
@@ -553,7 +553,7 @@ def handle_submission(ack, body, client):
     finally:
         db_update_incident_last_update_sent_col(
             channel_id=channel_id,
-            last_update_sent=tools.fetch_timestamp(),
+            last_update_sent=utils.fetch_timestamp(),
         )
 
 
@@ -881,7 +881,7 @@ def handle_submission(ack, body, say, view):
                     "elements": [
                         {
                             "type": "mrkdwn",
-                            "text": f"This {platform} action was attempted at: {tools.fetch_timestamp()}",
+                            "text": f"This {platform} action was attempted at: {utils.fetch_timestamp()}",
                         },
                     ],
                 },
@@ -1111,7 +1111,7 @@ def handle_submission(ack, body, say, view):
     event_date = parsed.get("update_incident_bot_timeline_date")
     event_time = parsed.get("update_incident_bot_timeline_time")
     event_text = parsed.get("update_incident_bot_timeline_text")
-    ts = tools.fetch_timestamp_from_time_obj(
+    ts = utils.fetch_timestamp_from_time_obj(
         datetime.strptime(f"{event_date} {event_time}", "%Y-%m-%d %H:%M")
     )
     try:

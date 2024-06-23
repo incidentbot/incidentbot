@@ -2,7 +2,7 @@ import config
 import json
 import re
 
-from bot.shared import tools
+from bot.utils import utils
 from datetime import timedelta
 from flasgger import Swagger
 from flask import Flask, request, Response
@@ -73,7 +73,7 @@ def webserver_logging(response):
             '{} {} [{}] "{} {}" - {} - {} {}'.format(
                 request.headers.get("host"),
                 request.access_route[-1],
-                tools.fetch_timestamp(short=True),
+                utils.fetch_timestamp(short=True),
                 request.method,
                 request.path,
                 request.headers.get("user_agent"),

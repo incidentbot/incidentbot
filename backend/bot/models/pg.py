@@ -87,7 +87,7 @@ class Incident(Base, MutableBase, Serializer):
     postmortem = Column(VARCHAR)
     is_security_incident = Column(Boolean)
     channel_description = Column(String())
-    conference_bridge = Column(String())
+    meeting_link = Column(String())
     pagerduty_incidents = Column(MutableList.as_mutable(JSONB))
     jira_issues = Column(MutableList.as_mutable(JSONB))
 

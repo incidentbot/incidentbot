@@ -2,7 +2,7 @@ import config
 import json
 
 from bot.models.pg import Incident, OperationalData, Session
-from bot.shared import tools
+from bot.utils import utils
 from bot.slack.client import slack_workspace_id
 from logger import logger
 from pdpyras import APISession, PDClientError
@@ -265,7 +265,7 @@ class PagerDutyInterface:
                 .where(OperationalData.id == record_name)
                 .values(
                     json_data=self.get_on_calls(),
-                    updated_at=tools.fetch_timestamp(),
+                    updated_at=utils.fetch_timestamp(),
                 )
             )
             Session.commit()
@@ -297,7 +297,7 @@ class PagerDutyInterface:
                 .where(OperationalData.id == record_name)
                 .values(
                     json_data=self.get_on_calls(short=True),
-                    updated_at=tools.fetch_timestamp(),
+                    updated_at=utils.fetch_timestamp(),
                 )
             )
             Session.commit()

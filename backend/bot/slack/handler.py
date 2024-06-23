@@ -13,9 +13,9 @@ from bot.models.incident import (
 )
 from bot.models.pager import read_pager_auto_page_targets
 from bot.scheduler import scheduler
-from bot.shared import tools
+from bot.utils import utils
 from bot.slack.client import (
-    get_user_name,
+    get_slack_user,
     slack_web_client,
     slack_workspace_id,
 )
@@ -184,7 +184,7 @@ def handle_mention(body, say, logger):
                         # Get length of returned objects
                         # If returned objects is greater than 5, paginate over them 5 at a time and include 5 in each message
                         # Send a separate message for each grouping of 5 to avoid block limits from the Slack API
-                        for page in tools.paginate_dictionary(
+                        for page in utils.paginate_dictionary(
                             pd_oncall_data.items(),
                             config.slack_items_pagination_per_page,
                         ):
@@ -217,7 +217,7 @@ def handle_mention(body, say, logger):
                                     {
                                         "type": "section",
                                         "block_id": "ping_oncall_{}".format(
-                                            tools.random_string_generator()
+                                            utils.random_string_generator()
                                         ),
                                         "text": {
                                             "type": "mrkdwn",
@@ -249,7 +249,7 @@ def handle_mention(body, say, logger):
                                     },
                                     {
                                         "type": "mrkdwn",
-                                        "text": f"This information is sourced from PagerDuty and is accurate as of {tools.fetch_timestamp()}.",
+                                        "text": f"This information is sourced from PagerDuty and is accurate as of {utils.fetch_timestamp()}.",
                                     },
                                 ],
                             }
@@ -297,7 +297,7 @@ def handle_mention(body, say, logger):
                             {
                                 "type": "section",
                                 "block_id": "ping_oncall_{}".format(
-                                    tools.random_string_generator()
+                                    utils.random_string_generator()
                                 ),
                                 "text": {
                                     "type": "mrkdwn",
@@ -329,7 +329,7 @@ def handle_mention(body, say, logger):
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"This information is sourced from Opsgenie and is accurate as of {tools.fetch_timestamp()}.",
+                                    "text": f"This information is sourced from Opsgenie and is accurate as of {utils.fetch_timestamp()}.",
                                 },
                             ],
                         }
@@ -476,7 +476,7 @@ def reaction_added(event, say):
             try:
                 request_parameters = incident.RequestParameters(
                     channel=channel_id,
-                    incident_description=f"auto-{tools.random_suffix}",
+                    incident_description=f"auto-{utils.random_suffix}",
                     user=event.get("user"),
                     severity="sev4",
                     message_reacted_to_content=message_reacted_to_content,
@@ -544,8 +544,10 @@ def reaction_added(event, say):
                                 title=file["name"],
                                 img=res.content,
                                 mimetype=file["mimetype"],
-                                ts=tools.fetch_timestamp(short=True),
-                                user=get_user_name(user_id=message["user"]),
+                                ts=utils.fetch_timestamp(short=True),
+                                user=get_slack_user(user_id=message["user"])[
+                                    "real_name"
+                                ],
                             )
                             # Revoke public access
                             try:
@@ -583,8 +585,10 @@ def reaction_added(event, say):
                     write_content(
                         incident_id=channel_info["channel"]["name"],
                         content=message["text"],
-                        ts=tools.fetch_timestamp(short=True),
-                        user=get_user_name(user_id=message["user"]),
+                        ts=utils.fetch_timestamp(short=True),
+                        user=get_slack_user(user_id=message["user"])[
+                            "real_name"
+                        ],
                     )
             except Exception as error:
                 logger.error(
@@ -685,7 +689,7 @@ def handle_dismiss_message(ack, body):
         logger.error(f"Error deleting message: {error}")
 
 
-@app.action("incident.clicked_conference_link")
+@app.action("incident.clicked_meeting_link")
 def handle_static_action(ack, body, logger):
     logger.debug(body)
     ack()

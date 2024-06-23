@@ -1,8 +1,8 @@
 import uuid
 
 from bot.models.pg import AuditLog, Session
-from bot.shared import tools
-from bot.slack.client import get_user_name
+from bot.utils import utils
+from bot.slack.client import get_slack_user
 from logger import logger
 from sqlalchemy import update
 from sqlalchemy.orm import scoped_session
@@ -216,9 +216,9 @@ def write(
             {
                 "id": str(uuid.uuid4()),
                 "log": event,
-                "user": get_user_name(user),
+                "user": get_slack_user(user)["real_name"],
                 "content": content,
-                "ts": ts if ts != "" else tools.fetch_timestamp(),
+                "ts": ts if ts != "" else utils.fetch_timestamp(),
             }
         )
         database_session.execute(

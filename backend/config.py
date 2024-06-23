@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from logger import logger, log_level
 from typing import Dict, List
 
-__version__ = "v1.12.1"
+__version__ = "v1.12.2"
 
 # .env parse
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -175,7 +175,7 @@ class Configuration:
                             },
                         },
                     },
-                    "conference_bridge_link": {
+                    "meeting_link": {
                         "required": False,
                         "type": "string",
                         "empty": True,
@@ -227,6 +227,11 @@ class Configuration:
                                     "parent": {
                                         "required": True,
                                         "type": "string",
+                                        "empty": False,
+                                    },
+                                    "postmortem_template_id": {
+                                        "required": False,
+                                        "type": "integer",
                                         "empty": False,
                                     },
                                 },
@@ -599,13 +604,13 @@ def startup_message(workspace: str, wrap: bool = False) -> str:
 --------------------------------------------------------------------------------
                             incident bot {__version__}
 --------------------------------------------------------------------------------
-Core functionality:
-    Database host:                      {database_host}
-    Incidents digest channel:           {active.digest_channel}
-    Slack workspace:                    {workspace}
-    Logging level:                      {log_level}
+Database host:                      {database_host}
+Incidents digest channel:           {active.digest_channel}
+Logging level:                      {log_level}
+Slack workspace:                    {workspace}
+Timezone:                           {active.options.get("timezone")}
 
-Integrations Configuration:                           
+Integrations:
 {json.dumps(active.integrations, sort_keys=True, indent=4)}
 --------------------------------------------------------------------------------
     """

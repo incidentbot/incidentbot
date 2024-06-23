@@ -6,7 +6,7 @@ from apscheduler.job import Job
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from bot.models.incident import db_read_incident, db_read_open_incidents
-from bot.shared import tools
+from bot.utils import utils
 from bot.slack.client import (
     get_digest_channel_id,
     slack_web_client,
@@ -14,11 +14,10 @@ from bot.slack.client import (
     store_slack_user_list_db,
 )
 from logger import logger
-from pytz import timezone
 from typing import List
+from zoneinfo import ZoneInfo
 
-
-application_timezone = config.active.options.get("timezone")
+configured_timezone = config.active.options.get("timezone")
 jobstores = {"default": SQLAlchemyJobStore(url=config.database_url)}
 
 
@@ -26,7 +25,7 @@ class TaskScheduler:
     def __init__(self):
         self.scheduler = BackgroundScheduler(
             jobstores=jobstores,
-            timezone=timezone(application_timezone),
+            timezone=ZoneInfo(configured_timezone),
         )
 
     def list_jobs(self) -> List[Job]:
@@ -89,7 +88,7 @@ def scheduled_reminder_message(
     max_age = 25
     if last_update_sent == None:
         created_at = datetime.datetime.strptime(
-            incident.created_at, tools.timestamp_fmt
+            incident.created_at, utils.timestamp_fmt
         )
         now = datetime.datetime.now()
         time_open = now - created_at
@@ -176,7 +175,7 @@ def scheduled_reminder_message(
                 )
     else:
         last_update_sent_ts = datetime.datetime.strptime(
-            last_update_sent, tools.timestamp_fmt
+            last_update_sent, utils.timestamp_fmt
         )
         now = datetime.datetime.now()
         time_since_last_update = now - last_update_sent_ts
@@ -248,7 +247,7 @@ def scrape_for_aging_incidents():
     formatted_incidents = []
     for inc in open_incidents:
         created_at = datetime.datetime.strptime(
-            inc.created_at, tools.timestamp_fmt
+            inc.created_at, utils.timestamp_fmt
         )
         now = datetime.datetime.now()
         time_open = now - created_at
