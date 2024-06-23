@@ -31,7 +31,7 @@ def create_mock_incident_data(amount: int):
                 dig_message_ts="",
                 is_security_incident=False,
                 channel_description=f"mock {identifier}",
-                conference_bridge="mock",
+                meeting_link="mock",
             )
         except Exception as error:
             logger.fatal(f"error writing mock entry to database: {error}")

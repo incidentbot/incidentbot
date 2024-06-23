@@ -4,7 +4,7 @@ import json
 
 from bot.exc import IndexNotFoundError
 from bot.models.pg import OperationalData, Session
-from bot.shared import tools
+from bot.utils import utils
 from logger import logger
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
@@ -121,7 +121,7 @@ def get_channel_list() -> Dict[str, str]:
 def get_channel_name(channel_id: str) -> str:
     # Get channel name by id
     channels = get_slack_channel_list_db().get("json_data")
-    index = tools.find_index_in_list(channels, "id", channel_id)
+    index = utils.find_index_in_list(channels, "id", channel_id)
     if index == -1:
         raise IndexNotFoundError(
             "Could not find index for channel in Slack conversations list"
@@ -132,7 +132,7 @@ def get_channel_name(channel_id: str) -> str:
 def get_digest_channel_id() -> str:
     # Get channel id of the incidents digest channel to send updates to
     channels = get_slack_channel_list_db().get("json_data")
-    index = tools.find_index_in_list(
+    index = utils.find_index_in_list(
         channels, "name", config.active.digest_channel
     )
     if index == -1:
@@ -287,7 +287,7 @@ def store_slack_channel_list_db():
             .where(OperationalData.id == record_name)
             .values(
                 json_data=get_channel_list(),
-                updated_at=tools.fetch_timestamp(),
+                updated_at=utils.fetch_timestamp(),
             )
         )
         Session.commit()
@@ -352,7 +352,7 @@ def check_user_in_group(user_id: str, group_name: str) -> bool:
         )
 
 
-def get_user_name(user_id: str) -> str:
+def get_slack_user(user_id: str) -> dict | None:
     """
     Get a single user's real_name from a user ID
 
@@ -360,11 +360,12 @@ def get_user_name(user_id: str) -> str:
     slack user data has been run
     """
     ulist = Session.query(OperationalData).filter_by(id="slack_users").one()
+
     for obj in ulist.json_data:
         if user_id in obj.values():
-            return obj["real_name"]
-        else:
-            continue
+            return obj
+
+    return None
 
 
 def get_slack_users() -> List[Dict[str, Any]]:
@@ -392,6 +393,7 @@ def get_slack_users() -> List[Dict[str, Any]]:
         {
             "name": user["name"],
             "real_name": user["profile"]["real_name"],
+            "email": user["profile"].get("email"),
             "id": user["id"],
         }
         for user in users
@@ -435,7 +437,7 @@ def store_slack_user_list_db():
         row = OperationalData(
             id="slack_users",
             json_data=get_slack_users(),
-            updated_at=tools.fetch_timestamp(),
+            updated_at=utils.fetch_timestamp(),
         )
 
         Session.add(row)

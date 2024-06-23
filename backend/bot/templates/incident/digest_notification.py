@@ -8,7 +8,7 @@ class IncidentChannelDigestNotification:
     @staticmethod
     def create(
         incident_channel_details: Dict[str, Any],
-        conference_bridge: str,
+        meeting_link: str,
         severity: str,
     ):
         if incident_channel_details.get("is_security_incident"):
@@ -34,10 +34,10 @@ class IncidentChannelDigestNotification:
                 "type": "button",
                 "text": {
                     "type": "plain_text",
-                    "text": "☎️ Conference",
+                    "text": "☎️ Meeting",
                 },
-                "url": conference_bridge,
-                "action_id": "incident.clicked_conference_link",
+                "url": meeting_link,
+                "action_id": "incident.clicked_meeting_link",
             },
         ]
         if config.active.links:
@@ -117,7 +117,7 @@ class IncidentChannelDigestNotification:
         is_security_incident: bool,
         status: str,
         severity: str,
-        conference_bridge: str,
+        meeting_link: str,
         postmortem_link: str = None,
     ):
         incident_reacji_header = (
@@ -150,10 +150,10 @@ class IncidentChannelDigestNotification:
                 "type": "button",
                 "text": {
                     "type": "plain_text",
-                    "text": "☎️ Conference",
+                    "text": "☎️ Meeting",
                 },
-                "url": conference_bridge,
-                "action_id": "incident.clicked_conference_link",
+                "url": meeting_link,
+                "action_id": "incident.clicked_meeting_link",
             },
         ]
 
@@ -224,8 +224,7 @@ class IncidentChannelDigestNotification:
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": message
-                    + f"\n#{incident_id}",
+                    "text": message + f"\n#{incident_id}",
                 },
             },
             {

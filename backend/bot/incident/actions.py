@@ -16,7 +16,7 @@ from bot.models.incident import (
     db_update_incident_updated_at_col,
 )
 from bot.scheduler import scheduler
-from bot.shared import tools
+from bot.utils import utils
 from bot.slack.client import (
     get_digest_channel_id,
     get_formatted_channel_history,
@@ -98,7 +98,7 @@ async def assign_role(
                 # Find the index of the block that contains info on
                 # the role we want to update and format it with the new user later
                 blocks = action_parameters.message_details.get("blocks")
-                index = tools.find_index_in_list(
+                index = utils.find_index_in_list(
                     blocks, "block_id", f"role_{action_value}"
                 )
                 if index == -1:
@@ -127,7 +127,7 @@ async def assign_role(
                     conversation_id=web_data.channel_id,
                     ts=web_data.bp_message_ts,
                 ).get("blocks")
-                index = tools.find_index_in_list(
+                index = utils.find_index_in_list(
                     blocks, "block_id", f"role_{web_data.role}"
                 )
                 if index == -1:
@@ -211,7 +211,7 @@ async def assign_role(
     # Finally, updated the updated_at column
     db_update_incident_updated_at_col(
         channel_id=target_channel,
-        updated_at=tools.fetch_timestamp(),
+        updated_at=utils.fetch_timestamp(),
     )
 
 
@@ -229,7 +229,7 @@ async def claim_role(action_parameters: type[ActionParametersSlack]):
     # Find the index of the block that contains info on
     # the role we want to update
     blocks = action_parameters.message_details["blocks"]
-    index = tools.find_index_in_list(
+    index = utils.find_index_in_list(
         blocks, "block_id", f"role_{action_value}"
     )
     if index == -1:
@@ -287,7 +287,7 @@ async def claim_role(action_parameters: type[ActionParametersSlack]):
     # Finally, updated the updated_at column
     db_update_incident_updated_at_col(
         channel_id=incident_data.channel_id,
-        updated_at=tools.fetch_timestamp(),
+        updated_at=utils.fetch_timestamp(),
     )
 
 
@@ -535,7 +535,7 @@ async def set_status(
                 is_security_incident=incident_data.is_security_incident,
                 status=action_value,
                 severity=incident_data.severity,
-                conference_bridge=incident_data.conference_bridge,
+                meeting_link=incident_data.meeting_link,
                 postmortem_link=(
                     postmortem_link
                     if action_value == "resolved"
@@ -565,7 +565,7 @@ async def set_status(
         limit=1,
     )
     blocks = result["messages"][0]["blocks"]
-    status_block_index = tools.find_index_in_list(blocks, "block_id", "status")
+    status_block_index = utils.find_index_in_list(blocks, "block_id", "status")
     if status_block_index == -1:
         raise IndexNotFoundError("Could not find index for block_id status")
     blocks[status_block_index]["accessory"]["initial_option"] = {
@@ -621,7 +621,7 @@ async def set_status(
             limit=1,
         )
         blocks = result["messages"][0]["blocks"]
-        status_block_index = tools.find_index_in_list(
+        status_block_index = utils.find_index_in_list(
             blocks, "block_id", "status"
         )
         if status_block_index == -1:
@@ -681,7 +681,7 @@ async def set_status(
     # Finally, updated the updated_at column
     db_update_incident_updated_at_col(
         channel_id=incident_data.channel_id,
-        updated_at=tools.fetch_timestamp(),
+        updated_at=utils.fetch_timestamp(),
     )
 
 
@@ -710,7 +710,7 @@ async def set_severity(
                 is_security_incident=incident_data.is_security_incident,
                 status=incident_data.status,
                 severity=action_value,
-                conference_bridge=incident_data.conference_bridge,
+                meeting_link=incident_data.meeting_link,
             ),
         )
     except slack_sdk.errors.SlackApiError as error:
@@ -726,7 +726,7 @@ async def set_severity(
         limit=1,
     )
     blocks = result["messages"][0]["blocks"]
-    sev_blocks_index = tools.find_index_in_list(blocks, "block_id", "severity")
+    sev_blocks_index = utils.find_index_in_list(blocks, "block_id", "severity")
     if sev_blocks_index == -1:
         raise IndexNotFoundError("Could not find index for block_id severity")
     blocks[sev_blocks_index]["accessory"]["initial_option"] = {
@@ -793,7 +793,7 @@ async def set_severity(
     # Finally, updated the updated_at column
     db_update_incident_updated_at_col(
         channel_id=incident_data.channel_id,
-        updated_at=tools.fetch_timestamp(),
+        updated_at=utils.fetch_timestamp(),
     )
     # Write audit log
     log.write(
@@ -812,7 +812,7 @@ def extract_role_owner(message_blocks: Dict[Any, Any], block_id: str) -> str:
     Takes message blocks and a block_id and returns information specific
     to one of the role blocks
     """
-    index = tools.find_index_in_list(message_blocks, "block_id", block_id)
+    index = utils.find_index_in_list(message_blocks, "block_id", block_id)
     if index == -1:
         raise IndexNotFoundError(
             f"Could not find index for block_id {block_id}"

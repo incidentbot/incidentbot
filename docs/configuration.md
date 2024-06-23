@@ -15,7 +15,7 @@ You can change the following settings in this file:
 - The default incident channel topic
 - Incident channel name prefixes and date formatting (override defaults)
 - The application's timezone for timestamps, timeline creation, etc.
-- The default conference bridge link if not using Zoom auto create
+- The default meeting link if not using Zoom auto create
 - The ability to create incidents from reactions
 - Groups to be automatically invited to new incidents
 - Links that are provided as helpful guidelines in messages and modals
@@ -104,7 +104,7 @@ options:
     # If set to true, set the channel topic to the meeting link. This will override channel_topic.
     set_to_meeting_link: true
   # If not using Zoom auto-create
-  conference_bridge_link: 'https://zoom.us'
+  meeting_link: 'https://zoom.us'
   # Allow creation of an incident by reacting to a message
   # The value is the name of the reacji that will trigger the action
   # It must exist in your workspace

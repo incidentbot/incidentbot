@@ -58,7 +58,7 @@ spec:
                   type: string
                 channel_name:
                   type: string
-                conference_bridge:
+                meeting_link:
                   type: string
                 is_security_incident:
                   type: boolean

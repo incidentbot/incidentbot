@@ -236,7 +236,7 @@ integrations:
     auto_create_meeting: true
 ```
 
-When enabled, the conference bridge link will be a dynamically-generated Zoom link:
+When enabled, the meeting link will be a dynamically-generated Zoom link:
 
 ![Zoom link](./assets/zoom-dynamic-link.png)
 

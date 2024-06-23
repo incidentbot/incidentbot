@@ -65,7 +65,7 @@ options:
     # If set to true, set the channel topic to the meeting link. This will override channel_topic.
     set_to_meeting_link: true
   # If not using Zoom auto-create
-  conference_bridge_link: 'https://zoom.us'
+  meeting_link: 'https://zoom.us'
   # Allow creation of an incident by reacting to a message
   # The value is the name of the reacji that will trigger the action
   # It must exist in your workspace
@@ -92,6 +92,8 @@ integrations:
   #   auto_create_postmortem: true
   #   space: ENGINEERIN
   #   parent: Postmortems
+  #   # Set a template to use for postmortems.
+  #   postmortem_template_id: 123456
   # Enable Jira integration
   # jira:
   #   project: 'IN'

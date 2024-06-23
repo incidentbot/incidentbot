@@ -11,7 +11,7 @@ from bot.models.incident import (
     db_write_incident,
 )
 from bot.models.pager import read_pager_auto_page_targets
-from bot.shared import tools
+from bot.utils import utils
 from bot.slack.client import (
     all_workspace_groups,
     slack_web_client,
@@ -166,7 +166,7 @@ class Incident:
                 "is_security_incident": self.request_parameters.is_security_incident,
                 "private_channel": self.request_parameters.private_channel,
             }
-            self.conference_bridge = self.__generate_conference_link()
+            self.meeting_link = self.__generate_meeting_link()
         else:
             self.channel_details = {}
             self.created_channel_details = {
@@ -174,7 +174,7 @@ class Incident:
                 "is_security_incident": False,
                 "private_channel": False,
             }
-            self.conference_bridge = "mock"
+            self.meeting_link = "mock"
 
     def log(self):
         request_log = {
@@ -242,7 +242,7 @@ class Incident:
                 f = config.active.options.get("channel_naming").get(
                     "time_format_in_channel_name"
                 )
-                if not tools.validate_date_format_string(f):
+                if not utils.validate_date_format_string(f):
                     logger.warning(
                         "Error setting format for timestamp in incident channel: {} is not valid so the default of {} will be used.".format(
                             f,
@@ -255,7 +255,7 @@ class Incident:
         else:
             return default_timestamp
 
-    def __generate_conference_link(self) -> str:
+    def __generate_meeting_link(self) -> str:
         if (
             "zoom" in config.active.integrations
             and config.active.integrations.get("zoom").get(
@@ -264,7 +264,7 @@ class Incident:
         ):
             return ZoomMeeting().url
         else:
-            return config.active.options.get("conference_bridge_link")
+            return config.active.options.get("meeting_link")
 
 
 """
@@ -293,7 +293,7 @@ def create_incident(
                 digest_message = slack_web_client.chat_postMessage(
                     **IncidentChannelDigestNotification.create(
                         incident_channel_details=created_channel_details,
-                        conference_bridge=incident.conference_bridge,
+                        meeting_link=incident.meeting_link,
                         severity=severity,
                     ),
                     text="New Incident",
@@ -312,7 +312,7 @@ def create_incident(
             Set incident channel topic
             """
             topic_boilerplate = (
-                incident.conference_bridge
+                incident.meeting_link
                 if config.active.options.get("channel_topic").get(
                     "set_to_meeting_link"
                 )
@@ -348,18 +348,18 @@ def create_incident(
                 timestamp=bp_message["ts"],
             )
             """
-            Post conference link in the channel upon creation
+            Post meeting link in the channel upon creation
             """
             try:
-                conference_bridge_message = slack_web_client.chat_postMessage(
+                meeting_link_message = slack_web_client.chat_postMessage(
                     channel=created_channel_details["id"],
-                    text=f":busts_in_silhouette: Please join the conference here: {incident.conference_bridge}",
+                    text=f":busts_in_silhouette: Please join the meeting here: {incident.meeting_link}",
                     blocks=[
                         {
                             "type": "header",
                             "text": {
                                 "type": "plain_text",
-                                "text": ":busts_in_silhouette: Please join the conference here.",
+                                "text": ":busts_in_silhouette: Please join the meeting here.",
                             },
                         },
                         {"type": "divider"},
@@ -367,19 +367,17 @@ def create_incident(
                             "type": "section",
                             "text": {
                                 "type": "mrkdwn",
-                                "text": incident.conference_bridge,
+                                "text": incident.meeting_link,
                             },
                         },
                     ],
                 )
                 slack_web_client.pins_add(
                     channel=created_channel_details["id"],
-                    timestamp=conference_bridge_message["message"]["ts"],
+                    timestamp=meeting_link_message["message"]["ts"],
                 )
             except slack_sdk.errors.SlackApiError as error:
-                logger.error(
-                    f"Error sending conference bridge link to channel: {error}"
-                )
+                logger.error(f"Error sending meeting link to channel: {error}")
             """
             Write incident entry to database
             """
@@ -403,7 +401,7 @@ def create_incident(
                     channel_description=created_channel_details[
                         "incident_description"
                     ],
-                    conference_bridge=incident.conference_bridge,
+                    meeting_link=incident.meeting_link,
                 )
             except Exception as error:
                 logger.fatal(f"Error writing entry to database: {error}")
@@ -411,7 +409,7 @@ def create_incident(
             try:
                 db_update_incident_created_at_col(
                     incident_id=created_channel_details["name"],
-                    created_at=tools.fetch_timestamp(),
+                    created_at=utils.fetch_timestamp(),
                 )
             except Exception as error:
                 logger.fatal(

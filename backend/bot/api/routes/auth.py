@@ -2,7 +2,7 @@ import secrets
 import sqlalchemy
 
 from bot.models.pg import PrivateSetting, Session
-from bot.shared import tools
+from bot.utils import utils
 from flask import abort, Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from functools import wraps
@@ -54,7 +54,7 @@ def api_key_required(func):
         ):
             if len(api_allowed_hosts) > 0:
                 for host in api_allowed_hosts:
-                    if tools.validate_ip_in_subnet(
+                    if utils.validate_ip_in_subnet(
                         request.access_route[-1], host
                     ):
                         return func(*args, **kwargs)
@@ -214,7 +214,7 @@ def handle_api_allowed_hosts():
                 Session.remove()
         case "POST":
             submission = request.json.get("host", None)
-            if tools.validate_ip_address(submission):
+            if utils.validate_ip_address(submission):
                 try:
                     setting = (
                         Session.query(PrivateSetting)
