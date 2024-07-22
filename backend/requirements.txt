@@ -8,7 +8,7 @@ flask==3.0.3
 flask-cors==4.0.1
 flask-debugtoolbar==0.15.1
 flask-jwt-extended==4.6.0
-flask-limiter==3.7.0
+flask-limiter==3.8.0
 flask-login==0.6.3
 flask-marshmallow==1.2.1
 marshmallow==3.21.3
