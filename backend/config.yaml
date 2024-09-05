@@ -9,10 +9,10 @@ roles:
 # Severities defined here will appear as options for each incident
 # Source: https://payitdev.atlassian.net/wiki/spaces/EN/pages/2726363280/Incident+Response+Process#%F0%9F%9A%A5-Severity
 severities:
-  sev1: 'Most or all end users are severely impacted and cannot transact with the platform. Severity guidelines can be found at https://payitdev.atlassian.net/wiki/x/Q4DzrQ.'
-  sev2: 'Many end users or most/all agency or internal users are severely impacted and cannot transact with the platform. Severity guidelines can be found at https://payitdev.atlassian.net/wiki/x/Q4DzrQ.'
-  sev3: 'Select end users or internal users are significantly impacted by an issue. Severity guidelines can be found at https://payitdev.atlassian.net/wiki/x/Q4DzrQ.'
-  sev4: 'Internal issues with no live client or customer impact but with business process or efficiency impact. Severity guidelines can be found at https://payitdev.atlassian.net/wiki/x/Q4DzrQ.'
+  sev1: 'Most or all end users are severely impacted and cannot transact with the platform.'
+  sev2: 'Many end users or most/all agency or internal users are severely impacted and cannot transact with the platform.'
+  sev3: 'Select end users or internal users are significantly impacted by an issue.'
+  sev4: 'Internal issues with no live client or customer impact but with business process or efficiency impact.'
 # Whether or not to deliver incident update reminders for critical incidents
 # This will send out a reminder message to an active incident channel at the supplied
 # interval
