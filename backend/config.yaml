@@ -8,10 +8,10 @@ roles:
   communications_liaison: "The purpose of the Communications Liaison is to be the primary individual in charge of notifying our customers of the current conditions, and informing the Incident Commander of any relevant feedback from customers as the incident progresses.\\n\\nIt's important for the rest of the command staff to be able to focus on the problem at hand, rather than worrying about crafting messages to customers.\\n\\nYour job as Communications Liaison is to listen to the call, watch the incident Slack room, and track incoming customer support requests, keeping track of what's going on and how far the incident is progressing (still investigating vs close to resolution).\\n\\nThe Incident Commander will instruct you to notify customers of the incident and keep them updated at various points throughout the call. You will be required to craft the message, gain approval from the IC, and then disseminate that message to customers.\\n\\nMore information: https://response.pagerduty.com/training/customer_liaison/"
 # Severities defined here will appear as options for each incident
 severities:
-  sev1: 'This signifies a critical production scenario that impacts most or all users with a major impact on SLAs. This is an all-hands-on-deck scenario that requires swift action to restore operation. Customers must be notified.'
-  sev2: 'This signifies a significant production degradation scenario impacting a large portion of users.'
-  sev3: 'This signifies a minor production scenario that may or may not result in degradation. This situation is worth coordination to resolve quickly but does not indicate a critical loss of service for users.'
-  sev4: 'This signifies an ongoing investigation. This incident has not been promoted to SEV3 yet, indicating there may be little to no impact, but the situation warrants a closer look. This is diagnostic in nature. This is the default setting for a new incident.'
+  sev1: 'Most or all end users are severely impacted and cannot transact with the platform.'
+  sev2: 'Many end users or most/all agency or internal users are severely impacted and cannot transact with the platform.'
+  sev3: 'Select end users or internal users are significantly impacted by an issue.'
+  sev4: 'Internal issues with no live client or customer impact but with business process or efficiency impact.'
 # Whether or not to deliver incident update reminders for critical incidents
 # This will send out a reminder message to an active incident channel at the supplied
 # interval

@@ -41,7 +41,7 @@ class IncidentChannelBoilerplateMessage:
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": "The incident starts out in *investigating* mode."
+                    "text": "The incident starts out as *declared*."
                     + " As the incident progresses, it can be moved through "
                     + "statuses until it is resolved.",
                 },
