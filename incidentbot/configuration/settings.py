@@ -257,7 +257,7 @@ class Settings(BaseSettings):
     jobs: Jobs | None = None
     links: list[Link] | None = None
     maintenance_windows: MaintenanceWindows | None = None
-    options: Options
+    options: Options | None = Options()
     pin_content_reacji: str = "pushpin"
     platform: str = "slack"
     roles: dict[str, RoleDefinition] = {
@@ -354,7 +354,7 @@ class Settings(BaseSettings):
     ZOOM_CLIENT_SECRET: str | None = None
 
     IS_MIGRATION: bool | None = False
-    IS_TEST_ENVIRONMENT: bool = False
+    IS_TEST_ENVIRONMENT: bool | None = False
 
     LOG_LEVEL: str = "INFO"
     LOG_TYPE: str | None = None
@@ -393,7 +393,9 @@ class Settings(BaseSettings):
         self._check_required_var("POSTGRES_PORT", self.POSTGRES_PORT)
         self._check_required_var("POSTGRES_USER", self.POSTGRES_USER)
 
-        if not TypeAdapter(bool).validate_python(self.IS_MIGRATION):
+        if not TypeAdapter(bool).validate_python(
+            self.IS_MIGRATION
+        ) or not TypeAdapter(bool).validate_python(self.IS_TEST_ENVIRONMENT):
             self._check_required_var("SLACK_APP_TOKEN", self.SLACK_APP_TOKEN)
             self._check_required_var("SLACK_BOT_TOKEN", self.SLACK_BOT_TOKEN)
             self._check_required_var("SLACK_USER_TOKEN", self.SLACK_USER_TOKEN)

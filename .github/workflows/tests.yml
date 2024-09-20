@@ -50,6 +50,15 @@ jobs:
           installer-parallel: true
       - name: Install dependencies
         run: poetry install --no-interaction --no-root
+      - name: Make envfile
+        uses: SpicyPizza/create-envfile@v2.0.3
+        with:
+          envkey_POSTGRES_DB: postgres
+          envkey_POSTGRES_HOST: postgres
+          envkey_POSTGRES_PASSWORD: pytest
+          envkey_POSTGRES_PORT: 5432
+          envkey_POSTGRES_USER: postgres
+          file_name: .env
       - name: Run tests
         run: |
           source .venv/bin/activate
