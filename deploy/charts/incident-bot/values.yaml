@@ -22,8 +22,7 @@ envFromSecret:
   enabled: false
   secretName:
 
-envVars:
-  CONFIG_FILE_PATH: /config/incident-bot/config.yaml
+envVars: {}
 
 healthCheck:
   enabled: true
@@ -36,8 +35,8 @@ healthCheck:
 image:
   repository: eb129/incident-bot
   pullPolicy: Always
-  # suffix:
-  # tag:
+  suffix:
+  tag:
 
 imagePullSecrets: []
 
@@ -55,6 +54,13 @@ ingress:
   tls:
     - secretName: incident-bot-tls
       hosts: []
+
+init:
+  enabled: true
+  command: ['/bin/sh']
+  args: ['-c', 'alembic upgrade head']
+  image:
+    tag:
 
 nodeSelector: {}
 

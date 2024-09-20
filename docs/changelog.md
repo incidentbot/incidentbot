@@ -1,6 +1,16 @@
 # Changelog
 
-## v2.0.0 (2024-09-24)
+## v2.0.1 (2024-09-20)
+
+- Add init containers to Helm chart to handle database migrations.
+- Add Dockerfile to build utility image for use with migrations and other tasks.
+- Clarify in documentation any steps regarding database migrations.
+- Add jobs to CircleCI build to test util and docs builds and build util image.
+- Move all Dockerfiles to root and fix references.
+- Update .gitignore file.
+- Fix versioning script.
+
+## v2.0.0 (2024-09-19)
 
 - Poetry has been adopted for Python package management, replacing the legacy pattern.
 - Pydantic is now used for both type-safety and convenience as well as configuration management.

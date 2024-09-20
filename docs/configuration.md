@@ -6,7 +6,7 @@ The bot is configured to look for environment variebles from the sys environment
 
 All other configuration options are handled by creating a `config.yaml` file. Almost all settings have default values, so you can run the application without creating a `config.yaml` file, but if you wish to enable integrations or change various settings, you'll want to create one.
 
-Please review the [integrations](/integrations/) documentation for additional information on enabling and configuring integrations.
+Please review the [integrations](integrations.md) documentation for additional information on enabling and configuring integrations.
 
 ## Configurable Parameters
 
@@ -29,7 +29,7 @@ With the API enabled, routes will be made available via `/api/v1`.
 
 !!! warning
 
-    API routes are only meant to serve the web interface. As such, they are secured using JWT and will not work without first running through the setup guide for the [web interface](/ui/).
+    API routes are only meant to serve the web interface. As such, they are secured using JWT and will not work without first running through the setup guide for the [web interface](ui.md).
 
 ### Digest Channel
 

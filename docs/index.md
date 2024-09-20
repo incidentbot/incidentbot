@@ -28,7 +28,7 @@ Need support or just want to chat with us? Join us on [Discord](https://discord.
 
 ## Integrations
 
-For more information on integrations, check out the [integrations](/integrations/) documentation.
+For more information on integrations, check out the [integrations](integrations.md) documentation.
 
 ## Quick Start
 
@@ -37,4 +37,4 @@ For more information on integrations, check out the [integrations](/integrations
 - You'll need the app token, bot token, and user token for your application and provide those as `SLACK_APP_TOKEN`, `SLACK_BOT_TOKEN`, and `SLACK_USER_TOKEN` - these can be found within the app's configuration page in Slack.
 - You'll need a Postgres instance to connect to.
 - Create a channel to serve as your incident "digest" channel - something like `#incidents`.
-- Configure the app using `config.yaml` and deploy it to Kubernetes, Docker, or whichever platform you choose. Check out the [installation](/installation/) guide for more details.
+- Configure the app using `config.yaml` and deploy it to Kubernetes, Docker, or whichever platform you choose. Check out the [installation](installation.md) guide for more details.

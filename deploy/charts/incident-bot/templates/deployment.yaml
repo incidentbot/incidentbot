@@ -30,6 +30,33 @@ spec:
       serviceAccountName: {{ include "incident-bot.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.init.enabled }}
+      initContainers:
+        - name: wait-for-db
+          image: busybox:latest
+          command: ['sh', '-c', 'echo -e "Waiting for database $POSTGRES_HOST $POSTGRES_PORT"; while ! nc -z $POSTGRES_HOST $POSTGRES_PORT; do sleep 1; printf "-"; done; echo -e "  >> Database is reachable";']
+          {{- if and .Values.envFromSecret.enabled (not (empty .Values.envFromSecret.secretName)) }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.envFromSecret.secretName }}
+          {{- end }}
+        - name: db-migrations
+          image: {{ include "incident-bot.util-image.rendered" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- with .Values.init.args }}
+          args:
+            {{- . | toYaml | nindent 12 }}
+          {{- end }}
+          {{- with .Values.init.command }}
+          command:
+            {{- . | toYaml | nindent 12 }}
+          {{- end }}
+          {{- if and .Values.envFromSecret.enabled (not (empty .Values.envFromSecret.secretName)) }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.envFromSecret.secretName }}
+          {{- end }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
