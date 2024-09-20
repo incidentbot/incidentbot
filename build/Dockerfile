@@ -1,35 +1,24 @@
-FROM node:21.7.0-alpine3.19 as frontend
+FROM python:3.12.4-alpine3.20
 
 WORKDIR /app
-COPY ./frontend/public/ ./public
-COPY ./frontend/src/ ./src
-COPY ./frontend/package.json .
-COPY ./frontend/package-lock.json .
-COPY ./frontend/.eslintrc.json .
-COPY ./frontend/.prettierrc .
 
-RUN npm install &&\
-  npm run build
+RUN apk add --update \
+  curl \
+  && rm -rf /var/cache/apk/*
 
-FROM python:3.11 as base
+# Install Poetry
+RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=/opt/poetry python && \
+  cd /usr/local/bin && \
+  ln -s /opt/poetry/bin/poetry && \
+  poetry config virtualenvs.create false
 
-# Copy only the relevant Python files into the container.
-COPY --from=frontend /app/build /incident-bot/app
-COPY ./backend/bot /incident-bot/bot
-COPY ./backend/requirements.txt /incident-bot
-COPY ./backend/config.py /incident-bot
-COPY ./backend/main.py /incident-bot
-COPY ./backend/logger.py /incident-bot
-COPY ./scripts/wait-for-it.sh /incident-bot/wait-for-it.sh
+COPY ./pyproject.toml ./poetry.lock* /app/
 
-# Set the work directory to the app folder.
-WORKDIR /incident-bot
+RUN poetry install --no-root
 
-# Install Python dependencies.
-RUN pip3 install --no-cache-dir -r requirements.txt
-
-EXPOSE 3000
+COPY ./incidentbot /app/incidentbot
+COPY ./main.py /app
+COPY ./alembic.ini /app
+COPY ./alembic/ /app/alembic/
 
 CMD ["python3", "main.py"]
-
-FROM base as production

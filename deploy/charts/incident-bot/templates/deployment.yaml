@@ -1,3 +1,4 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -9,17 +10,10 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
-  {{- end }}
   selector:
     matchLabels:
       {{- include "incident-bot.selectorLabels" . | nindent 6 }}
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -52,7 +46,7 @@ spec:
           {{- end }}
           ports:
             - name: http
-              containerPort: {{ .Values.port | default 3000 }}
+              containerPort: {{ .Values.service.port }}
               protocol: TCP
           {{- if .Values.envVars }}
           env:
@@ -68,7 +62,7 @@ spec:
           livenessProbe:
             httpGet:
               path: {{ .path }}
-              port: {{ .port | default 3000 }}
+              port: {{ $.Values.service.port }}
               scheme: {{ .scheme | default "HTTP" }}
             initialDelaySeconds: {{ .initialDelaySeconds | default 30 }}
             periodSeconds: {{ .periodSeconds | default 30 }}
@@ -76,7 +70,7 @@ spec:
           readinessProbe:
             httpGet:
               path: {{ .path }}
-              port: {{ .port | default 3000 }}
+              port: {{ $.Values.service.port }}
               scheme: {{ .scheme | default "HTTP" }}
             initialDelaySeconds: {{ .initialDelaySeconds | default 30 }}
             periodSeconds: {{ .periodSeconds | default 30 }}

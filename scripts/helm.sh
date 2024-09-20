@@ -42,7 +42,6 @@ if [ "$CIRCLE_BRANCH" != "main" ]; then
     echo
 fi
 
-
 # Package on merge.
 if [ "$CIRCLE_BRANCH" = "main" ]; then
     # Enable helm cm-push.

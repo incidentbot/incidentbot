@@ -2,13 +2,11 @@
 
 files=(
     "version"
-    "./backend/config.py"
     "./deploy/charts/incident-bot/Chart.yaml"
-    "./deploy/kustomize/incident-bot/overlays/production/kustomization.yaml"
     "./docs/deploy/overlays/production/kustomization.yaml"
 )
 
-CURRENT=`cat version`
+CURRENT=$(cat version)
 CURRENT_NO_V_PREFIX=$(echo $CURRENT | sed 's/\v//g')
 NEXT=$1
 NEXT_NO_V_PREFIX=$(echo $NEXT | sed 's/\v//g')

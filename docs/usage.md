@@ -1,99 +1,101 @@
 # Usage Guide
 
+## Interacting
+
+The main method of interacting with the bot is via its slash command - `/incidentbot` by default.
+
+Type `/incidentbot` (or whatever you've set the slash command to) in any channcel to get a prompt:
+
+![Slash command](./assets/slashcommand.png){: style="width:400px"}
+
+Once you hit `return`, you'll be presented with the core prompt:
+
+![Slash command prompt](./assets/slashcommand_output.png){: style="width:500px"}
+
+From here you can declare an incident, list all incidents, manage incident timelines, or send out incident updates.
+
 ## Running Incidents
 
 ### Starting an Incident
 
-Search for the `start a new incident` shortcut via the Slack search bar and click on it:
+Use the `Declare Incident` option via the bot prompt and you'll be issued the modal to declare an incident:
 
-![Start a search](./assets/start-search.png)
+![Declare incident modal](./assets/declare.png){: style="width:400px"}
 
-Provide a short description and fill out some other info to start the incident:
-
-![Start incident modal](./assets/start-modal.png)
+Provide information as-needed and hit `Start` to kick off the incident management process for this new incident.
 
 ### Managing an Incident
 
-The digest channel shows that a new incident has been started:
+The digest channel shows the status of any incident:
 
-![Digest message sample](./assets/digest-new.png)
+![Digest notification](./assets/digest_notification.png){: style="width:500px"}
 
-Upon joining the incident channel, the control panel is shown where changes can be made to `status`, `severity`, and `roles` along with other settings:
+When an incident has a meeting link:
 
-![Incident management panel](./assets/boilerplate.png)
+![Digest notification with meeting link](./assets/digest_notification_meeting.png){: style="width:600px"}
 
-Regardless of where you are within an incident channel, you can use the pinned messages shortcut to access the management message without scrolling back to the top:
+When an incident is resolved:
 
-![Incident management panel pinned](./assets/boilerplate-pinned.png)
+![Digest notification resolved](./assets/digest_notification_resolved.png){: style="width:600px"}
 
-![Incident management panel pinned full](./assets/boilerplate-pinned-full.png)
+From here, anyone can see the status of any incident at any time and join it if they choose to.
 
-As `status`, `severity`, and `roles` are changed, the channel is notified of these events:
+All new incidents receive a welcome message with context on things to do at the start of an incident:
 
-![Incident status updates](./assets/updates.png)
+![Welcome message](./assets/welcome_message.png){: style="width:500px"}
 
-Periodically, you can choose to provide those not involved directly in the incident about updates by searching for the `provide incident update` shortcut via the Slack search bar and clicking on it:
+If the Jira integration is enabled, you'll see an option to create a Jira issue:
 
-![Provide an incident update search](./assets/provide-update-search.png)
+![Welcome message with Jira enabled](./assets/welcome_message_with_jira.png){: style="width:500px"}
 
-You can then provide details regarding components and the nature of the update after selecting the incident channel. Only open incidents will show up in the list:
+From here, one can pick up a role by clicking on the role buttons:
 
-![Provide an incident update modal](./assets/provide-update-modal.png)
+![Role message](./assets/role_update.png)
 
-Now, everyone can see the updates in the **digest channel** without needing to join the incident:
+The channel will be notified about the role being assigned. The person accepting the role will be sent information on what the role entails. These messages are customizable.
 
-![Provide an incident update message](./assets/provide-update-message.png)
+At any time, you can use the `Describe` function to output a message that describes all current incident parameters, including assigned roles:
 
-When an incident is promoted to `sev2` or `sev1`, the scheduled reminder to send out updates will be created. You can view these by using `scheduler list`:
+![Describe incident](./assets/describe_incident.png){: style="width:600px"}
 
-![SEV2 Scheduler](./assets/sev2-scheduler.png)
+#### Interacting Directly
 
-### Manage an Incident's Timeline
+The bot contains a subcommand called `this`. Running `/incidentbot this` will provide a prompt to interact with an incident:
 
-Search for the `start a new incident` shortcut via the Slack search bar and click on it:
+!!! warning
 
-![Start a search](./assets/timeline-search-cmd.png)
+    The `this` subcommand only works within an incident channel.
 
-You can also access the timeline management modal via the pinned incident management message:
+![This](./assets/slashcommand_this.png){: style="width:500px"}
 
-![Incident management message showing timeline button](./assets/timeline-boilerplate-button.png)
+From here, you can:
 
-Once the modal is open, select an incident from the dropdown and you can see existing timeline entries. You can also add your own:
+Set severity:
 
-![Incident management timeline modaln](./assets/timeline-modal.png)
+![Severity](./assets/set_severity.png){: style="width:400px"}
 
-This timeline is automatically added to the postmortem document. You can remove entries from it using the web UI.
+Set status:
 
-### Resolving an Incident
+![Status](./assets/set_status.png){: style="width:400px"}
 
-When an incident has reached its conclusion and has been resolved, a helpful message is sent to the incident channel - notice that there is a handy button to export a formatted chat history to attach to your postmortem:
+List responders:
 
-![Resolution message](./assets/resolution-message.png)
+![Responders](./assets/responders.png){: style="width:400px"}
 
-The original message in the digest channel is changed to reflect the new status of the incident:
+!!! note
 
-![Resolution message update](./assets/resolution-digest-update.png)
+    With the `List Responders` option, you have the option to leave a role if you're currently assigned to it. You cannot remove others.
 
-This is only a simple explanation of the process for running an incident. There are plenty of features that will guide your teams along the way.
+Get help:
 
-## Using Commands
+![Help](./assets/help.png){: style="width:400px"}
 
-The bot features some commands that can be retrieved by mentioning the bot and saying `help`: `@incident-bot help`
+...and various other features depending on what is enabled.
 
-Most commands are straight forward and the help message will explain them. Some others require further discussion.
+## App Home
 
-### `edit`
+You can click on Incident Bot in the Slack sidebar to go to the app home:
 
-At this time, the only available option for this command is to edit incidents, and the only option for incidents is to set the status.
+![App home](./assets/app_home.png){: style="width:500px"}
 
-The `edit` command is available by using `@incident-bot edit incident <incident_id> set-status <status>` - this will update an incident record in the database directly.
-
-#### Why is this command necessary?
-
-It's possible to archive an incident channel before an incident is marked as resolved. It's also possible to reopen an incident before the channel is archived and then the channel gets archived before the incident is set to resolved again. In these types of instances, those incidents are still considered open and will show up in the aging incident report job if enabled. They will also show up as open incidents on the app home page and in the `lsoi` command.
-
-By using this command to set the status to `resolved`, this specific issue can be resolved.
-
-## Integrations
-
-To get information on how to use integrations, check out the [integrations](/integrations/) documentation.
+From here, you can declare an incident, create a maintenance window (if enabled), see open incidents, and see any maintenance windows.

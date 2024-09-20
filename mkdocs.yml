@@ -1,4 +1,4 @@
-site_name: Incident Bot Docs
+site_name: Incident Bot Documentation
 repo_url: https://github.com/echoboomer/incident-bot
 edit_uri: edit/main/docs/
 theme:
@@ -25,6 +25,7 @@ theme:
         name: Switch to dark mode
 markdown_extensions:
   - admonition
+  - attr_list
   - pymdownx.details
   - pymdownx.superfences
   - pymdownx.highlight:
@@ -39,12 +40,14 @@ plugins:
 nav:
   - Home:
       - index.md
-      - Installation, Setup, and Configuration:
-          - Installation and Setup: 'setup.md'
-          - Configuration: 'configuration.md'
+      - Installation: 'installation.md'
+      - Configuration: 'configuration.md'
       - Integrations: 'integrations.md'
+      - Features: 'features.md'
+      - Web Interface: 'ui.md'
       - Usage Guide: 'usage.md'
-      - Troubleshooting: 'troubleshooting.md'
+      - FAQ: 'faq.md'
+      - Changelog: 'changelog.md'
 extra:
   social:
     - icon: fontawesome/brands/discord
