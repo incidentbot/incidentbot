@@ -393,9 +393,10 @@ class Settings(BaseSettings):
         self._check_required_var("POSTGRES_PORT", self.POSTGRES_PORT)
         self._check_required_var("POSTGRES_USER", self.POSTGRES_USER)
 
-        if not TypeAdapter(bool).validate_python(
-            self.IS_MIGRATION
-        ) or not TypeAdapter(bool).validate_python(self.IS_TEST_ENVIRONMENT):
+        if not (
+            TypeAdapter(bool).validate_python(self.IS_MIGRATION)
+            or not TypeAdapter(bool).validate_python(self.IS_TEST_ENVIRONMENT)
+        ):
             self._check_required_var("SLACK_APP_TOKEN", self.SLACK_APP_TOKEN)
             self._check_required_var("SLACK_BOT_TOKEN", self.SLACK_BOT_TOKEN)
             self._check_required_var("SLACK_USER_TOKEN", self.SLACK_USER_TOKEN)
