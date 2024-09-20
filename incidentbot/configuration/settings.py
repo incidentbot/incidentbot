@@ -395,7 +395,7 @@ class Settings(BaseSettings):
 
         if not (
             TypeAdapter(bool).validate_python(self.IS_MIGRATION)
-            or not TypeAdapter(bool).validate_python(self.IS_TEST_ENVIRONMENT)
+            or TypeAdapter(bool).validate_python(self.IS_TEST_ENVIRONMENT)
         ):
             self._check_required_var("SLACK_APP_TOKEN", self.SLACK_APP_TOKEN)
             self._check_required_var("SLACK_BOT_TOKEN", self.SLACK_BOT_TOKEN)
