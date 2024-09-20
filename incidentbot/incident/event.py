@@ -1,9 +1,12 @@
 from datetime import datetime
 
+from incidentbot.configuration.settings import settings
 from incidentbot.logging import logger
 from incidentbot.models.database import engine, IncidentEvent
-from incidentbot.slack.client import get_slack_user
 from sqlmodel import Session, select, or_
+
+if not settings.IS_TEST_ENVIRONMENT:
+    from incidentbot.slack.client import get_slack_user
 
 
 class EventLogHandler:
@@ -25,6 +28,12 @@ class EventLogHandler:
         Create an event log for an incident
         """
 
+        user_real_name = (
+            (get_slack_user(user)["real_name"] if user != "" else None)
+            if not settings.IS_TEST_ENVIRONMENT
+            else "fake"
+        )
+
         with Session(engine) as session:
             try:
                 event = IncidentEvent(
@@ -37,11 +46,7 @@ class EventLogHandler:
                     text=event,
                     timestamp=timestamp,
                     title=title,
-                    user=(
-                        get_slack_user(user)["real_name"]
-                        if user != ""
-                        else None
-                    ),
+                    user=user_real_name,
                 )
 
                 session.add(event)

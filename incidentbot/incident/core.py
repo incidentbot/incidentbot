@@ -8,13 +8,6 @@ from incidentbot.incident.util import comms_reminder, role_watcher
 from incidentbot.logging import logger
 from incidentbot.models.database import IncidentRecord, engine
 from incidentbot.models.pager import read_pager_auto_page_targets
-from incidentbot.scheduler.core import process as TaskScheduler
-from incidentbot.slack.client import (
-    all_workspace_groups,
-    get_slack_user,
-    slack_web_client,
-    slack_workspace_id,
-)
 from incidentbot.slack.messages import (
     BlockBuilder,
     IncidentChannelDigestNotification,
@@ -25,7 +18,14 @@ from pydantic import BaseModel
 from sqlmodel import Session, select
 
 if not settings.IS_TEST_ENVIRONMENT:
+    from incidentbot.scheduler.core import process as TaskScheduler
     from incidentbot.slack.client import invite_user_to_channel
+    from incidentbot.slack.client import (
+        all_workspace_groups,
+        get_slack_user,
+        slack_web_client,
+        slack_workspace_id,
+    )
 
 
 def format_channel_name(id: int, description: str, comms: bool = False) -> str:

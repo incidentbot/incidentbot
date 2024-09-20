@@ -1,15 +1,19 @@
+from incidentbot.configuration.settings import settings
 from incidentbot.exceptions import IndexNotFoundError
 from incidentbot.logging import logger
 from incidentbot.models.incident import IncidentDatabaseInterface
-from incidentbot.slack.client import (
-    slack_web_client,
-)
+
 from incidentbot.slack.messages import (
     BlockBuilder,
 )
 from incidentbot.util import gen
 from slack_sdk.errors import SlackApiError
 from typing import Any
+
+if not settings.IS_TEST_ENVIRONMENT:
+    from incidentbot.slack.client import (
+        slack_web_client,
+    )
 
 
 def comms_reminder(channel_id: str):
