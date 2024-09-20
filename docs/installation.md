@@ -8,6 +8,63 @@
 - You'll need a Postgres instance to connect to. If trying the bot out using Docker Compose or Helm, there are options to run a database alongside the app.
 - Configure and deploy the application using one of the methods described below, or however you choose. (There's a Docker image available.)
 
+### Database Migrations
+
+The application does not handle database migrations automatically. This means that database migrations should be run using a bootstrap or init process.
+
+If you use the official Helm chart, two init containers are created - one to wait for the database to become available, and another to run the migrations.
+
+This feature is enabled by default:
+
+```yaml
+# values.yaml
+init:
+  enabled: true
+  command: ['/bin/sh']
+  args: ['-c', 'alembic upgrade head']
+  image:
+    tag:
+```
+
+We provide an image called `eb129/incident-bot:util` that is used for this step. You can provide your own image using the `image` and/or `tag` options shown above.
+
+!!! warning
+
+    If you choose to use your own image, be sure it conforms to the requirements of the application.
+
+!!! note
+
+    If you do not use the Helm chart and install using other methods, take note of how this is done using Docker Compose:
+
+    ```yaml
+    migrations:
+      build:
+        context: .
+        dockerfile: Dockerfile.util
+      depends_on:
+        db:
+          condition: service_healthy
+      command: ['sh', '-c', 'alembic upgrade head']
+      environment:
+        IS_MIGRATION: true
+        POSTGRES_HOST: db
+        POSTGRES_DB: incident_bot
+        POSTGRES_USER: incident_bot
+        POSTGRES_PASSWORD: somepassword
+        POSTGRES_PORT: 5432
+      volumes:
+        # Wherever the config file lives, root by default
+        - ./config.yaml:/app/config.yaml
+      networks:
+        - inc_bot_network
+    ```
+
+    In the end, you simply need a process that runs `alembic upgrade head` before the application starts.
+
+!!! note
+
+    If using the Helm chart and setting `envFromSecret`, those variables will be passed to the init containers.
+
 ## Required Variables
 
 These variables are **required** for all installation methods:
@@ -148,7 +205,7 @@ Any data under the `data` key will be added to the `ConfigMap` and will be made 
 
 You are not required to provide this option if you wish to use all of the default settings.
 
-Consult the [configuration](/configuration/) page for details on all configurable options.
+Consult the [configuration](configuration.md) page for details on all configurable options.
 
 ## Docker Compose
 

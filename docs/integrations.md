@@ -23,7 +23,7 @@ Provide the following environment variables to the bot:
 
 You are required to provide a [template](https://support.atlassian.com/confluence-cloud/docs/create-a-template/) ID for the bot to use - the bot will not create a page that is not based on a template. If you do not provide a template, the bot will not create a postmortem document.
 
-See the configuration section on [statuses](/configuration/#statuses) to understand how to configure a qualifying status to trigger postmortem generation.
+See the configuration section on [statuses](configuration.md#statuses) to understand how to configure a qualifying status to trigger postmortem generation.
 
 #### Using the Confluence Integration
 

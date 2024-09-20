@@ -1,5 +1,5 @@
-# incident-bot Helm Chart
+# Incident Bot Helm Chart
 
-Incident Bot's Helm chart.
+A Helm chart for deploying Incident Bot to Kubernetes.
 
-https://docs.incidentbot.io/setup/#helm
+https://docs.incidentbot.io/installation/#helm

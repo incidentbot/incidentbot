@@ -4,6 +4,7 @@ files=(
     "version"
     "./deploy/charts/incident-bot/Chart.yaml"
     "./docs/deploy/overlays/production/kustomization.yaml"
+    "./incidentbot/configuration/settings.py"
 )
 
 CURRENT=$(cat version)
@@ -20,3 +21,5 @@ for file in ${files[@]}; do
     sed -i '' "s/$CURRENT_NO_V_PREFIX/$NEXT_NO_V_PREFIX/g" ${file}
     echo "updated ${file}"
 done
+
+echo "don't forget to update pyproject.toml manually"
