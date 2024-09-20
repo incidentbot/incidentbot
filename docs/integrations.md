@@ -1,54 +1,109 @@
 # Integrations
 
-Incident Bot feature several integrations to help with automation at critical junctures during the incident management process.
+Incident Bot features several integrations to help with automation at critical junctures during the incident management process.
 
-Check out these sections to learn more about the integrations, how to enable and configure them, and how to use them.
+## Atlassian
 
-## Jira and Confluence
+The bot supports the following Atlassian products:
 
-It is possible to automatically create a postmortem document when an incident is transitioned to `resolved` status. This only works with Confluence Cloud at this time.
+- Confluence
+- Jira
+- Opsgenie
+- Statuspage
 
-There is also the ability to create issues in Jira related to an incident.
+To start with any of these integrations, you'll need an API token for your Atlassian account. The token can be created [here](https://id.atlassian.com/manage-profile/security/api-tokens).
 
-To start, you'll need an API token for your Atlassian account. The token can be created [here](https://id.atlassian.com/manage-profile/security/api-tokens).
-
-Provide the following environment variables:
+Provide the following environment variables to the bot:
 
 - `ATLASSIAN_API_URL` - The URL of the Atlassian account.
 - `ATLASSIAN_API_USERNAME` - Username that owns the API token.
 - `ATLASSIAN_API_TOKEN` - The API token.
 
+### Confluence
+
+You are required to provide a [template](https://support.atlassian.com/confluence-cloud/docs/create-a-template/) ID for the bot to use - the bot will not create a page that is not based on a template. If you do not provide a template, the bot will not create a postmortem document.
+
+See the configuration section on [statuses](/configuration/#statuses) to understand how to configure a qualifying status to trigger postmortem generation.
+
+#### Using the Confluence Integration
+
+The bot makes the following information from each incident available for each postmortem document using injection flags:
+
+- `!ib-inject-components`
+- `!ib-inject-created-at`
+- `!ib-inject-description`
+- `!ib-inject-impact`
+- `!ib-inject-participants`
+- `!ib-inject-severity`
+- `!ib-inject-updated-at`
+
+To use these, simply add these flags to your template. For example - this is a fully valid template for a Confluence postmortem document:
+
+
+```markdown
+## Description
+
+!ib-inject-description
+
+!ib-inject-severity
+
+!ib-inject-created-at
+
+## Participants
+
+!ib-inject-participants
+
+## Impact
+
+!ib-inject-impact
+
+## Components
+
+!ib-inject-components
+
+## Timeline
+
+!ib-inject-timeline
+```
+
+The bot would replace each call to an injection flag with the content for that flag. In the end, you'll have a document rendered using your template with the referenced flags replaced by actual content.
+
+#### Configurating the Confluence Integration
+
 In the application's `config.yaml`, you can set the Confluence space and parent page and Jira settings using the `integrations` section:
+
+!!! warning
+
+    You must provide all of these values in order for the integration to work. There are no default values for integrations.
 
 ```yaml
 integrations:
   atlassian:
     confluence:
+      enabled: true
       auto_create_postmortem: true
-      space: ENG
       parent: Postmortems
-    jira:
-      project: INCMGMT
-      issue_types: ['Task', 'Epic', 'Story']
-      priorities: ['High', 'Medium', 'Low']
-      labels:
-        - incident-management
-        - etc
+      space: ENGINEERING
+      template_id: 12345678
 ```
 
-This is only an example - you'll obviously need to provide your own information here.
+If the integration is properly configured, when an incident is set to its `final` status, you'll see a notification in the channel regarding the creation of a postmortem document:
 
-### Using the Confluence Integration
+![Postmortem created notification](./assets/postmortem_created_notification.png){: style="width:500px"}
 
-When enabled, a postmortem document will be created in Confluence with starting information. In general, no additional participation is required to generate this document.
+If you've used the appropriate flags in your document, data should be populated. Here's a very basic example showing how this works:
 
-If you use the pinned items feature, those will automatically be added to the document.
+![Postmortem](./assets/postmortem.png){: style="height:1400px"}
 
-There is also a timeline feature accessible using the `/timeline` shortcut in Slack.
+Here's the incident that postmortem references for comparison:
 
-All fields are **required** for this section.
+![Postmortem](./assets/postmortem_reference.png){: style="width:500"}
 
-### Using the Jira Integration
+### Jira
+
+The bot can open a Jira issue when an incident is created. You can optionally create any number of additional Jira issues directly from an incident.
+
+#### Using the Jira Integration
 
 In the `jira` section, the `project` field is required. All other fields are optional.
 
@@ -64,25 +119,48 @@ This is a list of strings. This will populate the list of selectable issue types
 
 This is a list of strings. This will populate the list of selectable priorities when creating a Jira ticket. These **must** be valid options for priorities in your Jira environment.
 
-#### Additional Information
+#### Controlling Creation
 
-When an incident is created and the Jira integration is enabled, you'll see an option in the incident channel management section to create a Jira issue:
+In the `jira` configuration section seen below, you can control whether or not an issue is created when an incident is started using the following options:
 
-![Jira button](./assets/boilerplate-showing-jira.png)
+```yaml
+auto_create_issue: true
+auto_create_issue_type: Task
+```
 
-Once you click this button, you'll be prompted for some information to create the issue:
+This would create a Task when an incident is opened containing the name of the incident.
 
-![Issue create modal](./assets/jira-issue-create-modal.png)
+#### Configurating the Jira Integration
 
-When the issue is created, a message is posted and pinned to the incident channel. This is also visible from the shortcut menu:
+In the application's `config.yaml`, you can adjust `jira` settings using the `integrations` section:
 
-![Issue created message](./assets/jira-issue-create-message.png)
+!!! warning
 
-You can view issues in the channel history or from the pinned items menu a tthe top of the incident channel:
+    You must provide all of these values in order for the integration to work. There are no default values for integrations.
 
-![Issue viewable in pinned items](./assets/jira-issue-create-pinned-shortcut.png)
+```yaml
+integrations:
+  atlassian:
+    jira:
+      enabled: true
+      auto_create_issue: true
+      auto_create_issue_type: Task
+      project: KAN
+      issue_types: ['Task', 'Epic']
+      labels:
+        - incident-management
+      status_mapping:
+        - incident_status: Investigating
+          jira_status: Open
+        - incident_status: Identified
+          jira_status: In Progress
+        - incident_status: Monitoring
+          jira_status: In Review
+        - incident_status: Resolved
+          jira_status: Done
+```
 
-## Opsgenie
+### Opsgenie
 
 You can integrate with Opsgenie to create incidents. To start, you'll need an API integration key for your Opsgenie account. You should also have at least one Opsgenie [Team](https://echoboomer-test.app.opsgenie.com/teams/list) created to alert for pages.
 
@@ -103,111 +181,69 @@ Provide the following variables depending on your setup:
 - `ATLASSIAN_OPSGENIE_API_KEY` - Required if creating an org-wide API integration.
 - `ATLASSIAN_OPSGENIE_API_TEAM_INTEGRATION_KEY` - Required if if using free or essentials tier plans.
 
-In the application's `config.yaml`, you can set the Opsgenie integration to active by providing a blank dict with the optional `team` field if needed:
+#### Configurating the Opsgenie Integration
+
+In the application's `config.yaml`, you can adjust `opsgenie` settings using the `integrations` section:
+
+!!! warning
+
+    You must provide all of these values in order for the integration to work. There are no default values for integrations.
 
 ```yaml
 integrations:
   atlassian:
-    opsgenie: {}
-    # team: my-team
+    opsgenie:
+      enabled: true
+      team: oncalls
 ```
 
-## PagerDuty
-
-You can integrate with PagerDuty to provide details about who is on call and page teams either manually or automatically. To do so, provide the following variables. If either of these is blank, the feature will not be enabled.
-
-- `PAGERDUTY_API_TOKEN`
-- `PAGERDUTY_API_USERNAME`
-
-In the application's `config.yaml`, you can set the PagerDuty integration to active by providing a blank dict:
-
-```yaml
-integrations:
-  pagerduty: {}
-```
-
-You are then able to use the bot's `pager` command and paging-related shortcuts as well as the web features related to them.
-
-### Using the PagerDuty Integration
-
-!!! warning
-
-    You will need to have services and escalation policies defined for this integration to function.
-
-You can issue a page by searching for the `pager` command:
-
-![Page modal](./assets/pager-search.png)
-
-Once the modal pops up, you'll need to fill out some information:
-
-![Page modal filled](./assets/pager-modal-default.png)
-
-When the last field is selected, the modal will change to ask you to confirm the pending operation:
-
-![Page confirmation](./assets/pager-modal-filled.png)
-
-Once a page is issued, the team is paged within PagerDuty where an incident is created:
-
-![An incident in PagerDuty](./assets/pager-pd-incident.png)
-
-A message is also sent to the incident channel to let everyone know the page has been issued:
-
-![A message is sent to the incident channel regarding the page](./assets/pager-sent-message.png)
-
-## Statuspage
+### Statuspage
 
 You can integrate with Statuspage to automatically prompt for Statuspage incident creation for new incidents. You can also update them directly from Slack.
 
 Provide the following environment variables:
 
-- `STATUSPAGE_API_KEY` - Statuspage API key if enabling.
-- `STATUSPAGE_PAGE_ID` - Statuspage page ID if enabling.
+- `STATUSPAGE_API_KEY` - Statuspage API key.
+- `STATUSPAGE_PAGE_ID` - Statuspage page ID.
 - `STATUSPAGE_URL` - Link to the public Statuspage for your organization. **Note:** This must be a fully formed URL - example: `https://status.foo.com`.
 
-In the application's `config.yaml`, you can set the Statuspage integration to active by providing the heading and a key that indicates what URL to lead others to to view your incidents:
+#### Configurating the Statuspage Integration
+
+In the application's `config.yaml`, you can adjust `statuspage` settings using the `integrations` section:
+
+!!! warning
+
+    You must provide all of these values in order for the integration to work. There are no default values for integrations.
 
 ```yaml
 integrations:
-# Enable Statuspage integration
-  statuspage:
-    # The public URL of the Statuspage.
-    url: https://status.mydomain.com
-    # Which Slack groups have permissions to manage Statuspage incidents?
-    # If not provided, everyone can manage Statuspage incidents from Slack.
-    permissions:
-      groups:
-        - my-slack-group
+  atlassian:
+    statuspage:
+      enabled: true
+      url: https://status.echoboomer.net
 ```
 
 You can optionally add groups under the `permissions.groups` heading to limit who can create and manage Statuspage incidents from Slack. Anyone not in one of these groups will get an ephemeral message indicating they do not have the required permissions.
 
-### Using the Statuspage Integration
+## PagerDuty
 
-When the integration is properly configured and enabled, all new incidents will feature a pinned message prompting for the creation of a Statuspage incident:
+You can integrate with PagerDuty to issue pages to teams. Set the following environment variables:
 
-![Statuspage incident prompt](./assets/statuspage-prompt.png)
+- `PAGERDUTY_API_TOKEN`
+- `PAGERDUTY_API_USERNAME`
 
-Click on `start new incident` within the Statuspage prompt and then fill out the required information in the modal:
+In the application's `config.yaml`, you can set the PagerDuty integration to active by setting `enabled` to `true`:
 
-![Statuspage incident modal](./assets/statuspage-modal.png)
+```yaml
+pagerduty:
+  enabled: true
+```
 
-Once an incident is created, the original pinned message will update to reflect current status. You can use this message to continue changing status and providing updates and view the incident:
-
-![Statuspage incident update](./assets/statuspage-update.png)
-
-![Statuspage incident ongoing](./assets/statuspage-ongoing.png)
-
-Once the incident is resolved, the message will reflect all status updates:
-
-![Statuspage incident resolved](./assets/statuspage-resolved.png)
-
-You can see that each of these steps was reflected on Statuspage:
-
-![Statuspage incident web](./assets/statuspage-web-example.png)
+You are then able to use the bot's pager options. These are introduced at various points through the incident management process.
 
 ## Zoom
 
-At this time, the bot can automatically create a Zoom meeting for each new incident. In the future, other platforms may be supported.
+The bot can automatically create a Zoom meeting for each new incident.
 
 If you want to automatically create an instant Zoom meeting for each incident, use the following steps to create a Zoom app and enable the integration:
 
@@ -228,29 +264,16 @@ Provide the following environment variables:
 - `ZOOM_CLIENT_ID` - The OAuth app client ID from the step above.
 - `ZOOM_CLIENT_SECRET` - The OAuth app client secret from the step above.
 
-In the application's `config.yaml`, you can set the Zoom integration to active by providing the heading and the value:
+#### Configurating the Zoom Integration
+
+In the application's `config.yaml`, you can adjust `zoom` settings using the `integrations` section:
+
+!!! warning
+
+    You must provide all of these values in order for the integration to work. There are no default values for integrations.
 
 ```yaml
-integrations:
-  zoom:
-    auto_create_meeting: true
+zoom:
+  enabled: true
+  auto_creating_meeting: true
 ```
-
-When enabled, the meeting link will be a dynamically-generated Zoom link:
-
-![Zoom link](./assets/zoom-dynamic-link.png)
-
-If you set `options.channel_topic.set_to_meeting_link` to `true`, the dynamic Zoom link will also appear in the channel topic.
-
-```yaml
-options:
-  channel_topic:
-    default: 'This is the default incident channel topic. You can edit it in settings.'
-    set_to_meeting_link: true
-```
-
-![Zoom link as topic](./assets/zoom-dynamic-link-topic.png)
-
-Note that regardless of what the meeting link is, it is always accessible from the digest channel message without needing to join the incident channel:
-
-![Digest sample](./assets/digest-new.png)

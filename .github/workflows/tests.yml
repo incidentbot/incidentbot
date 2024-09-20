@@ -27,26 +27,36 @@ jobs:
     timeout-minutes: 10
     strategy:
       matrix:
-        python-version: ['3.11']
+        python-version: ['3.12.4']
     env:
       # default: multiprocessing
       # threading is more stable on GitHub Actions
       BOLT_PYTHON_MOCK_SERVER_MODE: threading
     defaults:
       run:
-        working-directory: backend
+        working-directory: .
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4.1.7
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5.2.0
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          virtualenvs-path: .venv
+          installer-parallel: true
       - name: Install dependencies
-        run: |
-          pip3 install -r requirements.txt
-          pip3 install "pytest>=7.1.2"
-          pip3 install "pytest-mock>=3.10.0"
-          pip3 install "pytest-env>=0.8.1"
+        run: poetry install --no-interaction --no-root
       - name: Run tests
         run: |
-          pytest -vv tests/
+          export IS_TEST_ENVIRONMENT=true
+          export POSTGRES_DB=postgres
+          export POSTGRES_HOST=postgres
+          export POSTGRES_PASSWORD=pytest
+          export POSTGRES_PORT=5432
+          export POSTGRES_USER=postgres
+          source .venv/bin/activate
+          pytest tests/

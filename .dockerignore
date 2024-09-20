@@ -1,2 +1,2 @@
 .env
-backend/.env
+.env.sample
