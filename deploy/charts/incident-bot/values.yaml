@@ -24,6 +24,8 @@ envFromSecret:
 
 envVars: {}
 
+extraContainers: []
+
 healthCheck:
   enabled: true
   path: /api/v1/health
