@@ -10,7 +10,7 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: {{ default 1 .Values.replicaCount }}
   selector:
     matchLabels:
       {{- include "incident-bot.selectorLabels" . | nindent 6 }}
@@ -58,9 +58,6 @@ spec:
           {{- end }}
       {{- end }}
       containers:
-        {{- with .Values.extraContainers }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
@@ -114,6 +111,9 @@ spec:
             - name: {{ include "incident-bot.fullname" . }}-config
               mountPath: /config/{{ include "incident-bot.fullname" . }}
           {{- end }}
+        {{- with .Values.extraContainers }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- if .Values.configMap.create }}
       volumes:
         - name: {{ include "incident-bot.fullname" . }}-config
