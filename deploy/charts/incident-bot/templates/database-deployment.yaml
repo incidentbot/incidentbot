@@ -1,0 +1,16 @@
+{{- if and (.Values.database.enabled) (not (empty .Values.database.password)) }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+spec:
+  type: ClusterIP
+  ports:
+    - name: db
+      port: 5432
+      targetPort: db
+      protocol: TCP
+  selector:
+    app: db
+{{- end }}

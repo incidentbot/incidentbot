@@ -35,18 +35,4 @@ spec:
             requests:
               cpu: 250m
               memory: 256M
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: db
-spec:
-  type: ClusterIP
-  ports:
-    - name: db
-      port: 5432
-      targetPort: db
-      protocol: TCP
-  selector:
-    app: db
 {{- end }}
