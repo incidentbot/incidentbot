@@ -233,6 +233,21 @@ load _helpers
     [ "${actual}" = "myVarValue" ]
 }
 
+@test "deployment: config file path is added if create set to true" {
+    cd $(chart_dir)
+    local object=$(helm template \
+        --show-only templates/deployment.yaml \
+        --set 'configMap.create=true' \
+        . | tee /dev/stderr |
+        yq -r '.spec.template.spec.containers[0].env[0]' | tee /dev/stderr)
+
+    local actual=$(echo "$object" | yq '.name' | tee /dev/stderr)
+    [ "${actual}" = "CONFIG_FILE_PATH" ]
+
+    local actual=$(echo "$object" | yq '.value' | tee /dev/stderr)
+    [ "${actual}" = "/config/release-name-incident-bot/config.yaml" ]
+}
+
 @test "deployment: envFromSecret works on main container" {
     cd $(chart_dir)
     local actual=$(helm template \

@@ -60,7 +60,7 @@ class IncidentRequestParameters(BaseModel):
     created_from_web: bool | None = False
     incident_components: str
     incident_description: str
-    incident_impact: str
+    incident_impact: str | None = None
     is_security_incident: bool | None = False
     private_channel: bool | None = False
     severity: str

@@ -75,8 +75,12 @@ spec:
             - name: http
               containerPort: {{ .Values.service.port }}
               protocol: TCP
-          {{- if .Values.envVars }}
+          {{- if (or (.Values.envVars) (.Values.configMap.create) ) }}
           env:
+            {{- if .Values.configMap.create }}
+            - name: CONFIG_FILE_PATH
+              value: /config/{{ include "incident-bot.fullname" . }}/config.yaml
+            {{- end }}
           {{- include "incident-bot.envVars.rendered" (list . .Values) | indent 12 }}
           {{- end }}
           {{- if and .Values.envFromSecret.enabled (not (empty .Values.envFromSecret.secretName)) }}

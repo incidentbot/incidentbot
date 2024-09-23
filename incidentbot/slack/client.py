@@ -258,11 +258,10 @@ def invite_user_to_channel(channel_id: str, user: str):
                 users=user,
             )
             logger.debug(f"\n{invite}\n")
-        logger.info(
-            f"User already in channel or is one of {skip_invite_for_users}. Skipping invite."
-        )
     except SlackApiError as error:
-        logger.error(f"Error when inviting user {user}: {error}")
+        logger.error(
+            f"Error when inviting user {user} to incident channel {channel_id}: {error}"
+        )
 
 
 def store_slack_channel_list_db():

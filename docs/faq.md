@@ -10,4 +10,6 @@ This is because a public link has to be created temporarily in order to fetch th
 
 ## How do I handle database migrations?
 
-`make run-migrations`
+Locally, you can use `make run-migrations`. If using the Helm chart, there's an option to run migrations an init container.
+
+See the documentation for migrations [here](installation.md#database-migrations).

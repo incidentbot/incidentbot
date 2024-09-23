@@ -678,6 +678,11 @@ def show_modal(ack, body, client):
         oncalls = sess.list_teams()
         priorities = sess.priorities
         image_url = opsgenie_logo_url
+    else:
+        platform = None
+        image_url = None
+        oncalls = []
+        priorities = []
 
     blocks = [
         {
@@ -686,7 +691,7 @@ def show_modal(ack, body, client):
                 {
                     "type": "image",
                     "image_url": image_url,
-                    "alt_text": "pagerduty",
+                    "alt_text": platform,
                 },
             ],
         },
@@ -787,6 +792,7 @@ def show_modal(ack, body, client):
             },
         },
     ]
+
     client.views_open(
         # Pass a valid trigger_id within 3 seconds of receiving it
         trigger_id=body["trigger_id"],
@@ -800,9 +806,11 @@ def show_modal(ack, body, client):
             },
             "blocks": (
                 blocks
-                if settings.integrations
-                and settings.integrations.pagerduty
-                and settings.integrations.pagerduty.enabled
+                if (
+                    settings.integrations
+                    and settings.integrations.pagerduty
+                    and settings.integrations.pagerduty.enabled
+                )
                 or (
                     settings.integrations
                     and settings.integrations.atlassian

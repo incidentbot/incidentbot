@@ -145,18 +145,19 @@ class IncidentDatabaseInterface:
             limit (int): How many incidents to return
         """
 
+        final_status = [
+            status
+            for status, config in settings.statuses.items()
+            if config.final
+        ][0]
+
+        print(final_status)
+
         try:
             with Session(engine) as session:
                 incidents = session.exec(
                     select(IncidentRecord)
-                    .filter(
-                        IncidentRecord.status
-                        != [
-                            status
-                            for status, config in settings.statuses.items()
-                            if config.final
-                        ][0]
-                    )
+                    .filter(IncidentRecord.status != final_status)
                     .order_by(IncidentRecord.created_at)
                 ).all()
 
