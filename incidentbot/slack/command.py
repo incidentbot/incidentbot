@@ -258,17 +258,6 @@ def command_blocks(
                         },
                         "action_id": "pager",
                     },
-                    # {
-                    #    "type": "button",
-                    #    "text": {
-                    #        "type": "plain_text",
-                    #        "text": "View Tasks",
-                    #        "emoji": True,
-                    #    },
-                    #    "value": "this_incident_tasks",
-                    #    "action_id": "incident.show_tasks",
-                    #    "style": "primary",
-                    # },
                 ]
                 + join_buttons,
             }

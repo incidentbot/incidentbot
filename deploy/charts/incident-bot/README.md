@@ -14,6 +14,7 @@ https://docs.incidentbot.io/installation/#helm
 | `configMap.create`                | Whether or not to create the `ConfigMap` that will be mounted for application configuration.                       | `false`                          |
 | `configMap.data`                  | If creating a `ConfigMap`, it's `yaml` data.                                                                       | `{}`                             |
 | `database.enabled`                | Whether or not to enable the built-in database.                                                                    | `false`                          |
+| `database.user`                   | The username to use if creating the built-in database. Passed as the `POSTGRES_USER` env to the database `Pod`.    | `incident_bot`                   |
 | `database.password`               | The password for the built-in database.                                                                            | `null`                           |
 | `deploymentAnnotations`           | Annotations to apply to the `Deployment`.                                                                          | `{}`                             |
 | `envFromSecret.enabled`           | Whether or not to mount environment variables in the main process containers and init containers using a `Secret`. | `false`                          |
@@ -23,7 +24,7 @@ https://docs.incidentbot.io/installation/#helm
 | `healthCheck.enabled`             | Whether or not to enable the health check for the main process container.                                          | `true`                           |
 | `healthCheck.path`                | The path to use for the health check.                                                                              | `/api/v1/health`                 |
 | `healthCheck.scheme`              | The health check scheme.                                                                                           | `HTTP`                           |
-| `healthCheck.initialDelaySeconds` |                                                                                                                    | `30`                             |
+| `healthCheck.initialDelaySeconds` |                                                                                                                    | `10`                             |
 | `healthCheck.periodSeconds`       |                                                                                                                    | `30`                             |
 | `healthCheck.timeoutSeconds`      |                                                                                                                    | `1`                              |
 | `image.repository`                | Image repository to pull from.                                                                                     | `eb129/incident-bot`             |

@@ -169,21 +169,24 @@ tmp/
 # Docker
 docker-compose.dev.yml
 
-# Other
-.vscode/
-logs/
-
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
 
 # Other
+.DS_Store
 .vscode/
-slack_app_manifest.yaml
 test.py
 logs/
 
-.DS_Store
+# Secrets
 .env
+*secret.json
+*secret-sealed.json
+
+# Helm
+test-values.yaml
+
+# Configuration
 config.yaml

@@ -379,8 +379,9 @@ class BlockBuilder:
                     "action_id": "incident.declare_incident_modal.set_impact",
                     "placeholder": {
                         "type": "plain_text",
-                        "text": "Any known impact the problem is causing for users. (optional)",
+                        "text": "Any known impact the problem is causing for users.",
                     },
+                    "initial_value": "None",
                     "max_length": 120,
                     "min_length": 0,
                 },
@@ -598,7 +599,8 @@ class BlockBuilder:
         incidents: list[IncidentRecord],
         exclude_timestamp: bool = False,
     ) -> list[dict[str, Any]]:
-        """Return a message containing details on incidents
+        """
+        Return a message containing details on incidents
 
         Parameters:
             incidents (list[IncidentRecord]): Incidents to include in message
@@ -620,7 +622,7 @@ class BlockBuilder:
 
         for incident in incidents:
             if exclude_timestamp:
-                for item in [
+                results.append(
                     {
                         "type": "section",
                         "text": {
@@ -636,17 +638,9 @@ class BlockBuilder:
                             + f":fire_extinguisher: *{incident.status.title()}*",
                         },
                     }
-                    for incident in incidents
-                    if incident.status
-                    != [
-                        status
-                        for status, config in settings.statuses.items()
-                        if config.final
-                    ][0]
-                ]:
-                    incidents.append(item)
+                )
             else:
-                for item in [
+                results.append(
                     {
                         "type": "section",
                         "text": {
@@ -663,15 +657,7 @@ class BlockBuilder:
                             + f" *|* _Open Since_ *{incident.created_at}*",
                         },
                     }
-                    for incident in incidents
-                    if incident.status
-                    != [
-                        status
-                        for status, config in settings.statuses.items()
-                        if config.final
-                    ][0]
-                ]:
-                    incidents.append(item)
+                )
 
         if len(incidents) == 0:
             blocks.append(
@@ -684,7 +670,7 @@ class BlockBuilder:
                 },
             )
         else:
-            blocks.append(results)
+            blocks.extend(results)
 
         blocks.append(
             {
@@ -975,6 +961,12 @@ class BlockBuilder:
                     ]
                 )
 
+        status_definition = [
+            status
+            for status, config in settings.statuses.items()
+            if config.final
+        ][0]
+
         blocks = [
             {
                 "type": "header",
@@ -987,7 +979,7 @@ class BlockBuilder:
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": ":tada: This incident has been marked as *resolved*.",
+                    "text": f":tada: This incident has been marked as *{status_definition.title()}*.",
                 },
             },
             {
@@ -1741,7 +1733,7 @@ def digest_base(
     channel_id: str,
     incident_components: str,
     incident_description: str,
-    incident_impact: str,
+    incident_impact: str | None,
     incident_slug: str,
     severity: str,
     status: str,
@@ -1842,7 +1834,7 @@ class IncidentChannelDigestNotification:
         channel_id: str,
         incident_components: str,
         incident_description: str,
-        incident_impact: str,
+        incident_impact: str | None,
         incident_slug: str,
         initial_status: str,
         severity: str,
@@ -1893,12 +1885,11 @@ class IncidentChannelDigestNotification:
         channel_id: str,
         incident_components: str,
         incident_description: str,
-        incident_impact: str,
+        incident_impact: str | None,
         incident_slug: str,
         severity: str,
         status: str,
         meeting_link: str | None = None,
-        postmortem_link: str | None = None,
     ) -> list[dict[str, Any]]:
         """
         Formats a digest channel notification for updates

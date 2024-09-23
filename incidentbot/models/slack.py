@@ -58,7 +58,7 @@ class SlackBlockActionsResponse(BaseModel):
     container: dict[str, Any]
     trigger_id: str | None = None
     team: Team | None = None
-    enterprise: str | None = None
+    enterprise: str | dict | None = None
     is_enterprise_install: bool | None = None
     channel: Channel | None = None
     message: Message | None = None
@@ -98,4 +98,4 @@ class SlackViewSubmissionResponse(BaseModel):
     view: SlackView | None = None
     response_urls: list[str] | None = None
     is_enterprise_install: bool | None = None
-    enterprise: str | None = None
+    enterprise: str | dict | None = None
