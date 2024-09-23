@@ -1,5 +1,22 @@
 # Changelog
 
+## v2.0.4 (2024-09-23)
+
+- Fixes bug where the incident list functionality did not work via command or within app home in Slack.
+- Fixes incorrect content in some Helm templates.
+- Adds value to Helm chart to set database password if using built-in database.
+- Fixes bug in Helm chart where the `ConfigMap` data to populate `config.yaml` did not mount anything, resulting in the app always using default values.
+- Fixes some spelling mistakes in the documentation.
+- Adds clarity to documentation around database migrations.
+- Fixes bug where the `enterprise` value in Slack responses was assumed to always be `str`, but can actually be `dict`.
+- Cleans up some minor errors around the pager modal.
+
+## v2.0.3 (2024-09-20)
+
+- Adds unit testing to Helm chart.
+- Adds better readme for Helm chart.
+- Minor chart cleanup and fixes.
+
 ## v2.0.1 (2024-09-20)
 
 - Add init containers to Helm chart to handle database migrations.
