@@ -726,8 +726,8 @@ def reaction_added(event, say):
                                         title=file["name"],
                                         source="pin",
                                         user=get_slack_user(
-                                            user_id=message["user"]
-                                        )["real_name"],
+                                            message.get("user")
+                                        ).get("real_name", "NotAvailable"),
                                     )
 
                                     slack_web_client.reactions_add(
@@ -764,9 +764,9 @@ def reaction_added(event, say):
                             incident_slug=incident.slug,
                             message_ts=message_timestamp,
                             source="pin",
-                            user=get_slack_user(user_id=message["user"])[
-                                "real_name"
-                            ],
+                            user=get_slack_user(message.get("user")).get(
+                                "real_name", "NotAvailable"
+                            ),
                         )
 
                         slack_web_client.reactions_add(

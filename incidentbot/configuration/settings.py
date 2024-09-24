@@ -18,7 +18,7 @@ from pydantic_settings import (
 from typing import Annotated, Any, Literal, Tuple, Type
 from typing_extensions import Self
 
-__version__ = "v2.0.4"
+__version__ = "v2.0.5"
 
 opsgenie_logo_url = "https://i.imgur.com/NjiEBCu.png"
 pagerduty_logo_url = "https://i.imgur.com/IVvdFCV.png"
@@ -243,6 +243,7 @@ class Settings(BaseSettings):
             "impact": ":chart_with_upwards_trend:",
             "maintenance": ":hammer_and_wrench:",
             "meeting": ":busts_in_silhouette:",
+            "postmortem": ":book:",
             "role": ":bust_in_silhouette:",
             "status": ":fire_extinguisher:",
             "stopwatch": ":stopwatch:",

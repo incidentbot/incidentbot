@@ -28,12 +28,6 @@ class EventLogHandler:
         Create an event log for an incident
         """
 
-        user_real_name = (
-            (get_slack_user(user)["real_name"] if user != "" else None)
-            if not settings.IS_TEST_ENVIRONMENT
-            else "fake"
-        )
-
         with Session(engine) as session:
             try:
                 event = IncidentEvent(
@@ -46,7 +40,7 @@ class EventLogHandler:
                     text=event,
                     timestamp=timestamp,
                     title=title,
-                    user=user_real_name,
+                    user=get_slack_user(user).get("real_name", "NotAvailable"),
                 )
 
                 session.add(event)

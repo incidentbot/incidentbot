@@ -320,12 +320,16 @@ class Incident:
                 # Write event log
                 EventLogHandler.create(
                     event="The incident was reported by {}".format(
-                        (get_slack_user(self.params.user)["real_name"])
+                        get_slack_user(self.params.user).get(
+                            "real_name", "NotAvailable"
+                        )
                     ),
                     incident_id=record.id,
                     incident_slug=record.slug,
                     source="system",
-                    user=get_slack_user(self.params.user)["real_name"],
+                    user=get_slack_user(self.params.user).get(
+                        "real_name", "NotAvailable"
+                    ),
                 )
 
                 return f"<#{record.channel_id}>"
