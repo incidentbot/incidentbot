@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     environment:
-      IMAGE_NAME: eb129/incident-bot
+      IMAGE_NAME: eb129/incidentbot
     docker:
       - image: cimg/base:current
     steps:
@@ -16,7 +16,7 @@ jobs:
             docker build --file Dockerfile --tag $IMAGE_NAME:$IMAGE_TAG .
   build-arm64:
     environment:
-      IMAGE_NAME: eb129/incident-bot
+      IMAGE_NAME: eb129/incidentbot
     docker:
       - image: cimg/base:current
     resource_class: arm.medium
@@ -31,7 +31,7 @@ jobs:
             docker build --platform linux/arm64 --file Dockerfile.arm64 --tag $IMAGE_NAME:$IMAGE_TAG-arm64 .
   build-util:
     environment:
-      IMAGE_NAME: eb129/incident-bot
+      IMAGE_NAME: eb129/incidentbot
     docker:
       - image: cimg/base:current
     steps:
@@ -45,7 +45,7 @@ jobs:
             docker build --file Dockerfile.util --tag $IMAGE_NAME:$IMAGE_TAG .
   build-docs:
     environment:
-      IMAGE_NAME: eb129/incident-bot-docs
+      IMAGE_NAME: eb129/incidentbot-docs
     docker:
       - image: cimg/base:current
     steps:
@@ -59,7 +59,7 @@ jobs:
             docker build --tag $IMAGE_NAME:$IMAGE_TAG --file ./docs/Dockerfile .
   publish:
     environment:
-      IMAGE_NAME: eb129/incident-bot
+      IMAGE_NAME: eb129/incidentbot
     docker:
       - image: cimg/base:current
     steps:
@@ -75,7 +75,7 @@ jobs:
             docker push $IMAGE_NAME:$IMAGE_TAG
   publish-arm64:
     environment:
-      IMAGE_NAME: eb129/incident-bot
+      IMAGE_NAME: eb129/incidentbot
     docker:
       - image: cimg/base:current
     resource_class: arm.medium
@@ -92,7 +92,7 @@ jobs:
             docker push $IMAGE_NAME:$IMAGE_TAG-arm64
   publish-util:
     environment:
-      IMAGE_NAME: eb129/incident-bot
+      IMAGE_NAME: eb129/incidentbot
     docker:
       - image: cimg/base:current
     steps:
@@ -108,7 +108,7 @@ jobs:
             docker push $IMAGE_NAME:$IMAGE_TAG
   publish-docs:
     environment:
-      IMAGE_NAME: eb129/incident-bot-docs
+      IMAGE_NAME: eb129/incidentbot-docs
     docker:
       - image: cimg/base:current
     steps:

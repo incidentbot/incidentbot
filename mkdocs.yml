@@ -1,5 +1,5 @@
 site_name: Incident Bot Documentation
-repo_url: https://github.com/echoboomer/incident-bot
+repo_url: https://github.com/incidentbot/incidentbot
 edit_uri: edit/main/docs/
 theme:
   name: material

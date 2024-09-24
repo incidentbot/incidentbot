@@ -1,7 +1,7 @@
 # Incident Bot
 
-![tests](https://github.com/echoboomer/incident-bot/actions/workflows/tests.yml/badge.svg)
-![version](https://img.shields.io/github/v/release/echoboomer/incident-bot)
+![tests](https://github.com/incidentbot/incidentbot/actions/workflows/tests.yml/badge.svg)
+![version](https://img.shields.io/github/v/release/incidentbot/incidentbot)
 
 Incident management framework centralized around a ChatOps bot to allow your teams to easily and effectively identify and manage technical incidents impacting your cloud infrastructure, your products, or your customers' ability to use your applications and services.
 

@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: incident-bot-docs
+  name: incidentbot-docs
   annotations:
     kubernetes.io/ingress.class: nginx
     cert-manager.io/cluster-issuer: letsencrypt-prod
@@ -9,7 +9,7 @@ spec:
   tls:
     - hosts:
         - docs.incidentbot.io
-      secretName: incident-bot-docs-tls
+      secretName: incidentbot-docs-tls
   rules:
     - host: docs.incidentbot.io
       http:
@@ -18,6 +18,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: incident-bot-docs
+                name: incidentbot-docs
                 port:
                   number: 80

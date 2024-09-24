@@ -202,7 +202,7 @@ load _helpers
         --set 'image.tag=1234' \
         . | tee /dev/stderr |
         yq -r '.spec.template.spec.containers[0].image' | tee /dev/stderr)
-    [ "${actual}" = "eb129/incident-bot:v1234" ]
+    [ "${actual}" = "eb129/incidentbot:v1234" ]
 }
 
 @test "deployment: override init image tag" {
@@ -212,7 +212,7 @@ load _helpers
         --set 'init.image.tag=1234' \
         . | tee /dev/stderr |
         yq -r '.spec.template.spec.initContainers[1].image' | tee /dev/stderr)
-    [ "${actual}" = "eb129/incident-bot:util-v1234" ]
+    [ "${actual}" = "eb129/incidentbot:util-v1234" ]
 }
 
 #--------------------------------------------------------------------
@@ -245,7 +245,7 @@ load _helpers
     [ "${actual}" = "CONFIG_FILE_PATH" ]
 
     local actual=$(echo "$object" | yq '.value' | tee /dev/stderr)
-    [ "${actual}" = "/config/release-name-incident-bot/config.yaml" ]
+    [ "${actual}" = "/config/release-name-incidentbot/config.yaml" ]
 }
 
 @test "deployment: envFromSecret works on main container" {

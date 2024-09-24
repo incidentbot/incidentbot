@@ -27,7 +27,7 @@ https://docs.incidentbot.io/installation/#helm
 | `healthCheck.initialDelaySeconds` |                                                                                                                    | `10`                             |
 | `healthCheck.periodSeconds`       |                                                                                                                    | `30`                             |
 | `healthCheck.timeoutSeconds`      |                                                                                                                    | `1`                              |
-| `image.repository`                | Image repository to pull from.                                                                                     | `eb129/incident-bot`             |
+| `image.repository`                | Image repository to pull from.                                                                                     | `eb129/incidentbot`              |
 | `image.pullPolicy`                |                                                                                                                    | `Always`                         |
 | `image.suffix`                    | Whether or not to apply a suffix to the image. Useful if using `arm64`.                                            | `null`                           |
 | `image.tag`                       | Override the image tag. Will prefix with `v`.                                                                      | `null`                           |

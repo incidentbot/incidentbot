@@ -26,7 +26,7 @@ Run Init Tasks
 """
 
 app = FastAPI(
-    title="incident-bot",
+    title="incidentbot",
     summary="Incident Bot API",
     version=__version__,
     contact={

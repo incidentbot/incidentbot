@@ -2,13 +2,13 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: incident-bot-docs
-  name: incident-bot-docs
+    app: incidentbot-docs
+  name: incidentbot-docs
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: incident-bot-docs
+      app: incidentbot-docs
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -17,11 +17,11 @@ spec:
   template:
     metadata:
       labels:
-        app: incident-bot-docs
+        app: incidentbot-docs
     spec:
       containers:
-        - name: incident-bot-docs
-          image: eb129/incident-bot-docs
+        - name: incidentbot-docs
+          image: eb129/incidentbot-docs
           imagePullPolicy: Always
           ports:
             - name: http
