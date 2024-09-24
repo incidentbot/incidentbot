@@ -151,8 +151,6 @@ class IncidentDatabaseInterface:
             if config.final
         ][0]
 
-        print(final_status)
-
         try:
             with Session(engine) as session:
                 incidents = session.exec(

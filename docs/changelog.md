@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.0.5 (2024-09-24)
+
+- Fixes bug where `postmortem_link` was no longer a valid argument for generating a digest message update.
+- Adds link to postmortem in a digest message if one is passed in when the method is called.
+- Adds retry logic to all Slack API requests to avoid failures based on data not populating.
+
 ## v2.0.4 (2024-09-23)
 
 - Fixes bug where the incident list functionality did not work via command or within app home in Slack.

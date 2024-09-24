@@ -668,7 +668,11 @@ async def set_status(
                         "type": "header",
                         "text": {
                             "type": "plain_text",
-                            "text": ":book: Incident Postmortem",
+                            "text": "{} Incident Postmortem".format(
+                                settings.icons.get(settings.platform).get(
+                                    "postmortem"
+                                ),
+                            ),
                         },
                     },
                     {

@@ -1839,10 +1839,12 @@ class IncidentChannelDigestNotification:
         initial_status: str,
         severity: str,
         meeting_link: str | None = None,
+        postmortem_link: str | None = None,
     ) -> dict[str, Any]:
         """
         Formats a digest channel notification for initial creation
         """
+
         blocks = digest_base(
             channel_id=channel_id,
             incident_components=incident_components,
@@ -1872,6 +1874,26 @@ class IncidentChannelDigestNotification:
                     {"type": "divider"},
                 ]
             )
+
+        if postmortem_link:
+            blocks.extend(
+                [
+                    {
+                        "block_id": "postmortem_link",
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "{} *Postmortem:* <{}|View>".format(
+                                settings.icons.get(settings.platform).get(
+                                    "postmortem"
+                                ),
+                                postmortem_link,
+                            ),
+                        },
+                    },
+                    {"type": "divider"},
+                ]
+            )
         else:
             blocks.append({"type": "divider"})
 
@@ -1890,6 +1912,7 @@ class IncidentChannelDigestNotification:
         severity: str,
         status: str,
         meeting_link: str | None = None,
+        postmortem_link: str | None = None,
     ) -> list[dict[str, Any]]:
         """
         Formats a digest channel notification for updates
@@ -1920,6 +1943,26 @@ class IncidentChannelDigestNotification:
                         ),
                     },
                 },
+            )
+
+        if postmortem_link:
+            blocks.extend(
+                [
+                    {
+                        "block_id": "postmortem_link",
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "{} *Postmortem:* <{}|View>".format(
+                                settings.icons.get(settings.platform).get(
+                                    "postmortem"
+                                ),
+                                postmortem_link,
+                            ),
+                        },
+                    },
+                    {"type": "divider"},
+                ]
             )
         else:
             blocks.append({"type": "divider"})
