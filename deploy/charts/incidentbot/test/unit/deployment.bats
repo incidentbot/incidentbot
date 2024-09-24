@@ -245,7 +245,7 @@ load _helpers
     [ "${actual}" = "CONFIG_FILE_PATH" ]
 
     local actual=$(echo "$object" | yq '.value' | tee /dev/stderr)
-    [ "${actual}" = "/config/release-name-incident-bot/config.yaml" ]
+    [ "${actual}" = "/config/release-name-incidentbot/config.yaml" ]
 }
 
 @test "deployment: envFromSecret works on main container" {
