@@ -5,6 +5,7 @@
 - Fixes bug where `postmortem_link` was no longer a valid argument for generating a digest message update.
 - Adds link to postmortem in a digest message if one is passed in when the method is called.
 - Adds retry logic to all Slack API requests to avoid failures based on data not populating.
+- Fixes bug where a user's real name being unavailable for parsing would cause other things to fail.
 
 ## v2.0.4 (2024-09-23)
 
