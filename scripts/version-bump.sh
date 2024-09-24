@@ -2,7 +2,7 @@
 
 files=(
     "version"
-    "./deploy/charts/incident-bot/Chart.yaml"
+    "./deploy/charts/incidentbot/Chart.yaml"
     "./docs/deploy/overlays/production/kustomization.yaml"
     "./incidentbot/configuration/settings.py"
 )

@@ -162,7 +162,7 @@ integrations:
 
 ### Opsgenie
 
-You can integrate with Opsgenie to create incidents. To start, you'll need an API integration key for your Opsgenie account. You should also have at least one Opsgenie [Team](https://echoboomer-test.app.opsgenie.com/teams/list) created to alert for pages.
+You can integrate with Opsgenie to create incidents. To start, you'll need an API integration key for your Opsgenie account. You should also have at least one Opsgenie team created to alert for pages.
 
 !!! warning
 
@@ -220,7 +220,7 @@ integrations:
   atlassian:
     statuspage:
       enabled: true
-      url: https://status.echoboomer.net
+      url: https://status.mydomain.com
 ```
 
 You can optionally add groups under the `permissions.groups` heading to limit who can create and manage Statuspage incidents from Slack. Anyone not in one of these groups will get an ephemeral message indicating they do not have the required permissions.

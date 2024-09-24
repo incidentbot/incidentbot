@@ -26,7 +26,7 @@ init:
     tag:
 ```
 
-We provide an image called `eb129/incident-bot:util` that is used for this step. You can provide your own image using the `image` and/or `tag` options shown above.
+We provide an image called `eb129/incidentbot:util` that is used for this step. You can provide your own image using the `image` and/or `tag` options shown above.
 
 !!! warning
 
@@ -97,7 +97,7 @@ image:
 You can get started quickly by using the Helm chart:
 
 ```bash
-helm repo add echoboomer-charts https://charts.echoboomer.net
+helm repo add incidentbot https://charts.incidentbot.io
 helm repo update
 ```
 
@@ -112,9 +112,9 @@ One method is to used something like [sealed-secrets](https://github.com/bitnami
 If using `sealed-secrets`, you could put your sensitive environment variables in a `.env` file and create the `Secret` using the following command:
 
 ```bash
-kubectl create secret generic incident-bot-secret --from-env-file=.env --dry-run='client' -ojson --namespace incident-bot >incident-bot-secret.json &&
-  kubeseal --controller-name sealed-secrets <incident-bot-secret.json >incident-bot-secret-sealed.json &&
-  kubectl create -f incident-bot-secret-sealed.json
+kubectl create secret generic incidentbot-secret --from-env-file=.env --dry-run='client' -ojson --namespace incidentbot >incidentbot-secret.json &&
+  kubeseal --controller-name sealed-secrets <incidentbot-secret.json >incidentbot-secret-sealed.json &&
+  kubectl create -f incidentbot-secret-sealed.json
 ```
 
 Contained with `.env`, you'd want to include the sensitive values for this application. For example:
@@ -127,41 +127,41 @@ SLACK_USER_TOKEN=xoxp-...
 # and so on...
 ```
 
-This will create the required `Secret` in the `Namespace` `incident-bot`. You may need to create the `Namespace` if it doesn't exist.
+This will create the required `Secret` in the `Namespace` `incidentbot`. You may need to create the `Namespace` if it doesn't exist.
 
-Create a `values.yaml` file. We'll call this one `incident-bot-values.yaml`:
+Create a `values.yaml` file. We'll call this one `incidentbot-values.yaml`:
 
 ```yaml
 envFromSecret:
   enabled: true
-  secretName: incident-bot-secret
+  secretName: incidentbot-secret
 ingress:
   enabled: true
   annotations:
     kubernetes.io/ingress.class: nginx
     cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
-    - host: incident-bot.mydomain.com
+    - host: incidentbot.mydomain.com
       paths:
         - path: /
           pathType: ImplementationSpecific
   tls:
-    - secretName: incident-bot-tls
+    - secretName: incidentbot-tls
       hosts:
-        - incident-bot.mydomain.com
+        - incidentbot.mydomain.com
 ```
 
 Run the following command to install the resources using the chart:
 
 ```bash
-VERSION=$(helm search repo incident-bot --output=json | jq '.[0].version' | tr -d '"')
-helm install echoboomer-charts/incident-bot --version $VERSION --values incident-bot-values.yaml --namespace incident-bot
+VERSION=$(helm search repo incidentbot --output=json | jq '.[0].version' | tr -d '"')
+helm install incidentbot/incidentbot --version $VERSION --values incidentbot-values.yaml --namespace incidentbot
 ```
 
 To clean everything up:
 
 ```bash
-helm uninstall incident-bot --namespace incident-bot
+helm uninstall incidentbot --namespace incidentbot
 ```
 
 #### Using the built-in database

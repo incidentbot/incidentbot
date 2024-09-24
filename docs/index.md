@@ -1,4 +1,4 @@
-# Incident Bot Documenation
+# Incident Bot Documentation
 
 Incident Bot is an open-source incident management framework.
 

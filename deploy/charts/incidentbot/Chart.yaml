@@ -1,0 +1,9 @@
+apiVersion: v2
+name: incidentbot
+description: The Open Source Incident Management Framework
+maintainers:
+  - name: Scott Hawkins
+    email: scott@echoboomer.net
+type: application
+version: 2.0.4
+appVersion: '2.0.4'

@@ -6,8 +6,8 @@ cNone='\033[00m'
 cRed='\033[01;31m'
 cGreen='\033[01;32m'
 
-CHART_REPOSITORY_URL="https://charts.echoboomer.net"
-CHART_REPOSITORY_NAME="echoboomer-charts"
+CHART_REPOSITORY_URL="https://charts.incidentbot.io"
+CHART_REPOSITORY_NAME="incidentbot"
 
 # Directory for chart source.
 cd deploy/charts

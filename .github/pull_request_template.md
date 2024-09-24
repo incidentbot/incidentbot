@@ -5,7 +5,7 @@
 
 ## Issue number and link
 
-https://github.com/echoboomer/incident-bot/issues/## (or N/A)
+https://github.com/incidentbot/incidentbot/issues/## (or N/A)
 
 ## Checklist before requesting a review
 

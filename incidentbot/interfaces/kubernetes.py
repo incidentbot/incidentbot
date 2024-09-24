@@ -9,7 +9,7 @@ config.load_kube_config()
 # config.load_incluster_config()
 
 crd_group = "extensions.incidentbot.io"
-crd_namespace = "incident-bot"
+crd_namespace = "incidentbot"
 crd_plural = "incidents"
 crd_version = "v1alpha1"
 
