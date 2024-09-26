@@ -970,7 +970,7 @@ def handle_submission(ack, body, say, view):
         match platform.lower():
             case "pagerduty":
                 image_url = pagerduty_logo_url
-                pagerduty_interface.page(
+                url = pagerduty_interface.page(
                     priority=priority,
                     channel_name=incident_channel_name,
                     channel_id=incident_channel_id,
@@ -986,32 +986,57 @@ def handle_submission(ack, body, say, view):
                     priority=priority,
                     responders=[team],
                 )
-    except Exception as error:
-        say(f"Looks like I encountered an error issuing that page: {error}")
-    finally:
+
         outgoing = f"The team `{team}` has been paged to respond to this {artifact} via {platform} at the request of *{paging_user}*."
+
+        blocks = [
+            {
+                "type": "context",
+                "elements": [
+                    {
+                        "type": "image",
+                        "image_url": image_url,
+                        "alt_text": platform,
+                    },
+                ],
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": outgoing,
+                },
+            },
+        ]
+
+        if url:
+            blocks.append(
+                {
+                    "block_id": "buttons",
+                    "type": "actions",
+                    "elements": [
+                        {
+                            "type": "button",
+                            "text": {
+                                "type": "plain_text",
+                                "text": "View",
+                            },
+                            "style": "primary",
+                            "url": url,
+                            "action_id": "view_upstream_incident",
+                        },
+                    ],
+                }
+            )
         say(
             channel=incident_channel_id,
             text=outgoing,
-            blocks=[
-                {
-                    "type": "context",
-                    "elements": [
-                        {
-                            "type": "image",
-                            "image_url": image_url,
-                            "alt_text": platform,
-                        },
-                    ],
-                },
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": outgoing,
-                    },
-                },
-            ],
+            blocks=blocks,
+        )
+    except Exception as error:
+        say(
+            channel=incident_channel_id,
+            text=f":robot_face::heart_on_fire: Looks like I encountered an error issuing that page: `{error}`",
         )
 
 

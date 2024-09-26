@@ -478,7 +478,7 @@ class BlockBuilder:
         ):
             auto_page_targets = read_pager_auto_page_targets()
 
-            if len(auto_page_targets) != 0:
+            if auto_page_targets:
                 blocks.extend(
                     [
                         {"type": "divider"},

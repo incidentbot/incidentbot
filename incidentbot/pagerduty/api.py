@@ -4,10 +4,12 @@ from incidentbot.configuration.settings import settings
 from incidentbot.logging import logger
 from incidentbot.models.database import (
     engine,
-    IncidentRecord,
     ApplicationData,
+    IncidentRecord,
+    PagerDutyIncidentRecord,
 )
 from incidentbot.slack.client import slack_workspace_id
+from incidentbot.util.gen import fetch_timestamp
 from pdpyras import APISession, PDClientError
 from sqlalchemy import update
 from sqlmodel import Session, select
@@ -128,7 +130,7 @@ class PagerDutyInterface:
         channel_name: str,
         paging_user: str,
         priority: str,
-    ):
+    ) -> str:
         """
         Page via an escalation policy when triggered from Slack
 
@@ -149,7 +151,7 @@ class PagerDutyInterface:
                         "type": "service_reference",
                     },
                     "urgency": priority,
-                    "incident_key": channel_name,
+                    "incident_key": f"{channel_name}-{fetch_timestamp()}",
                     "body": {
                         "type": "incident_body",
                         "details": "An incident has been started in Slack and this team has been paged as a result. "
@@ -161,6 +163,7 @@ class PagerDutyInterface:
                     },
                 }
             }
+
             try:
                 response = self.session().post(
                     "/incidents", json=pagerduty_incident_data
@@ -172,39 +175,31 @@ class PagerDutyInterface:
                             response.json()
                         )
                     )
-
-                try:
-                    with Session(engine) as session:
-                        created_incident = json.loads(response.text)[
-                            "incident"
-                        ]
-                        incident = session.exec(
-                            select(IncidentRecord).filter(
-                                IncidentRecord.id == channel_name
-                            )
-                        ).first()
-
-                        existing_incidents = incident.pagerduty_incidents
-
-                        if existing_incidents is None:
-                            existing_incidents = [
-                                created_incident.get("html_url")
-                            ]
-                        else:
-                            existing_incidents.append(
-                                created_incident.get("html_url")
+                else:
+                    try:
+                        with Session(engine) as session:
+                            created_incident = json.loads(response.text).get(
+                                "incident"
                             )
 
-                        session.exec(
-                            update(IncidentRecord)
-                            .where(IncidentRecord.id == channel_name)
-                            .values(pagerduty_incidents=existing_incidents)
+                            incident = session.exec(
+                                select(IncidentRecord).filter(
+                                    IncidentRecord.channel_id == channel_id
+                                )
+                            ).first()
+
+                            record = PagerDutyIncidentRecord(
+                                parent=incident.id,
+                                url=created_incident.get("html_url"),
+                            )
+                            session.add(record)
+                            session.commit()
+                    except Exception as error:
+                        logger.error(
+                            f"Error updating incident with PagerDuty incident data: {error}"
                         )
-                        session.commit()
-                except Exception as error:
-                    logger.error(
-                        f"Error updating incident with PagerDuty incident data: {error}"
-                    )
+
+                return created_incident.get("html_url")
             except PDClientError as error:
                 logger.error(f"Error creating PagerDuty incident: {error}")
         else:

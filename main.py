@@ -164,7 +164,7 @@ def startup_tasks():
                     )
                 ).first():
                     auto_page_teams = ApplicationData(
-                        id="auto_page_teams",
+                        name="auto_page_teams",
                         json_data={"teams": []},
                     )
                     session.add(auto_page_teams)

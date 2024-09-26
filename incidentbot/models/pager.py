@@ -18,6 +18,7 @@ def read_pager_auto_page_targets():
             res = session.exec(
                 select(ApplicationData).filter(ApplicationData.name == name)
             ).first()
+
             targets = res.json_data["teams"]
             mappings = (
                 session.exec(

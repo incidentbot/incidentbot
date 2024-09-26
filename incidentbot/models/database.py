@@ -303,8 +303,20 @@ class OpsgenieIncidentRecord(SQLModel, table=True):
 
 
 class PagerDutyIncidentRecord(SQLModel, table=True):
+    created_at: datetime = Field(
+        sa_column_kwargs={
+            "server_default": text("CURRENT_TIMESTAMP"),
+        }
+    )
     id: uuid.UUID = Field(primary_key=True, default_factory=uuid.uuid4)
     parent: int = Field(default=None, foreign_key="incidentrecord.id")
+    updated_at: Optional[datetime] = Field(
+        sa_column=Column(
+            DateTime(),
+            onupdate=func.now(),
+        )
+    )
+    url: str | None = None
 
 
 class PostmortemRecord(SQLModel, table=True):

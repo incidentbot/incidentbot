@@ -4,6 +4,7 @@ from incidentbot.models.database import (
     engine,
     IncidentParticipant,
     IncidentRecord,
+    PagerDutyIncidentRecord,
     PostmortemRecord,
     StatuspageIncidentRecord,
 )
@@ -75,25 +76,23 @@ class IncidentDatabaseInterface:
         """
         Read a single incident from the database
 
-        Parameters:e
+        Parameters:
             id (int): Filter by incident id
         """
 
         try:
             with Session(engine) as session:
-                incident = session.exec(
+                return session.exec(
                     select(StatuspageIncidentRecord).filter(
                         or_(
                             StatuspageIncidentRecord.parent == id,
                         )
                     )
                 ).one()
-
-                return incident
         except NoResultFound as error:
-            logger.error(f"statuspage incident not found for incident {id}")
+            logger.error(f"Statuspage incident not found for incident {id}")
         except Exception as error:
-            logger.error(f"lookup failed: {error}")
+            logger.error(f"Lookup failed: {error}")
 
     """
     List
@@ -135,6 +134,32 @@ class IncidentDatabaseInterface:
             return incidents
         except Exception as error:
             logger.error(f"incident lookup query failed: {error}")
+
+    @classmethod
+    def list_pagerduty_incident_records(
+        self,
+        id: int = None,
+    ) -> list[PagerDutyIncidentRecord]:
+        """
+        Read all PagerDuty incidents associated with an incident
+
+        Parameters:
+            id (int): Filter by incident id
+        """
+
+        try:
+            with Session(engine) as session:
+                return session.exec(
+                    select(PagerDutyIncidentRecord).filter(
+                        or_(
+                            PagerDutyIncidentRecord.parent == id,
+                        )
+                    )
+                ).all()
+        except NoResultFound as error:
+            logger.error(f"PagerDuty incidents not found for incident {id}")
+        except Exception as error:
+            logger.error(f"Lookup failed: {error}")
 
     @classmethod
     def list_recent(self, limit: int = 5) -> list[IncidentRecord]:
@@ -374,3 +399,22 @@ class IncidentDatabaseInterface:
                 session.commit()
         except Exception as error:
             logger.error(f"creating postmortem record failed: {error}")
+
+    @classmethod
+    def get_postmortem(
+        self,
+        parent: int,
+    ) -> PostmortemRecord | None:
+        """
+        Return an incident postmortem if it exists
+
+        Parameters:
+            parent (int): ID of associated incident
+        """
+
+        with Session(engine) as session:
+            return session.exec(
+                select(PostmortemRecord).filter(
+                    PostmortemRecord.parent == parent,
+                )
+            ).first()
