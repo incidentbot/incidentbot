@@ -432,7 +432,7 @@ class Incident:
 
                 auto_page_targets = read_pager_auto_page_targets()
 
-                if len(auto_page_targets) != 0:
+                if auto_page_targets:
                     for i in auto_page_targets:
                         for k, v in i.items():
                             logger.info(f"Paging {k}...")

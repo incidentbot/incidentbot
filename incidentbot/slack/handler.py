@@ -647,6 +647,17 @@ def handle_static_action(ack, body, logger):
 
 
 """
+Other
+"""
+
+
+@app.action("view_upstream_incident")
+def handle_static_action(ack, body, logger):
+    ack()
+    logger.info(body)
+
+
+"""
 Reactions
 """
 

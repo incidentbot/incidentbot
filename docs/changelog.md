@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.0.6 (2024-09-26)
+
+- Fixes bug where PagerDuty information would not store in the database properly.
+- Fixes bug where trying to create more than one PagerDuty incident per bot incident failed.
+- Fixes bug where matching a bot incident when trying to create a PagerDuty incident failed.
+- Fixes bug where creating a PagerDuty incident failed because the column that used to store incidents has been removed.
+- PagerDuty incidents now create records properly.
+- The message when a page is issue now contains a link to the incident it creates.
+
 ## v2.0.5 (2024-09-24)
 
 - Fixes bug where `postmortem_link` was no longer a valid argument for generating a digest message update.

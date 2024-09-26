@@ -94,7 +94,7 @@ class IncidentPostmortem:
                         + created_page_info["_links"]["webui"]
                     )
                 except HTTPError as error:
-                    logger.error(f"error creating postmortem page: {error}")
+                    logger.error(f"Error creating postmortem page: {error}")
                     raise PostmortemException(error)
 
                 try:
