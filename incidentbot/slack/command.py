@@ -284,8 +284,8 @@ def show_responders(ack, body):
 
     ack()
 
-    channel_name = body.get("channel").get("name")
-    record = IncidentDatabaseInterface.get_one(channel_name=channel_name)
+    channel_id = body.get("channel").get("id")
+    record = IncidentDatabaseInterface.get_one(channel_id=channel_id)
 
     try:
         slack_web_client.chat_postMessage(
@@ -337,8 +337,8 @@ def show_modal(ack, body, client):
 
     ack()
 
-    channel_name = body.get("channel").get("name")
-    record = IncidentDatabaseInterface.get_one(channel_name=channel_name)
+    channel_id = body.get("channel").get("id")
+    record = IncidentDatabaseInterface.get_one(channel_id=channel_id)
 
     client.views_open(
         trigger_id=body["trigger_id"],
@@ -392,8 +392,8 @@ def show_modal(ack, body, client):
 
     ack()
 
-    channel_name = body.get("channel").get("name")
-    record = IncidentDatabaseInterface.get_one(channel_name=channel_name)
+    channel_id = body.get("channel").get("id")
+    record = IncidentDatabaseInterface.get_one(channel_id=channel_id)
 
     client.views_open(
         trigger_id=body["trigger_id"],
@@ -448,8 +448,8 @@ def show_responders(ack, body):
 
     ack()
 
-    channel_name = body.get("channel").get("name")
-    record = IncidentDatabaseInterface.get_one(channel_name=channel_name)
+    channel_id = body.get("channel").get("id")
+    record = IncidentDatabaseInterface.get_one(channel_id=channel_id)
     responders = IncidentDatabaseInterface.list_participants(incident=record)
     user = User(**body.get("user"))
 
