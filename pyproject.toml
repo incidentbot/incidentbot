@@ -34,7 +34,7 @@ structlog = "^24.4.0"
 sqlmodel = "^0.0.22"
 uvicorn = "^0.30.6"
 jinja2 = "^3.1.4"
-python-multipart = "^0.0.10"
+python-multipart = "^0.0.12"
 passlib = "^1.7.4"
 bcrypt = "^4.2.0"
 
