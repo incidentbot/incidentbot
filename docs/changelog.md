@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.0.8 (2024-09-30)
+
+- Corrections in documentation for web interface usage.
+- Add some packages required for docs development.
+
 ## v2.0.7 (2024-09-30)
 
 - Fixes bug where `postmortem_link` variable didn't work if integration was disabled.
