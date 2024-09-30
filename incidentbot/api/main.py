@@ -29,10 +29,11 @@ app = FastAPI(
     title="incidentbot",
     summary="Incident Bot API",
     version=__version__,
-    contact={
-        "name": "echoboomer",
-        "email": "scott@echoboomer.net",
-    },
+    docs_url="/docs" if settings.api.enable_docs_endpoint else None,
+    openapi_url=(
+        "/openapi.json" if settings.api.enable_openapi_endpoint else None
+    ),
+    redoc_url="/redoc" if settings.api.enable_redoc_endpoint else None,
 )
 
 app.add_middleware(

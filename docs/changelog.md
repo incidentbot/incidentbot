@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.0.9 (2024-09-30)
+
+- Allow disabling the API docs endpoint.
+- Updates to docs for web interface.
+
 ## v2.0.8 (2024-09-30)
 
 - Corrections in documentation for web interface usage.

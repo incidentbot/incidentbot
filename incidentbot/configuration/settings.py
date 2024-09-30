@@ -18,7 +18,7 @@ from pydantic_settings import (
 from typing import Annotated, Any, Tuple, Type
 from typing_extensions import Self
 
-__version__ = "v2.0.8"
+__version__ = "v2.0.9"
 
 opsgenie_logo_url = "https://i.imgur.com/NjiEBCu.png"
 pagerduty_logo_url = "https://i.imgur.com/IVvdFCV.png"
@@ -41,6 +41,9 @@ API
 
 class API(BaseModel):
     enabled: bool | None = False
+    enable_docs_endpoint: bool | None = False
+    enable_openapi_endpoint: bool | None = False
+    enable_redoc_endpoint: bool | None = False
     v1_str: str | None = "/api/v1"
 
 

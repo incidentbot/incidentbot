@@ -43,6 +43,22 @@ FIRST_SUPERUSER: str = "admin@example.com"
 FIRST_SUPERUSER_PASSWORD: str = "changethis"
 ```
 
+#### Documentation Endpoints
+
+All endpoints related to documentation for the API are **disabled** by default. You don't have to provide these values in the settings configuration if you don't wish to override them.
+
+To enable them, use the following settings:
+
+```yaml
+# Set any of these to true to enable them.
+api:
+  enable_docs_endpoint: false # /docs
+  enable_openapi_endpoint: false # /openapi.json
+  enable_redoc_endpoint: false # /redoc
+```
+
+It is recommended to keep these disabled when the API is exposed to the general public.
+
 ### Digest Channel
 
 The digest channel is where updates are sent regarding all incidents managed by the bot. The channel is `#incidents` by default.

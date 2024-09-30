@@ -37,21 +37,30 @@ FIRST_SUPERUSER: str = "admin@example.com"
 FIRST_SUPERUSER_PASSWORD: str = "changethis"
 ```
 
+Consult the API [documentation](configuration.md#api) for additional settings related to it.
+
 ## Running the Web Interface
+
+### Building the Docker Image
 
 There is a separate repository for the web interface located [here](https://github.com/incidentbot/console).
 
 Since the client application must be built with the API URL as an argument, you will need to build and host the image for the web interface on your own.
 
-If you want to test this, clone down that repository and run `docker compose up` after changing the API URL in the `docker-compose.yml` file under `VITE_API_URL` to the exposed API endpoint for your Incident Bot deployment.
+The easiest way to do this is to use the base image which already contains the application logic:
 
-Otherwise, handle building the image as you normally would using your own best practices and provide the `ARG`:
-
-```bash
-docker build --build-arg VITE_API_URL=https://path-to-incidentbot.mydomain.com .
+```dockerfile
+FROM eb129/incidentbot-console:v0.1.0 AS build
+WORKDIR /app
+ARG VITE_API_URL=${VITE_API_URL}
+RUN npm run build
+FROM nginx:1
+COPY --from=build /app/dist/ /usr/share/nginx/html
+COPY ./nginx.conf /etc/nginx/conf.d/default.conf
+COPY ./nginx-backend-not-found.conf /etc/nginx/extra-conf.d/backend-not-found.conf
 ```
 
-Once the image is built, you can use the Helm chart or deploy however you choose.
+You will need to provide the content of [nginx.conf](https://github.com/incidentbot/console/blob/main/nginx.conf) and [nginx-backend-not-found.conf](https://github.com/incidentbot/console/blob/main/nginx-backend-not-found.conf) in the build directory.
 
 ### Deploying via Helm
 

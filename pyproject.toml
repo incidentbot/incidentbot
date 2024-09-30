@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "incidentbot"
-version = "2.0.8"
+version = "2.0.9"
 description = "The open source incident management framework."
 authors = ["Scott Hawkins <scott@echoboomer.net>"]
 license = "MIT"
