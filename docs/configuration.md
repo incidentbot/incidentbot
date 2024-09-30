@@ -18,7 +18,7 @@ Note that the API exposes a health check route.
 
 !!! note
 
-    The web interface is still under development and will be made available in the near future. It is not required to use the application.
+    The web interface is optional and is not required to use the application.
 
 ```yaml
 api:
@@ -30,6 +30,18 @@ With the API enabled, routes will be made available via `/api/v1`.
 !!! warning
 
     API routes are only meant to serve the web interface. As such, they are secured using JWT and will not work without first running through the setup guide for the [web interface](ui.md).
+
+!!! warning
+
+    The default username and password for the web interface are set to `admin@example.com`:`changethis`. It is **strongly** recommended you change these variables before exposing the API.
+
+    Set the environment variables `FIRST_SUPERUSER` and `FIRST_SUPERUSER_PASSWORD` to unique values before running the application the first time.
+
+```python
+# incidentbot/configuration/settings.py
+FIRST_SUPERUSER: str = "admin@example.com"
+FIRST_SUPERUSER_PASSWORD: str = "changethis"
+```
 
 ### Digest Channel
 
