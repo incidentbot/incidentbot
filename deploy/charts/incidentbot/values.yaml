@@ -27,6 +27,8 @@ envVars: {}
 
 extraContainers: []
 
+extraPodLabels: {}
+
 healthCheck:
   enabled: true
   path: /api/v1/health
