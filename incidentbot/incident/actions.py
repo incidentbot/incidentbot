@@ -619,6 +619,8 @@ async def set_status(
                         f"error sending message back to user via slash command invocation: {error}"
                     )
 
+        postmortem_link = None
+
         if (
             status
             == [
@@ -627,8 +629,6 @@ async def set_status(
                 if config.final
             ][0]
         ):
-            postmortem_link = None
-
             # First, make sure a postmortem doesn't already exist
             if not IncidentDatabaseInterface.get_postmortem(
                 parent=incident.id,

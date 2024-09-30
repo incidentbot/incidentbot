@@ -179,6 +179,7 @@ docker-compose.dev.yml
 .vscode/
 test.py
 logs/
+todo.md
 
 # Secrets
 .env

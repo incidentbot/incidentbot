@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.0.7 (2024-09-30)
+
+- Fixes bug where `postmortem_link` variable didn't work if integration was disabled.
+- Fixes potential bugs where `this` command prompts resulted in errors due to responses from Slack.
+- Bumps a few packages.
+
 ## v2.0.6 (2024-09-26)
 
 - Fixes bug where PagerDuty information would not store in the database properly.
