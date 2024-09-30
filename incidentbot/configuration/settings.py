@@ -15,10 +15,10 @@ from pydantic_settings import (
     SettingsConfigDict,
     YamlConfigSettingsSource,
 )
-from typing import Annotated, Any, Literal, Tuple, Type
+from typing import Annotated, Any, Tuple, Type
 from typing_extensions import Self
 
-__version__ = "v2.0.6"
+__version__ = "v2.0.7"
 
 opsgenie_logo_url = "https://i.imgur.com/NjiEBCu.png"
 pagerduty_logo_url = "https://i.imgur.com/IVvdFCV.png"
