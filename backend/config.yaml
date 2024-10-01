@@ -1,7 +1,7 @@
 # Options: slack
 platform: slack
 # The channel where incident activity is logged
-digest_channel: incidents
+digest_channel: platform-engineering-support
 # Roles defined here will appear as options for each incident
 roles:
   incident_commander: "The Incident Commander is the decision maker during a major incident, delegating tasks and listening to input from subject matter experts in order to bring the incident to resolution. They become the highest ranking individual on any major incident call, regardless of their day-to-day rank. Their decisions made as commander are final.\\n\\nYour job as an Incident Commander is to listen to the call and to watch the incident Slack room in order to provide clear coordination, recruiting others to gather context and details. You should not be performing any actions or remediations, checking graphs, or investigating logs. Those tasks should be delegated.\\n\\nAn IC should also be considering next steps and backup plans at every opportunity, in an effort to avoid getting stuck without any clear options to proceed and to keep things moving towards resolution.\\n\\nMore information: https://response.pagerduty.com/training/incident_commander/"
@@ -15,15 +15,14 @@ severities:
 # Whether or not to deliver incident update reminders for critical incidents
 # This will send out a reminder message to an active incident channel at the supplied
 # interval
-incident_reminders:
+#incident_reminders:
   # Any severity in this list will have a scheduled reminder job created
   # This job will remind the channel to send out updates at the interval
   # specified rate below
-  qualifying_severities:
-    - sev1
+#  qualifying_severities:
   # rate determines how often reminders are sent to an incident channel
   # This is an int and is interpreted as minutes
-  rate: 30
+#  rate: 30
 # Statuses defined here will appear as options for each incident
 statuses:
   - investigating
