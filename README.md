@@ -43,7 +43,7 @@ New features are being added all the time.
 - You'll need a Postgres instance to connect to.
 - Configure the app using `config.yaml` and deploy it to Kubernetes, Docker, or whichever platform you choose.
 
-[Full setup documentation is available here](https://docs.incidentbot.io/setup/)
+[Full setup documentation is available here](https://docs.incidentbot.io/installation/)
 
 You have the option to download source from the latest release and build your own image as well.
 
