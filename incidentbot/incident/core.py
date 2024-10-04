@@ -161,6 +161,10 @@ class Incident:
 
                 record.channel_id = channel.get("id")
                 record.channel_name = channel_name
+                record.has_private_channel = (
+                    self.params.private_channel
+                    or self.params.is_security_incident
+                )
                 record.link = "https://{}.slack.com/archives/{}".format(
                     slack_workspace_id, channel.get("id")
                 )
@@ -180,6 +184,7 @@ class Incident:
                     digest_message = slack_web_client.chat_postMessage(
                         **IncidentChannelDigestNotification.create(
                             channel_id=record.channel_id,
+                            has_private_channel=record.has_private_channel,
                             incident_components=record.components,
                             incident_description=record.description,
                             incident_impact=record.impact,

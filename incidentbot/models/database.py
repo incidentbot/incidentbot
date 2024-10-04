@@ -218,6 +218,7 @@ class IncidentRecord(SQLModel, table=True):
     )
     description: str | None = None
     digest_message_ts: str | None = None
+    has_private_channel: bool | None = False
     id: int = Field(primary_key=True)
     impact: str | None = None
     is_security_incident: bool | None = None
