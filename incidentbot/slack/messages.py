@@ -1832,6 +1832,7 @@ class IncidentChannelDigestNotification:
     @staticmethod
     def create(
         channel_id: str,
+        has_private_channel: bool,
         incident_components: str,
         incident_description: str,
         incident_impact: str | None,
@@ -1855,7 +1856,7 @@ class IncidentChannelDigestNotification:
             status=initial_status,
         )
 
-        if meeting_link:
+        if meeting_link and (not has_private_channel):
             blocks.extend(
                 [
                     {
@@ -1905,6 +1906,7 @@ class IncidentChannelDigestNotification:
     @staticmethod
     def update(
         channel_id: str,
+        has_private_channel: bool,
         incident_components: str,
         incident_description: str,
         incident_impact: str | None,
@@ -1928,7 +1930,7 @@ class IncidentChannelDigestNotification:
             status=status,
         )
 
-        if meeting_link:
+        if meeting_link and (not has_private_channel):
             blocks.append(
                 {
                     "block_id": "digest_channel_meeting",
