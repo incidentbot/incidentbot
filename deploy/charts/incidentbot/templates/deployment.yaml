@@ -22,6 +22,9 @@ spec:
       {{- end }}
       labels:
         {{- include "incident-bot.selectorLabels" . | nindent 8 }}
+        {{- if .Values.extraPodLabels }}
+        {{- toYaml .Values.extraPodLabels | nindent 8 }}
+        {{- end }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:

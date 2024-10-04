@@ -66,6 +66,17 @@ load _helpers
     [ "${actual}" = "test" ]
 }
 
+@test "deployment: extraPodLabels" {
+    cd $(chart_dir)
+    local object=$(helm template \
+        --show-only templates/deployment.yaml \
+        --set extraPodLabels.foo=bar \
+        .)
+
+    local actual=$(echo "$object" | yq -r '.spec.template.metadata.labels.foo' | tee /dev/stderr)
+    [ "${actual}" = "bar" ]
+}
+
 @test "deployment: nodeSelector" {
     cd $(chart_dir)
     local actual=$(helm template \

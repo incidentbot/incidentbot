@@ -21,6 +21,7 @@ https://docs.incidentbot.io/installation/#helm
 | `envFromSecret.secretName`        | The name of the `Secret` to use if setting `envFromSecret.enabled` to `true`.                                      | `null`                           |
 | `envVars`                         | Variables in the format `KEY: value` to supply to the main process containers.                                     | `{}`                             |
 | `extraContainers`                 | A list of raw `yaml` specifying any additional containers to create alongside the main one.                        | `[]`                             |
+| `extraPodLabels`                  | A list of raw `yaml` specifying any additional labels to add to the `pod`.                                         | `{}`                             |
 | `healthCheck.enabled`             | Whether or not to enable the health check for the main process container.                                          | `true`                           |
 | `healthCheck.path`                | The path to use for the health check.                                                                              | `/api/v1/health`                 |
 | `healthCheck.scheme`              | The health check scheme.                                                                                           | `HTTP`                           |
