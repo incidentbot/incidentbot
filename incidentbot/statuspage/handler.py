@@ -9,9 +9,8 @@ from incidentbot.slack.client import slack_web_client
 from sqlmodel import Session, select
 from typing import Any
 
-api = "https://api.statuspage.io/v1/"
+api = "https://api.statuspage.io/v1"
 api_key = settings.STATUSPAGE_API_KEY
-page_id = settings.STATUSPAGE_PAGE_ID
 
 headers = {
     "Authorization": f"OAuth {api_key}",
@@ -51,12 +50,15 @@ class StatuspageIncident:
         )
 
         for message in result.get("messages"):
-            if message.get("text") == "Statuspage prompt.":
+            if (
+                message.get("text")
+                == "Statuspage prompt has been posted to an incident."
+            ):
                 message_ts = message.get("ts")
 
         try:
             resp = requests.post(
-                f"{api}/pages/{page_id}/incidents",
+                f"{api}/pages/{settings.STATUSPAGE_PAGE_ID}/incidents",
                 headers=headers,
                 json=self.payload,
             )
@@ -84,6 +86,7 @@ class StatuspageIncident:
                 shortlink=self.info.get("shortlink"),
                 status=self.info.get("status"),
                 updates=self.info.get("incident_updates"),
+                upstream_id=self.info.get("id"),
             )
 
             with Session(engine) as session:
@@ -136,7 +139,7 @@ class StatuspageIncidentUpdate:
                 components = sp_components.formatted_components_update(
                     sp_components.list_of_names, "operational"
                 )
-            elif record.updates:
+            else:
                 affected_components = record.updates[0].get(
                     "affected_components", []
                 )
@@ -157,13 +160,18 @@ class StatuspageIncidentUpdate:
 
             # Patch the incident
             resp = requests.patch(
-                "{}/pages/{}/incidents/{}".format(api, page_id, record.id),
+                "{}/pages/{}/incidents/{}".format(
+                    api, settings.STATUSPAGE_PAGE_ID, record.upstream_id
+                ),
                 headers=headers,
                 json=payload,
             )
 
             record.status = status
             record.updates = json.loads(resp.text).get("incident_updates")
+
+            session.add(record)
+            session.commit()
 
             try:
                 slack_web_client.chat_update(
@@ -175,12 +183,9 @@ class StatuspageIncidentUpdate:
                     ),
                 )
             except Exception as error:
-                logger.fatal(
+                logger.error(
                     f"Error updating Statuspage message for {incident_data.channel_name}: {error}"
                 )
-
-            session.add(record)
-            session.commit()
 
     @staticmethod
     def update_management_message(channel_id: str) -> list[dict[str, Any]]:
@@ -324,7 +329,7 @@ class StatuspageComponents:
         """
 
         components_raw = requests.get(
-            f"{api}/pages/{page_id}/components",
+            f"{api}/pages/{settings.STATUSPAGE_PAGE_ID}/components",
             headers=headers,
         )
 
@@ -367,7 +372,7 @@ class StatuspageObjects:
         """
 
         incidents_raw = requests.get(
-            f"{api}/pages/{page_id}/incidents",
+            f"{api}/pages/{settings.STATUSPAGE_PAGE_ID}/incidents",
             headers=headers,
         )
         self.open_incidents = json.loads(incidents_raw.text)

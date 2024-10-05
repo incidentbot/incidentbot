@@ -1871,8 +1871,7 @@ class IncidentChannelDigestNotification:
                                 meeting_link,
                             ),
                         },
-                    },
-                    {"type": "divider"},
+                    }
                 ]
             )
 

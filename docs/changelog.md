@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.0.12
+
+- Fix bugs with Statuspage integration.
+- This release requires a database migration - please plan accordingly. This is handled by the chart if using its init features.
+
 ## v2.0.9 (2024-09-30)
 
 - Allow disabling the API docs endpoint.

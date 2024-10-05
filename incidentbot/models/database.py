@@ -343,6 +343,7 @@ class StatuspageIncidentRecord(SQLModel, table=True):
     updates: list | None = Field(
         sa_column=Column(MutableList.as_mutable(JSON)), default_factory=list
     )
+    upstream_id: str
 
 
 class User(UserBase, table=True):
