@@ -18,7 +18,7 @@ from pydantic_settings import (
 from typing import Annotated, Any, Tuple, Type
 from typing_extensions import Self
 
-__version__ = "v2.0.11"
+__version__ = "v2.0.12"
 
 opsgenie_logo_url = "https://i.imgur.com/NjiEBCu.png"
 pagerduty_logo_url = "https://i.imgur.com/IVvdFCV.png"
@@ -351,7 +351,6 @@ class Settings(BaseSettings):
 
     STATUSPAGE_API_KEY: str | None = None
     STATUSPAGE_PAGE_ID: str | None = None
-    STATUSPAGE_URL: str | None = None
 
     ZOOM_ACCOUNT_ID: str | None = None
     ZOOM_CLIENT_ID: str | None = None
@@ -475,9 +474,6 @@ class Settings(BaseSettings):
                     "STATUSPAGE_PAGE_ID",
                     self.STATUSPAGE_PAGE_ID,
                     "Statuspage",
-                )
-                self._check_required_integration_var(
-                    "STATUSPAGE_URL", self.STATUSPAGE_URL, "Statuspage"
                 )
 
             if (

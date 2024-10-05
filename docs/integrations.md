@@ -205,7 +205,6 @@ Provide the following environment variables:
 
 - `STATUSPAGE_API_KEY` - Statuspage API key.
 - `STATUSPAGE_PAGE_ID` - Statuspage page ID.
-- `STATUSPAGE_URL` - Link to the public Statuspage for your organization. **Note:** This must be a fully formed URL - example: `https://status.foo.com`.
 
 #### Configurating the Statuspage Integration
 
@@ -224,6 +223,24 @@ integrations:
 ```
 
 You can optionally add groups under the `permissions.groups` heading to limit who can create and manage Statuspage incidents from Slack. Anyone not in one of these groups will get an ephemeral message indicating they do not have the required permissions.
+
+#### Using the Statuspage Integration
+
+With the integration enabled, a new incident will prompt for the creation of a Statuspage incident:
+
+![Statuspage prompt](./assets/statuspage_prompt.png){: style="width:600px"}
+
+Fill out the required information to create a Statuspage incident:
+
+![Statuspage modal 1](./assets/statuspage_modal_1.png){: style="width:500px"}
+
+![Statuspage modal 2](./assets/statuspage_modal_2.png){: style="width:500px"}
+
+You can use the buttons to provide updates. The message will be updated indicating updates applied to the ongoing incident:
+
+![Statuspage first update](./assets/statuspage_first_update.png){: style="width:600px"}
+
+![Statuspage final update](./assets/statuspage_final_update.png){: style="width:600px"}
 
 ## PagerDuty
 
