@@ -761,10 +761,8 @@ class BlockBuilder:
             {"type": "divider"},
         ]
 
-        results = []
-
         for window in maintenance_windows:
-            if window.status != "Complete":
+            if window.status != settings.maintenance_windows.statuses[-1]:
                 base = [
                     {
                         "type": "section",
@@ -810,7 +808,17 @@ class BlockBuilder:
 
                 blocks.extend(base)
 
-        if len(results) == 0 or len(maintenance_windows) == 0:
+        if (
+            len(
+                [
+                    window
+                    for window in maintenance_windows
+                    if window.status
+                    != settings.maintenance_windows.statuses[-1]
+                ]
+            )
+            == 0
+        ):
             blocks.append(
                 {
                     "type": "section",
@@ -820,8 +828,6 @@ class BlockBuilder:
                     },
                 },
             )
-        else:
-            blocks.append(results)
 
         return blocks
 

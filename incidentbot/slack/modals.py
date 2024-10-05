@@ -430,10 +430,11 @@ def show_modal(ack, body, client):
             "block_id": "description",
             "element": {
                 "type": "plain_text_input",
+                "multiline": True,
                 "action_id": "maintenance_window.set_description",
                 "placeholder": {
                     "type": "plain_text",
-                    "text": "A brief description.",
+                    "text": "A description of the maintenance window.",
                 },
             },
             "label": {"type": "plain_text", "text": "Description"},

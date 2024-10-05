@@ -1,5 +1,6 @@
 from datetime import datetime
 from incidentbot.logging import logger
+from incidentbot.configuration.settings import settings
 from incidentbot.models.database import MaintenanceWindowRecord, engine
 from pydantic import BaseModel
 from sqlmodel import Session
@@ -53,7 +54,7 @@ class MaintenanceWindow:
                     description=self.params.description,
                     end_timestamp=self.params.end_timestamp,
                     start_timestamp=self.params.start_timestamp,
-                    status="Scheduled",
+                    status=settings.maintenance_windows.statuses[0],
                     title=self.params.title,
                 )
                 session.add(maintenance_window)

@@ -113,6 +113,19 @@ maintenance_windows:
 
 By setting a list of components that will show up as components related to a maintenance window, the feature will be enabled.
 
+By default, statuses for maintenance windows are `Scheduled`, `In Progress`, `Complete`. If you wish to override these values, you can add the following block to the settings:
+
+
+```yaml
+maintenance_windows:
+  statuses:
+    - Scheduled
+    - In Progress
+    - Complete
+```
+
+Note that statuses should be stated in order of start to finish. The first status should be the initial status, etc.
+
 ### Options
 
 There is an `options` section that holds several settings.
