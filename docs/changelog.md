@@ -1,6 +1,10 @@
 # Changelog
 
-## v2.0.12
+## v2.0.13 (2024-10-05)
+
+- Fix bug with maintenance window management.
+
+## v2.0.12 (2024-10-05)
 
 - Fix bugs with Statuspage integration.
 - This release requires a database migration - please plan accordingly. This is handled by the chart if using its init features.

@@ -18,7 +18,7 @@ from pydantic_settings import (
 from typing import Annotated, Any, Tuple, Type
 from typing_extensions import Self
 
-__version__ = "v2.0.12"
+__version__ = "v2.0.13"
 
 opsgenie_logo_url = "https://i.imgur.com/NjiEBCu.png"
 pagerduty_logo_url = "https://i.imgur.com/IVvdFCV.png"
@@ -205,6 +205,7 @@ class MaintenanceWindows(BaseModel):
     """
 
     components: list[str]
+    statuses: list[str] | None = ["Scheduled", "In Progress", "Complete"]
 
 
 class RoleDefinition(BaseModel):
