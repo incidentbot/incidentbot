@@ -1,4 +1,4 @@
-"""Initial commit
+"""Add upstream_id column to StatuspageIncidentRecord
 
 Revision ID: e8a0a978b5f7
 Revises: c084a30ce811
