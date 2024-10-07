@@ -1087,12 +1087,12 @@ files = [
 
 [[package]]
 name = "pdpyras"
-version = "5.2.0"
+version = "5.3.0"
 description = "PagerDuty Python REST API Sessions"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "pdpyras-5.2.0.tar.gz", hash = "sha256:e1c9fed3be5d4ec532de62a493b21eff3d04210a6b0d6bba47b637c3bf4ecf88"},
+    {file = "pdpyras-5.3.0.tar.gz", hash = "sha256:0c5b514bea764bdd9e43685d9ede06afa2f504fa0c6799f1670d38ad3233fc6e"},
 ]
 
 [package.dependencies]
@@ -2244,4 +2244,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "422d789b74846aacf7192b4be1cf875c7525df98f833ec925af4b09f7d910c15"
+content-hash = "317f9e3e87d1fe2c9e7a7d6392af812b1f20e13e0848fff5f1d51b1a74b23a96"
