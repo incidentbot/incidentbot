@@ -226,6 +226,26 @@ load _helpers
     [ "${actual}" = "eb129/incidentbot:util-v1234" ]
 }
 
+@test "deployment: image suffix" {
+    cd $(chart_dir)
+    local actual=$(helm template \
+        --show-only templates/deployment.yaml \
+        --set 'image.suffix=arm64' \
+        . | tee /dev/stderr |
+        yq -r '.spec.template.spec.containers[0].image' | tee /dev/stderr)
+    [ "${actual}" = "eb129/incidentbot:v$(chart_version)-arm64" ]
+}
+
+@test "deployment: util image suffix" {
+    cd $(chart_dir)
+    local actual=$(helm template \
+        --show-only templates/deployment.yaml \
+        --set 'image.suffix=arm64' \
+        . | tee /dev/stderr |
+        yq -r '.spec.template.spec.initContainers[1].image' | tee /dev/stderr)
+    [ "${actual}" = "eb129/incidentbot:util-v$(chart_version)-arm64" ]
+}
+
 #--------------------------------------------------------------------
 # Variables
 
