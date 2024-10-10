@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.0.14 (2024-10-10)
+
+- Builds an arm64 version of the util image.
+- Adds tests for image suffixes to chart.
+- Minor version bumps for Poetry-managed packages.
+
 ## v2.0.13 (2024-10-05)
 
 - Fix bug with maintenance window management.

@@ -48,6 +48,7 @@ jobs:
       IMAGE_NAME: eb129/incidentbot
     docker:
       - image: cimg/base:current
+    resource_class: arm.medium
     steps:
       - checkout
       - setup_remote_docker
@@ -125,6 +126,7 @@ jobs:
       IMAGE_NAME: eb129/incidentbot
     docker:
       - image: cimg/base:current
+    resource_class: arm.medium
     steps:
       - checkout
       - setup_remote_docker
