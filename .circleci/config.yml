@@ -43,6 +43,21 @@ jobs:
             echo 'export IMAGE_TAG=util-$(cat version)' >> "$BASH_ENV"
             source "$BASH_ENV"
             docker build --file Dockerfile.util --tag $IMAGE_NAME:$IMAGE_TAG .
+  build-util-arm64:
+    environment:
+      IMAGE_NAME: eb129/incidentbot
+    docker:
+      - image: cimg/base:current
+    resource_class: arm.medium
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Build util image
+          command: |
+            echo 'export IMAGE_TAG=util-$(cat version)' >> "$BASH_ENV"
+            source "$BASH_ENV"
+            docker build --platform linux/arm64 --file Dockerfile.util.arm64 --tag $IMAGE_NAME:$IMAGE_TAG-arm64 .
   build-docs:
     environment:
       IMAGE_NAME: eb129/incidentbot-docs
@@ -106,6 +121,23 @@ jobs:
             docker build --file Dockerfile.util --tag $IMAGE_NAME:$IMAGE_TAG .
             echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
             docker push $IMAGE_NAME:$IMAGE_TAG
+  publish-util-arm64:
+    environment:
+      IMAGE_NAME: eb129/incidentbot
+    docker:
+      - image: cimg/base:current
+    resource_class: arm.medium
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Publish amd64 Docker Image to Docker Hub
+          command: |
+            echo 'export IMAGE_TAG=util-$(cat version)' >> "$BASH_ENV"
+            source "$BASH_ENV"
+            docker build --platform linux/arm64 --file Dockerfile.util.arm64 --tag $IMAGE_NAME:$IMAGE_TAG-arm64 .
+            echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            docker push $IMAGE_NAME:$IMAGE_TAG-arm64
   publish-docs:
     environment:
       IMAGE_NAME: eb129/incidentbot-docs
@@ -144,6 +176,10 @@ workflows:
           filters:
             branches:
               ignore: main
+      - build-util-arm64:
+          filters:
+            branches:
+              ignore: main
       - build-docs:
           filters:
             branches:
@@ -157,6 +193,10 @@ workflows:
             branches:
               only: main
       - publish-util:
+          filters:
+            branches:
+              only: main
+      - publish-util-arm64:
           filters:
             branches:
               only: main
