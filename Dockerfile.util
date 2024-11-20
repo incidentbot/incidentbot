@@ -1,4 +1,4 @@
-FROM python:3.12.4-alpine3.20
+FROM python:3.12.6-alpine3.20
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=/opt/poetry python
 
 COPY ./pyproject.toml ./poetry.lock* /app/
 
-RUN poetry install --no-root
+RUN poetry lock && poetry install --no-root
 
 COPY ./incidentbot/configuration /app/incidentbot/configuration
 COPY ./incidentbot/models /app/incidentbot/models
