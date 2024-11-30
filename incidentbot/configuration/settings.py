@@ -18,7 +18,7 @@ from pydantic_settings import (
 from typing import Annotated, Any, Tuple, Type
 from typing_extensions import Self
 
-__version__ = "v2.0.14"
+__version__ = "v2.0.15"
 
 opsgenie_logo_url = "https://i.imgur.com/NjiEBCu.png"
 pagerduty_logo_url = "https://i.imgur.com/IVvdFCV.png"
@@ -86,6 +86,7 @@ class Options(BaseModel):
     show_most_recent_incidents_app_home_limit: int = 5
     slack_items_pagination_per_page: int = 5
     timezone: str = "UTC"
+    updates_in_threads: bool | None = False
 
 
 """

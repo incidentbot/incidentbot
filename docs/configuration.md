@@ -232,3 +232,12 @@ root_slash_command: '/incidentbot'
 !!! note
 
     If you change this value, be sure to update the manifest to match.
+
+### Updates
+
+When using the "provide incident update" functionality, default behavior is to add any updates for an incident as comments under the original thread in the digest channel. If you wish to send all updates to the digest channel directly instead, set the following value in `config.yaml`:
+
+```yaml
+options:
+  updates_in_threads: true
+```

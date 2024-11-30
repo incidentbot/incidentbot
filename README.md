@@ -13,7 +13,6 @@ Need support or just want to chat with us? Join us on [Discord](https://discord.
   - [Features](#features)
   - [Quick Start](#quick-start)
   - [Feedback](#feedback)
-  - [Development](#development)
 
 ## Features
 
@@ -41,16 +40,3 @@ Full setup documentation is available [here](https://docs.incidentbot.io/install
 This application is not meant to solve every problem with regard to incident management. It was created as an open-source alternative to paid solutions.
 
 If you encounter issues with functionality or wish to see new features, please open an issue or a feature request to let us know.
-
-We encourage you to join the community [Discord](https://discord.gg/PzqSQUY88c) if you wish to interact with us directly.
-
-## Development
-
-Install [Poetry](https://python-poetry.org/).
-
-`poetry install --no-root`
-
-`poetry shell`
-
-From here, you can use the `Makefile` or simply run `python3 main.py` to start the application.
-
