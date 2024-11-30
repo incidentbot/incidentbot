@@ -373,7 +373,11 @@ def handle_submission(ack, body, client):
     try:
         client.chat_postMessage(
             channel=get_digest_channel_id(),
-            thread_ts=inc.digest_message_ts,
+            thread_ts=(
+                inc.digest_message_ts
+                if settings.options.updates_in_threads
+                else None
+            ),
             blocks=IncidentUpdate.public_update(
                 id=channel_id,
                 impacted_resources=parsed.get(

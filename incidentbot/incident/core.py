@@ -258,48 +258,23 @@ class Incident:
                     )
 
                 """
-                Post meeting link in the channel upon creation (optional)
+                Create bookmark for meeting (optional)
                 """
 
                 if record.meeting_link:
                     try:
-                        meeting_link_message = slack_web_client.chat_postMessage(
-                            channel=record.channel_id,
-                            text="{} Please join the meeting here: {}".format(
-                                settings.icons.get(settings.platform).get(
-                                    "meeting"
-                                ),
-                                record.meeting_link,
+                        slack_web_client.bookmarks_add(
+                            channel_id=record.channel_id,
+                            emoji=settings.icons.get(settings.platform).get(
+                                "meeting"
                             ),
-                            blocks=[
-                                {
-                                    "type": "header",
-                                    "text": {
-                                        "type": "plain_text",
-                                        "text": "{} Please join the meeting here.".format(
-                                            settings.icons.get(
-                                                settings.platform
-                                            ).get("meeting")
-                                        ),
-                                    },
-                                },
-                                {"type": "divider"},
-                                {
-                                    "type": "section",
-                                    "text": {
-                                        "type": "mrkdwn",
-                                        "text": record.meeting_link,
-                                    },
-                                },
-                            ],
-                        )
-                        slack_web_client.pins_add(
-                            channel=record.channel_id,
-                            timestamp=meeting_link_message["message"]["ts"],
+                            title="Meeting",
+                            type="link",
+                            link=record.meeting_link,
                         )
                     except slack_sdk.errors.SlackApiError as error:
                         logger.error(
-                            f"Error sending meeting link to channel: {error}"
+                            f"Error adding meeting bookmark to channel: {error}"
                         )
 
                 """

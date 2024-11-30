@@ -658,72 +658,73 @@ async def set_status(
                     )
                     postmortem_link = postmortem.create()
 
-                    # Create record
-                    IncidentDatabaseInterface.add_postmortem(
-                        parent=incident.id, url=postmortem_link
-                    )
+                    if postmortem_link:
+                        # Create record
+                        IncidentDatabaseInterface.add_postmortem(
+                            parent=incident.id, url=postmortem_link
+                        )
 
-                    # Write event log
-                    EventLogHandler.create(
-                        event=f"Postmortem generated",
-                        incident_id=incident.id,
-                        incident_slug=incident.slug,
-                        source="system",
-                    )
+                        # Write event log
+                        EventLogHandler.create(
+                            event=f"Postmortem generated",
+                            incident_id=incident.id,
+                            incident_slug=incident.slug,
+                            source="system",
+                        )
 
-                    postmortem_boilerplate_message_blocks = [
-                        {
-                            "type": "header",
-                            "text": {
-                                "type": "plain_text",
-                                "text": "{} Incident Postmortem".format(
-                                    settings.icons.get(settings.platform).get(
-                                        "postmortem"
+                        postmortem_boilerplate_message_blocks = [
+                            {
+                                "type": "header",
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "{} Incident Postmortem".format(
+                                        settings.icons.get(
+                                            settings.platform
+                                        ).get("postmortem"),
                                     ),
-                                ),
-                            },
-                        },
-                        {
-                            "type": "section",
-                            "text": {
-                                "type": "mrkdwn",
-                                "text": "A starter postmortem has been composed based on "
-                                + "data gathered during this incident.",
-                            },
-                        },
-                        {
-                            "block_id": "buttons",
-                            "type": "actions",
-                            "elements": [
-                                {
-                                    "type": "button",
-                                    "text": {
-                                        "type": "plain_text",
-                                        "text": "View Postmortem",
-                                    },
-                                    "style": "primary",
-                                    "url": postmortem_link,
-                                    "action_id": "view_postmortem",
                                 },
-                            ],
-                        },
-                    ]
+                            },
+                            {
+                                "type": "section",
+                                "text": {
+                                    "type": "mrkdwn",
+                                    "text": "A starter postmortem has been composed based on "
+                                    + "data gathered during this incident.",
+                                },
+                            },
+                            {
+                                "block_id": "buttons",
+                                "type": "actions",
+                                "elements": [
+                                    {
+                                        "type": "button",
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "View Postmortem",
+                                        },
+                                        "style": "primary",
+                                        "url": postmortem_link,
+                                        "action_id": "view_postmortem",
+                                    },
+                                ],
+                            },
+                        ]
 
-                    # Send postmortem message to incident channel
-                    try:
-                        result = slack_web_client.chat_postMessage(
-                            channel=incident.channel_id,
-                            blocks=postmortem_boilerplate_message_blocks,
-                            text=postmortem_link,
-                        )
-                        slack_web_client.pins_add(
-                            channel=incident.channel_id,
-                            timestamp=result.get("ts"),
-                        )
-                    except SlackApiError as error:
-                        logger.error(
-                            f"Error sending postmortem update to incident channel: {error}"
-                        )
+                        # Send postmortem message to incident channel
+                        try:
+                            result = slack_web_client.chat_postMessage(
+                                channel=incident.channel_id,
+                                blocks=postmortem_boilerplate_message_blocks,
+                                text=postmortem_link,
+                            )
+                            slack_web_client.pins_add(
+                                channel=incident.channel_id,
+                                timestamp=result.get("ts"),
+                            )
+                        except SlackApiError as error:
+                            logger.error(
+                                f"Error sending postmortem update to incident channel: {error}"
+                            )
 
             # If PagerDuty incident(s) exist, attempt to resolve them
             if (

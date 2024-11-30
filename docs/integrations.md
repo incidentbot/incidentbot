@@ -32,6 +32,7 @@ The bot makes the following information from each incident available for each po
 - `!ib-inject-components`
 - `!ib-inject-created-at`
 - `!ib-inject-description`
+- `!ib-inject-duration`
 - `!ib-inject-impact`
 - `!ib-inject-participants`
 - `!ib-inject-severity`
