@@ -1,3 +1,4 @@
+from datetime import datetime
 import asyncio
 import re
 import slack_sdk.errors
@@ -31,22 +32,45 @@ if not settings.IS_TEST_ENVIRONMENT:
     )
 
 
-def format_channel_name(id: int, description: str, comms: bool = False) -> str:
+def format_channel_name(id: int,
+                        description: str,
+                        useDatePrefix: bool = False,
+                        comms: bool = False) -> str:
     """
-    Remove any special characters (allow only alphanumeric)
+    Format a channel name by removing special characters, replacing spaces with dashes,
+    and optionally adding a date prefix.
+
+    Args:
+        id (int): The identifier for the channel.
+        description (str): A description used for the channel name.
+        useDatePrefix (bool): Whether to prepend the current date to the name. Defaults to False.
+        comms (bool): Whether to append '-comms' to the name. Defaults to False.
+
+    Returns:
+        str: The formatted channel name.
     """
 
+    # Prepare prefix and suffix
     prefix = settings.options.channel_name_prefix
     suffix = re.sub(
-        "[^A-Za-z0-9\\s]",
+        r"[^A-Za-z0-9\s]",
         "",
         description,
     )
 
-    # Replace any spaces with dashes
+    # Replace spaces with dashes and convert to lowercase
     suffix = suffix.replace(" ", "-").lower()
 
-    final = f"{prefix}-{id}-{suffix}"
+    # Handle date prefix if required
+    current_date = ""
+    if useDatePrefix:
+        date_format = settings.options.channel_name_date_format.replace(
+            "YYYY", "%Y").replace("MM", "%m").replace("DD", "%d")
+        current_date = datetime.now().strftime(date_format)
+        # Construct the final channel name
+        final = f"{prefix}-{id}-{current_date}-{suffix}"
+    else:
+        final = f"{prefix}-{id}-{suffix}"
 
     if comms:
         return f"{final}-comms"
@@ -147,7 +171,9 @@ class Incident:
                 """
 
                 channel_name = format_channel_name(
-                    id=record.id, description=self.params.incident_description
+                    id=record.id,
+                    description=self.params.incident_description,
+                    useDatePrefix=settings.options.channel_name_use_date_prefix
                 )
                 channel = self.create_channel(
                     channel_name=channel_name,
@@ -622,6 +648,7 @@ class Incident:
                         channel_name=format_channel_name(
                             id=record.id,
                             description=record.description,
+                            useDatePrefix=settings.options.channel_name_use_date_prefix,
                             comms=True,
                         ),
                         private=False,

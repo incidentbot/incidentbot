@@ -102,6 +102,8 @@ class Options(BaseModel):
     additional_welcome_messages: list[AdditionalWelcomeMessage] | None = None
     auto_invite_groups: list[GroupAutoInvite] | None = None
     channel_name_prefix: str | None = "inc"
+    channel_name_date_format: str | None = "YYYY-MM-DD"
+    channel_name_use_date_prefix: bool | None = False
     meeting_link: str | None = None
     pin_meeting_link_to_channel: bool = False
     skip_logs_for_user_agent: list[str] | None = None
