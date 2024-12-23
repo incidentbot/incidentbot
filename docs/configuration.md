@@ -139,13 +139,22 @@ options:
     - bar
   # This is the default value. This is what all incident channels are prefixed with.
   channel_name_prefix: inc
+
+  # This is the default value. Format for including the date in the channel name.
+  channel_name_date_format: YYYY-MM-DD
+
+  # This is the default value. Toggle whether to include a date prefix in the channel name.
+  channel_name_use_date_prefix: False
+
   # There is no default value for this. If one is set, this URL will be used for the meeting advertised with each incident.
   # Will not be used if using automatic Zoom meeting generation.
   meeting_link: None
+
   # This limits the amount of incidents shown on the summary on the app home page.
   # It is not recommended to raise this value very high due to Slack limitations on how many blocks can appear in a message.
   # This is the default value.
   show_most_recent_incidents_app_home_limit: 5
+
   # Application timezone.
   # This is the default value.
   timezone: UTC
