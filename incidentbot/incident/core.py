@@ -666,14 +666,12 @@ class Incident:
 
             try:
                 if settings.options.additional_welcome_messages:
-                    for (
-                        message
-                    ) in settings.options.additional_welcome_messages:
+                    for entry in settings.options.additional_welcome_messages:
                         resp = slack_web_client.chat_postMessage(
                             channel=record.channel_id,
-                            text=message,
+                            text=entry.message,
                         )
-                        if message.pin:
+                        if entry.pin:
                             slack_web_client.pins_add(
                                 channel=record.channel_id,
                                 timestamp=resp["ts"],
