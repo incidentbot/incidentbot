@@ -26,6 +26,8 @@ An incident management framework centralized around a ChatOps bot to allow your 
 - Automatically build a postmortem document base to save time
 - A web interface for advanced features and organizational capabilities [TBD]
 
+Interested in a web interface to use with Incident Bot? Check out the console project [here](https://github.com/incidentbot/console).
+
 ## Quick Start
 
 - [Create a Slack app](https://api.slack.com/apps?new_app=1) for this application. You can name it whatever you'd like.
