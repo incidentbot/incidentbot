@@ -30,7 +30,7 @@ def handle_comms_reminder(
             TaskScheduler.delete_job(job_to_delete=job.id)
             slack_web_client.chat_postMessage(
                 channel=channel_id,
-                text=f":white_check_mark: Got it. I won't send any more reminders about communications for this incident.",
+                text=":white_check_mark: Got it. I won't send any more reminders about communications for this incident.",
             )
         else:
             TaskScheduler.reschedule_job(job_id=job.id, new_minutes=interval)
@@ -77,7 +77,7 @@ def parse_modal_values(
 
                 return blocks[idx]
         else:
-            logger.error(f"must provide by_block_id_name if using by_block_id")
+            logger.error("must provide by_block_id_name if using by_block_id")
             return
 
     for _, value in values.items():

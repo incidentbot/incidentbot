@@ -1,9 +1,12 @@
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from incidentbot.api.deps import get_current_active_superuser, SessionDep
 from incidentbot.logging import logger
 from incidentbot.models.database import (
     MaintenanceWindowRecord,
 )
+from incidentbot.models.response import SuccessResponse
 from pydantic import BaseModel
 from sqlalchemy.exc import NoResultFound
 from sqlmodel import select
@@ -39,7 +42,7 @@ async def get_maintenance_windows(session: SessionDep) -> MaintenanceWindows:
     dependencies=[Depends(get_current_active_superuser)],
     status_code=status.HTTP_200_OK,
 )
-async def get_maintenance_window(session: SessionDep, id: str):
+async def get_maintenance_window(session: SessionDep, id: uuid.UUID):
     try:
         maintenance_window = session.exec(
             select(MaintenanceWindowRecord).filter(
@@ -57,23 +60,28 @@ async def get_maintenance_window(session: SessionDep, id: str):
 
 
 @router.delete(
-    "/maintenance_window",
+    "/maintenance_window/{id}",
     dependencies=[Depends(get_current_active_superuser)],
     status_code=status.HTTP_200_OK,
 )
 async def delete_maintenance_window(
-    session: SessionDep, maintenance_window: MaintenanceWindowRecord
+    session: SessionDep,
+    id: str,
 ):
     try:
         record = session.exec(
             select(MaintenanceWindowRecord).filter(
-                MaintenanceWindowRecord.id == maintenance_window.id
+                MaintenanceWindowRecord.id == id
             )
         ).one()
 
-        logger.info(f"Deleting maintenance window {maintenance_window.title}")
+        logger.info(f"Deleting maintenance window {record.title}")
         session.delete(record)
         session.commit()
+
+        return SuccessResponse(
+            result="success", message="maintenance window deleted"
+        )
     except NoResultFound:
         raise HTTPException(
             status_code=404, detail="maintenance window not found"

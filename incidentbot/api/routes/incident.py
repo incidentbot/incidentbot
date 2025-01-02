@@ -10,7 +10,6 @@ from incidentbot.incident.actions import (
 )
 from incidentbot.incident.core import Incident, IncidentRequestParameters
 from incidentbot.incident.event import EventLogHandler
-from incidentbot.logging import logger
 from incidentbot.models.database import (
     ApplicationData,
     IncidentEvent,
@@ -26,7 +25,7 @@ from incidentbot.models.database import (
 from incidentbot.models.response import SuccessResponse
 from pydantic import BaseModel
 from sqlalchemy.exc import NoResultFound
-from sqlmodel import select
+from sqlmodel import col, select
 from typing import Any
 
 router = APIRouter()
@@ -48,9 +47,21 @@ class Incidents(BaseModel):
     status_code=status.HTTP_200_OK,
 )
 async def get_incidents(
-    session: SessionDep, skip: int = 0, limit: int = 100
+    session: SessionDep,
+    skip: int = 0,
+    limit: int = 100,
+    filter: str = None,
 ) -> Incidents:
     try:
+        if filter:
+            incidents = session.exec(
+                select(IncidentRecord)
+                .where(col(IncidentRecord.description).contains(filter))
+                .order_by(IncidentRecord.slug)
+            ).all()
+
+            return Incidents(data=incidents, count=len(incidents))
+
         incidents = session.exec(
             select(IncidentRecord).offset(skip).limit(limit).order_by("id")
         ).all()
@@ -273,19 +284,17 @@ async def post_incident(request: IncidentRecord):
 
 
 @router.delete(
-    "/incident",
+    "/incident/{id}",
     dependencies=[Depends(get_current_active_superuser)],
     status_code=status.HTTP_200_OK,
 )
-async def delete_incident(session: SessionDep, incident: IncidentRecord):
+async def delete_incident(
+    id: str,
+) -> SuccessResponse:
     try:
-        record = session.exec(
-            select(IncidentRecord).filter(IncidentRecord.id == incident.id)
-        ).one()
+        Incident().delete(id)
 
-        logger.info(f"Deleting incident {incident.channel_name}")
-        session.delete(record)
-        session.commit()
+        return SuccessResponse(result="success", message="incident deleted")
     except NoResultFound:
         raise HTTPException(status_code=404, detail="incident not found")
     except Exception as error:
@@ -413,7 +422,6 @@ def get_incident_event_image(
     status_code=status.HTTP_200_OK,
 )
 def delete_incident_event(
-    slug: str,
     id: str,
 ) -> SuccessResponse:
     try:
@@ -432,7 +440,6 @@ def delete_incident_event(
     status_code=status.HTTP_200_OK,
 )
 def patch_incident_event(
-    slug: str,
     request: IncidentEvent,
 ) -> SuccessResponse:
     try:

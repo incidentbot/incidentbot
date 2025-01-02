@@ -63,7 +63,7 @@ class IncidentDatabaseInterface:
                 ).one()
 
                 return incident
-        except NoResultFound as error:
+        except NoResultFound:
             logger.error(f"incident {channel_id} not found in database")
         except Exception as error:
             logger.error(f"incident lookup (single) query failed: {error}")
@@ -89,7 +89,7 @@ class IncidentDatabaseInterface:
                         )
                     )
                 ).one()
-        except NoResultFound as error:
+        except NoResultFound:
             logger.error(f"Statuspage incident not found for incident {id}")
         except Exception as error:
             logger.error(f"Lookup failed: {error}")
@@ -156,7 +156,7 @@ class IncidentDatabaseInterface:
                         )
                     )
                 ).all()
-        except NoResultFound as error:
+        except NoResultFound:
             logger.error(f"PagerDuty incidents not found for incident {id}")
         except Exception as error:
             logger.error(f"Lookup failed: {error}")

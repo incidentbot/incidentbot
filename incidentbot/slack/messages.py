@@ -90,17 +90,17 @@ class BlockBuilder:
             )
 
         if settings.links:
-            for l in settings.links:
+            for link in settings.links:
                 button_el.extend(
                     [
                         {
                             "type": "button",
                             "text": {
                                 "type": "plain_text",
-                                "text": l.title,
+                                "text": link.title,
                             },
-                            "url": l.url,
-                            "action_id": f"incident.clicked_link_{l.title.lower().replace(' ', '_')}",
+                            "url": link.url,
+                            "action_id": f"incident.clicked_link_{link.title.lower().replace(' ', '_')}",
                         },
                     ]
                 )
@@ -952,17 +952,17 @@ class BlockBuilder:
         ]
 
         if settings.links:
-            for l in settings.links:
+            for link in settings.links:
                 button_el.extend(
                     [
                         {
                             "type": "button",
                             "text": {
                                 "type": "plain_text",
-                                "text": l.title,
+                                "text": link.title,
                             },
-                            "url": l.url,
-                            "action_id": f"incident.clicked_link_{l.title.lower().replace(' ', '_')}",
+                            "url": link.url,
+                            "action_id": f"incident.clicked_link_{link.title.lower().replace(' ', '_')}",
                         },
                     ]
                 )
@@ -1697,16 +1697,16 @@ class BlockBuilder:
             )
 
         if settings.links:
-            for l in settings.links:
+            for link in settings.links:
                 other_buttons.append(
                     {
                         "type": "button",
                         "text": {
                             "type": "plain_text",
-                            "text": f"🔗 {l.title}",
+                            "text": f"🔗 {link.title}",
                         },
-                        "url": l.url,
-                        "action_id": f"incident.clicked_link_{l.title.lower().replace(' ', '_')}",
+                        "url": link.url,
+                        "action_id": f"incident.clicked_link_{link.title.lower().replace(' ', '_')}",
                     },
                 )
 

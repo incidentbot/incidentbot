@@ -1,5 +1,5 @@
 import asyncio
-
+import re
 import requests
 import slack_sdk
 
@@ -14,6 +14,7 @@ from incidentbot.incident.actions import (
 )
 from incidentbot.incident.event import EventLogHandler
 from incidentbot.logging import logger
+from incidentbot.models.database import ApplicationData, engine
 from incidentbot.models.incident import IncidentDatabaseInterface
 from incidentbot.models.maintenance_window import (
     MaintenanceWindowDatabaseInterface,
@@ -30,6 +31,7 @@ from incidentbot.slack.util import handle_comms_reminder
 from incidentbot.util import gen
 from slack_bolt import App
 from slack_sdk.errors import SlackApiError
+from sqlmodel import Session, select
 
 ## The xoxb oauth token for the bot is called here to provide bot privileges.
 app = App(token=settings.SLACK_BOT_TOKEN)
@@ -41,8 +43,8 @@ def custom_error_handler(error, body, logger):
     logger.debug(f"Request body: {body}")
 
 
-from . import command
-from . import modals
+from . import command  # noqa: F401 E402
+from . import modals  # noqa: F401 E402
 
 
 @app.event("message")
@@ -106,7 +108,7 @@ def handle_mention(body, say, logger):
                     )
 
                     # Iterate over schedules
-                    if pd_oncall_data is not {}:
+                    if pd_oncall_data != {}:
                         # Get length of returned objects
                         # If returned objects is greater than 5, paginate over them 5 at a time and include 5 in each message
                         # Send a separate message for each grouping of 5 to avoid block limits from the Slack API
@@ -316,16 +318,16 @@ def handle_incident_archive_incident_channel(ack, body):
 
 
 @app.action("incident.clicked_meeting_link")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     logger.debug(body)
     ack()
 
 
 if settings.links:
-    for l in settings.links:
+    for link in settings.links:
 
         @app.action(
-            f"incident.clicked_link_{l.title.lower().replace(' ', '_')}"
+            f"incident.clicked_link_{link.title.lower().replace(' ', '_')}"
         )
         def handle_static_action(ack, body, logger):
             logger.debug(body)
@@ -333,19 +335,19 @@ if settings.links:
 
 
 @app.action("incident.declare_incident_modal.set_additional_comms_channel")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     ack()
     logger.info(body)
 
 
 @app.action("incident.declare_incident_modal.set_private")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     logger.debug(body)
     ack()
 
 
 @app.action("incident.declare_incident_modal.set_security_type")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     logger.debug(body)
     ack()
 
@@ -377,7 +379,7 @@ def handle_static_action(ack, body, logger):
 
 
 @app.action("incident.declare_incident_modal.set_severity")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     logger.debug(body)
     ack()
 
@@ -416,7 +418,7 @@ for role in [key for key, _ in settings.roles.items()]:
 
 
 @app.action("incident.get_help_for_this_incident")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     ack()
     logger.info(body)
 
@@ -435,7 +437,7 @@ def handle_static_action(ack, body, logger):
 
 
 @app.action("incident.handle_initial_comms_reminder_30m")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     ack()
     logger.info(body)
 
@@ -454,7 +456,7 @@ def handle_static_action(ack, body, logger):
 
 
 @app.action("incident.handle_initial_comms_reminder_60m")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     ack()
     logger.info(body)
 
@@ -473,7 +475,7 @@ def handle_static_action(ack, body, logger):
 
 
 @app.action("incident.handle_initial_comms_reminder_90m")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     ack()
     logger.info(body)
 
@@ -492,7 +494,7 @@ def handle_static_action(ack, body, logger):
 
 
 @app.action("incident.handle_initial_comms_reminder_never")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     ack()
     logger.info(body)
 
@@ -509,7 +511,7 @@ def handle_static_action(ack, body, logger):
 
 
 @app.action("incident.leave_this_incident")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     logger.debug(body)
     ack()
 
@@ -538,7 +540,7 @@ def handle_static_action(ack, body, logger):
 
 
 @app.action("incident.list_incidents")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     logger.debug(body)
     ack()
 
@@ -598,7 +600,7 @@ def handle_incident_set_status(ack, body):
 
 
 @app.action("incident.update_modal.select_incident")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     logger.debug(body)
     ack()
 
@@ -609,7 +611,7 @@ Maintenance Windows
 
 
 @app.action("maintenance_window.delete")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body):  # noqa: F811
     ack()
     parsed_body = SlackBlockActionsResponse(**body)
 
@@ -629,19 +631,19 @@ def handle_static_action(ack, body, logger):
 
 
 @app.action("maintenance_window.set_channels")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     ack()
     logger.debug(body)
 
 
 @app.action("maintenance_window.set_components")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     ack()
     logger.debug(body)
 
 
 @app.action("maintenance_window.set_contact")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     ack()
     logger.debug(body)
 
@@ -652,7 +654,7 @@ Other
 
 
 @app.action("view_upstream_incident")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     ack()
     logger.info(body)
 
@@ -732,7 +734,7 @@ def reaction_added(event, say):
                                         image=response.content,
                                         incident_id=incident.id,
                                         incident_slug=incident.slug,
-                                        message_ts=message_timestamp,
+                                        message_ts=message["ts"],
                                         mimetype=file["mimetype"],
                                         title=file["name"],
                                         source="pin",
@@ -760,20 +762,24 @@ def reaction_added(event, say):
                             else:
                                 say(
                                     channel=channel_id,
-                                    text=f":wave: It looks like that's not an image. I can currently only attach images.",
+                                    text=":wave: It looks like that's not an image. I can currently only attach images.",
                                 )
                     else:
                         say(
                             channel=channel_id,
-                            text=f":wave: Attaching images is currently disabled.",
+                            text=":wave: Attaching images is currently disabled.",
                         )
                 else:
                     try:
+                        # Parse elements in message text
+
                         result = EventLogHandler.create(
-                            event=message["text"],
+                            event=parse_pinned_message_content(
+                                message["text"]
+                            ),
                             incident_id=incident.id,
                             incident_slug=incident.slug,
-                            message_ts=message_timestamp,
+                            message_ts=message["ts"],
                             source="pin",
                             user=get_slack_user(message.get("user")).get(
                                 "real_name", "NotAvailable"
@@ -801,37 +807,100 @@ def reaction_added(event, say):
                 )
 
 
+def parse_pinned_message_content(message: str) -> str:
+    """
+    Replace components in pinned message
+
+    Args:
+        message (str): The message content to parse
+    """
+
+    channel_pattern = r"<#([A-Z0-9]+)\|?.*?>"
+    url_patterns = [
+        r"<(https?://[^|]+)\|([^>]+)>",
+        r"<(https?://[^|]+)>",
+    ]
+    username_pattern = r"<@([A-Z0-9]+)>"
+
+    if re.search(channel_pattern, message):
+        with Session(engine) as session:
+            match = re.search(channel_pattern, message)
+            channel_list = session.exec(
+                select(ApplicationData).filter(
+                    ApplicationData.name == "slack_channels"
+                )
+            ).one()
+            matched_channel = [
+                channel
+                for channel in channel_list.json_data
+                if channel.get("id") == match.group(1)
+            ][0]
+            message = message.replace(
+                match.group(0),
+                f"#{matched_channel.get("name")}",
+            )
+
+    for pattern in url_patterns:
+        if re.search(pattern, message):
+            with Session(engine) as session:
+                match = re.search(pattern, message)
+                message = message.replace(
+                    match.group(0),
+                    match.group(1),
+                )
+
+    if re.search(username_pattern, message):
+        with Session(engine) as session:
+            match = re.search(username_pattern, message)
+            user_list = session.exec(
+                select(ApplicationData).filter(
+                    ApplicationData.name == "slack_users"
+                )
+            ).one()
+            matched_user = [
+                user
+                for user in user_list.json_data
+                if user.get("id") == match.group(1)
+            ][0]
+            message = message.replace(
+                match.group(0),
+                f"@{matched_user.get("real_name")}",
+            )
+
+    return message
+
+
 """
 Jira
 """
 
 
 @app.action("jira.description_input")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     logger.debug(body)
     ack()
 
 
 @app.action("jira.priority_select")
-def handle_static_action(ack, body):
+def handle_static_action(ack, body):  # noqa: F811
     logger.debug(body)
     ack()
 
 
 @app.action("jira.summary_input")
-def handle_static_action(ack, body):
+def handle_static_action(ack, body):  # noqa: F811
     logger.debug(body)
     ack()
 
 
 @app.action("jira.type_select")
-def handle_static_action(ack, body):
+def handle_static_action(ack, body):  # noqa: F811
     logger.debug(body)
     ack()
 
 
 @app.action("jira.view_issue")
-def handle_static_action(ack, body):
+def handle_static_action(ack, body):  # noqa: F811
     logger.debug(body)
     ack()
 
@@ -842,37 +911,37 @@ Statuspage
 
 
 @app.action("statuspage.components_select")
-def handle_static_action(ack, body):
+def handle_static_action(ack, body):  # noqa: F811
     logger.debug(body)
     ack()
 
 
 @app.action("statuspage.components_status_select")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     logger.debug(body)
     ack()
 
 
 @app.action("statuspage.impact_select")
-def handle_static_action(ack, body):
+def handle_static_action(ack, body):  # noqa: F811
     logger.debug(body)
     ack()
 
 
 @app.action("statuspage.open")
-def handle_static_action(ack, body):
+def handle_static_action(ack, body):  # noqa: F811
     logger.debug(body)
     ack()
 
 
 @app.action("statuspage.update_status")
-def handle_static_action(ack, body):
+def handle_static_action(ack, body):  # noqa: F811
     logger.debug(body)
     ack()
 
 
 @app.action("statuspage.view_incident")
-def handle_static_action(ack, body):
+def handle_static_action(ack, body):  # noqa: F811
     logger.debug(body)
     ack()
 
@@ -895,6 +964,6 @@ def handle_dismiss_message(ack, body):
 
 
 @app.action("view_postmortem")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     logger.debug(body)
     ack()

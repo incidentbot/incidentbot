@@ -94,7 +94,7 @@ def get_pager_automapping(session: SessionDep) -> dict | SuccessResponse:
     dependencies=[Depends(get_current_active_superuser)],
     status_code=status.HTTP_200_OK,
 )
-def get_pager_automapping(session: SessionDep) -> dict | SuccessResponse:
+def get_pager_store_automapping(session: SessionDep) -> dict | SuccessResponse:
     if (
         settings.integrations
         and settings.integrations.pagerduty
