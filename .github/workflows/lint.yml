@@ -1,0 +1,21 @@
+name: Lint
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        python-version: ['3.12.6']
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4.1.7
+      - uses: astral-sh/ruff-action@v3
+      - run: make lint

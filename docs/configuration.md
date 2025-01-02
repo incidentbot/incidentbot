@@ -80,6 +80,12 @@ To disable this behavior, set the following value in `config.yaml`:
 enable_pinned_images: false
 ```
 
+!!! note
+
+    You may not be able to pin images on a free/trial plan. The API method that it requires, `files.sharedPublicURL`, typically won't work.
+
+    That being said, it has worked fine in the past despite the error that will show in the logs.
+
 ### Initial Communications Reminders
 
 The bot will watch all incidents that are created and will send notifications to the channel to remind participants to send out updates and claim roles if they remain unclaimed.
@@ -134,9 +140,18 @@ To change any of these values, set the following values in `config.yaml`:
 
 ```yaml
 options:
+  additional_welcome_messages:
+    # Any additional messages to add to a new incident when it is opened.
+    - message: "Welcome to the incident. Please be sure to..."
+      pin: true # false by default
   auto_invite_groups:
-    - foo
-    - bar
+    - name: str
+      # Only if PagerDuty integration is enabled
+      # Create a page when these groups are invited
+      pagerduty_escalation_policy: some-policy
+      pagerduty_escalation_priority: high
+      severities: sev1,sev2
+      # severities: all
   # This is the default value. This is what all incident channels are prefixed with.
   channel_name_prefix: inc
 

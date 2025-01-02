@@ -79,7 +79,7 @@ class JiraApi:
             ).get("id")
         except Exception as error:
             logger.error(f"Error authenticating to Jira: {error}")
-            logger.error(f"Please check Jira configuration and try again.")
+            logger.error("Please check Jira configuration and try again.")
 
     def update_issue_status(
         self,

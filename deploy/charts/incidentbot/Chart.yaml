@@ -5,5 +5,5 @@ maintainers:
   - name: Scott Hawkins
     email: scott@echoboomer.net
 type: application
-version: 2.0.16
-appVersion: '2.0.16'
+version: 2.1.1
+appVersion: '2.1.1'

@@ -129,7 +129,7 @@ async def join_incident_as_role(
     # Verify the role is valid
     try:
         role_definition = settings.roles.get(role)
-    except Exception as error:
+    except Exception:
         logger.error(f"role {role} isn't valid")
         return
 
@@ -253,7 +253,7 @@ async def leave_incident_as_role(
     # Verify the role is valid
     try:
         role_definition = settings.roles.get(role)
-    except Exception as error:
+    except Exception:
         logger.error(f"role {role} isn't valid")
         return
 
@@ -267,7 +267,7 @@ async def leave_incident_as_role(
         if assigned:
             pass
         else:
-            logger.error(f"user is not assigned that role")
+            logger.error("user is not assigned that role")
             return
 
         # Send update notification message to incident channel
@@ -668,7 +668,7 @@ async def set_status(
 
                         # Write event log
                         EventLogHandler.create(
-                            event=f"Postmortem generated",
+                            event="Postmortem generated",
                             incident_id=incident.id,
                             incident_slug=incident.slug,
                             source="system",
