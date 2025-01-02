@@ -107,8 +107,8 @@ class PagerDutyInterface:
                             ],
                         }
                         for item in self.session().iter_all("oncalls")
-                        if item.get("start") != None
-                        and item.get("end") != None
+                        if item.get("start") is not None
+                        and item.get("end") is not None
                     ],
                     key=lambda x: x.get("escalation_level"),
                 )

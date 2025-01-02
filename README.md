@@ -1,5 +1,7 @@
 # Incident Bot
 
+![Incident Bot](https://github.com/incidentbot/incidentbot/blob/main/assets/logo.png)
+
 ![tests](https://github.com/incidentbot/incidentbot/actions/workflows/tests.yml/badge.svg)
 ![version](https://img.shields.io/github/v/release/incidentbot/incidentbot)
 
@@ -12,6 +14,7 @@ Need support or just want to chat with us? Join us on [Discord](https://discord.
 - [Incident Bot](#incident-bot)
   - [Features](#features)
   - [Quick Start](#quick-start)
+  - [Contributing](#contributing)
   - [Feedback](#feedback)
 
 ## Features
@@ -34,6 +37,10 @@ Need support or just want to chat with us? Join us on [Discord](https://discord.
 - Configure and deploy the application using one of the methods described in the documentation, or however you choose. (There's a Docker image available.)
 
 Full setup documentation is available [here](https://docs.incidentbot.io/installation/).
+
+## Contributing
+
+Please see [contribution guidelines](https://github.com/incidentbot/incidentbot/blob/main/CONTRIBUTING.md) before opening a pull request.
 
 ## Feedback
 

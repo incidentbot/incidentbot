@@ -353,7 +353,7 @@ def show_modal(ack, body, client):
 
 
 @app.view("incident.set_this_severity_modal")
-def handle_submission(ack, body):
+def handle_submission(ack, body):  # noqa: F811
     """
     Handles incident.set_this_severity_modal
     """
@@ -376,7 +376,7 @@ def handle_submission(ack, body):
 
 
 @app.action("incident.set_this_severity")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     ack()
     logger.debug(body)
 
@@ -385,7 +385,7 @@ def handle_static_action(ack, body, logger):
 
 
 @app.action("incident.set_this_status_modal")
-def show_modal(ack, body, client):
+def show_modal(ack, body, client):  # noqa: F811
     """
     Provides the modal that will display for setting an incident's status
     """
@@ -410,7 +410,7 @@ def show_modal(ack, body, client):
 
 
 @app.view("incident.set_this_status_modal")
-def handle_submission(ack, body):
+def handle_submission(ack, body):  # noqa: F811
     """
     Handles incident.set_this_status_modal
     """
@@ -432,7 +432,7 @@ def handle_submission(ack, body):
 
 
 @app.action("incident.set_this_status")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     ack()
     logger.debug(body)
 
@@ -441,7 +441,7 @@ def handle_static_action(ack, body, logger):
 
 
 @app.action("incident.view_responders")
-def show_responders(ack, body):
+def show_responders(ack, body):  # noqa: F811
     """
     Provides the response for viewing an incident's reponders
     """
@@ -515,7 +515,7 @@ Maintenance Windows
 
 
 @app.action("maintenance_window.set_this_status_modal")
-def show_modal(ack, body, client):
+def show_modal(ack, body, client):  # noqa: F811
     """
     Provides the modal that will display for setting a maintenance window's status
     """
@@ -548,7 +548,7 @@ def show_modal(ack, body, client):
 
 
 @app.view("maintenance_window.set_this_status_modal")
-def handle_submission(ack, body):
+def handle_submission(ack, body):  # noqa: F811
     """
     Handles maintenance_window.set_this_status_modal
     """
@@ -578,6 +578,6 @@ def handle_submission(ack, body):
 
 
 @app.action("maintenance_window.set_this_status")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     ack()
     logger.debug(body)

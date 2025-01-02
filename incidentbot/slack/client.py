@@ -391,7 +391,7 @@ def invite_user_to_channel(channel_id: str, user: str):
     """
 
     if (
-        not user in get_conversation_members(channel_id)
+        user not in get_conversation_members(channel_id)
         and user not in skip_invite_for_users
     ):
         try:

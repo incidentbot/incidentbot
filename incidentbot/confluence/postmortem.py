@@ -2,7 +2,7 @@ import datetime
 import uuid
 
 from incidentbot.configuration.settings import settings
-from incidentbot.confluence.api import ConfluenceApi, logger
+from incidentbot.confluence.api import ConfluenceApi
 from incidentbot.exceptions import PostmortemException
 from incidentbot.models.database import (
     IncidentEvent,
@@ -144,7 +144,9 @@ class IncidentPostmortem:
                     logger.error(
                         "Couldn't create postmortem page, does the parent page exist?"
                     )
-                    raise PostmortemException(error)
+                    raise PostmortemException(
+                        "Couldn't create postmortem page, does the parent page exist?"
+                    )
             else:
                 return None
         except Exception as error:
@@ -193,7 +195,7 @@ class IncidentPostmortem:
             else:
                 all_items_formatted += f"<tr><td><p>{item.created_at}</p></td><td><p>{item.text}</p></td></tr>"
         all_items_formatted += (
-            f"<tr><td><p>&hellip;</p></td><td><p>&hellip;</p></td></tr>"
+            "<tr><td><p>&hellip;</p></td><td><p>&hellip;</p></td></tr>"
         )
         base += all_items_formatted
         base += "</tbody></table>"

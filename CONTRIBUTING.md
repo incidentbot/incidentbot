@@ -22,3 +22,9 @@ Please fill out the pull request template and use a list to describe your change
 
   * Indent using 4 spaces
   * Format using `black`
+
+## Linting
+
+Linting is done using `ruff`. If you've already used `poetry shell`, just run `make lint`.
+
+Linting will occur on all pull requests and will fail if there are errors.
