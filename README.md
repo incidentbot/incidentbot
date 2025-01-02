@@ -1,15 +1,13 @@
 # Incident Bot
 
-![Incident Bot](https://github.com/incidentbot/incidentbot/blob/main/assets/logo.png)
+<img src="./assets/logo.png" width="250" height="250"/>
 
 ![tests](https://github.com/incidentbot/incidentbot/actions/workflows/tests.yml/badge.svg)
 ![version](https://img.shields.io/github/v/release/incidentbot/incidentbot)
 
-Incident management framework centralized around a ChatOps bot to allow your teams to easily and effectively identify and manage technical incidents impacting your cloud infrastructure, your products, or your customers' ability to use your applications and services.
+An incident management framework centralized around a ChatOps bot to allow your teams to easily and effectively identify and manage technical incidents impacting your cloud infrastructure, your products, or your customers' ability to use your applications and services.
 
 [Incident Bot's Documentation](https://docs.incidentbot.io)
-
-Need support or just want to chat with us? Join us on [Discord](https://discord.gg/PzqSQUY88c).
 
 - [Incident Bot](#incident-bot)
   - [Features](#features)

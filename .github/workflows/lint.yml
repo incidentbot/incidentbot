@@ -16,5 +16,6 @@ jobs:
       run:
         working-directory: .
     steps:
+      - uses: actions/checkout@v4.1.7
       - uses: astral-sh/ruff-action@v3
       - run: make lint
