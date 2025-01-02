@@ -18,7 +18,7 @@ from pydantic_settings import (
 from typing import Annotated, Any, Tuple, Type
 from typing_extensions import Self
 
-__version__ = "v2.0.16"
+__version__ = "v2.1.1"
 
 opsgenie_logo_url = "https://i.imgur.com/NjiEBCu.png"
 pagerduty_logo_url = "https://i.imgur.com/IVvdFCV.png"
@@ -74,12 +74,33 @@ Options
 """
 
 
+class AdditionalWelcomeMessage(BaseModel):
+    """
+    Model for messages that will be added to the beginning of all incidents
+    """
+
+    message: str
+    pin: bool | None = False
+
+
+class GroupAutoInvite(BaseModel):
+    """
+    Model for groups that should be auto invited to incidents
+    """
+
+    name: str
+    pagerduty_escalation_policy: str | None = None
+    pagerduty_escalation_priority: str | None = "low"
+    severities: str | None = "all"
+
+
 class Options(BaseModel):
     """
     Model for the options field
     """
 
-    auto_invite_groups: list[str] | None = None
+    additional_welcome_messages: list[AdditionalWelcomeMessage] | None = None
+    auto_invite_groups: list[GroupAutoInvite] | None = None
     channel_name_prefix: str | None = "inc"
     channel_name_date_format: str | None = "YYYY-MM-DD"
     channel_name_use_date_prefix: bool | None = False

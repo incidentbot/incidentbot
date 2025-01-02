@@ -48,7 +48,7 @@ class MaintenanceWindowDatabaseInterface:
                 ).one()
 
                 return maintenance_window
-        except NoResultFound as error:
+        except NoResultFound:
             logger.error(f"maintenance window {id} not found in database")
         except Exception as error:
             logger.error(
@@ -128,7 +128,7 @@ class MaintenanceWindowDatabaseInterface:
 
                 maintenance_window.status = status
                 session.commit()
-        except NoResultFound as error:
+        except NoResultFound:
             logger.error(f"maintenance window {id} not found in database")
         except Exception as error:
             logger.error(

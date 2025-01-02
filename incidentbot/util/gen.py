@@ -10,12 +10,18 @@ from zoneinfo import ZoneInfo
 timestamp_fmt = "%Y-%m-%dT%H:%M:%S"
 
 
-def fetch_timestamp(tz: str | None = None):
+def fetch_timestamp(
+    epoch: bool | None = False,
+    tz: str | None = None,
+):
     """
     Return a localized, formatted timestamp using datetime.now()
     """
 
     now = datetime.now(ZoneInfo(tz or settings.options.timezone))
+
+    if epoch:
+        return now.timestamp()
 
     return now.strftime(timestamp_fmt)
 

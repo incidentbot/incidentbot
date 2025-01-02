@@ -3,6 +3,7 @@ from datetime import datetime
 from incidentbot.configuration.settings import settings
 from incidentbot.logging import logger
 from incidentbot.models.database import engine, IncidentEvent
+from incidentbot.util.gen import fetch_timestamp
 from sqlmodel import Session, select, or_
 
 if not settings.IS_TEST_ENVIRONMENT:
@@ -33,7 +34,11 @@ class EventLogHandler:
                 event = IncidentEvent(
                     image=image,
                     incident_slug=incident_slug,
-                    message_ts=message_ts,
+                    message_ts=(
+                        message_ts
+                        if message_ts
+                        else fetch_timestamp(epoch=True)
+                    ),
                     mimetype=mimetype,
                     parent=incident_id,
                     source=source,
@@ -96,11 +101,15 @@ class EventLogHandler:
         with Session(engine) as session:
             try:
                 records = session.exec(
-                    select(IncidentEvent).filter(
+                    select(IncidentEvent)
+                    .filter(
                         or_(
                             IncidentEvent.incident_slug == incident_slug,
                             IncidentEvent.parent == incident_id,
                         )
+                    )
+                    .order_by(
+                        IncidentEvent.message_ts, IncidentEvent.created_at
                     )
                 ).all()
 
@@ -129,9 +138,13 @@ class EventLogHandler:
         with Session(engine) as session:
             try:
                 records = session.exec(
-                    select(IncidentEvent).filter(
+                    select(IncidentEvent)
+                    .filter(
                         IncidentEvent.incident_slug == incident_slug,
                         IncidentEvent.id == id,
+                    )
+                    .order_by(
+                        IncidentEvent.message_ts, IncidentEvent.created_at
                     )
                 ).one()
 

@@ -1,17 +1,18 @@
 # Incident Bot
 
+<img src="./assets/logo.png" width="250" height="250"/>
+
 ![tests](https://github.com/incidentbot/incidentbot/actions/workflows/tests.yml/badge.svg)
 ![version](https://img.shields.io/github/v/release/incidentbot/incidentbot)
 
-Incident management framework centralized around a ChatOps bot to allow your teams to easily and effectively identify and manage technical incidents impacting your cloud infrastructure, your products, or your customers' ability to use your applications and services.
+An incident management framework centralized around a ChatOps bot to allow your teams to easily and effectively identify and manage technical incidents impacting your cloud infrastructure, your products, or your customers' ability to use your applications and services.
 
 [Incident Bot's Documentation](https://docs.incidentbot.io)
-
-Need support or just want to chat with us? Join us on [Discord](https://discord.gg/PzqSQUY88c).
 
 - [Incident Bot](#incident-bot)
   - [Features](#features)
   - [Quick Start](#quick-start)
+  - [Contributing](#contributing)
   - [Feedback](#feedback)
 
 ## Features
@@ -25,6 +26,8 @@ Need support or just want to chat with us? Join us on [Discord](https://discord.
 - Automatically build a postmortem document base to save time
 - A web interface for advanced features and organizational capabilities [TBD]
 
+Interested in a web interface to use with Incident Bot? Check out the console project [here](https://github.com/incidentbot/console).
+
 ## Quick Start
 
 - [Create a Slack app](https://api.slack.com/apps?new_app=1) for this application. You can name it whatever you'd like.
@@ -34,6 +37,10 @@ Need support or just want to chat with us? Join us on [Discord](https://discord.
 - Configure and deploy the application using one of the methods described in the documentation, or however you choose. (There's a Docker image available.)
 
 Full setup documentation is available [here](https://docs.incidentbot.io/installation/).
+
+## Contributing
+
+Please see [contribution guidelines](https://github.com/incidentbot/incidentbot/blob/main/CONTRIBUTING.md) before opening a pull request.
 
 ## Feedback
 

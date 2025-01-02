@@ -9,6 +9,9 @@ from incidentbot.incident.util import comms_reminder, role_watcher
 from incidentbot.logging import logger
 from incidentbot.models.database import IncidentRecord, engine
 from incidentbot.models.pager import read_pager_auto_page_targets
+from incidentbot.scheduler.core import (
+    process as TaskScheduler,
+)
 from incidentbot.slack.messages import (
     BlockBuilder,
     IncidentChannelDigestNotification,
@@ -99,7 +102,7 @@ class Incident:
         params (IncidentRequestParameters)
     """
 
-    def __init__(self, params: IncidentRequestParameters):
+    def __init__(self, params: IncidentRequestParameters | None = None):
         self.params = params
 
     def create_channel(self, channel_name: str, private: bool = False) -> dict:
@@ -289,12 +292,17 @@ class Incident:
 
                 if record.meeting_link:
                     try:
+                        # Try to sort out the meeting link provider
+                        meeting_link_provider = "Audio"
+                        if "zoom" in record.meeting_link.lower():
+                            meeting_link_provider = "Zoom"
+
                         slack_web_client.bookmarks_add(
                             channel_id=record.channel_id,
                             emoji=settings.icons.get(settings.platform).get(
                                 "meeting"
                             ),
-                            title="Meeting",
+                            title=f"{meeting_link_provider} Meeting",
                             type="link",
                             link=record.meeting_link,
                         )
@@ -343,6 +351,37 @@ class Incident:
             logger.error(f"Error during incident creation: {error}")
             return
 
+    @staticmethod
+    def delete(id: int) -> bool:
+        """
+        Delete an incident
+        """
+
+        try:
+            with Session(engine) as session:
+                # Remove record
+                record = session.exec(
+                    select(IncidentRecord).filter(IncidentRecord.id == id)
+                ).one()
+                session.delete(record)
+                session.commit()
+
+                # Clean up jobs
+                for job in TaskScheduler.list_jobs():
+                    if f"inc-{record.id}" in job.id:
+                        TaskScheduler.delete_job(job.id)
+
+                slack_web_client.chat_postMessage(
+                    channel=record.channel_id,
+                    text=":octagonal_sign: This incident has been deleted from the application. "
+                    + "You will no longer be able to use the bot to manage it.",
+                )
+
+                return True
+        except Exception as error:
+            logger.error(f"Error deleting incident: {error}")
+            return
+
     async def handle_incident_optional_features(self, id: int):
         """
         Invite required participants (optional)
@@ -355,33 +394,37 @@ class Incident:
 
             if settings.options.auto_invite_groups:
                 for gr in settings.options.auto_invite_groups:
-                    all_groups = all_workspace_groups.get("usergroups")
-                    if len(all_groups) == 0:
-                        logger.error(
-                            f"Error when inviting mandatory users: looked for group {gr} but did not find it."
-                        )
-                    else:
+                    if (
+                        record.severity in gr.severities.split(",")
+                        or gr.severities == "all"
+                    ):
+                        # Get group members
                         try:
-                            required_participants_group = [
-                                g for g in all_groups if g["handle"] == gr
-                            ][0]["id"]
                             required_participants_group_members = (
                                 slack_web_client.usergroups_users_list(
-                                    usergroup=required_participants_group,
+                                    usergroup=[
+                                        g
+                                        for g in all_workspace_groups.get(
+                                            "usergroups"
+                                        )
+                                        if g["handle"] == gr
+                                    ][0]["id"],
                                 )
                             )["users"]
                         except Exception as error:
                             logger.error(
-                                f"Error when formatting automatic invitees group name: {error}"
+                                f"Error getting group members for {gr}: {error}"
                             )
+                            raise
+
+                        # Invite group members to channel
                         try:
-                            invite = slack_web_client.conversations_invite(
+                            slack_web_client.conversations_invite(
                                 channel=record.channel_id,
                                 users=",".join(
                                     required_participants_group_members
                                 ),
                             )
-                            logger.debug(f"\n{invite}\n")
 
                             # Write event log
                             EventLogHandler.create(
@@ -393,6 +436,38 @@ class Incident:
                         except slack_sdk.errors.SlackApiError as error:
                             logger.error(
                                 f"Error when inviting auto users: {error}"
+                            )
+
+                        # If the PagerDuty integration is enabled
+                        # and the group declaration has an escalation
+                        # issue a page
+                        if (
+                            settings.integrations
+                            and settings.integrations.pagerduty
+                            and settings.integrations.pagerduty.enabled
+                            and gr.pagerduty_escalation_policy
+                        ):
+                            from incidentbot.pagerduty.api import (
+                                PagerDutyInterface,
+                            )
+
+                            pagerduty_interface = PagerDutyInterface(
+                                escalation_policy=gr.pagerduty_escalation_policy
+                            )
+
+                            pagerduty_interface.page(
+                                priority=gr.pagerduty_escalation_priority,
+                                channel_name=record.channel_name,
+                                channel_id=record.channel_id,
+                                paging_user="auto",
+                            )
+
+                            # Write event log
+                            EventLogHandler.create(
+                                event="Created PagerDuty incident based on automatic configuration",
+                                incident_id=record.id,
+                                incident_slug=record.slug,
+                                source="system",
                             )
 
             """
@@ -470,7 +545,7 @@ class Incident:
                 try:
                     slack_web_client.chat_postMessage(
                         channel=record.channel_id,
-                        text=f":warning: This incident was flagged as a security incident and the channel is private. You must invite other users to this channel manually.",
+                        text=":warning: This incident was flagged as a security incident and the channel is private. You must invite other users to this channel manually.",
                     )
                 except slack_sdk.errors.SlackApiError as error:
                     logger.error(
@@ -592,7 +667,7 @@ class Incident:
                         replace_existing=True,
                     )
             except Exception as error:
-                logger.error(f"error adding job: {error}")
+                logger.error(f"Error adding job: {error}")
 
             """
             Create task to watch for unassigned roles
@@ -610,7 +685,32 @@ class Incident:
                         replace_existing=True,
                     )
             except Exception as error:
-                logger.error(f"error adding job: {error}")
+                logger.error(f"Error adding job: {error}")
+
+            """
+            Additional welcome messages
+            """
+
+            try:
+                if settings.options.additional_welcome_messages:
+                    for entry in settings.options.additional_welcome_messages:
+                        resp = slack_web_client.chat_postMessage(
+                            channel=record.channel_id,
+                            text=entry.message,
+                        )
+                        if entry.pin:
+                            slack_web_client.pins_add(
+                                channel=record.channel_id,
+                                timestamp=resp["ts"],
+                            )
+            except Exception as error:
+                logger.error(
+                    f"Error sending additional welcome message to {record.slug}: {error}"
+                )
+
+            """
+            Final mutation
+            """
 
             session.add(record)
             session.commit()

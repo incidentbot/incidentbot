@@ -19,6 +19,7 @@ oauth_config:
   scopes:
     user:
       - files:write
+      - files:write:user
     bot:
       - app_mentions:read
       - bookmarks:write

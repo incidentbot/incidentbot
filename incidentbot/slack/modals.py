@@ -153,7 +153,7 @@ def update_home_tab(client, event, logger):
 
 
 @app.action("declare_incident_modal")
-def show_modal(ack, body, client):
+def show_modal(ack, body, client):  # noqa: F811
     """
     Provides the modal that will display for declaring an incident
     """
@@ -173,7 +173,7 @@ def show_modal(ack, body, client):
 
 
 @app.view("declare_incident_modal")
-def handle_submission(ack, body, client):
+def handle_submission(ack, body, client):  # noqa: F811
     """
     Handles declare_incident_modal
     """
@@ -229,7 +229,7 @@ def handle_submission(ack, body, client):
 
 
 @app.action("incident_update_modal")
-def show_modal(ack, body, client):
+def show_modal(ack, body, client):  # noqa: F811
     """
     Provides the modal that will display when the shortcut is used to provide an incident update
     """
@@ -353,7 +353,7 @@ def show_modal(ack, body, client):
 
 
 @app.view("incident_update_modal")
-def handle_submission(ack, body, client):
+def handle_submission(ack, body, client):  # noqa: F811
     """
     Handles incident_update_modal
     """
@@ -403,7 +403,7 @@ Maintenance Windows
 
 
 @app.action("maintenance_window_modal")
-def show_modal(ack, body, client):
+def show_modal(ack, body, client):  # noqa: F811
     """
     Provides the modal that will display when the shortcut is used to create a maintenance window
     """
@@ -591,7 +591,7 @@ def show_modal(ack, body, client):
 
 
 @app.view("maintenance_window_modal")
-def handle_submission(ack, body, client):
+def handle_submission(ack, body, client):  # noqa: F811
     """
     Handles maintenance_window_modal
     """
@@ -643,7 +643,7 @@ Paging
 
 @app.action("pager")
 @app.shortcut("pager")
-def show_modal(ack, body, client):
+def show_modal(ack, body, client):  # noqa: F811
     # Acknowledge the command request
     ack()
 
@@ -922,19 +922,19 @@ def update_modal(ack, body, client):
 
 
 @app.action("update_pager_selected_team")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     ack()
     logger.debug(body)
 
 
 @app.action("update_pager_selected_priority")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     ack()
     logger.debug(body)
 
 
 @app.view("pager_modal")
-def handle_submission(ack, body, say, view):
+def handle_submission(ack, body, say, view):  # noqa: F811
     """
     Handles pager
     """
@@ -1051,7 +1051,7 @@ Timeline
 
 
 @app.action("incident_timeline_modal")
-def show_modal(ack, body, client):
+def show_modal(ack, body, client):  # noqa: F811
     # Acknowledge the command request
     ack()
 
@@ -1118,7 +1118,7 @@ def show_modal(ack, body, client):
 
 
 @app.action("update_timeline_selected_incident")
-def update_modal(ack, body, client):
+def update_modal(ack, body, client):  # noqa: F811
     # Acknowledge the button request
     ack()
 
@@ -1199,25 +1199,25 @@ def update_modal(ack, body, client):
 
 
 @app.action("update_timeline_date")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     ack()
     logger.debug(body)
 
 
 @app.action("update_timeline_time")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     ack()
     logger.debug(body)
 
 
 @app.action("update_timeline_text")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     ack()
     logger.debug(body)
 
 
 @app.view("incident_timeline_modal_add")
-def handle_submission(ack, body, say, view):
+def handle_submission(ack, body, say, view):  # noqa: F811
     """
     Handles
     """
@@ -1265,7 +1265,7 @@ Statuspage
 
 
 @app.action("statuspage_incident_modal")
-def show_modal(ack, body, client):
+def show_modal(ack, body, client):  # noqa: F811
     """
     Provides the modal that will display when the shortcut is
     used to start a Statuspage incident
@@ -1495,7 +1495,7 @@ def show_modal(ack, body, client):
 
 
 @app.view("statuspage_incident_modal")
-def handle_submission(ack, body, client, view):
+def handle_submission(ack, body, client, view):  # noqa: F811
     """
     Handles statuspage_incident_modal
     """
@@ -1540,7 +1540,7 @@ def handle_submission(ack, body, client, view):
 
 
 @app.action("statuspage_incident_update_modal")
-def show_modal(ack, body, client):
+def show_modal(ack, body, client):  # noqa: F811
     """
     Provides the modal that will display when the shortcut is used to update a Statuspage incident
     """
@@ -1685,7 +1685,7 @@ def show_modal(ack, body, client):
 
 
 @app.view("statuspage_incident_update_modal")
-def handle_submission(ack, body):
+def handle_submission(ack, body):  # noqa: F811
     """
     Handles statuspage_incident_update_modal
     """
@@ -1722,7 +1722,7 @@ Jira
 
 
 @app.action("incident_create_jira_issue_modal")
-def show_modal(ack, body, client):
+def show_modal(ack, body, client):  # noqa: F811
     """
     Provides the modal that will display when the shortcut is used to create a Jira issue
     """
@@ -1863,7 +1863,7 @@ def show_modal(ack, body, client):
 
 
 @app.view("incident_create_jira_issue_modal")
-def handle_submission(ack, body, client, view):
+def handle_submission(ack, body, client):  # noqa: F811
     """
     Handles incident_create_jira_issue_modal
     """
