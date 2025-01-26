@@ -29,7 +29,7 @@ test-exec:
 	./$(VENV)/bin/python3 test.py
 
 tests:
-	./$(VENV)/bin/python -m pytest -v tests/
+	IS_TEST_ENVIRONMENT=true ./$(VENV)/bin/python -m pytest -v tests/
 
 update: shell
 	poetry update
