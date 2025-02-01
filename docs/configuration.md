@@ -157,6 +157,8 @@ options:
   # There is no default value for this. If one is set, this URL will be used for the meeting advertised with each incident.
   # Will not be used if using automatic Zoom meeting generation.
   meeting_link: None
+  # If true, pin the meeting link to the incident channel upon creation.
+  pin_meeting_link_to_channel: false
   # This limits the amount of incidents shown on the summary on the app home page.
   # It is not recommended to raise this value very high due to Slack limitations on how many blocks can appear in a message.
   # This is the default value.
