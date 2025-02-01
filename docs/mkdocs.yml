@@ -48,7 +48,3 @@ nav:
       - Usage Guide: 'usage.md'
       - FAQ: 'faq.md'
       - Changelog: 'changelog.md'
-extra:
-  social:
-    - icon: fontawesome/brands/discord
-      link: https://discord.gg/PzqSQUY88c

@@ -4,8 +4,6 @@ Incident Bot is an open-source incident management framework.
 
 The core feature is a ChatOps bot to allow your teams to easily and effectively identify and manage technical incidents impacting your cloud infrastructure, your products, or your customers' ability to use your applications and services.
 
-Need support or just want to chat with us? Join us on [Discord](https://discord.gg/PzqSQUY88c).
-
 ## Core Technologies
 
  - [Pydantic](https://docs.pydantic.dev/latest/) is used to handle data validation and type safety across the platform.
