@@ -18,7 +18,7 @@ from pydantic_settings import (
 from typing import Annotated, Any, Tuple, Type
 from typing_extensions import Self
 
-__version__ = "v2.1.1"
+__version__ = "v2.1.2"
 
 opsgenie_logo_url = "https://i.imgur.com/NjiEBCu.png"
 pagerduty_logo_url = "https://i.imgur.com/IVvdFCV.png"
@@ -103,6 +103,7 @@ class Options(BaseModel):
     auto_invite_groups: list[GroupAutoInvite] | None = None
     channel_name_prefix: str | None = "inc"
     meeting_link: str | None = None
+    pin_meeting_link_to_channel: bool = False
     skip_logs_for_user_agent: list[str] | None = None
     show_most_recent_incidents_app_home_limit: int = 5
     slack_items_pagination_per_page: int = 5
