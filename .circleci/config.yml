@@ -58,20 +58,6 @@ jobs:
             echo 'export IMAGE_TAG=util-$(cat version)' >> "$BASH_ENV"
             source "$BASH_ENV"
             docker build --platform linux/arm64 --file Dockerfile.util.arm64 --tag $IMAGE_NAME:$IMAGE_TAG-arm64 .
-  build-docs:
-    environment:
-      IMAGE_NAME: eb129/incidentbot-docs
-    docker:
-      - image: cimg/base:current
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: Build util image
-          command: |
-            echo 'export IMAGE_TAG=$(cat version)' >> "$BASH_ENV"
-            source "$BASH_ENV"
-            docker build --tag $IMAGE_NAME:$IMAGE_TAG --file ./docs/Dockerfile .
   publish:
     environment:
       IMAGE_NAME: eb129/incidentbot
@@ -138,28 +124,6 @@ jobs:
             docker build --platform linux/arm64 --file Dockerfile.util.arm64 --tag $IMAGE_NAME:$IMAGE_TAG-arm64 .
             echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
             docker push $IMAGE_NAME:$IMAGE_TAG-arm64
-  publish-docs:
-    environment:
-      IMAGE_NAME: eb129/incidentbot-docs
-    docker:
-      - image: cimg/base:current
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: Publish Docker Image to Docker Hub
-          command: |
-            echo 'export IMAGE_TAG=$(cat version)' >> "$BASH_ENV"
-            source "$BASH_ENV"
-            docker build --tag $IMAGE_NAME:$IMAGE_TAG --file ./docs/Dockerfile .
-            echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-            docker push $IMAGE_NAME:$IMAGE_TAG
-  helm:
-    docker:
-      - image: eb129/docker-kubectl:v1.2.0
-    steps:
-      - checkout
-      - run: scripts/helm.sh
 workflows:
   version: 2
   main:
@@ -180,10 +144,6 @@ workflows:
           filters:
             branches:
               ignore: main
-      - build-docs:
-          filters:
-            branches:
-              ignore: main
       - publish:
           filters:
             branches:
@@ -200,9 +160,3 @@ workflows:
           filters:
             branches:
               only: main
-      - publish-docs:
-          filters:
-            branches:
-              only: main
-      - helm:
-          context: helm-charts-repository
