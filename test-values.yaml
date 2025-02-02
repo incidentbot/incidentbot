@@ -1,0 +1,27 @@
+configMap:
+  create: true
+  data:
+    api:
+      enabled: true
+    options:
+      timezone: America/New_York
+database:
+  enabled: true
+  password: foobar1234
+envFromSecret:
+  enabled: true
+  secretName: incidentbot-secret
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: 'nginx'
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: api.incidentbot.io
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - hosts:
+        - api.incidentbot.io
+      secretName: incidentbot-tls

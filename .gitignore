@@ -186,8 +186,5 @@ todo.md
 *secret.json
 *secret-sealed.json
 
-# Helm
-test-values.yaml
-
 # Configuration
 config.yaml
