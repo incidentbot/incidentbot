@@ -9,6 +9,8 @@ An incident management framework centralized around a ChatOps bot to allow your 
 
 [Incident Bot's Documentation](https://docs.incidentbot.io)
 
+**NOTICE:** As of February 2nd, 2025, the Helm charts repository has moved from https://charts.incidentbot.io to https://docs.incidentbot.io/charts - please update your usage accordingly.
+
 - [Incident Bot](#incident-bot)
   - [Features](#features)
   - [Quick Start](#quick-start)
