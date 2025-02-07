@@ -403,13 +403,13 @@ class Incident:
                                         for g in all_workspace_groups.get(
                                             "usergroups"
                                         )
-                                        if g["handle"] == gr
+                                        if g["handle"] == gr.name
                                     ][0]["id"],
                                 )
                             )["users"]
                         except Exception as error:
                             logger.error(
-                                f"Error getting group members for {gr}: {error}"
+                                f"Error getting group members for {gr.name}: {error}"
                             )
                             raise
 
@@ -424,7 +424,7 @@ class Incident:
 
                             # Write event log
                             EventLogHandler.create(
-                                event=f"Group {gr} was invited to the incident channel based on configured settings",
+                                event=f"Group {gr.name} was invited to the incident channel based on configured settings",
                                 incident_id=record.id,
                                 incident_slug=record.slug,
                                 source="system",
