@@ -64,7 +64,7 @@ class TestFormatChannelName(unittest.TestCase):
     @patch("incidentbot.incident.core.datetime")
     def test_format_channel_name_with_date_prefix(self, mock_datetime):
         mock_datetime.now.return_value = datetime(2024, 12, 25)
-        result = format_channel_name(1, "Test Description", useDatePrefix=True)
+        result = format_channel_name(1, "Test Description", use_date_prefix=True)
         self.assertEqual(result, "incident-1-2024-12-25-test-description")
 
     @patch("incidentbot.incident.core.datetime")
@@ -76,7 +76,7 @@ class TestFormatChannelName(unittest.TestCase):
     @patch("incidentbot.incident.core.datetime")
     def test_format_channel_name_with_date_and_comms(self, mock_datetime):
         mock_datetime.now.return_value = datetime(2024, 12, 25)
-        result = format_channel_name(1, "Test Description", useDatePrefix=True, comms=True)
+        result = format_channel_name(1, "Test Description", use_date_prefix=True, comms=True)
         self.assertEqual(result, "incident-1-2024-12-25-test-description-comms")
 
     def test_format_channel_name_special_characters(self):

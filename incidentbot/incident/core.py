@@ -34,7 +34,7 @@ if not settings.IS_TEST_ENVIRONMENT:
 
 def format_channel_name(id: int,
                         description: str,
-                        useDatePrefix: bool = False,
+                        use_date_prefix: bool = False,
                         comms: bool = False) -> str:
     """
     Format a channel name by removing special characters, replacing spaces with dashes,
@@ -43,7 +43,7 @@ def format_channel_name(id: int,
     Args:
         id (int): The identifier for the channel.
         description (str): A description used for the channel name.
-        useDatePrefix (bool): Whether to prepend the current date to the name. Defaults to False.
+        use_date_prefix (bool): Whether to prepend the current date to the name. Defaults to False.
         comms (bool): Whether to append '-comms' to the name. Defaults to False.
 
     Returns:
@@ -63,7 +63,7 @@ def format_channel_name(id: int,
 
     # Handle date prefix if required
     current_date = ""
-    if useDatePrefix:
+    if use_date_prefix:
         date_format = settings.options.channel_name_date_format.replace(
             "YYYY", "%Y").replace("MM", "%m").replace("DD", "%d")
         current_date = datetime.now().strftime(date_format)
@@ -173,7 +173,7 @@ class Incident:
                 channel_name = format_channel_name(
                     id=record.id,
                     description=self.params.incident_description,
-                    useDatePrefix=settings.options.channel_name_use_date_prefix
+                    use_date_prefix=settings.options.channel_name_use_date_prefix
                 )
                 channel = self.create_channel(
                     channel_name=channel_name,
@@ -648,7 +648,7 @@ class Incident:
                         channel_name=format_channel_name(
                             id=record.id,
                             description=record.description,
-                            useDatePrefix=settings.options.channel_name_use_date_prefix,
+                            use_date_prefix=settings.options.channel_name_use_date_prefix,
                             comms=True,
                         ),
                         private=False,

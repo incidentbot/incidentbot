@@ -424,7 +424,7 @@ async def set_description(channel_id: str, description: str, user: str = None):
         new_channel_name = format_channel_name(
             id=incident.id,
             description=description,
-            useDatePrefix=settings.options.channel_name_use_date_prefix
+            use_date_prefix=settings.options.channel_name_use_date_prefix
         )
         try:
             slack_web_client.conversations_rename(
