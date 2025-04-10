@@ -32,10 +32,12 @@ if not settings.IS_TEST_ENVIRONMENT:
     )
 
 
-def format_channel_name(id: int,
-                        description: str,
-                        use_date_prefix: bool = False,
-                        comms: bool = False) -> str:
+def format_channel_name(
+    id: int,
+    description: str,
+    use_date_prefix: bool = False,
+    comms: bool = False,
+) -> str:
     """
     Format a channel name by removing special characters, replacing spaces with dashes,
     and optionally adding a date prefix.
@@ -64,8 +66,11 @@ def format_channel_name(id: int,
     # Handle date prefix if required
     current_date = ""
     if use_date_prefix:
-        date_format = settings.options.channel_name_date_format.replace(
-            "YYYY", "%Y").replace("MM", "%m").replace("DD", "%d")
+        date_format = (
+            settings.options.channel_name_date_format.replace("YYYY", "%Y")
+            .replace("MM", "%m")
+            .replace("DD", "%d")
+        )
         current_date = datetime.now().strftime(date_format)
         # Construct the final channel name
         final = f"{prefix}-{id}-{current_date}-{suffix}"
@@ -173,7 +178,7 @@ class Incident:
                 channel_name = format_channel_name(
                     id=record.id,
                     description=self.params.incident_description,
-                    use_date_prefix=settings.options.channel_name_use_date_prefix
+                    use_date_prefix=settings.options.channel_name_use_date_prefix,
                 )
                 channel = self.create_channel(
                     channel_name=channel_name,
