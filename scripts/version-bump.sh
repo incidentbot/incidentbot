@@ -2,15 +2,14 @@
 
 files=(
     "version"
-    "./deploy/charts/incidentbot/Chart.yaml"
-    "./docs/deploy/overlays/production/kustomization.yaml"
     "./incidentbot/configuration/settings.py"
+    "pyproject.toml"
 )
 
 CURRENT=$(cat version)
-CURRENT_NO_V_PREFIX=$(echo $CURRENT | sed 's/\v//g')
+CURRENT_NO_V_PREFIX=$(echo $CURRENT | sed 's/^v//')
 NEXT=$1
-NEXT_NO_V_PREFIX=$(echo $NEXT | sed 's/\v//g')
+NEXT_NO_V_PREFIX=$(echo $NEXT | sed 's/^v//')
 
 if [[ "$CURRENT" == "$NEXT" ]]; then
     echo "already at this version"
@@ -18,8 +17,12 @@ if [[ "$CURRENT" == "$NEXT" ]]; then
 fi
 
 for file in ${files[@]}; do
-    sed -i '' "s/$CURRENT_NO_V_PREFIX/$NEXT_NO_V_PREFIX/g" ${file}
-    echo "updated ${file}"
+    if [ -f "$file" ]; then
+        sed -i '' "s/$CURRENT_NO_V_PREFIX/$NEXT_NO_V_PREFIX/g" "$file"
+        echo "updated $file"
+    else
+        echo "skipping $file (file not found)"
+    fi
 done
 
 echo "don't forget to update pyproject.toml manually"

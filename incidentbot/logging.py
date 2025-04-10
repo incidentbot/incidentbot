@@ -3,12 +3,12 @@ import structlog
 import sys
 
 from incidentbot.configuration.settings import settings
-from pythonjsonlogger import jsonlogger
+from pythonjsonlogger.json import JsonFormatter
 
 if settings.LOG_TYPE is not None and settings.LOG_TYPE.lower() == "json":
     logger = logging.getLogger()
     logHandler = logging.StreamHandler(stream=sys.stdout)
-    formatter = jsonlogger.JsonFormatter(
+    formatter = JsonFormatter(
         "%(name)s %(asctime)s %(levelname)s %(filename)s %(message)s"
     )
     logHandler.setFormatter(formatter)
