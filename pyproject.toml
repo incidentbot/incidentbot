@@ -39,7 +39,7 @@ slack-bolt = "^1.21.2"
 slack-sdk = "^3.35.0"
 sqlmodel = "^0.0.22"
 structlog = "^25.1.0"
-uvicorn = "^0.34.0"
+uvicorn = "^0.34.3"
 
 
 [tool.poetry.group.dev.dependencies]
