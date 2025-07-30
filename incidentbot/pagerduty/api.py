@@ -10,7 +10,7 @@ from incidentbot.models.database import (
 )
 from incidentbot.slack.client import slack_workspace_id
 from incidentbot.util.gen import fetch_timestamp
-from pdpyras import APISession, PDClientError
+from pagerduty import RestApiV2Client, Error as PDClientError
 from sqlalchemy import update
 from sqlmodel import Session, select
 
@@ -20,8 +20,8 @@ class PagerDutyInterface:
         self.escalation_policy = escalation_policy
 
     @classmethod
-    def session(self) -> APISession:
-        return APISession(
+    def session(self) -> RestApiV2Client:
+        return RestApiV2Client(
             settings.PAGERDUTY_API_TOKEN,
             default_from=settings.PAGERDUTY_API_USERNAME,
         )

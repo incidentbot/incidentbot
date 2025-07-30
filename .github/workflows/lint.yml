@@ -11,7 +11,7 @@ jobs:
     timeout-minutes: 10
     strategy:
       matrix:
-        python-version: ['3.12.6']
+        python-version: ['3.13.5']
     defaults:
       run:
         working-directory: .
