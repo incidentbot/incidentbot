@@ -1016,13 +1016,13 @@ files = [
 
 [[package]]
 name = "pagerduty"
-version = "3.1.0"
+version = "4.1.0"
 description = "Clients for PagerDuty's Public APIs"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "pagerduty-3.1.0-py3-none-any.whl", hash = "sha256:951b8a6f20759d2fe74f9965fe23e2f958a3b0beae71bce1e0893d765a153014"},
-    {file = "pagerduty-3.1.0.tar.gz", hash = "sha256:938e7731cf801a15d213a24e8e4d3addbfe50a9dc1d75500076802b49861f600"},
+    {file = "pagerduty-4.1.0-py3-none-any.whl", hash = "sha256:0fb62d673915af8b7d76c75892ee10ca4dc89ec9c18f3c37ed305fd24bc0ea8e"},
+    {file = "pagerduty-4.1.0.tar.gz", hash = "sha256:65a8cb43b41f6f9574eab03634d4faefaf54c9d0a5297fed7f55b5f6bb1fc68f"},
 ]
 
 [package.dependencies]
@@ -2134,4 +2134,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.13.7"
-content-hash = "46c3ede4d03a877766db0e5bd678a197d284417bc306219858d5e67eed5510dc"
+content-hash = "4960a93d406055ae40a9b891f6a6bb7d84e0e6b9ea5627ec5f0625102d27015d"
