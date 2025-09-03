@@ -20,27 +20,6 @@ router = APIRouter()
 def get_pager(session: SessionDep) -> PagerDataResponse | SuccessResponse:
     if (
         settings.integrations
-        and settings.integrations.atlassian
-        and settings.integrations.atlassian.opsgenie
-        and settings.integrations.atlassian.opsgenie.enabled
-    ):
-        try:
-
-            data = (
-                session.exec(select(ApplicationData))
-                .filter(ApplicationData.name == "opsgenie_oc_data")
-                .first()
-            )
-
-            return PagerDataResponse(
-                platform="opsgenie",
-                data=data.json_data,
-                ts=data.updated_at,
-            )
-        except Exception as error:
-            raise HTTPException(status_code=500, detail=str(error))
-    elif (
-        settings.integrations
         and settings.integrations.pagerduty
         and settings.integrations.pagerduty.enabled
     ):

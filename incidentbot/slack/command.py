@@ -243,6 +243,17 @@ def command_blocks(
                         "type": "button",
                         "text": {
                             "type": "plain_text",
+                            "text": "Archive",
+                            "emoji": True,
+                        },
+                        "value": "archive_incident_channel",
+                        "action_id": "incident.archive_incident_channel",
+                        "style": "danger",
+                    },
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
                             "text": "🛟 Get Help",
                             "emoji": True,
                         },

@@ -223,39 +223,6 @@ process.scheduler.add_job(
 
 if (
     settings.integrations
-    and settings.integrations.atlassian
-    and settings.integrations.atlassian.opsgenie
-    and settings.integrations.atlassian.opsgenie.enabled
-):
-    from incidentbot.opsgenie.api import OpsgenieAPI
-
-    def update_opsgenie_oc_data():
-        """
-        Uses Opsgenie API to fetch information about on-call schedules
-        """
-
-        logger.info("[running task update_opsgenie_oc_data]")
-
-        try:
-            api = OpsgenieAPI()
-            api.store_on_call_data()
-        except Exception as error:
-            logger.error(
-                f"Error updating Opsgenie on-call information in scheduled job: {error}"
-            )
-
-    process.scheduler.add_job(
-        id="update_opsgenie_oc_data",
-        func=update_opsgenie_oc_data,
-        trigger="interval",
-        name="Update Opsgenie on-call information",
-        minutes=30,
-        replace_existing=True,
-    )
-
-
-if (
-    settings.integrations
     and settings.integrations.pagerduty
     and settings.integrations.pagerduty.enabled
 ):

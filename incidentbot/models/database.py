@@ -331,18 +331,6 @@ class MaintenanceWindowRecord(SQLModel, table=True):
     )
 
 
-class OpsgenieIncidentRecord(SQLModel, table=True):
-    id: uuid.UUID = Field(primary_key=True, default_factory=uuid.uuid4)
-    parent: Annotated[
-        int,
-        Field(
-            foreign_key="incidentrecord.id",
-            ondelete="CASCADE",
-            exclude=True,
-        ),
-    ]
-
-
 class PagerDutyIncidentRecord(SQLModel, table=True):
     created_at: datetime = Field(
         sa_column_kwargs={

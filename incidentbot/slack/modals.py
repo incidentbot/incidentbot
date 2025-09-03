@@ -669,20 +669,6 @@ def show_modal(ack, body, client):  # noqa: F811
 
         priorities = ["low", "high"]
         image_url = pagerduty_logo_url
-    elif (
-        settings.integrations
-        and settings.integrations.atlassian
-        and settings.integrations.atlassian.opsgenie
-        and settings.integrations.atlassian.opsgenie.enabled
-    ):
-        from incidentbot.configuration.settings import opsgenie_logo_url
-        from incidentbot.opsgenie import api as og_api
-
-        platform = "Opsgenie"
-        sess = og_api.OpsgenieAPI()
-        oncalls = sess.list_teams()
-        priorities = sess.priorities
-        image_url = opsgenie_logo_url
     else:
         platform = None
         image_url = None
@@ -816,12 +802,6 @@ def show_modal(ack, body, client):  # noqa: F811
                     and settings.integrations.pagerduty
                     and settings.integrations.pagerduty.enabled
                 )
-                or (
-                    settings.integrations
-                    and settings.integrations.atlassian
-                    and settings.integrations.atlassian.opsgenie
-                    and settings.integrations.atlassian.opsgenie.enabled
-                )
                 else [
                     {
                         "type": "section",
@@ -856,14 +836,6 @@ def update_modal(ack, body, client):
     ):
         platform = "PagerDuty"
         artifact = "incident"
-    elif (
-        settings.integrations
-        and settings.integrations.atlassian
-        and settings.integrations.atlassian.opsgenie
-        and settings.integrations.atlassian.opsgenie.enabled
-    ):
-        platform = "Opsgenie"
-        artifact = "alert"
 
     # Call views_update with the built-in client
     client.views_update(
@@ -959,17 +931,6 @@ def handle_submission(ack, body, say, view):  # noqa: F811
 
         platform = "PagerDuty"
         artifact = "incident"
-    elif (
-        settings.integrations
-        and settings.integrations.atlassian
-        and settings.integrations.atlassian.opsgenie
-        and settings.integrations.atlassian.opsgenie.enabled
-    ):
-        from incidentbot.configuration.settings import opsgenie_logo_url
-        from incidentbot.opsgenie import api as og_api
-
-        platform = "Opsgenie"
-        artifact = "alert"
 
     try:
         match platform.lower():
@@ -980,16 +941,6 @@ def handle_submission(ack, body, say, view):  # noqa: F811
                     channel_name=incident_channel_name,
                     channel_id=incident_channel_id,
                     paging_user=paging_user,
-                )
-            case "opsgenie":
-                image_url = opsgenie_logo_url
-                sess = og_api.OpsgenieAPI()
-                sess.create_alert(
-                    channel_name=incident_channel_name,
-                    channel_id=incident_channel_id,
-                    paging_user=paging_user,
-                    priority=priority,
-                    responders=[team],
                 )
 
         outgoing = f"The team `{team}` has been paged to respond to this {artifact} via {platform} at the request of *{paging_user}*."

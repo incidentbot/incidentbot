@@ -129,16 +129,6 @@ def startup_tasks():
 
     if (
         settings.integrations
-        and settings.integrations.atlassian
-        and settings.integrations.atlassian.opsgenie
-        and settings.integrations.atlassian.opsgenie.enabled
-    ):
-        from incidentbot.scheduler.core import update_opsgenie_oc_data
-
-        update_opsgenie_oc_data()
-
-    if (
-        settings.integrations
         and settings.integrations.pagerduty
         and settings.integrations.pagerduty.enabled
     ):
