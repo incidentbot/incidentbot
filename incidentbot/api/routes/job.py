@@ -16,7 +16,6 @@ router = APIRouter()
 
 protected_jobs = [
     "scrape_for_aging_incidents",
-    "update_opsgenie_oc_data",
     "update_pagerduty_oc_data",
     "update_slack_channel_list",
     "update_slack_user_list",
@@ -56,25 +55,6 @@ async def run_job(job_id) -> SuccessResponse:
                 scrape_for_aging_incidents()
             except Exception as error:
                 raise HTTPException(status_code=500, detail=str(error))
-        case "update_opsgenie_oc_data":
-            if (
-                settings.integrations
-                and settings.integrations.atlassian
-                and settings.integrations.atlassian.opsgenie
-                and settings.integrations.atlassian.opsgenie.enabled
-            ):
-                from incidentbot.opsgenie.api import OpsgenieAPI
-
-                try:
-                    api = OpsgenieAPI()
-                    api.store_on_call_data()
-                except Exception as error:
-                    raise HTTPException(status_code=500, detail=str(error))
-            else:
-                raise HTTPException(
-                    status_code=500,
-                    detail="opsgenie integration not enabled",
-                )
         case "update_pagerduty_oc_data":
             if (
                 settings.integrations

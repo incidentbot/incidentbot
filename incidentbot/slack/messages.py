@@ -1458,7 +1458,7 @@ class BlockBuilder:
 
     @staticmethod
     def statuspage_incident_list(
-        incidents: list[dict[str, Any]]
+        incidents: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
         """
         Return a message containing details on Statuspage incidents
@@ -1678,11 +1678,6 @@ class BlockBuilder:
             settings.integrations
             and settings.integrations.pagerduty
             and settings.integrations.pagerduty.enabled
-        ) or (
-            settings.integrations
-            and settings.integrations.atlassian
-            and settings.integrations.atlassian.opsgenie
-            and settings.integrations.atlassian.opsgenie.enabled
         ):
             other_buttons.append(
                 {

@@ -61,7 +61,7 @@ Handle Mentions
 @app.event("app_mention")
 def handle_mention(body, say, logger):
     message = body.get("event").get("text").split(" ")
-    user = body["event"]["user"]
+    _ = body["event"]["user"]
     logger.debug(body)
 
     if len(message) == 1:
@@ -187,97 +187,6 @@ def handle_mention(body, say, logger):
                         ],
                         text="Oncall information was sent.",
                     )
-            elif (
-                settings.integrations
-                and settings.integrations.atlassian
-                and settings.integrations.atlassian.opsgenie
-                and settings.integrations.atlassian.opsgenie.enabled
-            ):
-                from incidentbot.configuration.settings import (
-                    opsgenie_logo_url,
-                )
-                from incidentbot.opsgenie import api as opsgenie
-
-                sess = opsgenie.OpsgenieAPI()
-                og_oncall_data = sess.list_rotations()
-
-                if og_oncall_data:
-                    # Header
-                    say(
-                        blocks=[
-                            {
-                                "type": "header",
-                                "text": {
-                                    "type": "plain_text",
-                                    "text": ":pager: Who is on call right now?",
-                                },
-                            },
-                            {"type": "divider"},
-                        ],
-                        text="Oncall information was sent.",
-                    )
-
-                    base_block = []
-
-                    # Iterate over schedules
-                    for item in og_oncall_data:
-                        options = []
-                        for user in item.get("participants"):
-                            options.append(
-                                {
-                                    "text": {
-                                        "type": "plain_text",
-                                        "text": user.get("username"),
-                                    },
-                                    "value": user.get("username"),
-                                },
-                            )
-                        base_block.append(
-                            {
-                                "type": "section",
-                                "block_id": "ping_oncall_{}".format(
-                                    gen.random_string_generator()
-                                ),
-                                "text": {
-                                    "type": "mrkdwn",
-                                    "text": f"*{item.get('name')}*",
-                                },
-                                "accessory": {
-                                    "type": "overflow",
-                                    "options": options,
-                                    "action_id": "incident.add_on_call_to_channel",
-                                },
-                            }
-                        )
-                    say(
-                        blocks=base_block,
-                        text="Oncall information was sent.",
-                    )
-                else:
-                    say(
-                        text="No data regarding schedule rotations was returned from Opsgenie."
-                    )
-
-                # Footer
-                say(
-                    blocks=[
-                        {
-                            "type": "context",
-                            "elements": [
-                                {
-                                    "type": "image",
-                                    "image_url": opsgenie_logo_url,
-                                    "alt_text": "opsgenie",
-                                },
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f"This information is sourced from Opsgenie and is accurate as of {gen.fetch_timestamp()}.",
-                                },
-                            ],
-                        }
-                    ],
-                    text="Oncall information was sent.",
-                )
             else:
                 say(
                     text=":no_entry: Sorry - no platforms have been added for handling paging yet. Ask the administrator about adding one."

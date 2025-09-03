@@ -24,7 +24,7 @@ An incident management framework centralized around a ChatOps bot to allow your 
 - Completely customizable status, severity, and role definitions to control all stages of incident response
 - Communicate with the bot using ephemeral messages to keep clutter out of your channels
 - Keep the rest of your organization informed with an incident digest channel that explains the state of all incidents
-- Integrate with tools you already use like Confluence, Jira, Opsgenie, Statuspage, PagerDuty, and Zoom
+- Integrate with tools you already use like Confluence, Jira, Statuspage, PagerDuty, and Zoom
 - Automatically build a postmortem document base to save time
 - A web interface for advanced features and organizational capabilities [TBD]
 
