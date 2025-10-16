@@ -39,6 +39,8 @@ slack-sdk = "^3.36.0"
 sqlmodel = "^0.0.24"
 structlog = "^25.4.0"
 uvicorn = "^0.35.0"
+python-gitlab = {extras = ["graphql"], version = "^6.4.0"}
+
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"

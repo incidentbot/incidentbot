@@ -644,6 +644,70 @@ class Incident:
                     )
 
             """
+            If a Gitlab issue should be created automatically, create it (optional)
+            """
+
+            if (
+                settings.integrations
+                and settings.integrations.gitlab
+                and settings.integrations.gitlab.enabled
+                and settings.integrations.gitlab.auto_create_incident
+            ):
+                from incidentbot.gitlab.issue import GitLabIncident
+                from incidentbot.models.database import GitlabIssueRecord
+
+                try:
+                    issue_obj = GitLabIncident(
+                        description=record.channel_name,
+                        incident_id=record.id,
+                        summary=record.description,
+                        status=record.status,
+                        severity=record.severity
+                    )
+
+                    resp = issue_obj.new()
+
+                    if resp is not None:
+                        issue_link = resp.get("web_url")
+
+                        gitlab_incident_record = GitlabIssueRecord(
+                            id=resp.get("id"),
+                            iid=resp.get("iid"),
+                            parent=record.id,
+                            status="Unassigned",
+                            url=issue_link,
+                        )
+
+                        session.add(gitlab_incident_record)
+
+                        from incidentbot.slack.messages import (
+                            BlockBuilder,
+                        )
+
+                        try:
+                            resp = slack_web_client.chat_postMessage(
+                                channel=record.channel_id,
+                                blocks=BlockBuilder.gitlab_incident_message(
+                                    id=resp.get("id"),
+                                    summary=record.description,
+                                    link=issue_link,
+                                ),
+                                text=f"A Gitlab {settings.integrations.gitlab.issue_type.title()} has been created for this incident: {resp.get('self')}",
+                            )
+                            slack_web_client.pins_add(
+                                channel=record.channel_id,
+                                timestamp=resp["ts"],
+                            )
+                        except Exception as error:
+                            logger.error(
+                                f"Error sending Gitlab {settings.integrations.gitlab.issue_type.title()} message for {record.channel_name}: {error}"
+                            )
+                except Exception as error:
+                    logger.error(
+                        f"Error creating Gitlab {settings.integrations.gitlab.issue_type.title()} for {record.channel_name}: {error}"
+                    )
+
+            """
             Additional comms channel (optional)
             """
 

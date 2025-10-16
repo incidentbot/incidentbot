@@ -813,6 +813,40 @@ def handle_static_action(ack, body):  # noqa: F811
     logger.debug(body)
     ack()
 
+"""
+Gitlab
+"""
+
+
+@app.action("gitlab.description_input")
+def handle_static_action(ack, body, logger):  # noqa: F811
+    logger.debug(body)
+    ack()
+
+
+@app.action("gitlab.priority_select")
+def handle_static_action(ack, body):  # noqa: F811
+    logger.debug(body)
+    ack()
+
+
+@app.action("gitlab.summary_input")
+def handle_static_action(ack, body):  # noqa: F811
+    logger.debug(body)
+    ack()
+
+
+@app.action("gitlab.type_select")
+def handle_static_action(ack, body):  # noqa: F811
+    logger.debug(body)
+    ack()
+
+
+@app.action("gitlab.view_issue")
+def handle_static_action(ack, body):  # noqa: F811
+    logger.debug(body)
+    ack()
+
 
 """
 Statuspage

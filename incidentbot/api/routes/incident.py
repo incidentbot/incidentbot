@@ -17,6 +17,7 @@ from incidentbot.models.database import (
     IncidentParticipant,
     IncidentRecord,
     JiraIssueRecord,
+    GitlabIssueRecord,
     PagerDutyIncidentRecord,
     PostmortemRecord,
     StatuspageIncidentRecord,

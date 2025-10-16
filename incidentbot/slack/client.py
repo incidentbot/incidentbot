@@ -192,6 +192,8 @@ def get_digest_channel_id() -> str:
     """
 
     channels = get_slack_channel_list_db()
+    logger.info(f"Channels: {channels}")
+
     index = gen.find_index_in_list(channels, "name", settings.digest_channel)
     if index == -1:
         raise IndexNotFoundError(

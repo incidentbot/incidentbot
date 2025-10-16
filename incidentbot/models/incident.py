@@ -7,6 +7,7 @@ from incidentbot.models.database import (
     PagerDutyIncidentRecord,
     PostmortemRecord,
     StatuspageIncidentRecord,
+    GitlabIssueRecord,
 )
 from incidentbot.models.slack import User
 from sqlalchemy.exc import NoResultFound
@@ -93,6 +94,33 @@ class IncidentDatabaseInterface:
             logger.error(f"Statuspage incident not found for incident {id}")
         except Exception as error:
             logger.error(f"Lookup failed: {error}")
+
+    @classmethod
+    def get_gitlab_incident_record(
+        self,
+        id: int = None,
+    ) -> GitlabIssueRecord:
+        """
+        Read a single incident from the database
+
+        Parameters:
+            id (int): Filter by incident id
+        """
+
+        try:
+            with Session(engine) as session:
+                return session.exec(
+                    select(GitlabIssueRecord).filter(
+                        or_(
+                            GitlabIssueRecord.parent == id,
+                        )
+                    )
+                ).one()
+        except NoResultFound:
+            logger.error(f"GitLab issue not found for incident {id}")
+        except Exception as error:
+            logger.error(f"Lookup failed: {error}")
+
 
     """
     List
