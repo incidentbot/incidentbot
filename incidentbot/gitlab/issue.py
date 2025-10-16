@@ -20,18 +20,21 @@ class GitLabIncident:
     Handles the creation and updating of a GitLab incident / issue
     based on external incident data.
     """
+
     def __init__(
         self,
         description: str,
         incident_id: int,
         status: str,
         severity: str,
-        summary: str
+        summary: str,
     ):
         self.gitlab_api = GitLabApi()
         self.incident_id = incident_id
 
-        self.incident_data = IncidentDatabaseInterface.get_one(id=self.incident_id)
+        self.incident_data = IncidentDatabaseInterface.get_one(
+            id=self.incident_id
+        )
 
         self.description = description
         self.status = status
@@ -40,14 +43,18 @@ class GitLabIncident:
 
         # Build labels list
         channel_label = format_channel_label(self.incident_data.channel_name)
-        severity_labels = get_severity_label_mapping().get(severity.lower(), [])
+        severity_labels = get_severity_label_mapping().get(
+            severity.lower(), []
+        )
         self.labels = (
-            settings.integrations.gitlab.labels +
-            [channel_label] +
-            severity_labels
+            settings.integrations.gitlab.labels
+            + [channel_label]
+            + severity_labels
         )
 
-        logger.info(f"Severity input {severity} mapped to GitLab severity {self.severity}")
+        logger.info(
+            f"Severity input {severity} mapped to GitLab severity {self.severity}"
+        )
 
     def _get_incident_by_channel_name(self):
         """
@@ -56,16 +63,20 @@ class GitLabIncident:
         """
         proj = self.gitlab_api.project
         if not proj:
-            logger.error("Could not retrieve GitLab project for incident search.")
+            logger.error(
+                "Could not retrieve GitLab project for incident search."
+            )
             return None
 
         return find_issue_by_label(
             proj,
             self.incident_data.channel_name,
-            issue_type=settings.integrations.gitlab.issue_type or "incident"
+            issue_type=settings.integrations.gitlab.issue_type or "incident",
         )
 
-    def _add_resource_link(self, incident_id: int, incident_iid: int, link: str, title: str):
+    def _add_resource_link(
+        self, incident_id: int, incident_iid: int, link: str, title: str
+    ):
         """Helper to add a resource link to a GitLab issue."""
         try:
             self.gitlab_api.add_issue_resource_link(
@@ -85,7 +96,9 @@ class GitLabIncident:
         """
         proj = self.gitlab_api.project
         if not proj:
-            logger.error("Could not retrieve GitLab project to create incident.")
+            logger.error(
+                "Could not retrieve GitLab project to create incident."
+            )
             return None
 
         # Build complete labels list
@@ -93,18 +106,24 @@ class GitLabIncident:
 
         # Create the Issue/Incident
         try:
-            incident = proj.issues.create({
-                "title": self.summary,
-                "description": self.description,
-                "labels": labels,
-                "issue_type": settings.integrations.gitlab.issue_type or "incident",
-                "confidential": settings.integrations.gitlab.incident_confidential or False,
-            })
+            incident = proj.issues.create(
+                {
+                    "title": self.summary,
+                    "description": self.description,
+                    "labels": labels,
+                    "issue_type": settings.integrations.gitlab.issue_type
+                    or "incident",
+                    "confidential": settings.integrations.gitlab.incident_confidential
+                    or False,
+                }
+            )
         except gitlab.exceptions.GitlabCreateError as error:
             logger.error(f"Error creating GitLab issue: {error}")
             return None
         except Exception as error:
-            logger.error(f"Unexpected error during GitLab issue creation: {error}")
+            logger.error(
+                f"Unexpected error during GitLab issue creation: {error}"
+            )
             return None
 
         # Post-creation actions (severity and links for incidents only)
@@ -134,8 +153,10 @@ class GitLabIncident:
             labels.extend(initial_status_labels)
 
         # Add security labels if applicable
-        if (self.incident_data.is_security_incident and
-            settings.integrations.gitlab.security_labels):
+        if (
+            self.incident_data.is_security_incident
+            and settings.integrations.gitlab.security_labels
+        ):
             logger.info("Adding security labels to GitLab issue.")
             labels.extend(settings.integrations.gitlab.security_labels)
 
@@ -152,8 +173,7 @@ class GitLabIncident:
         # Set incident severity
         try:
             self.gitlab_api.set_incident_severity(
-                issue_iid=incident_iid,
-                severity=self.severity
+                issue_iid=incident_iid, severity=self.severity
             )
         except Exception as error:
             logger.warning(
@@ -189,7 +209,9 @@ class GitLabIncident:
 
         # Only incidents support status updates
         if settings.integrations.gitlab.issue_type != "incident":
-            logger.info("Skipping status update as issue_type is not 'incident'.")
+            logger.info(
+                "Skipping status update as issue_type is not 'incident'."
+            )
             return None
 
         input_status = status.lower()
@@ -200,7 +222,8 @@ class GitLabIncident:
 
             # Remove existing status labels and add the new one
             current_labels = [
-                label for label in incident.labels
+                label
+                for label in incident.labels
                 if label.lower() not in status_labels
             ]
             current_labels.append(input_status)
@@ -213,7 +236,9 @@ class GitLabIncident:
 
             incident.save()
 
-            logger.info(f"Updated GitLab issue #{incident.iid} status to {input_status}.")
+            logger.info(
+                f"Updated GitLab issue #{incident.iid} status to {input_status}."
+            )
 
             return {
                 "id": incident.id,
@@ -221,8 +246,12 @@ class GitLabIncident:
                 "status": input_status,
             }
         except gitlab.exceptions.GitlabUpdateError as error:
-            logger.error(f"Error updating GitLab issue status for #{incident.iid}: {error}")
+            logger.error(
+                f"Error updating GitLab issue status for #{incident.iid}: {error}"
+            )
             return None
         except Exception as error:
-            logger.error(f"Unexpected error updating GitLab issue status for #{incident.iid}: {error}")
+            logger.error(
+                f"Unexpected error updating GitLab issue status for #{incident.iid}: {error}"
+            )
             return None

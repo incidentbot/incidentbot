@@ -662,7 +662,7 @@ class Incident:
                         incident_id=record.id,
                         summary=record.description,
                         status=record.status,
-                        severity=record.severity
+                        severity=record.severity,
                     )
 
                     resp = issue_obj.new()

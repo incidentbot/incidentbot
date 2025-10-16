@@ -5,14 +5,15 @@ Revises: d3da32cf941c
 Create Date: 2025-10-15 09:30:32.388389
 
 """
+
 from alembic import op
 import sqlalchemy as sa
 import sqlmodel.sql.sqltypes
 
 
 # revision identifiers, used by Alembic.
-revision = '65d4a71a8e37'
-down_revision = 'd3da32cf941c'
+revision = "65d4a71a8e37"
+down_revision = "d3da32cf941c"
 branch_labels = None
 depends_on = None
 

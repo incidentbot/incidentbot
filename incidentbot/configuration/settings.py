@@ -143,6 +143,7 @@ class JiraIntegration(BaseModel):
     project: str
     status_mapping: list[dict[str, str]]
 
+
 class GitlabIntegration(BaseModel):
     """
     Model for the gitlab field
@@ -163,7 +164,10 @@ class GitlabIntegration(BaseModel):
 
     @model_validator(mode="after")
     def _validate_issue_type(self) -> Self:
-        if self.issue_type is not None and self.issue_type not in ("incident", "issue"):
+        if self.issue_type is not None and self.issue_type not in (
+            "incident",
+            "issue",
+        ):
             raise ValueError("issue_type must be either 'incident' or 'issue'")
         return self
 

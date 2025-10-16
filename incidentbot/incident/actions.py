@@ -506,11 +506,11 @@ async def set_severity(channel_id: str, severity: str, user: User | str):
 
             gitlab = GitLabApi()
             gitlab.update_issue_severity(
-                incident_name=incident.channel_name,
-                incident_severity=severity
+                incident_name=incident.channel_name, incident_severity=severity
             )
-            logger.info(f"Updated GitLab issue severity for {incident.channel_name} to {severity}")
-
+            logger.info(
+                f"Updated GitLab issue severity for {incident.channel_name} to {severity}"
+            )
 
         # Update digest message
         try:
@@ -961,11 +961,11 @@ async def set_status(
 
             gitlab = GitLabApi()
             gitlab.update_issue_status(
-                incident_name=incident.channel_name,
-                incident_status=status
+                incident_name=incident.channel_name, incident_status=status
             )
-            logger.info(f"Updated GitLab issue status for {incident.channel_name} to {status}")
-
+            logger.info(
+                f"Updated GitLab issue status for {incident.channel_name} to {status}"
+            )
 
         # Update incident record with new status
         try:

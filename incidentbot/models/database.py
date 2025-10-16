@@ -295,8 +295,11 @@ class JiraIssueRecord(SQLModel, table=True):
     team: str | None = None
     url: str | None = None
 
+
 class GitlabIssueRecord(SQLModel, table=True):
-    id: str = Field(default=None, primary_key=True) # GitLab Issue ID (globally unique)
+    id: str = Field(
+        default=None, primary_key=True
+    )  # GitLab Issue ID (globally unique)
     parent: Annotated[
         int,
         Field(
@@ -305,7 +308,7 @@ class GitlabIssueRecord(SQLModel, table=True):
             exclude=True,
         ),
     ]
-    iid: str | None = None # GitLab Issue IID (project-scoped unique)
+    iid: str | None = None  # GitLab Issue IID (project-scoped unique)
     status: str | None = None
     url: str | None = None
 

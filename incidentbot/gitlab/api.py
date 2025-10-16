@@ -55,7 +55,9 @@ class GitLabApi:
             self._project = self.gitlab.projects.get(project_id)
             return self._project
         except gitlab.exceptions.GitlabGetError as error:
-            logger.error(f"Error getting GitLab project ID {project_id}: {error}")
+            logger.error(
+                f"Error getting GitLab project ID {project_id}: {error}"
+            )
             return None
 
     @property
@@ -83,7 +85,9 @@ class GitLabApi:
             labels = proj.labels.list(get_all=True)
             return [label.name for label in labels]
         except gitlab.exceptions.GitlabListError as error:
-            logger.error(f"Error listing GitLab labels for project {proj.id}: {error}")
+            logger.error(
+                f"Error listing GitLab labels for project {proj.id}: {error}"
+            )
             return []
 
     def test(self) -> bool:
@@ -93,8 +97,12 @@ class GitLabApi:
         try:
             proj = self.project
             if proj is None or proj.id is None:
-                logger.error("GitLab connection failed. Project could not be retrieved.")
-                logger.error("Please check GitLab configuration and try again.")
+                logger.error(
+                    "GitLab connection failed. Project could not be retrieved."
+                )
+                logger.error(
+                    "Please check GitLab configuration and try again."
+                )
                 return False
             return True
         except Exception as error:
@@ -109,7 +117,7 @@ class GitLabApi:
         mapping_list: list,
         mapping_key: str,
         gitlab_value_key: str,
-        update_field: Optional[str] = None
+        update_field: Optional[str] = None,
     ):
         """
         Generic method to update issues based on severity or status mappings.
@@ -123,14 +131,18 @@ class GitLabApi:
             update_field: Optional field to update on issue (e.g., 'state_event')
         """
         if not mapping_list:
-            logger.warning(f"No {mapping_key} mapping found for GitLab integration.")
+            logger.warning(
+                f"No {mapping_key} mapping found for GitLab integration."
+            )
             return
 
         mapping_dict = build_mapping_dict(mapping_list, mapping_key)
         mapping = mapping_dict.get(incident_value.lower())
 
         if not mapping:
-            logger.warning(f"No mapping found for {mapping_key}={incident_value}.")
+            logger.warning(
+                f"No mapping found for {mapping_key}={incident_value}."
+            )
             return
 
         gitlab_value = mapping.get(gitlab_value_key)
@@ -176,13 +188,16 @@ class GitLabApi:
                 issue.save()
 
                 # For severity updates on incidents, use GraphQL
-                if (mapping_key == "incident_severity" and
-                    settings.integrations.gitlab.issue_type == 'incident' and
-                    gitlab_value):
-                    logger.info(f"Setting incident severity of #{issue.iid} to {gitlab_value}")
+                if (
+                    mapping_key == "incident_severity"
+                    and settings.integrations.gitlab.issue_type == "incident"
+                    and gitlab_value
+                ):
+                    logger.info(
+                        f"Setting incident severity of #{issue.iid} to {gitlab_value}"
+                    )
                     self.set_incident_severity(
-                        issue_iid=issue.iid,
-                        severity=gitlab_value
+                        issue_iid=issue.iid, severity=gitlab_value
                     )
 
         except gitlab.exceptions.GitlabUpdateError as error:
@@ -190,7 +205,9 @@ class GitLabApi:
         except Exception as error:
             logger.error(f"Unexpected error updating GitLab issue: {error}")
 
-    def update_issue_severity(self, incident_name: str, incident_severity: str):
+    def update_issue_severity(
+        self, incident_name: str, incident_severity: str
+    ):
         """
         Updates GitLab issue/incident with the given incident name to the mapped severity.
         """
@@ -236,7 +253,9 @@ class GitLabApi:
 
         project_path = self.project_path
         if not project_path:
-            logger.error("Could not retrieve project path for GraphQL mutation.")
+            logger.error(
+                "Could not retrieve project path for GraphQL mutation."
+            )
             return False
 
         query = """
@@ -263,22 +282,29 @@ class GitLabApi:
         try:
             response = self.gitlabgql.execute(query, variables)
 
-            errors = response.get("data", {}).get("issueSetSeverity", {}).get("errors", [])
+            errors = (
+                response.get("data", {})
+                .get("issueSetSeverity", {})
+                .get("errors", [])
+            )
             if errors:
-                logger.error(f"GraphQL error setting issue severity for #{issue_iid}: {errors}")
+                logger.error(
+                    f"GraphQL error setting issue severity for #{issue_iid}: {errors}"
+                )
                 return False
 
-            logger.info(f"Set GitLab issue #{issue_iid} severity to {severity}.")
+            logger.info(
+                f"Set GitLab issue #{issue_iid} severity to {severity}."
+            )
             return True
         except Exception as error:
-            logger.error(f"Error setting GitLab issue severity via GraphQL for #{issue_iid}: {error}")
+            logger.error(
+                f"Error setting GitLab issue severity via GraphQL for #{issue_iid}: {error}"
+            )
             return False
 
     def add_issue_resource_link(
-        self,
-        issue_id: int,
-        link: str,
-        title: Optional[str] = None
+        self, issue_id: int, link: str, title: Optional[str] = None
     ) -> bool:
         """
         Adds a related resource link to a specific issue using the GitLab GraphQL API.
@@ -310,20 +336,30 @@ class GitLabApi:
                 "id": f"gid://gitlab/Issue/{issue_id}",
                 "link": link,
                 "linkText": title,
-                "linkType": "general"
+                "linkType": "general",
             }
         }
 
         try:
             response = self.gitlabgql.execute(mutation, variables)
 
-            errors = response.get("data", {}).get("issuableResourceLinkCreate", {}).get("errors", [])
+            errors = (
+                response.get("data", {})
+                .get("issuableResourceLinkCreate", {})
+                .get("errors", [])
+            )
             if errors:
-                logger.error(f"GraphQL error adding resource link to #{issue_id}: {errors}")
+                logger.error(
+                    f"GraphQL error adding resource link to #{issue_id}: {errors}"
+                )
                 return False
 
-            logger.info(f"Added resource link ({title}) to GitLab issue #{issue_id}.")
+            logger.info(
+                f"Added resource link ({title}) to GitLab issue #{issue_id}."
+            )
             return True
         except Exception as error:
-            logger.error(f"Error adding resource link via GraphQL for #{issue_id}: {error}")
+            logger.error(
+                f"Error adding resource link via GraphQL for #{issue_id}: {error}"
+            )
             return False

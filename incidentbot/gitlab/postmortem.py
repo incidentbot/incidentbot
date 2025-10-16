@@ -38,14 +38,16 @@ class IncidentPostmortem:
     @staticmethod
     def _sanitize_filename(filename: str) -> str:
         """Sanitizes a filename for use in GitLab."""
-        filename = re.sub(r'[^\w\s\-\.]', '_', filename)
-        filename = re.sub(r'\s+', '_', filename)
-        if '.' not in filename:
-            filename += '.png'
+        filename = re.sub(r"[^\w\s\-\.]", "_", filename)
+        filename = re.sub(r"\s+", "_", filename)
+        if "." not in filename:
+            filename += ".png"
         return filename
 
     @staticmethod
-    def _get_duration(created_at: datetime.datetime, updated_at: datetime.datetime) -> str:
+    def _get_duration(
+        created_at: datetime.datetime, updated_at: datetime.datetime
+    ) -> str:
         """Calculates the duration of the incident."""
         end_time = updated_at if updated_at else datetime.datetime.now()
         duration: datetime.timedelta = end_time - created_at
@@ -71,7 +73,7 @@ class IncidentPostmortem:
         return find_issue_by_label(
             proj,
             self.incident.channel_name,
-            issue_type=settings.integrations.gitlab.issue_type
+            issue_type=settings.integrations.gitlab.issue_type,
         )
 
     def create(self) -> Optional[str]:
@@ -81,7 +83,9 @@ class IncidentPostmortem:
         incident_issue = self._get_target_gitlab_issue()
 
         if not incident_issue:
-            logger.error("Could not find corresponding GitLab issue for postmortem.")
+            logger.error(
+                "Could not find corresponding GitLab issue for postmortem."
+            )
             return None  # Error logged in helper method
 
         proj = self.gitlab_api.project  # Project is guaranteed to be in cache
@@ -91,7 +95,9 @@ class IncidentPostmortem:
 
         try:
             # Upload timeline images first and get their markdown references
-            image_references = self._upload_timeline_images(proj, incident_issue.iid)
+            image_references = self._upload_timeline_images(
+                proj, incident_issue.iid
+            )
 
             # Generate postmortem content
             content = self._generate_postmortem_content(image_references)
@@ -110,12 +116,18 @@ class IncidentPostmortem:
         except PostmortemException:
             raise
         except Exception as error:
-            logger.error(f"Unexpected error during postmortem creation: {error}")
+            logger.error(
+                f"Unexpected error during postmortem creation: {error}"
+            )
             raise PostmortemException(error)
 
-    def _generate_postmortem_content(self, image_references: Dict[str, str]) -> str:
+    def _generate_postmortem_content(
+        self, image_references: Dict[str, str]
+    ) -> str:
         """Generates postmortem content in markdown format."""
-        duration_str = self._get_duration(self.incident.created_at, self.incident.updated_at)
+        duration_str = self._get_duration(
+            self.incident.created_at, self.incident.updated_at
+        )
 
         content_parts = [
             f"## 📋 Post-Mortem: {self.title}\n\n",
@@ -153,7 +165,9 @@ class IncidentPostmortem:
         rows = ["| Role | User |", "|------|------|"]
 
         for participant in self.participants:
-            role = ' '.join(word.capitalize() for word in participant.role.split('_'))
+            role = " ".join(
+                word.capitalize() for word in participant.role.split("_")
+            )
             rows.append(f"| {role} | {participant.user_name} |")
 
         return "\n".join(rows) + "\n"
@@ -166,7 +180,7 @@ class IncidentPostmortem:
         rows = ["| Timestamp | Event |", "|-----------|-------|"]
 
         for event in self.timeline:
-            timestamp = event.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            timestamp = event.created_at.strftime("%Y-%m-%d %H:%M:%S")
 
             if event.image is not None and event.title in image_references:
                 # Use the markdown reference from uploaded image
@@ -179,7 +193,9 @@ class IncidentPostmortem:
 
         return "\n".join(rows) + "\n"
 
-    def _upload_timeline_images(self, proj, incident_iid: int) -> Dict[str, str]:
+    def _upload_timeline_images(
+        self, proj, incident_iid: int
+    ) -> Dict[str, str]:
         """
         Uploads images from timeline events to the GitLab project.
         Returns a dict mapping event titles to their markdown references.
@@ -194,22 +210,23 @@ class IncidentPostmortem:
             filename = self._sanitize_filename(event.title)
 
             try:
-                files = {
-                    'file': (filename, event.image, event.mimetype)
-                }
+                files = {"file": (filename, event.image, event.mimetype)}
 
                 response = self.gitlab_api.api.http_post(
-                    f"/projects/{proj_id}/uploads",
-                    files=files
+                    f"/projects/{proj_id}/uploads", files=files
                 )
 
                 if response:
-                    markdown = response.get('markdown', '')
+                    markdown = response.get("markdown", "")
                     if markdown:
                         image_references[event.title] = markdown
-                        logger.info(f"Uploaded image {filename} for issue #{incident_iid}.")
+                        logger.info(
+                            f"Uploaded image {filename} for issue #{incident_iid}."
+                        )
                     else:
-                        logger.warning(f"Upload succeeded but no markdown returned for {filename}.")
+                        logger.warning(
+                            f"Upload succeeded but no markdown returned for {filename}."
+                        )
                 else:
                     logger.error(
                         f"Failed to upload image {filename} for issue #{incident_iid}. "
@@ -221,6 +238,8 @@ class IncidentPostmortem:
                     f"HTTP error uploading file {event.title} to project {proj_id}: {error}"
                 )
             except Exception as error:
-                logger.error(f"Unexpected error uploading file {event.title}: {error}")
+                logger.error(
+                    f"Unexpected error uploading file {event.title}: {error}"
+                )
 
         return image_references

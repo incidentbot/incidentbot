@@ -196,6 +196,32 @@ async def get_incident_statuspage(
         raise HTTPException(status_code=500, detail=str(error))
 
 
+@router.get(
+    "/incident/{slug}/gitlab",
+    dependencies=[Depends(get_current_active_superuser)],
+    status_code=status.HTTP_200_OK,
+)
+async def get_incident_gitlab_issues(
+    session: SessionDep, slug: str
+) -> list[GitlabIssueRecord]:
+    try:
+        incident = session.exec(
+            select(IncidentRecord).filter(IncidentRecord.slug == slug)
+        ).one()
+
+        records = session.exec(
+            select(GitlabIssueRecord).filter(
+                GitlabIssueRecord.parent == incident.id
+            )
+        ).all()
+
+        return records
+    except NoResultFound:
+        raise HTTPException(status_code=404, detail="incident not found")
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=str(error))
+
+
 # Participants
 
 

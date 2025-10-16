@@ -121,7 +121,6 @@ class IncidentDatabaseInterface:
         except Exception as error:
             logger.error(f"Lookup failed: {error}")
 
-
     """
     List
     """

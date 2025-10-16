@@ -18,7 +18,7 @@ from incidentbot.models.database import (
     engine,
     ApplicationData,
     JiraIssueRecord,
-    GitlabIssueRecord
+    GitlabIssueRecord,
 )
 from incidentbot.models.incident import IncidentDatabaseInterface
 from incidentbot.models.maintenance_window import (
@@ -1903,10 +1903,6 @@ def show_modal(ack, body, client):  # noqa: F811
     # Get the incident record
     incident_data = IncidentDatabaseInterface.get_one(channel_id=incident_id)
 
-    from incidentbot.gitlab.api import GitLabApi
-
-    j = GitLabApi()
-
     blocks = [
         {
             "type": "header",
@@ -1948,7 +1944,7 @@ def show_modal(ack, body, client):  # noqa: F811
                 "type": "plain_text_input",
                 "action_id": "gitlab.description_input",
                 "min_length": 1,
-                "initial_value": incident_data.description
+                "initial_value": incident_data.description,
             },
             "label": {
                 "type": "plain_text",
@@ -1957,7 +1953,6 @@ def show_modal(ack, body, client):  # noqa: F811
             },
         },
         # TODO: Add checkbox to make the issue confidential
-
     ]
 
     ack()
@@ -1996,7 +1991,7 @@ def handle_submission(ack, body, client):  # noqa: F811
             description=parsed.get("gitlab.description_input"),
             summary=parsed.get("gitlab.summary_input"),
             status=incident_data.status,
-            severity=incident_data.severity
+            severity=incident_data.severity,
         )
 
         resp = issue_obj.new()

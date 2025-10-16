@@ -813,6 +813,7 @@ def handle_static_action(ack, body):  # noqa: F811
     logger.debug(body)
     ack()
 
+
 """
 Gitlab
 """
