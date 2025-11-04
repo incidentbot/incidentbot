@@ -495,6 +495,23 @@ async def set_severity(channel_id: str, severity: str, user: User | str):
                         f"error sending message back to user via slash command invocation: {error}"
                     )
 
+        # Update gitlab ticket severity
+        if (
+            settings.integrations
+            and settings.integrations.gitlab
+            and settings.integrations.gitlab.enabled
+            and settings.integrations.gitlab.severity_mapping
+        ):
+            from incidentbot.gitlab.api import GitLabApi
+
+            gitlab = GitLabApi()
+            gitlab.update_issue_severity(
+                incident_name=incident.channel_name, incident_severity=severity
+            )
+            logger.info(
+                f"Updated GitLab issue severity for {incident.channel_name} to {severity}"
+            )
+
         # Update digest message
         try:
             slack_web_client.chat_update(
@@ -728,6 +745,96 @@ async def set_status(
                                 f"Error sending postmortem update to incident channel: {error}"
                             )
 
+                # Generate Gitlab postmortem if enabled
+                # Get normalized description as postmortem title
+                if (
+                    settings.integrations
+                    and settings.integrations.gitlab
+                    and settings.integrations.gitlab.enabled
+                    and settings.integrations.gitlab.auto_create_postmortem
+                ):
+                    from incidentbot.gitlab.postmortem import (
+                        IncidentPostmortem,
+                    )
+
+                    postmortem = IncidentPostmortem(
+                        incident=incident,
+                        participants=IncidentDatabaseInterface.list_participants(
+                            incident=incident
+                        ),
+                        timeline=EventLogHandler.read(incident_id=incident.id),
+                        title=f"{datetime.datetime.today().strftime('%Y-%m-%d')} - {incident.slug.upper()} - {incident.description}",
+                    )
+                    postmortem_link = postmortem.create()
+
+                    if postmortem_link:
+                        # Create record
+                        IncidentDatabaseInterface.add_postmortem(
+                            parent=incident.id, url=postmortem_link
+                        )
+
+                        # Write event log
+                        EventLogHandler.create(
+                            event="Postmortem generated",
+                            incident_id=incident.id,
+                            incident_slug=incident.slug,
+                            source="system",
+                        )
+
+                        postmortem_boilerplate_message_blocks = [
+                            {
+                                "type": "header",
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "{} Incident Postmortem".format(
+                                        settings.icons.get(
+                                            settings.platform
+                                        ).get("postmortem"),
+                                    ),
+                                },
+                            },
+                            {
+                                "type": "section",
+                                "text": {
+                                    "type": "mrkdwn",
+                                    "text": "A starter postmortem has been composed based on "
+                                    + "data gathered during this incident.",
+                                },
+                            },
+                            {
+                                "block_id": "buttons",
+                                "type": "actions",
+                                "elements": [
+                                    {
+                                        "type": "button",
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "View Postmortem",
+                                        },
+                                        "style": "primary",
+                                        "url": postmortem_link,
+                                        "action_id": "view_postmortem",
+                                    },
+                                ],
+                            },
+                        ]
+
+                        # Send postmortem message to incident channel
+                        try:
+                            result = slack_web_client.chat_postMessage(
+                                channel=incident.channel_id,
+                                blocks=postmortem_boilerplate_message_blocks,
+                                text=postmortem_link,
+                            )
+                            slack_web_client.pins_add(
+                                channel=incident.channel_id,
+                                timestamp=result.get("ts"),
+                            )
+                        except SlackApiError as error:
+                            logger.error(
+                                f"Error sending postmortem update to incident channel: {error}"
+                            )
+
             # If PagerDuty incident(s) exist, attempt to resolve them
             if (
                 settings.integrations
@@ -841,6 +948,23 @@ async def set_status(
             jira.update_issue_status(
                 incident_name=incident.channel_name,
                 incident_status=status,
+            )
+
+        # Update gitlab ticket status
+        if (
+            settings.integrations
+            and settings.integrations.gitlab
+            and settings.integrations.gitlab.enabled
+            and settings.integrations.gitlab.status_mapping
+        ):
+            from incidentbot.gitlab.api import GitLabApi
+
+            gitlab = GitLabApi()
+            gitlab.update_issue_status(
+                incident_name=incident.channel_name, incident_status=status
+            )
+            logger.info(
+                f"Updated GitLab issue status for {incident.channel_name} to {status}"
             )
 
         # Update incident record with new status

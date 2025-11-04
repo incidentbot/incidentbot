@@ -296,6 +296,23 @@ class JiraIssueRecord(SQLModel, table=True):
     url: str | None = None
 
 
+class GitlabIssueRecord(SQLModel, table=True):
+    id: str = Field(
+        default=None, primary_key=True
+    )  # GitLab Issue ID (globally unique)
+    parent: Annotated[
+        int,
+        Field(
+            foreign_key="incidentrecord.id",
+            ondelete="CASCADE",
+            exclude=True,
+        ),
+    ]
+    iid: str | None = None  # GitLab Issue IID (project-scoped unique)
+    status: str | None = None
+    url: str | None = None
+
+
 class MaintenanceWindowRecord(SQLModel, table=True):
     channels: list = Field(
         sa_column=Column(MutableList.as_mutable(JSON)), default_factory=list

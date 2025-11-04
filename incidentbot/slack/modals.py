@@ -8,6 +8,7 @@ from incidentbot.exceptions import ConfigurationError
 from incidentbot.incident.core import Incident, IncidentRequestParameters
 from incidentbot.incident.event import EventLogHandler
 from incidentbot.jira.issue import JiraIssue
+from incidentbot.gitlab.issue import GitLabIncident
 from incidentbot.logging import logger
 from incidentbot.maintenance_window.core import (
     MaintenanceWindow,
@@ -17,6 +18,7 @@ from incidentbot.models.database import (
     engine,
     ApplicationData,
     JiraIssueRecord,
+    GitlabIssueRecord,
 )
 from incidentbot.models.incident import IncidentDatabaseInterface
 from incidentbot.models.maintenance_window import (
@@ -1875,6 +1877,161 @@ def handle_submission(ack, body, client):  # noqa: F811
             except Exception as error:
                 logger.error(
                     f"Error sending Jira issue message for {incident_data.id}: {error}"
+                )
+        else:
+            resp = client.chat_postMessage(
+                channel=channel_id,
+                text="Hmmm.. that didn't work. Check my logs for more information.",
+            )
+    except Exception as error:
+        logger.error(error)
+
+
+"""
+Gitlab
+"""
+
+
+@app.action("incident_create_gitlab_incident_modal")
+def show_modal(ack, body, client):  # noqa: F811
+    """
+    Provides the modal that will display when the shortcut is used to create a Gitlab issue
+    """
+
+    incident_id = body.get("channel").get("id")
+
+    # Get the incident record
+    incident_data = IncidentDatabaseInterface.get_one(channel_id=incident_id)
+
+    blocks = [
+        {
+            "type": "header",
+            "block_id": incident_id,
+            "text": {
+                "type": "plain_text",
+                "text": f"Create a Gitlab {settings.integrations.gitlab.issue_type.title()}",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "This incident will be created in the project: *{}*".format(
+                    settings.integrations.gitlab.project_id
+                ),
+            },
+        },
+        {"type": "divider"},
+        {
+            "type": "input",
+            "block_id": "gitlab_incident_summary_input",
+            "element": {
+                "type": "plain_text_input",
+                "action_id": "gitlab.summary_input",
+                "min_length": 1,
+                "initial_value": incident_data.channel_name,
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "Issue Summary",
+                "emoji": True,
+            },
+        },
+        {
+            "type": "input",
+            "block_id": "gitlab_incident_description_input",
+            "element": {
+                "type": "plain_text_input",
+                "action_id": "gitlab.description_input",
+                "min_length": 1,
+                "initial_value": incident_data.description,
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "Issue Description",
+                "emoji": True,
+            },
+        },
+        # TODO: Add checkbox to make the issue confidential
+    ]
+
+    ack()
+    client.views_open(
+        trigger_id=body["trigger_id"],
+        view={
+            "type": "modal",
+            # View identifier
+            "callback_id": "incident_create_gitlab_incident_modal",
+            "title": {
+                "type": "plain_text",
+                "text": f"Gitlab {settings.integrations.gitlab.issue_type.title()}",
+            },
+            "submit": {"type": "plain_text", "text": "Create"},
+            "blocks": blocks,
+        },
+    )
+
+
+@app.view("incident_create_gitlab_incident_modal")
+def handle_submission(ack, body, client):  # noqa: F811
+    """
+    Handles incident_create_gitlab_incident_modal
+    """
+    ack()
+    channel_id = body.get("view").get("blocks")[0].get("block_id")
+    parsed = parse_modal_values(body)
+
+    try:
+        incident_data = IncidentDatabaseInterface.get_one(
+            channel_id=channel_id
+        )
+
+        issue_obj = GitLabIncident(
+            incident_id=incident_data.id,
+            description=parsed.get("gitlab.description_input"),
+            summary=parsed.get("gitlab.summary_input"),
+            status=incident_data.status,
+            severity=incident_data.severity,
+        )
+
+        resp = issue_obj.new()
+
+        if resp is not None:
+            issue_link = resp.get("web_url")
+
+            gitlab_incident_record = GitlabIssueRecord(
+                id=resp.get("id"),
+                iid=resp.get("iid"),
+                parent=incident_data.id,
+                status="Unassigned",
+                url=issue_link,
+            )
+
+            with Session(engine) as session:
+                session.add(gitlab_incident_record)
+                session.commit()
+
+            try:
+                from incidentbot.slack.messages import BlockBuilder
+
+                resp = client.chat_postMessage(
+                    channel=channel_id,
+                    blocks=BlockBuilder.gitlab_incident_message(
+                        id=resp.get("id"),
+                        summary=parsed.get("gitlab.summary_input"),
+                        link=issue_link,
+                    ),
+                    text="A Gitlab issue has been created for this incident: {}".format(
+                        resp.get("self")
+                    ),
+                )
+                client.pins_add(
+                    channel=resp.get("channel"),
+                    timestamp=resp.get("ts"),
+                )
+            except Exception as error:
+                logger.error(
+                    f"Error sending Gitlab issue message for incident #{incident_data.id}: {error}"
                 )
         else:
             resp = client.chat_postMessage(

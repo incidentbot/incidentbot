@@ -18,7 +18,7 @@ from pydantic_settings import (
 from typing import Annotated, Any, Tuple, Type
 from typing_extensions import Self
 
-__version__ = "v2.1.6"
+__version__ = "v2.2.0"
 
 pagerduty_logo_url = "https://i.imgur.com/IVvdFCV.png"
 statuspage_logo_url = "https://i.imgur.com/v4xmF6u.png"
@@ -144,6 +144,34 @@ class JiraIntegration(BaseModel):
     status_mapping: list[dict[str, str]]
 
 
+class GitlabIntegration(BaseModel):
+    """
+    Model for the gitlab field
+    """
+
+    auto_create_incident: bool = False
+    auto_create_postmortem: bool | None = False
+    incident_confidential: bool | None = False
+    enabled: bool = False
+    labels: list[str] | None = None
+    security_labels: list[str] | None = None
+    priorities: list[str] | None = None
+    project_id: int
+    status_mapping: list[dict[str, Any]]
+    severity_mapping: list[dict[str, Any]]
+    label_template: str | None = None
+    issue_type: str | None = "incident"
+
+    @model_validator(mode="after")
+    def _validate_issue_type(self) -> Self:
+        if self.issue_type is not None and self.issue_type not in (
+            "incident",
+            "issue",
+        ):
+            raise ValueError("issue_type must be either 'incident' or 'issue'")
+        return self
+
+
 class StatuspageIntegrationPermissions(BaseModel):
     """
     Model for the statuspage permissions field
@@ -197,6 +225,7 @@ class Integrations(BaseModel):
     atlassian: AtlassianIntegration | None = None
     pagerduty: PagerDutyIntegration | None = None
     zoom: ZoomIntegration | None = None
+    gitlab: GitlabIntegration | None = None
 
 
 """
@@ -369,6 +398,9 @@ class Settings(BaseSettings):
     ZOOM_CLIENT_ID: str | None = None
     ZOOM_CLIENT_SECRET: str | None = None
 
+    GITLAB_URL: str | None = None
+    GITLAB_API_TOKEN: str | None = None
+
     IS_MIGRATION: bool | None = False
     IS_TEST_ENVIRONMENT: bool | None = False
 
@@ -499,6 +531,18 @@ class Settings(BaseSettings):
                 )
                 self._check_required_integration_var(
                     "ZOOM_CLIENT_SECRET", self.ZOOM_CLIENT_SECRET, "Zoom"
+                )
+
+            if (
+                self.integrations
+                and self.integrations.gitlab
+                and self.integrations.gitlab.enabled
+            ):
+                self._check_required_integration_var(
+                    "GITLAB_URL", self.GITLAB_URL, "Gitlab"
+                )
+                self._check_required_integration_var(
+                    "GITLAB_API_TOKEN", self.GITLAB_API_TOKEN, "Gitlab"
                 )
 
         return self
