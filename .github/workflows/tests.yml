@@ -27,7 +27,7 @@ jobs:
     timeout-minutes: 10
     strategy:
       matrix:
-        python-version: ['3.13.7']
+        python-version: ['3.13.9']
     env:
       # default: multiprocessing
       # threading is more stable on GitHub Actions

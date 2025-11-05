@@ -11,11 +11,23 @@ jobs:
     timeout-minutes: 10
     strategy:
       matrix:
-        python-version: ['3.13.7']
+        python-version: ["3.13.9"]
     defaults:
       run:
         working-directory: .
     steps:
       - uses: actions/checkout@v4.1.7
-      - uses: astral-sh/ruff-action@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          virtualenvs-path: .venv
+          installer-parallel: true
+      - name: Install dependencies
+        run: poetry install --no-interaction --no-root
       - run: make lint

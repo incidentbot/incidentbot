@@ -336,7 +336,7 @@ def show_modal(ack, body, client):  # noqa: F811
                     },
                 },
             ]
-            if len(database_data) != 0
+            if database_data
             else [
                 {
                     "type": "section",
@@ -1055,7 +1055,7 @@ def show_modal(ack, body, client):  # noqa: F811
                             ],
                         },
                     }
-                    if len(database_data) != 0
+                    if database_data
                     else {
                         "type": "section",
                         "block_id": "no_incidents",

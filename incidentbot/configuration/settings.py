@@ -18,7 +18,7 @@ from pydantic_settings import (
 from typing import Annotated, Any, Tuple, Type
 from typing_extensions import Self
 
-__version__ = "v2.2.0"
+__version__ = "v2.2.1"
 
 pagerduty_logo_url = "https://i.imgur.com/IVvdFCV.png"
 statuspage_logo_url = "https://i.imgur.com/v4xmF6u.png"

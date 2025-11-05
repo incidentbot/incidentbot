@@ -7,7 +7,7 @@ configMap:
       timezone: America/New_York
 database:
   enabled: true
-  password: foobar1234
+  password: postgres
 envFromSecret:
   enabled: true
   secretName: incidentbot-secret
