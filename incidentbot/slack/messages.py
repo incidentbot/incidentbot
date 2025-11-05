@@ -1028,11 +1028,12 @@ class BlockBuilder:
                     ]
                 )
 
-        status_definition = [
+        final_statuses = [
             status
             for status, config in settings.statuses.items()
             if config.final
-        ][0]
+        ]
+        status_definition = final_statuses[0] if final_statuses else "resolved"
 
         blocks = [
             {
@@ -1562,14 +1563,16 @@ class BlockBuilder:
                 created_at = inc["created_at"]
                 updated_at = inc["updated_at"]
                 shortlink = inc["shortlink"]
-                if (
-                    inc["status"]
-                    != [
-                        status
-                        for status, config in settings.statuses.items()
-                        if config.final
-                    ][0]
-                ):
+                final_statuses = [
+                    status
+                    for status, config in settings.statuses.items()
+                    if config.final
+                ]
+                final_status = (
+                    final_statuses[0] if final_statuses else "resolved"
+                )
+
+                if inc["status"] != final_status:
                     formatted_incidents.append(
                         {
                             "type": "section",

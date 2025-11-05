@@ -69,13 +69,14 @@ def parse_modal_values(
     if by_block_id:
         if by_block_id_name:
             if by_block_id_name in [i.get("block_id") for i in blocks]:
-                idx = [
+                matching_indices = [
                     v[0]
                     for v in enumerate(blocks)
                     if v[1].get("block_id") == by_block_id_name
-                ][0]
-
-                return blocks[idx]
+                ]
+                if matching_indices:
+                    idx = matching_indices[0]
+                    return blocks[idx]
         else:
             logger.error("must provide by_block_id_name if using by_block_id")
             return

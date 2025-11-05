@@ -159,11 +159,10 @@ class Incident:
                     roles_all=[key for key, _ in settings.roles.items()],
                     severity=self.params.severity,
                     severities=[key for key, _ in settings.severities.items()],
-                    status=[
-                        status
-                        for status, config in settings.statuses.items()
-                        if config.initial
-                    ][0],
+                    status=next(
+                        (status for status, config in settings.statuses.items() if config.initial),
+                        list(settings.statuses.keys())[0] if settings.statuses else None
+                    ),
                     statuses=[status for status in settings.statuses.keys()],
                 )
 
