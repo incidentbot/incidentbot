@@ -147,16 +147,20 @@ class IncidentDatabaseInterface:
 
         try:
             with Session(engine) as session:
-                incidents = session.exec(
-                    select(IncidentRecord).filter(
-                        IncidentRecord.status
-                        != [
-                            status
-                            for status, config in settings.statuses.items()
-                            if config.final
-                        ][0]
-                    )
-                ).all()
+                final_statuses = [
+                    status
+                    for status, config in settings.statuses.items()
+                    if config.final
+                ]
+
+                if final_statuses:
+                    incidents = session.exec(
+                        select(IncidentRecord).filter(
+                            IncidentRecord.status != final_statuses[0]
+                        )
+                    ).all()
+                else:
+                    incidents = session.exec(select(IncidentRecord)).all()
 
             return incidents
         except Exception as error:

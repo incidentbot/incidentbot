@@ -295,11 +295,11 @@ def show_modal(ack, body, client):  # noqa: F811
                             )
                             for inc in database_data
                             if inc.status
-                            != [
+                            not in [
                                 status
                                 for status, config in settings.statuses.items()
                                 if config.final
-                            ][0]
+                            ]
                         ],
                     },
                 },
@@ -776,11 +776,11 @@ def show_modal(ack, body, client):  # noqa: F811
                     )
                     for inc in IncidentDatabaseInterface.list_open()
                     if inc.status
-                    != [
+                    not in [
                         status
                         for status, config in settings.statuses.items()
                         if config.final
-                    ][0]
+                    ]
                 ],
             },
         },
@@ -1047,11 +1047,11 @@ def show_modal(ack, body, client):  # noqa: F811
                                 }
                                 for inc in database_data
                                 if inc.status
-                                != [
+                                not in [
                                     status
                                     for status, config in settings.statuses.items()
                                     if config.final
-                                ][0]
+                                ]
                             ],
                         },
                     }

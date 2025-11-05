@@ -642,14 +642,12 @@ async def set_status(
 
         postmortem_link = None
 
-        if (
+        final_statuses = [
             status
-            == [
-                status
-                for status, config in settings.statuses.items()
-                if config.final
-            ][0]
-        ):
+            for status, config in settings.statuses.items()
+            if config.final
+        ]
+        if final_statuses and status == final_statuses[0]:
             # First, make sure a postmortem doesn't already exist
             if not IncidentDatabaseInterface.get_postmortem(
                 parent=incident.id,
@@ -985,14 +983,12 @@ async def set_status(
             source="system",
         )
 
-        if (
+        final_statuses = [
             status
-            == [
-                status
-                for status, config in settings.statuses.items()
-                if config.final
-            ][0]
-        ):
+            for status, config in settings.statuses.items()
+            if config.final
+        ]
+        if final_statuses and status == final_statuses[0]:
             # Remove comms reminder job if it exists
             try:
                 job = TaskScheduler.get_job(
