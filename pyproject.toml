@@ -8,7 +8,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.13.9"
-alembic = "^1.16.5"
+alembic = "^1.17.1"
 apscheduler = "^3.11.0"
 atlassian-python-api = "^4.0.7"
 bcrypt = "^4.3.0"
@@ -28,18 +28,18 @@ pytest-asyncio = "^1.1.0"
 pytest-env = "^1.1.5"
 pytest-mock = "^3.14.1"
 pytest-sqlalchemy-mock = "^0.1.7"
-python-dotenv = "^1.1.1"
+python-dotenv = "^1.2.1"
 python-gitlab = {extras = ["graphql"], version = "^6.4.0"}
-python-json-logger = "^3.3.0"
+python-json-logger = "^4.0.0"
 python-multipart = "^0.0.20"
 requests = "^2.32.5"
 requests-mock = "^1.12.1"
 ruff = "^0.12.11"
 slack-bolt = "^1.24.0"
 slack-sdk = "^3.36.0"
-sqlmodel = "^0.0.24"
+sqlmodel = "^0.0.27"
 structlog = "^25.4.0"
-uvicorn = "^0.35.0"
+uvicorn = "^0.38.0"
 
 
 [tool.poetry.group.dev.dependencies]
