@@ -10,6 +10,7 @@ from sqlmodel import (
     create_engine,
     Column,
     Field,
+    ForeignKey,
     JSON,
     LargeBinary,
     Relationship,
@@ -137,6 +138,8 @@ class ApplicationData(SQLModel, table=True):
 
 
 class IncidentRecord(SQLModel, table=True):
+    __tablename__ = "incidentrecord"
+
     additional_comms_channel: bool | None = None
     additional_comms_channel_id: str | None = None
     additional_comms_channel_link: str | None = None
@@ -152,7 +155,12 @@ class IncidentRecord(SQLModel, table=True):
     description: str | None = None
     digest_message_ts: str | None = None
     events: list["IncidentEvent"] = Relationship(
-        back_populates="incident", cascade_delete=True
+        back_populates="incident",
+        sa_relationship_kwargs={
+            "primaryjoin": "IncidentEvent.parent == IncidentRecord.id",
+            "foreign_keys": "[IncidentEvent.parent]",
+            "cascade": "all, delete-orphan",
+        },
     )
     has_private_channel: bool | None = False
     id: int = Field(primary_key=True)
@@ -218,6 +226,8 @@ class IncidentEventBase(BaseModel):
 
 
 class IncidentEvent(SQLModel, table=True):
+    __tablename__ = "incidentevent"
+
     created_at: datetime = Field(
         sa_column_kwargs={
             "server_default": text("CURRENT_TIMESTAMP"),
@@ -225,18 +235,24 @@ class IncidentEvent(SQLModel, table=True):
     )
     id: uuid.UUID = Field(primary_key=True, default_factory=uuid.uuid4)
     image: bytes | None = Field(sa_column=Column(LargeBinary))
-    incident: IncidentRecord | None = Relationship(back_populates="events")
+    incident: IncidentRecord | None = Relationship(
+        back_populates="events",
+        sa_relationship_kwargs={
+            "primaryjoin": "IncidentEvent.parent == IncidentRecord.id",
+            "foreign_keys": "[IncidentEvent.parent]",
+        },
+    )
     incident_slug: str | None = None
     message_ts: str | None = None
     mimetype: str | None = None
-    parent: Annotated[
-        int,
-        Field(
-            foreign_key="incidentrecord.id",
-            ondelete="CASCADE",
-            exclude=True,
-        ),
-    ]
+    parent: int = Field(
+        sa_column=Column(
+            "parent",
+            ForeignKey("incidentrecord.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        )
+    )
     source: str
     text: str | None = None
     timestamp: Optional[datetime] = Field(
