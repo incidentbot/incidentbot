@@ -197,11 +197,12 @@ class IncidentDatabaseInterface:
             limit (int): How many incidents to return
         """
 
-        final_status = [
+        final_statuses = [
             status
             for status, config in settings.statuses.items()
             if config.final
-        ][0]
+        ]
+        final_status = final_statuses[0] if final_statuses else None
 
         try:
             with Session(engine) as session:
