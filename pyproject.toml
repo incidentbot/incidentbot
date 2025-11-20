@@ -28,7 +28,7 @@ pytest-env = "^1.1.5"
 pytest-mock = "^3.14.1"
 pytest-sqlalchemy-mock = "^0.1.7"
 python-dotenv = "^1.2.1"
-python-gitlab = {extras = ["graphql"], version = "^6.4.0"}
+python-gitlab = {extras = ["graphql"], version = "^7.0.0"}
 python-json-logger = "^4.0.0"
 python-multipart = "^0.0.20"
 requests = "^2.32.5"
