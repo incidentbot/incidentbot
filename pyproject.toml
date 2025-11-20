@@ -19,7 +19,7 @@ mkdocs-glightbox = "^0.4.0"
 mkdocs-material = "^9.6.18"
 pagerduty = "^4.1.0"
 psycopg2-binary = "^2.9.10"
-pydantic = {extras = ["email"], version = "^2.11.7"}
+pydantic = {extras = ["email"], version = "^2.12.4"}
 pydantic-settings = {extras = ["yaml"], version = "^2.10.1"}
 pyjwt = "^2.10.1"
 pytest = "^8.4.1"
