@@ -2,6 +2,7 @@ import datetime
 import json
 import time
 
+from functools import lru_cache
 from incidentbot.configuration.settings import settings
 from incidentbot.exceptions import IndexNotFoundError
 from incidentbot.logging import logger
@@ -186,18 +187,37 @@ def get_channel_name(channel_id: str) -> str:
     return channels[index].get("name")
 
 
+@lru_cache(maxsize=1)
+def _get_slack_channel_list_cached(bucket: int):
+    # bucket changes every TTL seconds -> cache invalidates automatically
+    return get_slack_channel_list_db()
+
+
 def get_digest_channel_id() -> str:
     """
-    Get channel id of the incidents digest channel to send updates to
+    Resolve the channel ID for the digest channel configured in settings.digest_channel
     """
 
-    channels = get_slack_channel_list_db()
-    index = gen.find_index_in_list(channels, "name", settings.digest_channel)
-    if index == -1:
-        raise IndexNotFoundError(
-            "Could not find index for digest channel in Slack conversations list"
-        )
-    return channels[index].get("id")
+    value = settings.digest_channel
+    if not value:
+        raise ValueError("settings.digest_channel is empty")
+
+    channels = _get_slack_channel_list_cached(int(time.time() // 300))
+
+    # ID first
+    for ch in channels:
+        if ch.get("id") == value:
+            return ch["id"]
+
+    # name (case-insensitive)
+    v = value.lower()
+    for ch in channels:
+        if (name := ch.get("name")) and name.lower() == v:
+            return ch["id"]
+
+    raise IndexNotFoundError(
+        f"Could not resolve digest channel '{value}' from Slack conversations list"
+    )
 
 
 def get_formatted_channel_history(channel_id: str, channel_name: str) -> str:

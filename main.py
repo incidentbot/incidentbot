@@ -183,10 +183,12 @@ def startup_tasks():
 if __name__ == "__main__":
     # Database Check
     # --------------------
+
     db_check()
 
     # Startup Tests
     # --------------------
+
     startup_tasks()
 
     # Startup Message
@@ -225,6 +227,7 @@ if __name__ == "__main__":
 
     # API and handler Integration
     # --------------------
+
     from incidentbot.api.main import app
 
     handler.connect()
