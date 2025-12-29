@@ -36,7 +36,7 @@ requests-mock = "^1.12.1"
 ruff = "^0.14.10"
 slack-bolt = "^1.27.0"
 slack-sdk = "^3.39.0"
-sqlmodel = "^0.0.28"
+sqlmodel = "^0.0.31"
 structlog = "^25.5.0"
 uvicorn = "^0.40.0"
 
