@@ -882,6 +882,36 @@ def handle_static_action(ack, body):  # noqa: F811
     ack()
 
 
+@app.action("phare.impact_select")
+def handle_static_action(ack, body):  # noqa: F811
+    logger.debug(body)
+    ack()
+
+
+@app.action("phare.monitors_select")
+def handle_static_action(ack, body):  # noqa: F811
+    logger.debug(body)
+    ack()
+
+
+@app.action("phare.open")
+def handle_static_action(ack, body):  # noqa: F811
+    logger.debug(body)
+    ack()
+
+
+@app.action("phare.update_status")
+def handle_static_action(ack, body):  # noqa: F811
+    logger.debug(body)
+    ack()
+
+
+@app.action("phare.view_incident")
+def handle_static_action(ack, body):  # noqa: F811
+    logger.debug(body)
+    ack()
+
+
 @app.action("statuspage.open")
 def handle_static_action(ack, body):  # noqa: F811
     logger.debug(body)

@@ -27,6 +27,11 @@ from incidentbot.models.maintenance_window import (
 from incidentbot.slack.client import check_user_in_group, get_digest_channel_id
 from incidentbot.slack.handler import app
 from incidentbot.slack.messages import BlockBuilder, IncidentUpdate
+from incidentbot.phare.handler import (
+    PhareIncident,
+    PhareIncidentUpdate,
+    PhareMonitors,
+)
 from incidentbot.statuspage.handler import (
     StatuspageComponents,
     StatuspageIncident,
@@ -1667,6 +1672,362 @@ def handle_submission(ack, body):  # noqa: F811
         )
     except Exception as error:
         logger.error(f"Error updating Statuspage incident: {error}")
+
+
+"""
+Phare
+"""
+
+
+@app.action("phare_incident_modal")
+def show_modal(ack, body, client):  # noqa: F811
+    """
+    Provides the modal that will display when the shortcut is
+    used to start a Phare incident
+    """
+
+    user = body.get("user").get("id")
+    channel_id = body.get("actions")[0].get("value").split("_")[-1:][0]
+    incident_data = IncidentDatabaseInterface.get_one(channel_id=channel_id)
+
+    try:
+        phare_monitors = PhareMonitors()
+        monitor_options = [
+            {
+                "text": {
+                    "type": "plain_text",
+                    "text": name,
+                    "emoji": True,
+                },
+                "value": str(monitor_id),
+            }
+            for entry in phare_monitors.list_of_dict_name_ids
+            for name, monitor_id in entry.items()
+        ]
+    except Exception as error:
+        logger.error(f"Error fetching Phare monitors: {error}")
+        monitor_options = []
+
+    blocks = [
+        {"type": "divider"},
+        {
+            "type": "section",
+            "block_id": incident_data.slug,
+            "text": {
+                "type": "mrkdwn",
+                "text": f"Incident: {incident_data.slug.upper()}",
+            },
+        },
+        {"type": "divider"},
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "This Phare incident will start in *investigating* mode. "
+                + "You may change its state as the incident proceeds.",
+            },
+        },
+        {"type": "divider"},
+        {
+            "type": "input",
+            "block_id": "phare_title_input",
+            "element": {
+                "type": "plain_text_input",
+                "action_id": "phare.title_input",
+                "min_length": 1,
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "Title for the incident",
+                "emoji": True,
+            },
+        },
+        {
+            "type": "input",
+            "block_id": "phare_description_input",
+            "element": {
+                "type": "plain_text_input",
+                "action_id": "phare.description_input",
+                "min_length": 1,
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "Description of the incident",
+                "emoji": True,
+            },
+        },
+        {
+            "block_id": "phare_impact_select",
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": "*Impact:*"},
+            "accessory": {
+                "type": "static_select",
+                "action_id": "phare.impact_select",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Select an impact...",
+                    "emoji": True,
+                },
+                "options": [
+                    {
+                        "text": {"type": "plain_text", "text": "Operational", "emoji": True},
+                        "value": "operational",
+                    },
+                    {
+                        "text": {"type": "plain_text", "text": "Degraded Performance", "emoji": True},
+                        "value": "degraded_performance",
+                    },
+                    {
+                        "text": {"type": "plain_text", "text": "Partial Outage", "emoji": True},
+                        "value": "partial_outage",
+                    },
+                    {
+                        "text": {"type": "plain_text", "text": "Major Outage", "emoji": True},
+                        "value": "major_outage",
+                    },
+                ],
+            },
+        },
+    ]
+
+    if monitor_options:
+        blocks.append(
+            {
+                "type": "section",
+                "block_id": "phare_monitors_select",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "Select impacted monitors",
+                },
+                "accessory": {
+                    "action_id": "phare.monitors_select",
+                    "type": "multi_static_select",
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": "Select monitors",
+                    },
+                    "options": monitor_options,
+                },
+            }
+        )
+
+    ack()
+
+    phare_permissions = settings.integrations.phare.permissions
+
+    if phare_permissions and phare_permissions.groups:
+        for group in phare_permissions.groups:
+            if check_user_in_group(user_id=user, group_name=group):
+                client.views_open(
+                    trigger_id=body["trigger_id"],
+                    view={
+                        "type": "modal",
+                        "callback_id": "phare_incident_modal",
+                        "title": {"type": "plain_text", "text": "Phare Incident"},
+                        "submit": {"type": "plain_text", "text": "Start"},
+                        "blocks": blocks,
+                    },
+                )
+            else:
+                client.chat_postEphemeral(
+                    channel=channel_id,
+                    user=user,
+                    text="You don't have permissions to manage Phare incidents.",
+                )
+    else:
+        client.views_open(
+            trigger_id=body["trigger_id"],
+            view={
+                "type": "modal",
+                "callback_id": "phare_incident_modal",
+                "title": {"type": "plain_text", "text": "Phare Incident"},
+                "submit": {"type": "plain_text", "text": "Start"},
+                "blocks": blocks,
+            },
+        )
+
+
+@app.view("phare_incident_modal")
+def handle_submission(ack, body, client, view):  # noqa: F811
+    """
+    Handles phare_incident_modal submission
+    """
+
+    ack()
+    slug = view["blocks"][1].get("block_id")
+    incident_data = IncidentDatabaseInterface.get_one(slug=slug)
+
+    parsed = parse_modal_values(body)
+
+    title = parsed.get("phare.title_input")
+    description = parsed.get("phare.description_input")
+    impact = parsed.get("phare.impact_select")
+    selected_monitors_raw = parsed.get("phare.monitors_select") or []
+    monitor_ids = [int(m) for m in selected_monitors_raw] if selected_monitors_raw else []
+
+    incident = PhareIncident(
+        request_data={
+            "channel_id": incident_data.channel_id,
+            "title": title,
+            "description": description,
+            "impact": impact,
+            "monitor_ids": monitor_ids,
+        }
+    )
+
+    message_ts = incident.start()
+
+    if message_ts:
+        client.chat_update(
+            channel=incident_data.channel_id,
+            ts=message_ts,
+            text="Phare incident has been created.",
+            blocks=PhareIncidentUpdate.update_management_message(
+                incident_data.channel_id
+            ),
+        )
+
+
+@app.action("phare_incident_update_modal")
+def show_modal(ack, body, client):  # noqa: F811
+    """
+    Provides the modal that will display when the shortcut is used to update a Phare incident
+    """
+
+    user = body.get("user").get("id")
+    channel_id = body.get("channel").get("id")
+    incident_data = IncidentDatabaseInterface.get_one(channel_id=channel_id)
+
+    record = IncidentDatabaseInterface.get_phare_incident_record(id=incident_data.id)
+
+    blocks = [
+        {"type": "divider"},
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "*Name*: {}\n*State*: {}\nLast Updated: {}\n".format(
+                    record.name,
+                    record.state,
+                    record.updated_at,
+                ),
+            },
+        },
+        {"type": "divider"},
+        {
+            "type": "input",
+            "block_id": f"phare_update_content_input_{channel_id}",
+            "element": {
+                "type": "plain_text_input",
+                "action_id": "phare.update_content_input",
+                "min_length": 1,
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "Message to include with this update",
+                "emoji": True,
+            },
+        },
+        {
+            "block_id": "phare_incident_state_management",
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": "*Update State:*"},
+            "accessory": {
+                "type": "static_select",
+                "action_id": "phare.update_status",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Investigating",
+                    "emoji": True,
+                },
+                "options": [
+                    {
+                        "text": {"type": "plain_text", "text": "Investigating", "emoji": True},
+                        "value": "investigating",
+                    },
+                    {
+                        "text": {"type": "plain_text", "text": "Identified", "emoji": True},
+                        "value": "identified",
+                    },
+                    {
+                        "text": {"type": "plain_text", "text": "Monitoring", "emoji": True},
+                        "value": "monitoring",
+                    },
+                    {
+                        "text": {"type": "plain_text", "text": "Resolved", "emoji": True},
+                        "value": "resolved",
+                    },
+                ],
+            },
+        },
+    ]
+
+    ack()
+
+    phare_permissions = settings.integrations.phare.permissions
+
+    if phare_permissions and phare_permissions.groups:
+        for group in phare_permissions.groups:
+            if check_user_in_group(user_id=user, group_name=group):
+                client.views_open(
+                    trigger_id=body["trigger_id"],
+                    view={
+                        "type": "modal",
+                        "callback_id": "phare_incident_update_modal",
+                        "title": {"type": "plain_text", "text": "Update Incident"},
+                        "submit": {"type": "plain_text", "text": "Update"},
+                        "blocks": blocks,
+                    },
+                )
+            else:
+                client.chat_postEphemeral(
+                    channel=channel_id,
+                    user=user,
+                    text="You don't have permissions to manage Phare incidents.",
+                )
+    else:
+        client.views_open(
+            trigger_id=body["trigger_id"],
+            view={
+                "type": "modal",
+                "callback_id": "phare_incident_update_modal",
+                "title": {"type": "plain_text", "text": "Update Incident"},
+                "submit": {"type": "plain_text", "text": "Update"},
+                "blocks": blocks,
+            },
+        )
+
+
+@app.view("phare_incident_update_modal")
+def handle_submission(ack, body):  # noqa: F811
+    """
+    Handles phare_incident_update_modal
+    """
+
+    ack()
+
+    channel_id = (
+        body.get("view").get("blocks")[3].get("block_id").split("_")[-1:][0]
+    )
+    values = body.get("view").get("state").get("values")
+    content = (
+        values.get(f"phare_update_content_input_{channel_id}")
+        .get("phare.update_content_input")
+        .get("value")
+    )
+    state = (
+        values.get("phare_incident_state_management")
+        .get("phare.update_status")
+        .get("selected_option")
+        .get("value")
+    )
+
+    try:
+        PhareIncidentUpdate.update(
+            channel_id=channel_id, content=content, state=state
+        )
+    except Exception as error:
+        logger.error(f"Error updating Phare incident: {error}")
 
 
 """

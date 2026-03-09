@@ -200,6 +200,24 @@ class AtlassianIntegration(BaseModel):
     statuspage: StatuspageIntegration | None = None
 
 
+class PhareIntegrationPermissions(BaseModel):
+    """
+    Model for Phare permissions
+    """
+
+    groups: list[str] | None = None
+
+
+class PhareIntegration(BaseModel):
+    """
+    Model for the phare field
+    """
+
+    enabled: bool = False
+    permissions: PhareIntegrationPermissions | None = None
+    url: str = "https://phare.io"
+
+
 class PagerDutyIntegration(BaseModel):
     """
     Model for the pagerduty field
@@ -224,6 +242,7 @@ class Integrations(BaseModel):
 
     atlassian: AtlassianIntegration | None = None
     pagerduty: PagerDutyIntegration | None = None
+    phare: PhareIntegration | None = None
     zoom: ZoomIntegration | None = None
     gitlab: GitlabIntegration | None = None
 
@@ -391,6 +410,9 @@ class Settings(BaseSettings):
     SLACK_BOT_TOKEN: str | None = None
     SLACK_USER_TOKEN: str | None = None
 
+    PHARE_API_KEY: str | None = None
+    PHARE_PROJECT_ID: int | None = None
+
     STATUSPAGE_API_KEY: str | None = None
     STATUSPAGE_PAGE_ID: str | None = None
 
@@ -543,6 +565,15 @@ class Settings(BaseSettings):
                 )
                 self._check_required_integration_var(
                     "GITLAB_API_TOKEN", self.GITLAB_API_TOKEN, "Gitlab"
+                )
+
+            if (
+                self.integrations
+                and self.integrations.phare
+                and self.integrations.phare.enabled
+            ):
+                self._check_required_integration_var(
+                    "PHARE_API_KEY", self.PHARE_API_KEY, "Phare"
                 )
 
         return self
