@@ -157,7 +157,6 @@ class PhareIncidentUpdate:
                         json={"state": state, "content": content},
                     )
                     resp.raise_for_status()
-                    update_data = resp.json()
                     updates = list(record.updates or [])
                     updates.append(
                         {
