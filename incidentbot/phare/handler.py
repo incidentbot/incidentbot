@@ -2,8 +2,6 @@ import requests
 
 from datetime import datetime, timezone
 from incidentbot.configuration.settings import settings
-
-phare_url = "https://app.phare.io"
 from incidentbot.logging import logger
 from incidentbot.models.database import engine, PhareIncidentRecord
 from incidentbot.models.incident import IncidentDatabaseInterface
@@ -12,6 +10,7 @@ from sqlmodel import Session, select
 from typing import Any
 
 api = "https://api.phare.io"
+phare_url = "https://app.phare.io"
 
 
 def _headers() -> dict:

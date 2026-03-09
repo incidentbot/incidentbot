@@ -1,6 +1,3 @@
-phare_url = "https://app.phare.io"
-
-
 def return_new_phare_incident_message(channel_id: str) -> dict:
     """
     Renders content for the Phare prompt message
@@ -44,7 +41,7 @@ def return_new_phare_incident_message(channel_id: str) -> dict:
                             "type": "plain_text",
                             "text": "Open Phare",
                         },
-                        "url": phare_url,
+                        "url": "https://app.phare.io",
                     },
                 ],
             },
