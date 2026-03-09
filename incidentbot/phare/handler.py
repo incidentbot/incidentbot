@@ -181,7 +181,7 @@ class PhareIncidentUpdate:
                 slack_web_client.chat_update(
                     channel=incident_data.channel_id,
                     ts=record.message_ts,
-                    text=f"Phare incident updated to {state}.",
+                    text=f"Phare Uptime incident updated to {state}.",
                     blocks=PhareIncidentUpdate.update_management_message(
                         incident_data.channel_id
                     ),
@@ -212,7 +212,7 @@ class PhareIncidentUpdate:
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "*Phare* - A Phare incident has been created. Use the options here to manage it.",
+                        "text": "*Phare Uptime* - A Phare Uptime incident has been created. Use the options here to manage it.",
                     },
                 },
                 {
@@ -299,7 +299,7 @@ class PhareIncidentUpdate:
                     "style": "primary",
                     "text": {
                         "type": "plain_text",
-                        "text": "Open Phare",
+                        "text": "Open Phare Uptime",
                     },
                     "action_id": "phare.open",
                     "url": phare_url,

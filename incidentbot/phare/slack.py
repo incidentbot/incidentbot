@@ -14,7 +14,7 @@ def return_new_phare_incident_message(channel_id: str) -> dict:
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": "*Phare* - To start a Phare incident, use the prompt here. "
+                    "text": "*Phare Uptime* - To start a Phare Uptime incident, use the prompt here. "
                     + "In order to use this feature, you'll need to have access rights.",
                 },
             },
@@ -26,7 +26,7 @@ def return_new_phare_incident_message(channel_id: str) -> dict:
                         "type": "button",
                         "text": {
                             "type": "plain_text",
-                            "text": "Start Phare Incident",
+                            "text": "Start Phare Uptime Incident",
                             "emoji": True,
                         },
                         "value": channel_id,
@@ -39,7 +39,7 @@ def return_new_phare_incident_message(channel_id: str) -> dict:
                         "action_id": "phare.open",
                         "text": {
                             "type": "plain_text",
-                            "text": "Open Phare",
+                            "text": "Open Phare Uptime",
                         },
                         "url": "https://app.phare.io",
                     },

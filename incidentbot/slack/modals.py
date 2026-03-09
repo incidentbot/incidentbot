@@ -1675,7 +1675,7 @@ def handle_submission(ack, body):  # noqa: F811
 
 
 """
-Phare
+Phare Uptime
 """
 
 
@@ -1723,7 +1723,7 @@ def show_modal(ack, body, client):  # noqa: F811
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "This Phare incident will start in *investigating* mode. "
+                "text": "This Phare Uptime incident will start in *investigating* mode. "
                 + "You may change its state as the incident proceeds.",
             },
         },
@@ -1823,7 +1823,7 @@ def show_modal(ack, body, client):  # noqa: F811
                     view={
                         "type": "modal",
                         "callback_id": "phare_incident_modal",
-                        "title": {"type": "plain_text", "text": "Phare Incident"},
+                        "title": {"type": "plain_text", "text": "Phare Uptime Incident"},
                         "submit": {"type": "plain_text", "text": "Start"},
                         "blocks": blocks,
                     },
@@ -1832,7 +1832,7 @@ def show_modal(ack, body, client):  # noqa: F811
                 client.chat_postEphemeral(
                     channel=channel_id,
                     user=user,
-                    text="You don't have permissions to manage Phare incidents.",
+                    text="You don't have permissions to manage Phare Uptime incidents.",
                 )
     else:
         client.views_open(
@@ -1881,7 +1881,7 @@ def handle_submission(ack, body, client, view):  # noqa: F811
         client.chat_update(
             channel=incident_data.channel_id,
             ts=message_ts,
-            text="Phare incident has been created.",
+            text="Phare Uptime incident has been created.",
             blocks=PhareIncidentUpdate.update_management_message(
                 incident_data.channel_id
             ),
@@ -1983,7 +1983,7 @@ def show_modal(ack, body, client):  # noqa: F811
                 client.chat_postEphemeral(
                     channel=channel_id,
                     user=user,
-                    text="You don't have permissions to manage Phare incidents.",
+                    text="You don't have permissions to manage Phare Uptime incidents.",
                 )
     else:
         client.views_open(
