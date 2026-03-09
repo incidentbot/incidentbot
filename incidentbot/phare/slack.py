@@ -1,4 +1,4 @@
-from incidentbot.configuration.settings import settings
+phare_url = "https://phare.io"
 
 
 def return_new_phare_incident_message(channel_id: str) -> dict:
@@ -44,7 +44,7 @@ def return_new_phare_incident_message(channel_id: str) -> dict:
                             "type": "plain_text",
                             "text": "Open Phare",
                         },
-                        "url": settings.integrations.phare.url,
+                        "url": phare_url,
                     },
                 ],
             },

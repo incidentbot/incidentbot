@@ -215,7 +215,6 @@ class PhareIntegration(BaseModel):
 
     enabled: bool = False
     permissions: PhareIntegrationPermissions | None = None
-    url: str = "https://phare.io"
 
 
 class PagerDutyIntegration(BaseModel):

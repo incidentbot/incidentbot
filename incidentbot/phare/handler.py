@@ -2,6 +2,8 @@ import requests
 
 from datetime import datetime, timezone
 from incidentbot.configuration.settings import settings
+
+phare_url = "https://phare.io"
 from incidentbot.logging import logger
 from incidentbot.models.database import engine, PhareIncidentRecord
 from incidentbot.models.incident import IncidentDatabaseInterface
@@ -301,7 +303,7 @@ class PhareIncidentUpdate:
                         "text": "Open Phare",
                     },
                     "action_id": "phare.open",
-                    "url": settings.integrations.phare.url,
+                    "url": phare_url,
                 }
             )
 
