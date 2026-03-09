@@ -3,7 +3,7 @@ import requests
 from datetime import datetime, timezone
 from incidentbot.configuration.settings import settings
 
-phare_url = "https://phare.io"
+phare_url = "https://app.phare.io"
 from incidentbot.logging import logger
 from incidentbot.models.database import engine, PhareIncidentRecord
 from incidentbot.models.incident import IncidentDatabaseInterface

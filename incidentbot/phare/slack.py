@@ -1,4 +1,4 @@
-phare_url = "https://phare.io"
+phare_url = "https://app.phare.io"
 
 
 def return_new_phare_incident_message(channel_id: str) -> dict:
