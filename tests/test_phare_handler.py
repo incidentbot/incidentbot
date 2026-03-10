@@ -143,7 +143,7 @@ class TestPhareIncident(unittest.TestCase):
                 {"text": "Phare prompt has been posted to an incident.", "ts": "111.222"},
             ]
         }
-        inc = _setup_incident(mock_get_one)
+        _setup_incident(mock_get_one)
         ctx = _setup_session(mock_session, MagicMock())
 
         incident = self._make()
