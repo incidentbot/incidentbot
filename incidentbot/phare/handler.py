@@ -62,7 +62,8 @@ class PhareIncident:
             "title": self.request_data["title"],
             "description": self.request_data.get("description", ""),
             "impact": self.request_data.get("impact", "operational"),
-            "monitor_ids": self.request_data.get("monitor_ids", []),
+            "monitors": self.request_data.get("monitors", []),
+            "exclude_from_downtime": self.request_data.get("exclude_from_downtime", False),
         }
 
     def start(self) -> str | None:
@@ -91,6 +92,12 @@ class PhareIncident:
             resp.raise_for_status()
             self.info = resp.json()
             logger.info(f"Created Phare incident: {self.info.get('title')}")
+
+            requests.post(
+                f"{api}/uptime/incidents/{self.info['id']}/updates",
+                headers=_headers(),
+                json={"state": "investigating", "content": "Incident is being investigated."},
+            ).raise_for_status()
 
             incident_data = IncidentDatabaseInterface.get_one(channel_id=channel_id)
         except Exception as error:
@@ -128,6 +135,51 @@ class PhareIncidentUpdate:
     """
     Updates a Phare incident
     """
+
+    @staticmethod
+    def update_impact(channel_id: str, impact: str):
+        """
+        Change the impact level of a Phare incident via POST /uptime/incidents/{id}.
+        The endpoint requires a full replace — fetch current values first.
+        """
+
+        incident_data = IncidentDatabaseInterface.get_one(channel_id=channel_id)
+
+        with Session(engine) as session:
+            record = session.exec(
+                select(PhareIncidentRecord).filter(
+                    PhareIncidentRecord.parent == incident_data.id
+                )
+            ).one()
+
+            try:
+                current = requests.get(
+                    f"{api}/uptime/incidents/{record.upstream_id}",
+                    headers=_headers(),
+                )
+                current.raise_for_status()
+                current_data = current.json()
+
+                resp = requests.post(
+                    f"{api}/uptime/incidents/{record.upstream_id}",
+                    headers=_headers(),
+                    json={
+                        "title": current_data.get("title"),
+                        "description": current_data.get("description"),
+                        "monitors": current_data.get("monitors", []),
+                        "exclude_from_downtime": current_data.get("exclude_from_downtime", False),
+                        "incident_at": current_data.get("incident_at"),
+                        "impact": impact,
+                    },
+                )
+                resp.raise_for_status()
+            except Exception as error:
+                logger.error(f"Error updating Phare incident impact: {error}")
+                return
+
+            record.updated_at = datetime.now(tz=timezone.utc)
+            session.add(record)
+            session.commit()
 
     @staticmethod
     def update(channel_id: str, content: str, state: str):
@@ -183,7 +235,7 @@ class PhareIncidentUpdate:
                     ts=record.message_ts,
                     text=f"Phare Uptime incident updated to {state}.",
                     blocks=PhareIncidentUpdate.update_management_message(
-                        incident_data.channel_id
+                        incident_data.channel_id or channel_id
                     ),
                 )
             except Exception as error:

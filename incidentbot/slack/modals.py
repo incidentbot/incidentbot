@@ -1811,6 +1811,25 @@ def show_modal(ack, body, client):  # noqa: F811
             }
         )
 
+    blocks.append(
+        {
+            "type": "input",
+            "block_id": "phare_exclude_from_downtime",
+            "optional": True,
+            "element": {
+                "type": "checkboxes",
+                "action_id": "phare.exclude_from_downtime",
+                "options": [
+                    {
+                        "text": {"type": "plain_text", "text": "Exclude from downtime calculations"},
+                        "value": "exclude",
+                    }
+                ],
+            },
+            "label": {"type": "plain_text", "text": "Downtime", "emoji": True},
+        }
+    )
+
     ack()
 
     phare_permissions = settings.integrations.phare.permissions
@@ -1863,7 +1882,8 @@ def handle_submission(ack, body, client, view):  # noqa: F811
     description = parsed.get("phare.description_input")
     impact = parsed.get("phare.impact_select")
     selected_monitors_raw = parsed.get("phare.monitors_select") or []
-    monitor_ids = [int(m) for m in selected_monitors_raw] if selected_monitors_raw else []
+    monitors = [int(m) for m in selected_monitors_raw] if selected_monitors_raw else []
+    exclude_from_downtime = "exclude" in (parsed.get("phare.exclude_from_downtime") or [])
 
     incident = PhareIncident(
         request_data={
@@ -1871,7 +1891,8 @@ def handle_submission(ack, body, client, view):  # noqa: F811
             "title": title,
             "description": description,
             "impact": impact,
-            "monitor_ids": monitor_ids,
+            "monitors": monitors,
+            "exclude_from_downtime": exclude_from_downtime,
         }
     )
 
@@ -1960,6 +1981,46 @@ def show_modal(ack, body, client):  # noqa: F811
                 ],
             },
         },
+        {
+            "block_id": "phare_incident_impact_management",
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": "*Update Impact:*"},
+            "accessory": {
+                "type": "static_select",
+                "action_id": "phare.update_impact",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Leave unchanged",
+                    "emoji": True,
+                },
+                "options": [
+                    {
+                        "text": {"type": "plain_text", "text": "Operational", "emoji": True},
+                        "value": "operational",
+                    },
+                    {
+                        "text": {"type": "plain_text", "text": "Degraded Performance", "emoji": True},
+                        "value": "degraded_performance",
+                    },
+                    {
+                        "text": {"type": "plain_text", "text": "Partial Outage", "emoji": True},
+                        "value": "partial_outage",
+                    },
+                    {
+                        "text": {"type": "plain_text", "text": "Major Outage", "emoji": True},
+                        "value": "major_outage",
+                    },
+                    {
+                        "text": {"type": "plain_text", "text": "Maintenance", "emoji": True},
+                        "value": "maintenance",
+                    },
+                    {
+                        "text": {"type": "plain_text", "text": "Unknown", "emoji": True},
+                        "value": "unknown",
+                    },
+                ],
+            },
+        },
     ]
 
     ack()
@@ -2021,6 +2082,12 @@ def handle_submission(ack, body):  # noqa: F811
         .get("selected_option")
         .get("value")
     )
+    impact_option = (
+        values.get("phare_incident_impact_management", {})
+        .get("phare.update_impact", {})
+        .get("selected_option")
+    )
+    impact = impact_option.get("value") if impact_option else None
 
     try:
         PhareIncidentUpdate.update(
@@ -2028,6 +2095,12 @@ def handle_submission(ack, body):  # noqa: F811
         )
     except Exception as error:
         logger.error(f"Error updating Phare incident: {error}")
+
+    if impact:
+        try:
+            PhareIncidentUpdate.update_impact(channel_id=channel_id, impact=impact)
+        except Exception as error:
+            logger.error(f"Error updating Phare incident impact: {error}")
 
 
 """
