@@ -245,24 +245,10 @@ class TestPhareIncidentUpdateUpdate(unittest.TestCase):
 # ---------------------------------------------------------------------------
 
 class TestPhareIncidentUpdateImpact(unittest.TestCase):
-    CURRENT_INCIDENT = {
-        "id": 99,
-        "title": "DB outage",
-        "description": "Primary DB is down",
-        "monitors": [42],
-        "exclude_from_downtime": False,
-        "incident_at": "2026-03-10T08:00:00Z",
-        "state": "investigating",
-    }
-
     @patch("incidentbot.phare.handler.Session")
     @patch("incidentbot.phare.handler.IncidentDatabaseInterface.get_one")
     @patch("incidentbot.phare.handler.requests.post")
-    @patch("incidentbot.phare.handler.requests.get")
-    def test_fetches_current_then_posts_with_incident_at_preserved(
-        self, mock_get, mock_post, mock_get_one, mock_session
-    ):
-        mock_get.return_value = _resp(self.CURRENT_INCIDENT)
+    def test_posts_partial_update(self, mock_post, mock_get_one, mock_session):
         mock_post.return_value = _resp({})
         record = _make_record()
         _setup_incident(mock_get_one)
@@ -270,29 +256,17 @@ class TestPhareIncidentUpdateImpact(unittest.TestCase):
 
         PhareIncidentUpdate.update_impact("C123", "partial_outage")
 
-        mock_get.assert_called_once_with(
-            "https://api.phare.io/uptime/incidents/99",
-            headers={"Authorization": "Bearer test-api-key", "X-Phare-Project-Id": "proj-123"},
-        )
         mock_post.assert_called_once_with(
             "https://api.phare.io/uptime/incidents/99",
             headers={"Authorization": "Bearer test-api-key", "X-Phare-Project-Id": "proj-123"},
-            json={
-                "title": "DB outage",
-                "description": "Primary DB is down",
-                "monitors": [42],
-                "exclude_from_downtime": False,
-                "incident_at": "2026-03-10T08:00:00Z",
-                "impact": "partial_outage",
-            },
+            json={"impact": "partial_outage"},
         )
 
     @patch("incidentbot.phare.handler.Session")
     @patch("incidentbot.phare.handler.IncidentDatabaseInterface.get_one")
     @patch("incidentbot.phare.handler.requests.post")
-    @patch("incidentbot.phare.handler.requests.get")
-    def test_api_error_does_not_raise(self, mock_get, mock_post, mock_get_one, mock_session):
-        mock_get.return_value.raise_for_status.side_effect = Exception("500")
+    def test_api_error_does_not_raise(self, mock_post, mock_get_one, mock_session):
+        mock_post.return_value.raise_for_status.side_effect = Exception("500")
         record = _make_record()
         _setup_incident(mock_get_one)
         _setup_session(mock_session, record)

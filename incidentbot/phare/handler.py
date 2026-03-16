@@ -139,8 +139,7 @@ class PhareIncidentUpdate:
     @staticmethod
     def update_impact(channel_id: str, impact: str):
         """
-        Change the impact level of a Phare incident via POST /uptime/incidents/{id}.
-        The endpoint requires a full replace — fetch current values first.
+        Change the impact level of a Phare incident via partial update.
         """
 
         incident_data = IncidentDatabaseInterface.get_one(channel_id=channel_id)
@@ -153,24 +152,10 @@ class PhareIncidentUpdate:
             ).one()
 
             try:
-                current = requests.get(
-                    f"{api}/uptime/incidents/{record.upstream_id}",
-                    headers=_headers(),
-                )
-                current.raise_for_status()
-                current_data = current.json()
-
                 resp = requests.post(
                     f"{api}/uptime/incidents/{record.upstream_id}",
                     headers=_headers(),
-                    json={
-                        "title": current_data.get("title"),
-                        "description": current_data.get("description"),
-                        "monitors": current_data.get("monitors", []),
-                        "exclude_from_downtime": current_data.get("exclude_from_downtime", False),
-                        "incident_at": current_data.get("incident_at"),
-                        "impact": impact,
-                    },
+                    json={"impact": impact},
                 )
                 resp.raise_for_status()
             except Exception as error:
