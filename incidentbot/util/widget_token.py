@@ -19,6 +19,20 @@ def generate_widget_token(room_id: str) -> str:
     )
 
 
+def build_widget_url(
+    base_url: str, path: str, room_id: str, widget_id: str
+) -> str:
+    token = generate_widget_token(room_id)
+    return (
+        f"{base_url.rstrip('/')}{path}"
+        f"?roomId={room_id}"
+        f"&widgetId={widget_id}"
+        f"&userId=$userId"
+        f"&matrix_user_id=$matrix_user_id"
+        f"&token={token}"
+    )
+
+
 def verify_widget_token(token: str) -> dict:
     """
     Verify and decode a widget token. Raises jwt.InvalidTokenError on failure.

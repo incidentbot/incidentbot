@@ -6,11 +6,23 @@ from incidentbot.models.database import engine, IncidentEvent
 from incidentbot.util.gen import fetch_timestamp
 from sqlmodel import Session, select, or_
 
-if not settings.IS_TEST_ENVIRONMENT:
-    from incidentbot.slack.client import get_slack_user
-
 
 class EventLogHandler:
+    @staticmethod
+    def _resolve_user_display_name(user: str | None) -> str:
+        if not user:
+            return "NotAvailable"
+
+        if settings.IS_TEST_ENVIRONMENT:
+            return user
+
+        try:
+            from incidentbot.platform import get_adapter
+
+            return get_adapter().get_user_display_name(user)
+        except Exception:
+            return user
+
     @classmethod
     def create(
         self,
@@ -45,7 +57,7 @@ class EventLogHandler:
                     text=event,
                     timestamp=timestamp,
                     title=title,
-                    user=get_slack_user(user).get("real_name", "NotAvailable"),
+                    user=self._resolve_user_display_name(user),
                 )
 
                 session.add(event)

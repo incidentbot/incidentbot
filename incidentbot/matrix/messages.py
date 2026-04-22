@@ -36,11 +36,11 @@ class MatrixMessages:
     def welcome(room_id: str) -> tuple[str, str]:
         plain = (
             "Welcome to this incident channel.\n"
-            "Use !incident help to see available commands."
+            "Open the widget panel to manage roles, severity, and status."
         )
         html = (
             "<b>Welcome to this incident channel.</b><br>"
-            "Use <code>!incident help</code> to see available commands."
+            "Open the widget panel to manage roles, severity, and status."
         )
         return plain, html
 

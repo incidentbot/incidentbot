@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from incidentbot.api.deps import get_current_active_superuser, SessionDep
 from incidentbot.models.database import ApplicationData
-from incidentbot.slack.client import slack_workspace_id
+from incidentbot.configuration.settings import settings
 from sqlalchemy.exc import NoResultFound
 from sqlmodel import select
 
@@ -39,6 +39,14 @@ def get_setting(session: SessionDep, setting_name: str) -> ApplicationData:
 
             return ApplicationData(name="slack_users", value=data.json_data)
         case "slack_workspace_id":
+            if settings.platform != "slack":
+                raise HTTPException(
+                    status_code=404,
+                    detail="slack_workspace_id is only available in Slack mode",
+                )
+
+            from incidentbot.slack.client import slack_workspace_id
+
             return ApplicationData(
                 name="slack_workspace_id", value=[slack_workspace_id]
             )

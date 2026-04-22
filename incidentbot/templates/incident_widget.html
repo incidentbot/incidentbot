@@ -58,13 +58,26 @@
   </div>
 
   <script>
-    var params = new URLSearchParams(location.search);
-    var WIDGET_TOKEN = params.get('token') || '';
-    var MATRIX_USER = params.get('matrix_user_id') || params.get('userId') || '';
+    function readParam(name) {
+      var search = new URLSearchParams(location.search);
+      if (search.has(name)) return search.get(name) || '';
+
+      var hash = location.hash ? location.hash.replace(/^#/, '') : '';
+      var hashParams = new URLSearchParams(hash);
+      if (hashParams.has(name)) return hashParams.get(name) || '';
+
+      return '';
+    }
+
+    var WIDGET_TOKEN = readParam('token');
+    var MATRIX_USER =
+      readParam('matrix_user_id') ||
+      readParam('userId') ||
+      readParam('user_id');
 
     // Matrix Widget API handshake
-    var widgetId = params.get('widgetId') || '';
-    var parentUrl = params.get('parentUrl') || '*';
+    var widgetId = readParam('widgetId') || '';
+    var parentUrl = readParam('parentUrl') || '*';
     var seq = 0;
 
     function widgetSend(action, data, reqId) {

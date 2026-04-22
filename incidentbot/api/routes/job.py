@@ -6,10 +6,6 @@ from incidentbot.scheduler.core import (
     process as TaskScheduler,
     scrape_for_aging_incidents,
 )
-from incidentbot.slack.client import (
-    store_slack_channel_list_db,
-    store_slack_user_list_db,
-)
 
 router = APIRouter()
 
@@ -75,11 +71,15 @@ async def run_job(job_id) -> SuccessResponse:
                     detail="pagerduty integration not enabled",
                 )
         case "update_slack_channel_list":
+            from incidentbot.slack.client import store_slack_channel_list_db
+
             try:
                 store_slack_channel_list_db()
             except Exception as error:
                 raise HTTPException(status_code=500, detail=str(error))
         case "update_slack_user_list":
+            from incidentbot.slack.client import store_slack_user_list_db
+
             try:
                 store_slack_user_list_db()
             except Exception as error:

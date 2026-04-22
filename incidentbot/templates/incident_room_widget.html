@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Incident Controls</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; font-size: 14px; background: #fff; color: #1a1a1a; padding: 16px; }
+    h2 { font-size: 16px; margin-bottom: 12px; }
+    h3 { font-size: 14px; margin-bottom: 8px; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin-bottom: 12px; background: #fafafa; }
+    .meta { font-size: 13px; line-height: 1.5; }
+    label { display: block; font-weight: 600; margin-bottom: 4px; margin-top: 8px; }
+    select, button { width: 100%; padding: 8px; border-radius: 4px; font-size: 14px; }
+    select { border: 1px solid #ccc; background: #fff; }
+    button { margin-top: 8px; border: none; background: #c92424; color: #fff; font-weight: 600; cursor: pointer; }
+    button:hover { background: #a81e1e; }
+    #status { margin-top: 12px; padding: 8px; border-radius: 4px; display: none; }
+    #status.success { background: #e6f4ea; color: #1e7e34; display: block; }
+    #status.error { background: #fdecea; color: #b71c1c; display: block; }
+  </style>
+</head>
+<body>
+  <h2>Incident Controls</h2>
+
+  <div class="card">
+    <div class="meta"><strong>{{ incident.slug }}</strong></div>
+    <div class="meta">Severity: <strong id="current-severity">{{ incident.severity.upper() }}</strong></div>
+    <div class="meta">Status: <strong id="current-status">{{ incident.status.title() }}</strong></div>
+    <div class="meta">Description: {{ incident.description }}</div>
+  </div>
+
+  <div class="card">
+    <h3>Join Role</h3>
+    <label for="role">Role</label>
+    <select id="role">
+      <option value="">Select role</option>
+      {% for role in roles %}
+      <option value="{{ role }}">{{ role.replace('_', ' ').title() }}</option>
+      {% endfor %}
+    </select>
+    <button id="join-role-btn">Join Role</button>
+  </div>
+
+  <div class="card">
+    <h3>Update Severity</h3>
+    <label for="severity">Severity</label>
+    <select id="severity">
+      {% for severity in severities %}
+      <option value="{{ severity }}" {% if severity == incident.severity %}selected{% endif %}>{{ severity.upper() }}</option>
+      {% endfor %}
+    </select>
+    <button id="set-severity-btn">Update Severity</button>
+  </div>
+
+  <div class="card">
+    <h3>Update Status</h3>
+    <label for="incident-status">Status</label>
+    <select id="incident-status">
+      {% for status in statuses %}
+      <option value="{{ status }}" {% if status == incident.status %}selected{% endif %}>{{ status.title() }}</option>
+      {% endfor %}
+    </select>
+    <button id="set-status-btn">Update Status</button>
+  </div>
+
+  <div id="status"></div>
+
+  <script>
+    function readParam(name) {
+      var search = new URLSearchParams(location.search);
+      if (search.has(name)) return search.get(name) || '';
+      var hash = location.hash ? location.hash.replace(/^#/, '') : '';
+      var hashParams = new URLSearchParams(hash);
+      if (hashParams.has(name)) return hashParams.get(name) || '';
+      return '';
+    }
+
+    var WIDGET_TOKEN = readParam('token');
+    var MATRIX_USER =
+      readParam('matrix_user_id') ||
+      readParam('userId') ||
+      readParam('user_id');
+    var widgetId = readParam('widgetId') || '';
+    var parentUrl = readParam('parentUrl') || '*';
+    var seq = 0;
+
+    function widgetSend(action, data, reqId) {
+      window.parent.postMessage({
+        api: 'fromWidget',
+        widgetId: widgetId,
+        action: action,
+        requestId: reqId || ('r' + (++seq)),
+        data: data || {}
+      }, parentUrl);
+    }
+
+    window.addEventListener('message', function(e) {
+      var d = e.data;
+      if (!d || d.api !== 'toWidget') return;
+      if (d.action === 'capabilities') {
+        widgetSend('capabilities', { capabilities: [] }, d.requestId);
+      } else if (d.action === 'supported_api_versions') {
+        widgetSend('supported_api_versions', { supported_versions: ['0.0.1', '0.0.2'] }, d.requestId);
+      }
+    });
+
+    async function submitAction(body) {
+      var statusEl = document.getElementById('status');
+      statusEl.className = '';
+      statusEl.style.display = 'none';
+
+      try {
+        var resp = await fetch('/widget/api/incident-room', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Widget-Token': WIDGET_TOKEN,
+          },
+          body: JSON.stringify(body),
+        });
+        var data = await resp.json().catch(function () { return { detail: resp.statusText }; });
+        if (!resp.ok) throw new Error(data.detail || resp.statusText);
+        statusEl.textContent = data.message || 'Updated';
+        statusEl.className = 'success';
+
+        if (body.severity) {
+          document.getElementById('current-severity').textContent = body.severity.toUpperCase();
+        }
+        if (body.status) {
+          document.getElementById('current-status').textContent =
+            body.status.charAt(0).toUpperCase() + body.status.slice(1);
+        }
+        if (body.action === 'resolve') {
+          document.getElementById('current-status').textContent = 'Resolved';
+          document.getElementById('incident-status').value = 'resolved';
+        }
+      } catch (err) {
+        statusEl.textContent = 'Error: ' + err.message;
+        statusEl.className = 'error';
+      }
+    }
+
+    document.getElementById('join-role-btn').addEventListener('click', function () {
+      if (!MATRIX_USER) {
+        var statusEl = document.getElementById('status');
+        statusEl.textContent = 'Error: this widget could not determine your Matrix user ID.';
+        statusEl.className = 'error';
+        return;
+      }
+      submitAction({
+        action: 'join_role',
+        role: document.getElementById('role').value,
+        user: MATRIX_USER || null,
+      });
+    });
+
+    document.getElementById('set-severity-btn').addEventListener('click', function () {
+      submitAction({
+        action: 'set_severity',
+        severity: document.getElementById('severity').value,
+        user: MATRIX_USER || null,
+      });
+    });
+
+    document.getElementById('set-status-btn').addEventListener('click', function () {
+      var status = document.getElementById('incident-status').value;
+      submitAction({
+        action: status === 'resolved' ? 'resolve' : 'set_status',
+        status: status,
+        user: MATRIX_USER || null,
+      });
+    });
+  </script>
+</body>
+</html>

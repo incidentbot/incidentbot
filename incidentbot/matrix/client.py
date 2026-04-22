@@ -2,7 +2,12 @@ import asyncio
 import threading
 
 from incidentbot.logging import logger
-from nio import AsyncClient, RoomCreateResponse, RoomSendResponse
+from nio import (
+    AsyncClient,
+    JoinResponse,
+    RoomCreateResponse,
+    RoomSendResponse,
+)
 
 
 class MatrixClient:
@@ -35,6 +40,30 @@ class MatrixClient:
     def _run(self, coro, timeout: int = 30):
         future = asyncio.run_coroutine_threadsafe(coro, self._loop)
         return future.result(timeout=timeout)
+
+    async def _send_text_async(
+        self, room_id: str, text: str, html: str | None = None
+    ) -> str:
+        content: dict = {"msgtype": "m.text", "body": text}
+        if html:
+            content["format"] = "org.matrix.custom.html"
+            content["formatted_body"] = html
+        resp = await self._client.room_send(room_id, "m.room.message", content)
+        if isinstance(resp, RoomSendResponse):
+            return resp.event_id
+        logger.error(f"Matrix send_text failed for {room_id}: {resp}")
+        return ""
+
+    async def _get_display_name_async(self, user_id: str) -> str:
+        resp = await self._client.get_displayname(user_id)
+        return getattr(resp, "displayname", None) or user_id
+
+    async def _join_room_async(self, room_id: str) -> bool:
+        resp = await self._client.join(room_id)
+        if isinstance(resp, JoinResponse):
+            return True
+        logger.error(f"Matrix join failed for {room_id}: {resp}")
+        return False
 
     # ------------------------------------------------------------------
     # Room operations
@@ -72,17 +101,12 @@ class MatrixClient:
 
     def send_text(self, room_id: str, text: str, html: str | None = None) -> str:
         """Send a message. Returns event_id on success, empty string on failure."""
-        content: dict = {"msgtype": "m.text", "body": text}
-        if html:
-            content["format"] = "org.matrix.custom.html"
-            content["formatted_body"] = html
-        resp = self._run(
-            self._client.room_send(room_id, "m.room.message", content)
-        )
-        if isinstance(resp, RoomSendResponse):
-            return resp.event_id
-        logger.error(f"Matrix send_text failed for {room_id}: {resp}")
-        return ""
+        return self._run(self._send_text_async(room_id, text, html))
+
+    async def send_text_async(
+        self, room_id: str, text: str, html: str | None = None
+    ) -> str:
+        return await self._send_text_async(room_id, text, html)
 
     def pin_message(self, room_id: str, event_id: str) -> None:
         """Append event_id to the room's pinned events state."""
@@ -102,9 +126,46 @@ class MatrixClient:
     def invite_user(self, room_id: str, user_id: str) -> None:
         self._run(self._client.room_invite(room_id, user_id))
 
+    async def _set_room_admin_async(self, room_id: str, user_id: str) -> None:
+        resp = await self._client.room_get_state_event(
+            room_id, "m.room.power_levels", ""
+        )
+        content = getattr(resp, "content", {}) or {}
+        users = dict(content.get("users", {}))
+
+        # 100 is the conventional admin level in Matrix rooms.
+        users[user_id] = max(int(users.get(user_id, 0)), 100)
+        content["users"] = users
+
+        put_resp = await self._client.room_put_state(
+            room_id,
+            "m.room.power_levels",
+            content,
+        )
+        if getattr(put_resp, "transport_response", None) is None and not hasattr(
+            put_resp, "event_id"
+        ):
+            logger.error(
+                f"Matrix set admin failed for {user_id} in {room_id}: {put_resp}"
+            )
+
+    def join_room(self, room_id: str) -> bool:
+        return self._run(self._join_room_async(room_id))
+
+    async def join_room_async(self, room_id: str) -> bool:
+        return await self._join_room_async(room_id)
+
     def get_display_name(self, user_id: str) -> str:
-        resp = self._run(self._client.get_displayname(user_id))
-        return getattr(resp, "displayname", None) or user_id
+        return self._run(self._get_display_name_async(user_id))
+
+    async def get_display_name_async(self, user_id: str) -> str:
+        return await self._get_display_name_async(user_id)
+
+    def set_room_admin(self, room_id: str, user_id: str) -> None:
+        self._run(self._set_room_admin_async(room_id, user_id))
+
+    async def set_room_admin_async(self, room_id: str, user_id: str) -> None:
+        await self._set_room_admin_async(room_id, user_id)
 
     def register_widget(self, room_id: str, widget_id: str, name: str, url: str) -> None:
         """Register a Matrix widget in a room via im.vector.modular.widgets state."""
@@ -131,6 +192,13 @@ class MatrixClient:
         while True:
             try:
                 resp = await self._client.sync(timeout=30000, full_state=False)
+                for room_id in resp.rooms.invite:
+                    if await self._join_room_async(room_id):
+                        logger.info(f"Accepted Matrix invite for room {room_id}")
+                    else:
+                        logger.error(
+                            f"Failed to accept Matrix invite for room {room_id}"
+                        )
                 for room_id, room in resp.rooms.join.items():
                     for event in room.timeline.events:
                         if hasattr(event, "body"):

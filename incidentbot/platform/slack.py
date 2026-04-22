@@ -75,6 +75,10 @@ class SlackAdapter(PlatformAdapter):
         except slack_sdk.errors.SlackApiError as error:
             logger.error(f"Error inviting users to {room_id}: {error}")
 
+    def make_room_admin(self, room_id: str, user_id: str) -> None:
+        # Slack channels do not have a room-admin concept analogous to Matrix power levels.
+        return
+
     def get_group_members_by_name(self, group_name: str) -> list[str]:
         import slack_sdk.errors
         groups = self._workspace_groups.get("usergroups", [])

@@ -197,6 +197,34 @@ class Incident:
 
                 adapter.post_welcome_message(room_id=record.channel_id)
 
+                if (
+                    settings.platform == "matrix"
+                    and settings.matrix
+                    and settings.matrix.widget_base_url
+                ):
+                    from incidentbot.util.widget_token import build_widget_url
+
+                    widget_url = build_widget_url(
+                        settings.matrix.widget_base_url,
+                        "/widget/incident-room",
+                        record.channel_id,
+                        "incidentbot-controls",
+                    )
+                    try:
+                        adapter.client.register_widget(
+                            room_id=record.channel_id,
+                            widget_id="incidentbot-controls",
+                            name="Incident Controls",
+                            url=widget_url,
+                        )
+                        logger.info(
+                            f"Incident controls widget registered in room {record.channel_id}"
+                        )
+                    except Exception as error:
+                        logger.error(
+                            f"Failed to register incident controls widget in {record.channel_id}: {error}"
+                        )
+
                 """
                 Add meeting bookmark (optional)
                 """
@@ -240,7 +268,25 @@ class Incident:
 
                 # Invite the user who started the incident to the room
                 if self.params.user:
+                    logger.info(
+                        f"Inviting declaring user {self.params.user} to {record.channel_id}"
+                    )
                     adapter.invite_user(room_id=record.channel_id, user_id=self.params.user)
+                    try:
+                        adapter.make_room_admin(
+                            room_id=record.channel_id, user_id=self.params.user
+                        )
+                        logger.info(
+                            f"Granted room admin to declaring user {self.params.user} in {record.channel_id}"
+                        )
+                    except Exception as error:
+                        logger.error(
+                            f"Failed to grant room admin to {self.params.user} in {record.channel_id}: {error}"
+                        )
+                else:
+                    logger.info(
+                        f"No declaring user provided for incident {record.channel_id}; skipping auto-invite"
+                    )
 
                 # Write event log
                 user_name = (

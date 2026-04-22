@@ -37,6 +37,11 @@ class PlatformAdapter(ABC):
         ...
 
     @abstractmethod
+    def make_room_admin(self, room_id: str, user_id: str) -> None:
+        """Grant elevated room permissions to a user when supported."""
+        ...
+
+    @abstractmethod
     def get_group_members_by_name(self, group_name: str) -> list[str]:
         """Return list of user IDs belonging to a named group/usergroup."""
         ...

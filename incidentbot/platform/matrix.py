@@ -50,6 +50,9 @@ class MatrixAdapter(PlatformAdapter):
         for user_id in user_ids:
             self._matrix.invite_user(room_id, user_id)
 
+    def make_room_admin(self, room_id: str, user_id: str) -> None:
+        self._matrix.set_room_admin(room_id, user_id)
+
     def get_group_members_by_name(self, group_name: str) -> list[str]:
         logger.warning(
             f"Matrix does not support usergroups. Cannot auto-invite group '{group_name}'. "

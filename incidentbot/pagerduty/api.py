@@ -8,7 +8,6 @@ from incidentbot.models.database import (
     IncidentRecord,
     PagerDutyIncidentRecord,
 )
-from incidentbot.slack.client import slack_workspace_id
 from incidentbot.util.gen import fetch_timestamp
 from pagerduty import RestApiV2Client, Error as PDClientError
 from sqlalchemy import update
@@ -142,6 +141,8 @@ class PagerDutyInterface:
         """
 
         if self.escalation_policy_id is not None:
+            from incidentbot.slack.client import slack_workspace_id
+
             pagerduty_incident_data = {
                 "incident": {
                     "type": "incident",
