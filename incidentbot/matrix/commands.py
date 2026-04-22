@@ -1,6 +1,7 @@
 from incidentbot.logging import logger
 from incidentbot.matrix.messages import MatrixMessages
 from incidentbot.models.database import IncidentRecord, engine
+from incidentbot.util.widget_token import generate_widget_token
 from sqlmodel import Session, select
 
 
@@ -52,7 +53,11 @@ def handle_status(room_id: str, client) -> None:
 
 def handle_create(room_id: str, client, widget_base_url: str | None) -> None:
     if widget_base_url:
-        form_url = f"{widget_base_url.rstrip('/')}/widget/incident?roomId={room_id}"
+        token = generate_widget_token(room_id)
+        form_url = (
+            f"{widget_base_url.rstrip('/')}/widget/incident"
+            f"?roomId={room_id}&token={token}"
+        )
         plain = f"Open the incident creation form: {form_url}"
         html = f'<a href="{form_url}">Open incident creation form</a>'
     else:

@@ -17,42 +17,54 @@
     #status { margin-top: 12px; padding: 8px; border-radius: 4px; display: none; }
     #status.success { background: #e6f4ea; color: #1e7e34; display: block; }
     #status.error { background: #fdecea; color: #b71c1c; display: block; }
+    #auth-error { padding: 16px; background: #fdecea; color: #b71c1c; border-radius: 4px; }
   </style>
 </head>
 <body>
-  <h2>🚨 Create Incident</h2>
-  <form id="form">
-    <label for="incident_description">Description *</label>
-    <input type="text" id="incident_description" name="incident_description" required placeholder="Brief description of the incident">
 
-    <label for="severity">Severity *</label>
-    <select id="severity" name="severity" required>
-      <option value="">Select severity</option>
-      <option value="sev1">SEV1 — Critical</option>
-      <option value="sev2">SEV2 — Major</option>
-      <option value="sev3">SEV3 — Minor</option>
-      <option value="sev4">SEV4 — Investigating</option>
-    </select>
+  <div id="auth-error" style="display:none">
+    ⛔ Access denied. This widget can only be opened from an authorised Matrix room.
+  </div>
 
-    <label for="incident_components">Components *</label>
-    <input type="text" id="incident_components" name="incident_components" required placeholder="Affected components (e.g. API, Database)">
+  <div id="app" style="display:none">
+    <h2>🚨 Create Incident</h2>
+    <form id="form">
+      <label for="incident_description">Description *</label>
+      <input type="text" id="incident_description" name="incident_description" required placeholder="Brief description of the incident">
 
-    <label for="incident_impact">Impact</label>
-    <textarea id="incident_impact" name="incident_impact" placeholder="Describe the user or business impact"></textarea>
+      <label for="severity">Severity *</label>
+      <select id="severity" name="severity" required>
+        <option value="">Select severity</option>
+        <option value="sev1">SEV1 — Critical</option>
+        <option value="sev2">SEV2 — Major</option>
+        <option value="sev3">SEV3 — Minor</option>
+        <option value="sev4">SEV4 — Investigating</option>
+      </select>
 
-    <label>
-      <input type="checkbox" id="is_security_incident" name="is_security_incident">
-      Security incident (private channel)
-    </label>
+      <label for="incident_components">Components *</label>
+      <input type="text" id="incident_components" name="incident_components" required placeholder="Affected components (e.g. API, Database)">
 
-    <button type="submit" id="submit-btn">Declare Incident</button>
-  </form>
-  <div id="status"></div>
+      <label for="incident_impact">Impact</label>
+      <textarea id="incident_impact" name="incident_impact" placeholder="Describe the user or business impact"></textarea>
+
+      <label>
+        <input type="checkbox" id="is_security_incident" name="is_security_incident">
+        Security incident (private room)
+      </label>
+
+      <button type="submit" id="submit-btn">Declare Incident</button>
+    </form>
+    <div id="status"></div>
+  </div>
 
   <script>
+    var params = new URLSearchParams(location.search);
+    var WIDGET_TOKEN = params.get('token') || '';
+    var MATRIX_USER = params.get('matrix_user_id') || params.get('userId') || '';
+
     // Matrix Widget API handshake
-    var widgetId = new URLSearchParams(location.search).get('widgetId') || '';
-    var parentUrl = new URLSearchParams(location.search).get('parentUrl') || '*';
+    var widgetId = params.get('widgetId') || '';
+    var parentUrl = params.get('parentUrl') || '*';
     var seq = 0;
 
     function widgetSend(action, data, reqId) {
@@ -75,7 +87,13 @@
       }
     });
 
-    // Form submission
+    // Guard: token must be present (server already validated it, but belt-and-suspenders)
+    if (!WIDGET_TOKEN) {
+      document.getElementById('auth-error').style.display = 'block';
+    } else {
+      document.getElementById('app').style.display = 'block';
+    }
+
     document.getElementById('form').addEventListener('submit', async function(e) {
       e.preventDefault();
       var btn = document.getElementById('submit-btn');
@@ -90,17 +108,20 @@
         incident_components: document.getElementById('incident_components').value,
         incident_impact: document.getElementById('incident_impact').value || null,
         is_security_incident: document.getElementById('is_security_incident').checked,
-        created_from_web: true,
+        user: MATRIX_USER || null,
       };
 
       try {
-        var resp = await fetch('/api/v1/incident', {
+        var resp = await fetch('/widget/api/incident', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Widget-Token': WIDGET_TOKEN,
+          },
           body: JSON.stringify(body),
         });
         if (resp.ok) {
-          statusEl.textContent = 'Incident created successfully. Check your incident room.';
+          statusEl.textContent = 'Incident created. Check your incident room.';
           statusEl.className = 'success';
           document.getElementById('form').reset();
         } else {
