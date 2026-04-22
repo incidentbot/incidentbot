@@ -253,7 +253,9 @@ if __name__ == "__main__":
 
             _adapter = get_adapter()
             matrix_handler = MatrixHandler(
-                _adapter.client, settings.matrix.widget_base_url
+                _adapter.client,
+                digest_room_id=settings.matrix.digest_room_id,
+                widget_base_url=settings.matrix.widget_base_url,
             )
             matrix_handler.start()
 

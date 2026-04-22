@@ -3,7 +3,6 @@ from incidentbot.logging import logger
 from incidentbot.matrix.client import MatrixClient
 from incidentbot.matrix.messages import MatrixMessages
 from incidentbot.platform.base import PlatformAdapter
-from incidentbot.util.widget_token import generate_widget_token
 from typing import Any
 
 
@@ -71,18 +70,6 @@ class MatrixAdapter(PlatformAdapter):
     def post_welcome_message(self, room_id: str) -> None:
         plain, html = MatrixMessages.welcome(room_id)
         self._matrix.send_text(room_id, plain, html)
-        if self._widget_base_url:
-            token = generate_widget_token(room_id)
-            widget_url = (
-                f"{self._widget_base_url.rstrip('/')}/widget/incident"
-                f"?roomId={room_id}&widgetId=incidentbot-manage&token={token}"
-            )
-            self._matrix.register_widget(
-                room_id=room_id,
-                widget_id="incidentbot-manage",
-                name="Incident Management",
-                url=widget_url,
-            )
 
     def post_digest_notification(
         self,

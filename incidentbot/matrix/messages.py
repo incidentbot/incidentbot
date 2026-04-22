@@ -104,19 +104,32 @@ class MatrixMessages:
         return plain, html
 
     @staticmethod
-    def help() -> tuple[str, str]:
+    def help(digest_room_id: str = "") -> tuple[str, str]:
+        create_hint = (
+            f"Open the widget panel in the incidents room "
+            + (f"(https://matrix.to/#/{digest_room_id})" if digest_room_id else "")
+        )
         commands = [
             ("!incident help", "Show this help"),
             ("!incident status", "List active incidents"),
-            ("!incident create", "Open incident creation form"),
             ("!incident join <id> <role>", "Join an incident with a role"),
             ("!incident severity <id> <sev>", "Update incident severity"),
             ("!incident resolve <id>", "Mark incident as resolved"),
         ]
-        plain = "Incident Bot Commands:\n" + "\n".join(
-            f"  {cmd}  —  {desc}" for cmd, desc in commands
+        plain = (
+            f"To create an incident: {create_hint}\n\n"
+            "Other commands:\n"
+            + "\n".join(f"  {cmd}  —  {desc}" for cmd, desc in commands)
         )
-        html = "<b>Incident Bot Commands:</b><br><ul>" + "".join(
-            f"<li><code>{cmd}</code> — {desc}</li>" for cmd, desc in commands
-        ) + "</ul>"
+        digest_link = (
+            f'<a href="https://matrix.to/#/{digest_room_id}">incidents room</a>'
+            if digest_room_id
+            else "the incidents room"
+        )
+        html = (
+            f"<b>To create an incident:</b> Open the widget panel in {digest_link}<br><br>"
+            "<b>Other commands:</b><ul>"
+            + "".join(f"<li><code>{cmd}</code> — {desc}</li>" for cmd, desc in commands)
+            + "</ul>"
+        )
         return plain, html

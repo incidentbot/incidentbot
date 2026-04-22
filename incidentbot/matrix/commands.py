@@ -1,7 +1,6 @@
 from incidentbot.logging import logger
 from incidentbot.matrix.messages import MatrixMessages
 from incidentbot.models.database import IncidentRecord, engine
-from incidentbot.util.widget_token import generate_widget_token
 from sqlmodel import Session, select
 
 
@@ -19,8 +18,8 @@ def parse(body: str) -> tuple[str, list[str]] | None:
     return (parts[0].lower(), parts[1:])
 
 
-def handle_help(room_id: str, client) -> None:
-    plain, html = MatrixMessages.help()
+def handle_help(room_id: str, client, digest_room_id: str = "") -> None:
+    plain, html = MatrixMessages.help(digest_room_id)
     client.send_text(room_id, plain, html)
 
 
@@ -51,22 +50,6 @@ def handle_status(room_id: str, client) -> None:
     client.send_text(room_id, "\n".join(lines_plain), "".join(lines_html))
 
 
-def handle_create(room_id: str, client, widget_base_url: str | None) -> None:
-    if widget_base_url:
-        token = generate_widget_token(room_id)
-        form_url = (
-            f"{widget_base_url.rstrip('/')}/widget/incident"
-            f"?roomId={room_id}&token={token}"
-        )
-        plain = f"Open the incident creation form: {form_url}"
-        html = f'<a href="{form_url}">Open incident creation form</a>'
-    else:
-        plain = (
-            "Use the API or web interface to create an incident. "
-            "Set matrix.widget_base_url in config to enable in-room widget."
-        )
-        html = plain
-    client.send_text(room_id, plain, html)
 
 
 def handle_join(room_id: str, args: list[str], sender: str, client) -> None:
