@@ -1,7 +1,6 @@
 from datetime import datetime
 import asyncio
 import re
-import slack_sdk.errors
 
 from incidentbot.configuration.settings import settings
 from incidentbot.incident.event import EventLogHandler
@@ -9,6 +8,7 @@ from incidentbot.incident.util import comms_reminder, role_watcher
 from incidentbot.logging import logger
 from incidentbot.models.database import IncidentRecord, engine
 from incidentbot.models.pager import read_pager_auto_page_targets
+from incidentbot.platform import get_adapter
 from incidentbot.scheduler.core import (
     process as TaskScheduler,
 )
@@ -22,16 +22,6 @@ from incidentbot.zoom.meeting import ZoomMeeting
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
-if not settings.IS_TEST_ENVIRONMENT:
-    from incidentbot.scheduler.core import process as TaskScheduler
-    from incidentbot.slack.client import invite_user_to_channel
-    from incidentbot.slack.client import (
-        all_workspace_groups,
-        get_slack_user,
-        slack_web_client,
-        slack_workspace_id,
-    )
-
 
 def format_channel_name(
     id: int,
@@ -42,29 +32,12 @@ def format_channel_name(
     """
     Format a channel name by removing special characters, replacing spaces with dashes,
     and optionally adding a date prefix.
-
-    Args:
-        id (int): The identifier for the channel.
-        description (str): A description used for the channel name.
-        use_date_prefix (bool): Whether to prepend the current date to the name. Defaults to False.
-        comms (bool): Whether to append '-comms' to the name. Defaults to False.
-
-    Returns:
-        str: The formatted channel name.
     """
 
-    # Prepare prefix and suffix
     prefix = settings.options.channel_name_prefix
-    suffix = re.sub(
-        r"[^A-Za-z0-9\s]",
-        "",
-        description,
-    )
-
-    # Replace spaces with dashes and convert to lowercase
+    suffix = re.sub(r"[^A-Za-z0-9\s]", "", description)
     suffix = suffix.replace(" ", "-").lower()
 
-    # Handle date prefix if required
     current_date = ""
     if use_date_prefix:
         date_format = (
@@ -73,7 +46,6 @@ def format_channel_name(
             .replace("DD", "%d")
         )
         current_date = datetime.now().strftime(date_format)
-        # Construct the final channel name
         final = f"{prefix}-{id}-{current_date}-{suffix}"
     else:
         final = f"{prefix}-{id}-{suffix}"
@@ -111,24 +83,6 @@ class Incident:
     def __init__(self, params: IncidentRequestParameters | None = None):
         self.params = params
 
-    def create_channel(self, channel_name: str, private: bool = False) -> dict:
-        """
-        Create a Slack channel
-        """
-
-        logger.info(f"Creating Slack channel: {channel_name}")
-
-        try:
-            channel = slack_web_client.conversations_create(
-                name=channel_name,
-                is_private=private,
-            )
-
-            return channel.get("channel")
-        except slack_sdk.errors.SlackApiError as error:
-            logger.error(f"error creating channel {channel_name}: {error}")
-            return
-
     def generate_meeting_link(self, channel_name: str) -> str | None:
         if (
             settings.integrations
@@ -148,7 +102,8 @@ class Incident:
         Create an incident
         """
 
-        # Create initial record
+        adapter = get_adapter()
+
         try:
             with Session(engine) as session:
                 record = IncidentRecord(
@@ -172,7 +127,7 @@ class Incident:
                 session.refresh(record)
 
                 """
-                Create Slack channel for incident
+                Create platform room/channel for incident
                 """
 
                 channel_name = format_channel_name(
@@ -180,14 +135,11 @@ class Incident:
                     description=self.params.incident_description,
                     use_date_prefix=settings.options.channel_name_use_date_prefix,
                 )
-                channel = self.create_channel(
-                    channel_name=channel_name,
-                    private=self.params.private_channel
-                    | self.params.is_security_incident,
+                channel = adapter.create_room(
+                    name=channel_name,
+                    private=self.params.private_channel | self.params.is_security_incident,
                 )
-                meeting_link = self.generate_meeting_link(
-                    channel_name=channel_name
-                )
+                meeting_link = self.generate_meeting_link(channel_name=channel_name)
 
                 """
                 Update record
@@ -196,147 +148,82 @@ class Incident:
                 record.channel_id = channel.get("id")
                 record.channel_name = channel_name
                 record.has_private_channel = (
-                    self.params.private_channel
-                    or self.params.is_security_incident
+                    self.params.private_channel or self.params.is_security_incident
                 )
-                record.link = "https://{}.slack.com/archives/{}".format(
-                    slack_workspace_id, channel.get("id")
-                )
+                record.link = adapter.room_url(channel.get("id"))
                 record.meeting_link = meeting_link
-                record.slug = (
-                    f"{settings.options.channel_name_prefix}-{record.id}"
-                )
+                record.slug = f"{settings.options.channel_name_prefix}-{record.id}"
 
                 """
-                Notify incidents digest channel
+                Notify digest room/channel
                 """
 
                 logger.info(
                     f"Sending message to digest channel for: {record.channel_name}"
                 )
-                try:
-                    digest_message = slack_web_client.chat_postMessage(
-                        **IncidentChannelDigestNotification.create(
-                            channel_id=record.channel_id,
-                            has_private_channel=record.has_private_channel,
-                            incident_components=record.components,
-                            incident_description=record.description,
-                            incident_impact=record.impact,
-                            incident_slug=f"{settings.options.channel_name_prefix}-{record.id}",
-                            initial_status=record.status,
-                            meeting_link=record.meeting_link,
-                            severity=record.severity,
-                        ),
-                        text="A new incident has been declared!",
-                    )
-                except slack_sdk.errors.SlackApiError as error:
-                    logger.error(
-                        f"Error sending message to incident digest channel: {error}"
-                    )
+                digest_event_id = adapter.post_digest_notification(
+                    channel_id=record.channel_id,
+                    has_private_channel=record.has_private_channel,
+                    incident_components=record.components,
+                    incident_description=record.description,
+                    incident_impact=record.impact,
+                    incident_slug=f"{settings.options.channel_name_prefix}-{record.id}",
+                    initial_status=record.status,
+                    meeting_link=record.meeting_link,
+                    severity=record.severity,
+                )
+
+                record.digest_message_ts = digest_event_id
 
                 """
-                Update record
+                Set incident room topic
                 """
 
-                record.digest_message_ts = digest_message.get("ts")
+                adapter.set_room_topic(
+                    room_id=record.channel_id,
+                    topic=f"Severity: {record.severity.upper()} | Status: {record.status.title()}",
+                )
 
                 """
-                Set incident channel topic
+                Send boilerplate info to incident room
                 """
 
-                try:
-                    slack_web_client.conversations_setTopic(
-                        channel=record.channel_id,
-                        topic=f"Severity: {record.severity.upper()} | Status: {record.status.title()}",
-                    )
-                except slack_sdk.errors.SlackApiError as error:
-                    logger.error(
-                        f"Error setting incident channel topic: {error}"
-                    )
+                bp_event_id = adapter.post_incident_boilerplate(incident=record)
+                record.boilerplate_message_ts = bp_event_id
 
                 """
-                Send boilerplate info to incident channel
+                Send welcome message to incident room
                 """
 
-                try:
-                    bp_message = slack_web_client.chat_postMessage(
-                        **BlockBuilder.boilerplate_message(
-                            incident=record,
-                        ),
-                        text="Incident details have been posted to an incident channel.",
-                    )
-                except slack_sdk.errors.SlackApiError as error:
-                    logger.error(
-                        f"Error sending message to incident channel: {error}"
-                    )
+                adapter.post_welcome_message(room_id=record.channel_id)
 
                 """
-                Update record
-                """
-
-                record.boilerplate_message_ts = bp_message.get("ts")
-
-                """
-                Send welcome message to incident channel
-                """
-
-                try:
-                    slack_web_client.chat_postMessage(
-                        channel=record.channel_id,
-                        blocks=BlockBuilder.welcome_message(),
-                        text="Welcome Message",
-                    )
-                except slack_sdk.errors.SlackApiError as error:
-                    logger.error(
-                        f"Error sending welcome message to incident channel: {error}"
-                    )
-
-                """
-                Create bookmark for meeting (optional)
+                Add meeting bookmark (optional)
                 """
 
                 if record.meeting_link:
-                    try:
-                        # Try to sort out the meeting link provider
-                        meeting_link_provider = "Audio"
-                        if "zoom" in record.meeting_link.lower():
-                            meeting_link_provider = "Zoom"
+                    meeting_link_provider = "Audio"
+                    if "zoom" in record.meeting_link.lower():
+                        meeting_link_provider = "Zoom"
 
-                        slack_web_client.bookmarks_add(
-                            channel_id=record.channel_id,
-                            emoji=settings.icons.get(settings.platform).get(
-                                "meeting"
-                            ),
-                            title=f"{meeting_link_provider} Meeting",
-                            type="link",
-                            link=record.meeting_link,
-                        )
-                    except slack_sdk.errors.SlackApiError as error:
-                        logger.error(
-                            f"Error adding meeting bookmark to channel: {error}"
-                        )
+                    adapter.add_bookmark(
+                        room_id=record.channel_id,
+                        title=f"{meeting_link_provider} Meeting",
+                        url=record.meeting_link,
+                        emoji=settings.icons.get(settings.platform, {}).get("meeting", ""),
+                    )
 
                 """
                 Pin meeting link to channel (optional)
                 """
 
-                if (
-                    record.meeting_link
-                    and settings.options.pin_meeting_link_to_channel
-                ):
-                    try:
-                        resp = slack_web_client.chat_postMessage(
-                            channel=record.channel_id,
-                            text=f"Join the meeting here: {record.meeting_link}",
-                        )
-                        slack_web_client.pins_add(
-                            channel=record.channel_id,
-                            timestamp=resp["ts"],
-                        )
-                    except slack_sdk.errors.SlackApiError as error:
-                        logger.error(
-                            f"Error pinning meeting link to channel: {error}"
-                        )
+                if record.meeting_link and settings.options.pin_meeting_link_to_channel:
+                    event_id = adapter.send_text(
+                        room_id=record.channel_id,
+                        text=f"Join the meeting here: {record.meeting_link}",
+                    )
+                    if event_id:
+                        adapter.pin_message(room_id=record.channel_id, event_id=event_id)
 
                 """
                 Database commit
@@ -349,31 +236,27 @@ class Incident:
                 Run additional features
                 """
 
-                asyncio.run(
-                    self.handle_incident_optional_features(id=record.id)
-                )
+                asyncio.run(self.handle_incident_optional_features(id=record.id))
 
-                # Invite the user who started the incident to the channel
-                invite_user_to_channel(
-                    channel_id=record.channel_id, user=self.params.user
-                )
+                # Invite the user who started the incident to the room
+                if self.params.user:
+                    adapter.invite_user(room_id=record.channel_id, user_id=self.params.user)
 
                 # Write event log
+                user_name = (
+                    adapter.get_user_display_name(self.params.user)
+                    if self.params.user
+                    else "system"
+                )
                 EventLogHandler.create(
-                    event="The incident was reported by {}".format(
-                        get_slack_user(self.params.user).get(
-                            "real_name", "NotAvailable"
-                        )
-                    ),
+                    event=f"The incident was reported by {user_name}",
                     incident_id=record.id,
                     incident_slug=record.slug,
                     source="system",
-                    user=get_slack_user(self.params.user).get(
-                        "real_name", "NotAvailable"
-                    ),
+                    user=user_name,
                 )
 
-                return f"<#{record.channel_id}>"
+                return record.channel_id
         except Exception as error:
             logger.error(f"Error during incident creation: {error}")
             return
@@ -385,23 +268,24 @@ class Incident:
         """
 
         try:
+            adapter = get_adapter()
             with Session(engine) as session:
-                # Remove record
                 record = session.exec(
                     select(IncidentRecord).filter(IncidentRecord.id == id)
                 ).one()
                 session.delete(record)
                 session.commit()
 
-                # Clean up jobs
                 for job in TaskScheduler.list_jobs():
                     if f"inc-{record.id}" in job.id:
                         TaskScheduler.delete_job(job.id)
 
-                slack_web_client.chat_postMessage(
-                    channel=record.channel_id,
-                    text=":octagonal_sign: This incident has been deleted from the application. "
-                    + "You will no longer be able to use the bot to manage it.",
+                adapter.send_text(
+                    room_id=record.channel_id,
+                    text=(
+                        "This incident has been deleted from the application. "
+                        "You will no longer be able to use the bot to manage it."
+                    ),
                 )
 
                 return True
@@ -411,8 +295,11 @@ class Incident:
 
     async def handle_incident_optional_features(self, id: int):
         """
-        Invite required participants (optional)
+        Run optional post-creation features: group invites, Statuspage, PagerDuty,
+        Jira, GitLab, comms channel, schedulers, additional messages.
         """
+
+        adapter = get_adapter()
 
         with Session(engine) as session:
             record = session.exec(
@@ -425,71 +312,40 @@ class Incident:
                         record.severity in gr.severities.split(",")
                         or gr.severities == "all"
                     ):
-                        # Get group members
-                        try:
-                            required_participants_group_members = (
-                                slack_web_client.usergroups_users_list(
-                                    usergroup=[
-                                        g
-                                        for g in all_workspace_groups.get(
-                                            "usergroups"
-                                        )
-                                        if g["handle"] == gr.name
-                                    ][0]["id"],
+                        members = adapter.get_group_members_by_name(gr.name)
+                        if members:
+                            try:
+                                adapter.invite_users(
+                                    room_id=record.channel_id, user_ids=members
                                 )
-                            )["users"]
-                        except Exception as error:
-                            logger.error(
-                                f"Error getting group members for {gr.name}: {error}"
-                            )
-                            raise
+                                EventLogHandler.create(
+                                    event=f"Group {gr.name} was invited to the incident channel based on configured settings",
+                                    incident_id=record.id,
+                                    incident_slug=record.slug,
+                                    source="system",
+                                )
+                            except Exception as error:
+                                logger.error(
+                                    f"Error when inviting auto users: {error}"
+                                )
 
-                        # Invite group members to channel
-                        try:
-                            slack_web_client.conversations_invite(
-                                channel=record.channel_id,
-                                users=",".join(
-                                    required_participants_group_members
-                                ),
-                            )
-
-                            # Write event log
-                            EventLogHandler.create(
-                                event=f"Group {gr.name} was invited to the incident channel based on configured settings",
-                                incident_id=record.id,
-                                incident_slug=record.slug,
-                                source="system",
-                            )
-                        except slack_sdk.errors.SlackApiError as error:
-                            logger.error(
-                                f"Error when inviting auto users: {error}"
-                            )
-
-                        # If the PagerDuty integration is enabled
-                        # and the group declaration has an escalation
-                        # issue a page
                         if (
                             settings.integrations
                             and settings.integrations.pagerduty
                             and settings.integrations.pagerduty.enabled
                             and gr.pagerduty_escalation_policy
                         ):
-                            from incidentbot.pagerduty.api import (
-                                PagerDutyInterface,
-                            )
+                            from incidentbot.pagerduty.api import PagerDutyInterface
 
                             pagerduty_interface = PagerDutyInterface(
                                 escalation_policy=gr.pagerduty_escalation_policy
                             )
-
                             pagerduty_interface.page(
                                 priority=gr.pagerduty_escalation_priority,
                                 channel_name=record.channel_name,
                                 channel_id=record.channel_id,
                                 paging_user="auto",
                             )
-
-                            # Write event log
                             EventLogHandler.create(
                                 event="Created PagerDuty incident based on automatic configuration",
                                 incident_id=record.id,
@@ -507,25 +363,8 @@ class Incident:
                 and settings.integrations.atlassian.statuspage
                 and settings.integrations.atlassian.statuspage.enabled
             ):
-                sp_starter_message_content = (
-                    return_new_statuspage_incident_message(
-                        channel_id=record.channel_id
-                    )
-                )
-
-                logger.info(
-                    f"Sending Statuspage prompt to {record.channel_name}"
-                )
-
-                try:
-                    slack_web_client.chat_postMessage(
-                        **sp_starter_message_content,
-                        text="Statuspage prompt has been posted to an incident.",
-                    )
-                except slack_sdk.errors.SlackApiError as error:
-                    logger.error(
-                        f"Error sending Statuspage prompt to incident channel {record.channel_name}: {error}"
-                    )
+                logger.info(f"Sending Statuspage prompt to {record.channel_name}")
+                adapter.post_statuspage_prompt(room_id=record.channel_id)
 
             """
             Post prompt for creating Phare incident if enabled (optional)
@@ -571,19 +410,13 @@ class Incident:
                     for i in auto_page_targets:
                         for k, v in i.items():
                             logger.info(f"Paging {k}...")
-
-                            pagerduty_interface = PagerDutyInterface(
-                                escalation_policy=v
-                            )
-
+                            pagerduty_interface = PagerDutyInterface(escalation_policy=v)
                             pagerduty_interface.page(
                                 priority="low",
                                 channel_name=record.channel_name,
                                 channel_id=record.channel_id,
                                 paging_user="auto",
                             )
-
-                            # Write event log
                             EventLogHandler.create(
                                 event=f"Created PagerDuty incident for team {k} at user request",
                                 incident_id=record.id,
@@ -596,15 +429,13 @@ class Incident:
             """
 
             if record.is_security_incident:
-                try:
-                    slack_web_client.chat_postMessage(
-                        channel=record.channel_id,
-                        text=":warning: This incident was flagged as a security incident and the channel is private. You must invite other users to this channel manually.",
-                    )
-                except slack_sdk.errors.SlackApiError as error:
-                    logger.error(
-                        f"Error sending additional information to the incident channel {record.channel_name}: {error}"
-                    )
+                adapter.send_text(
+                    room_id=record.channel_id,
+                    text=(
+                        "This incident was flagged as a security incident and the channel is private. "
+                        "You must invite other users to this channel manually."
+                    ),
+                )
 
             """
             If a Jira issue should be created automatically, create it (optional)
@@ -627,40 +458,30 @@ class Incident:
                         issue_type=settings.integrations.atlassian.jira.auto_create_issue_type,
                         summary=record.description,
                     )
-
                     resp = issue_obj.new()
 
                     if resp is not None:
                         issue_link = f"{settings.ATLASSIAN_API_URL}/browse/{resp.get('key')}"
-
                         jira_issue_record = JiraIssueRecord(
                             key=resp.get("key"),
                             parent=record.id,
                             status="Unassigned",
                             url=issue_link,
                         )
-
                         session.add(jira_issue_record)
 
-                        from incidentbot.slack.messages import (
-                            BlockBuilder,
-                        )
-
                         try:
-                            resp = slack_web_client.chat_postMessage(
-                                channel=record.channel_id,
-                                blocks=BlockBuilder.jira_issue_message(
-                                    key=resp.get("key"),
-                                    summary=record.description,
-                                    type=settings.integrations.atlassian.jira.auto_create_issue_type,
-                                    link=issue_link,
-                                ),
-                                text=f"A Jira issue has been created for this incident: {resp.get('self')}",
+                            event_id = adapter.post_jira_issue(
+                                room_id=record.channel_id,
+                                key=resp.get("key"),
+                                summary=record.description,
+                                issue_type=settings.integrations.atlassian.jira.auto_create_issue_type,
+                                link=issue_link,
                             )
-                            slack_web_client.pins_add(
-                                channel=record.channel_id,
-                                timestamp=resp["ts"],
-                            )
+                            if event_id:
+                                adapter.pin_message(
+                                    room_id=record.channel_id, event_id=event_id
+                                )
                         except Exception as error:
                             logger.error(
                                 f"Error sending Jira issue message for {record.channel_name}: {error}"
@@ -691,12 +512,10 @@ class Incident:
                         status=record.status,
                         severity=record.severity,
                     )
-
                     resp = issue_obj.new()
 
                     if resp is not None:
                         issue_link = resp.get("web_url")
-
                         gitlab_incident_record = GitlabIssueRecord(
                             id=resp.get("id"),
                             iid=resp.get("iid"),
@@ -704,34 +523,26 @@ class Incident:
                             status="Unassigned",
                             url=issue_link,
                         )
-
                         session.add(gitlab_incident_record)
 
-                        from incidentbot.slack.messages import (
-                            BlockBuilder,
-                        )
-
                         try:
-                            resp = slack_web_client.chat_postMessage(
-                                channel=record.channel_id,
-                                blocks=BlockBuilder.gitlab_incident_message(
-                                    id=resp.get("id"),
-                                    summary=record.description,
-                                    link=issue_link,
-                                ),
-                                text=f"A Gitlab {settings.integrations.gitlab.issue_type.title()} has been created for this incident: {resp.get('self')}",
+                            event_id = adapter.post_gitlab_incident(
+                                room_id=record.channel_id,
+                                incident_id=resp.get("id"),
+                                summary=record.description,
+                                link=issue_link,
                             )
-                            slack_web_client.pins_add(
-                                channel=record.channel_id,
-                                timestamp=resp["ts"],
-                            )
+                            if event_id:
+                                adapter.pin_message(
+                                    room_id=record.channel_id, event_id=event_id
+                                )
                         except Exception as error:
                             logger.error(
-                                f"Error sending Gitlab {settings.integrations.gitlab.issue_type.title()} message for {record.channel_name}: {error}"
+                                f"Error sending GitLab incident message for {record.channel_name}: {error}"
                             )
                 except Exception as error:
                     logger.error(
-                        f"Error creating Gitlab {settings.integrations.gitlab.issue_type.title()} for {record.channel_name}: {error}"
+                        f"Error creating GitLab incident for {record.channel_name}: {error}"
                     )
 
             """
@@ -740,8 +551,8 @@ class Incident:
 
             if record.additional_comms_channel:
                 try:
-                    comms_channel = self.create_channel(
-                        channel_name=format_channel_name(
+                    comms_channel = adapter.create_room(
+                        name=format_channel_name(
                             id=record.id,
                             description=record.description,
                             use_date_prefix=settings.options.channel_name_use_date_prefix,
@@ -749,25 +560,18 @@ class Incident:
                         ),
                         private=False,
                     )
-                    resp = slack_web_client.chat_postMessage(
-                        channel=record.channel_id,
-                        text="As requested, here is the dedicated communications channel for this incident: <#{}>".format(
-                            comms_channel.get("id")
-                        ),
+                    comms_id = comms_channel.get("id")
+                    event_id = adapter.send_text(
+                        room_id=record.channel_id,
+                        text=f"Dedicated communications channel/room: {adapter.room_url(comms_id)}",
                     )
-                    slack_web_client.pins_add(
-                        channel=record.channel_id,
-                        timestamp=resp["ts"],
-                    )
+                    if event_id:
+                        adapter.pin_message(room_id=record.channel_id, event_id=event_id)
+
+                    record.additional_comms_channel_id = comms_id
+                    record.additional_comms_channel_link = adapter.room_url(comms_id)
                 except Exception as error:
                     logger.error(f"Error creating comms channel: {error}")
-
-                record.additional_comms_channel_id = comms_channel.get("id")
-                record.additional_comms_channel_link = (
-                    "https://{}.slack.com/archives/{}".format(
-                        slack_workspace_id, comms_channel.get("id")
-                    )
-                )
 
             """
             Create task to remind channel about status updates
@@ -812,14 +616,12 @@ class Incident:
             try:
                 if settings.options.additional_welcome_messages:
                     for entry in settings.options.additional_welcome_messages:
-                        resp = slack_web_client.chat_postMessage(
-                            channel=record.channel_id,
-                            text=entry.message,
+                        event_id = adapter.send_text(
+                            room_id=record.channel_id, text=entry.message
                         )
-                        if entry.pin:
-                            slack_web_client.pins_add(
-                                channel=record.channel_id,
-                                timestamp=resp["ts"],
+                        if entry.pin and event_id:
+                            adapter.pin_message(
+                                room_id=record.channel_id, event_id=event_id
                             )
             except Exception as error:
                 logger.error(

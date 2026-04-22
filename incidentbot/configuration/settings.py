@@ -217,6 +217,19 @@ class PhareIntegration(BaseModel):
     permissions: PhareIntegrationPermissions | None = None
 
 
+class MatrixSettings(BaseModel):
+    """
+    Model for the matrix field (required when platform = 'matrix')
+    """
+
+    homeserver: str
+    user_id: str
+    access_token: str
+    device_id: str = "INCIDENTBOT"
+    digest_room_id: str
+    widget_base_url: str | None = None
+
+
 class PagerDutyIntegration(BaseModel):
     """
     Model for the pagerduty field
@@ -321,6 +334,7 @@ class Settings(BaseSettings):
     initial_role_watcher_minutes: int = 10
     integrations: Integrations | None = None
     jobs: Jobs | None = None
+    matrix: MatrixSettings | None = None
     links: list[Link] | None = None
     maintenance_windows: MaintenanceWindows | None = None
     options: Options | None = Options()
@@ -466,9 +480,19 @@ class Settings(BaseSettings):
             TypeAdapter(bool).validate_python(self.IS_MIGRATION)
             or TypeAdapter(bool).validate_python(self.IS_TEST_ENVIRONMENT)
         ):
-            self._check_required_var("SLACK_APP_TOKEN", self.SLACK_APP_TOKEN)
-            self._check_required_var("SLACK_BOT_TOKEN", self.SLACK_BOT_TOKEN)
-            self._check_required_var("SLACK_USER_TOKEN", self.SLACK_USER_TOKEN)
+            if self.platform == "slack":
+                self._check_required_var("SLACK_APP_TOKEN", self.SLACK_APP_TOKEN)
+                self._check_required_var("SLACK_BOT_TOKEN", self.SLACK_BOT_TOKEN)
+                self._check_required_var("SLACK_USER_TOKEN", self.SLACK_USER_TOKEN)
+            elif self.platform == "matrix":
+                if not self.matrix:
+                    raise ValueError(
+                        "The 'matrix' config block is required when platform = 'matrix'."
+                    )
+                self._check_required_var("matrix.homeserver", self.matrix.homeserver)
+                self._check_required_var("matrix.user_id", self.matrix.user_id)
+                self._check_required_var("matrix.access_token", self.matrix.access_token)
+                self._check_required_var("matrix.digest_room_id", self.matrix.digest_room_id)
 
             if (
                 self.integrations

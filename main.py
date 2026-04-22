@@ -191,6 +191,21 @@ if __name__ == "__main__":
 
     startup_tasks()
 
+    # Platform Adapter Initialization
+    # --------------------
+
+    match settings.platform:
+        case "slack":
+            from incidentbot.platform.slack import SlackAdapter
+            from incidentbot.platform import init_adapter
+
+            init_adapter(SlackAdapter())
+        case "matrix":
+            from incidentbot.platform.matrix import MatrixAdapter
+            from incidentbot.platform import init_adapter
+
+            init_adapter(MatrixAdapter(settings.matrix))
+
     # Startup Message
     # --------------------
 
@@ -202,6 +217,13 @@ if __name__ == "__main__":
 
             print(
                 startup_message(provider="Slack", workspace=slack_workspace_id)
+            )
+        case "matrix":
+            print(
+                startup_message(
+                    provider="Matrix",
+                    workspace=settings.matrix.homeserver,
+                )
             )
 
     # Always check to make sure the bot user is in the digest channel
@@ -215,7 +237,7 @@ if __name__ == "__main__":
 
             check_bot_user_in_digest_channel()
 
-    # Platform Integrations
+    # Platform handler start
     # --------------------
 
     match settings.platform:
@@ -223,12 +245,21 @@ if __name__ == "__main__":
             from incidentbot.slack.handler import app as slack_app
             from slack_bolt.adapter.socket_mode import SocketModeHandler
 
-            handler = SocketModeHandler(slack_app, settings.SLACK_APP_TOKEN)
+            platform_handler = SocketModeHandler(slack_app, settings.SLACK_APP_TOKEN)
+            platform_handler.connect()
+        case "matrix":
+            from incidentbot.matrix.handler import MatrixHandler
+            from incidentbot.platform import get_adapter
 
-    # API and handler Integration
+            _adapter = get_adapter()
+            matrix_handler = MatrixHandler(
+                _adapter.client, settings.matrix.widget_base_url
+            )
+            matrix_handler.start()
+
+    # API server
     # --------------------
 
     from incidentbot.api.main import app
 
-    handler.connect()
     run(app, host="0.0.0.0", port=3000)
