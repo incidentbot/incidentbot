@@ -6,6 +6,7 @@ from nio import (
     AsyncClient,
     JoinResponse,
     RoomCreateResponse,
+    RoomPutStateError,
     RoomSendResponse,
 )
 
@@ -93,11 +94,13 @@ class MatrixClient:
         return {}
 
     def set_room_topic(self, room_id: str, topic: str) -> None:
-        self._run(
+        resp = self._run(
             self._client.room_put_state(
                 room_id, "m.room.topic", {"topic": topic}
             )
         )
+        if isinstance(resp, RoomPutStateError):
+            logger.error(f"Matrix set_room_topic failed for {room_id}: {resp}")
 
     def send_text(self, room_id: str, text: str, html: str | None = None) -> str:
         """Send a message. Returns event_id on success, empty string on failure."""
@@ -166,6 +169,14 @@ class MatrixClient:
 
     async def set_room_admin_async(self, room_id: str, user_id: str) -> None:
         await self._set_room_admin_async(room_id, user_id)
+
+    async def set_room_topic_async(self, room_id: str, topic: str) -> None:
+        resp = await self._client.room_put_state(room_id, "m.room.topic", {"topic": topic})
+        if isinstance(resp, RoomPutStateError):
+            logger.error(f"Matrix set_room_topic_async failed for {room_id}: {resp}")
+
+    async def invite_user_async(self, room_id: str, user_id: str) -> None:
+        await self._client.room_invite(room_id, user_id)
 
     def register_widget(self, room_id: str, widget_id: str, name: str, url: str) -> None:
         """Register a Matrix widget in a room via im.vector.modular.widgets state."""

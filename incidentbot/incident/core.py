@@ -150,6 +150,10 @@ class Incident:
                 record.has_private_channel = (
                     self.params.private_channel or self.params.is_security_incident
                 )
+
+                if settings.platform == "matrix" and self.params.user:
+                    adapter.invite_user(record.channel_id, self.params.user)
+                    adapter.make_room_admin(record.channel_id, self.params.user)
                 record.link = adapter.room_url(channel.get("id"))
                 record.meeting_link = meeting_link
                 record.slug = f"{settings.options.channel_name_prefix}-{record.id}"
@@ -264,7 +268,11 @@ class Incident:
                 Run additional features
                 """
 
-                asyncio.run(self.handle_incident_optional_features(id=record.id))
+                try:
+                    loop = asyncio.get_running_loop()
+                    loop.create_task(self.handle_incident_optional_features(id=record.id))
+                except RuntimeError:
+                    asyncio.run(self.handle_incident_optional_features(id=record.id))
 
                 # Invite the user who started the incident to the room
                 if self.params.user:

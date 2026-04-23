@@ -114,20 +114,35 @@ async def handle_join(room_id: str, args: list[str], sender: str, client) -> Non
         )
         session.add(participant)
         session.commit()
+        session.refresh(record)
+        incident_channel_id = record.channel_id
+        incident_severity = record.severity
+        incident_status = record.status
+        incident_slug = record.slug
+        is_private = record.has_private_channel
+
+    if is_private:
+        await client.invite_user_async(incident_channel_id, sender)
 
     if role_config and role_config.is_lead:
-        get_adapter().set_room_topic(
-            room_id=record.channel_id,
-            topic=(
-                f"Severity: {record.severity.upper()} | "
-                f"Status: {record.status.title()} | "
-                f"{assigned_role.replace('_', ' ').title()}: {display_name}"
-            ),
+        logger.info(
+            f"Updating topic for incident room {incident_channel_id} with role {assigned_role}"
+        )
+        await client.set_room_topic_async(
+            incident_channel_id,
+            f"Severity: {incident_severity.upper()} | "
+            f"Status: {incident_status.title()} | "
+            f"{assigned_role.replace('_', ' ').title()}: {display_name}",
+        )
+    else:
+        logger.debug(
+            f"Skipping topic update: role_config={role_config}, "
+            f"is_lead={getattr(role_config, 'is_lead', None)}"
         )
 
     await client.send_text_async(
         room_id,
-        f"{display_name} joined {record.slug} as {assigned_role.replace('_', ' ').title()}.",
+        f"{display_name} joined {incident_slug} as {assigned_role.replace('_', ' ').title()}.",
     )
 
 
