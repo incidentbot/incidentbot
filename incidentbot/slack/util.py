@@ -103,5 +103,10 @@ def parse_modal_values(
                     result[title] = content.get("selected_time")
                 case "users_select":
                     result[title] = content.get("selected_user")
+                case "checkboxes":
+                    result[title] = [
+                        obj.get("value")
+                        for obj in content.get("selected_options", [])
+                    ]
 
     return result

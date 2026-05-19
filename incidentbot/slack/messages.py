@@ -1625,6 +1625,87 @@ class BlockBuilder:
         return blocks
 
     @staticmethod
+    def phare_incident_list(
+        incidents: list[dict],
+    ) -> list[dict[str, Any]]:
+        """
+        Return a message containing details on Phare incidents
+
+        Parameters:
+            incidents (list[dict]): Incidents to iterate over
+        """
+
+        blocks = [
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": ":fire: Phare Incidents",
+                },
+            },
+            {"type": "divider"},
+        ]
+        formatted_incidents = []
+        none_found_block = [
+            {"type": "divider"},
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": ":fire: No Phare Incidents",
+                },
+            },
+            {"type": "divider"},
+        ]
+
+        if len(incidents) == 0:
+            return none_found_block
+
+        for inc in incidents:
+            name = inc.get("name")
+            state = inc.get("state")
+            url = inc.get("url")
+            updated_at = inc.get("updated_at")
+
+            if state != "resolved":
+                entry = {
+                    "type": "section",
+                    "fields": [
+                        {"type": "mrkdwn", "text": f"*Name:* {name}"},
+                        {"type": "mrkdwn", "text": f"*State:* {state}"},
+                        {"type": "mrkdwn", "text": f"*Last Updated:* {updated_at}"},
+                    ],
+                }
+                formatted_incidents.append(entry)
+
+                if url:
+                    formatted_incidents.append(
+                        {
+                            "type": "actions",
+                            "elements": [
+                                {
+                                    "type": "button",
+                                    "text": {
+                                        "type": "plain_text",
+                                        "text": "Open In Phare",
+                                    },
+                                    "url": url,
+                                },
+                            ],
+                        }
+                    )
+
+                formatted_incidents.append({"type": "divider"})
+
+        if len(formatted_incidents) == 0:
+            return none_found_block
+
+        for inc in formatted_incidents:
+            blocks.append(inc)
+
+        return blocks
+
+    @staticmethod
     def task_list(
         tasks: list[Job],
     ) -> list[dict[str, Any]]:

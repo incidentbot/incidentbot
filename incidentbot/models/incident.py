@@ -5,6 +5,7 @@ from incidentbot.models.database import (
     IncidentParticipant,
     IncidentRecord,
     PagerDutyIncidentRecord,
+    PhareIncidentRecord,
     PostmortemRecord,
     StatuspageIncidentRecord,
     GitlabIssueRecord,
@@ -92,6 +93,30 @@ class IncidentDatabaseInterface:
                 ).one()
         except NoResultFound:
             logger.error(f"Statuspage incident not found for incident {id}")
+        except Exception as error:
+            logger.error(f"Lookup failed: {error}")
+
+    @classmethod
+    def get_phare_incident_record(
+        self,
+        id: int = None,
+    ) -> PhareIncidentRecord:
+        """
+        Read a single Phare incident record from the database
+
+        Parameters:
+            id (int): Filter by incident id
+        """
+
+        try:
+            with Session(engine) as session:
+                return session.exec(
+                    select(PhareIncidentRecord).filter(
+                        PhareIncidentRecord.parent == id,
+                    )
+                ).one()
+        except NoResultFound:
+            logger.error(f"Phare incident not found for incident {id}")
         except Exception as error:
             logger.error(f"Lookup failed: {error}")
 

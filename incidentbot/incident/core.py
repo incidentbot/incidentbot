@@ -16,6 +16,7 @@ from incidentbot.slack.messages import (
     BlockBuilder,
     IncidentChannelDigestNotification,
 )
+from incidentbot.phare.slack import return_new_phare_incident_message
 from incidentbot.statuspage.slack import return_new_statuspage_incident_message
 from incidentbot.zoom.meeting import ZoomMeeting
 from pydantic import BaseModel
@@ -524,6 +525,33 @@ class Incident:
                 except slack_sdk.errors.SlackApiError as error:
                     logger.error(
                         f"Error sending Statuspage prompt to incident channel {record.channel_name}: {error}"
+                    )
+
+            """
+            Post prompt for creating Phare incident if enabled (optional)
+            """
+
+            if (
+                settings.integrations
+                and settings.integrations.phare
+                and settings.integrations.phare.enabled
+            ):
+                phare_starter_message_content = return_new_phare_incident_message(
+                    channel_id=record.channel_id
+                )
+
+                logger.info(
+                    f"Sending Phare prompt to {record.channel_name}"
+                )
+
+                try:
+                    slack_web_client.chat_postMessage(
+                        **phare_starter_message_content,
+                        text="Phare prompt has been posted to an incident.",
+                    )
+                except slack_sdk.errors.SlackApiError as error:
+                    logger.error(
+                        f"Error sending Phare prompt to incident channel {record.channel_name}: {error}"
                     )
 
             """

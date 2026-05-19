@@ -428,6 +428,33 @@ class StatuspageIncidentRecord(SQLModel, table=True):
     upstream_id: str
 
 
+class PhareIncidentRecord(SQLModel, table=True):
+    channel_id: str | None = None
+    id: uuid.UUID = Field(primary_key=True, default_factory=uuid.uuid4)
+    message_ts: str | None = None
+    name: str | None = None
+    parent: Annotated[
+        int,
+        Field(
+            foreign_key="incidentrecord.id",
+            ondelete="CASCADE",
+            exclude=True,
+        ),
+    ]
+    state: str | None = None
+    updated_at: Optional[datetime] = Field(
+        sa_column=Column(
+            DateTime(),
+            onupdate=func.now(),
+        )
+    )
+    updates: list | None = Field(
+        sa_column=Column(MutableList.as_mutable(JSON)), default_factory=list
+    )
+    upstream_id: int
+    url: str | None = None
+
+
 class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
