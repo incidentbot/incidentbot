@@ -118,3 +118,9 @@ class MatrixAdapter(PlatformAdapter):
             "Update your Statuspage incident at the configured Statuspage URL."
         )
         self._matrix.send_text(room_id, plain)
+
+    def post_phare_prompt(self, room_id: str) -> None:
+        self._matrix.send_text(
+            room_id,
+            "Phare integration is active. Update your Phare incident at the configured Phare URL.",
+        )

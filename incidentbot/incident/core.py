@@ -12,12 +12,6 @@ from incidentbot.platform import get_adapter
 from incidentbot.scheduler.core import (
     process as TaskScheduler,
 )
-from incidentbot.slack.messages import (
-    BlockBuilder,
-    IncidentChannelDigestNotification,
-)
-from incidentbot.phare.slack import return_new_phare_incident_message
-from incidentbot.statuspage.slack import return_new_statuspage_incident_message
 from incidentbot.zoom.meeting import ZoomMeeting
 from pydantic import BaseModel
 from sqlmodel import Session, select
@@ -429,23 +423,8 @@ class Incident:
                 and settings.integrations.phare
                 and settings.integrations.phare.enabled
             ):
-                phare_starter_message_content = return_new_phare_incident_message(
-                    channel_id=record.channel_id
-                )
-
-                logger.info(
-                    f"Sending Phare prompt to {record.channel_name}"
-                )
-
-                try:
-                    slack_web_client.chat_postMessage(
-                        **phare_starter_message_content,
-                        text="Phare prompt has been posted to an incident.",
-                    )
-                except slack_sdk.errors.SlackApiError as error:
-                    logger.error(
-                        f"Error sending Phare prompt to incident channel {record.channel_name}: {error}"
-                    )
+                logger.info(f"Sending Phare prompt to {record.channel_name}")
+                adapter.post_phare_prompt(record.channel_id)
 
             """
             Page groups that are required to be automatically paged (optional)

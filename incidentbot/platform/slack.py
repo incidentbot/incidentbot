@@ -222,3 +222,15 @@ class SlackAdapter(PlatformAdapter):
             )
         except slack_sdk.errors.SlackApiError as error:
             logger.error(f"Error posting Statuspage prompt to {room_id}: {error}")
+
+    def post_phare_prompt(self, room_id: str) -> None:
+        import slack_sdk.errors
+        from incidentbot.phare.slack import return_new_phare_incident_message
+
+        try:
+            self._client.chat_postMessage(
+                **return_new_phare_incident_message(channel_id=room_id),
+                text="Phare prompt has been posted to an incident.",
+            )
+        except slack_sdk.errors.SlackApiError as error:
+            logger.error(f"Error posting Phare prompt to {room_id}: {error}")
