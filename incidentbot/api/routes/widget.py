@@ -73,14 +73,11 @@ def _update_room_topic(adapter, incident: IncidentRecord) -> None:
         lead_participant = session.exec(
             select(IncidentParticipant).where(
                 IncidentParticipant.parent == incident.id,
-                IncidentParticipant.is_lead == True,
+                IncidentParticipant.is_lead == True,  # noqa: E712
             )
         ).first()
 
-    topic = (
-        f"Severity: {incident.severity.upper()} | "
-        f"Status: {incident.status.title()}"
-    )
+    topic = f"Severity: {incident.severity.upper()} | Status: {incident.status.title()}"
     if lead_participant:
         topic += (
             f" | {lead_participant.role.replace('_', ' ').title()}: "
@@ -264,11 +261,7 @@ async def widget_update_incident_room(
                 target_status = body.status
                 if body.action == "resolve":
                     target_status = next(
-                        (
-                            name
-                            for name, cfg in settings.statuses.items()
-                            if cfg.final
-                        ),
+                        (name for name, cfg in settings.statuses.items() if cfg.final),
                         "resolved",
                     )
                 if not target_status:

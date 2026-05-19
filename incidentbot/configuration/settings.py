@@ -502,6 +502,9 @@ class Settings(BaseSettings):
         self._check_required_var("POSTGRES_PORT", self.POSTGRES_PORT)
         self._check_required_var("POSTGRES_USER", self.POSTGRES_USER)
 
+        if self.platform == "matrix":
+            self.matrix = self._resolve_matrix_settings()
+
         if not (
             TypeAdapter(bool).validate_python(self.IS_MIGRATION)
             or TypeAdapter(bool).validate_python(self.IS_TEST_ENVIRONMENT)
@@ -511,15 +514,18 @@ class Settings(BaseSettings):
                 self._check_required_var("SLACK_BOT_TOKEN", self.SLACK_BOT_TOKEN)
                 self._check_required_var("SLACK_USER_TOKEN", self.SLACK_USER_TOKEN)
             elif self.platform == "matrix":
-                self.matrix = self._resolve_matrix_settings()
                 if not self.matrix:
                     raise ValueError(
                         "Matrix configuration is required when platform = 'matrix'."
                     )
                 self._check_required_var("matrix.homeserver", self.matrix.homeserver)
                 self._check_required_var("matrix.user_id", self.matrix.user_id)
-                self._check_required_var("matrix.access_token", self.matrix.access_token)
-                self._check_required_var("matrix.digest_room_id", self.matrix.digest_room_id)
+                self._check_required_var(
+                    "matrix.access_token", self.matrix.access_token
+                )
+                self._check_required_var(
+                    "matrix.digest_room_id", self.matrix.digest_room_id
+                )
 
             if (
                 self.integrations

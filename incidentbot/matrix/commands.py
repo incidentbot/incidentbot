@@ -18,7 +18,7 @@ def parse(body: str) -> tuple[str, list[str]] | None:
     stripped = body.strip()
     if not stripped.startswith(COMMAND_PREFIX):
         return None
-    parts = stripped[len(COMMAND_PREFIX):].strip().split()
+    parts = stripped[len(COMMAND_PREFIX) :].strip().split()
     if not parts:
         return ("help", [])
     return (parts[0].lower(), parts[1:])
@@ -53,9 +53,8 @@ async def handle_status(room_id: str, client) -> None:
             f"| {inc.severity.upper()} | {inc.status.title()} — {inc.description}</li>"
         )
     lines_html.append("</ul>")
-    await client.send_text_async(
-        room_id, "\n".join(lines_plain), "".join(lines_html)
-    )
+    await client.send_text_async(room_id, "\n".join(lines_plain), "".join(lines_html))
+
 
 async def handle_join(room_id: str, args: list[str], sender: str, client) -> None:
     if len(args) < 2:
@@ -68,17 +67,13 @@ async def handle_join(room_id: str, args: list[str], sender: str, client) -> Non
     try:
         incident_id = int(incident_id_str)
     except ValueError:
-        await client.send_text_async(
-            room_id, f"Invalid incident ID: {incident_id_str}"
-        )
+        await client.send_text_async(room_id, f"Invalid incident ID: {incident_id_str}")
         return
 
     with Session(engine) as session:
         record = session.get(IncidentRecord, incident_id)
         if not record:
-            await client.send_text_async(
-                room_id, f"Incident {incident_id} not found."
-            )
+            await client.send_text_async(room_id, f"Incident {incident_id} not found.")
             return
         roles = record.roles_all or []
         matched = [r for r in roles if role.lower() in r.lower()]
@@ -157,17 +152,13 @@ async def handle_severity(room_id: str, args: list[str], client) -> None:
     try:
         incident_id = int(incident_id_str)
     except ValueError:
-        await client.send_text_async(
-            room_id, f"Invalid incident ID: {incident_id_str}"
-        )
+        await client.send_text_async(room_id, f"Invalid incident ID: {incident_id_str}")
         return
 
     with Session(engine) as session:
         record = session.get(IncidentRecord, incident_id)
         if not record:
-            await client.send_text_async(
-                room_id, f"Incident {incident_id} not found."
-            )
+            await client.send_text_async(room_id, f"Incident {incident_id} not found.")
             return
         valid = list(record.severities or [])
         if new_severity not in valid:
@@ -185,13 +176,10 @@ async def handle_severity(room_id: str, args: list[str], client) -> None:
         lead_participant = session.exec(
             select(IncidentParticipant).where(
                 IncidentParticipant.parent == record.id,
-                IncidentParticipant.is_lead == True,
+                IncidentParticipant.is_lead == True,  # noqa: E712
             )
         ).first()
-    topic = (
-        f"Severity: {record.severity.upper()} | "
-        f"Status: {record.status.title()}"
-    )
+    topic = f"Severity: {record.severity.upper()} | Status: {record.status.title()}"
     if lead_participant:
         topic += (
             f" | {lead_participant.role.replace('_', ' ').title()}: "
@@ -207,9 +195,7 @@ async def handle_severity(room_id: str, args: list[str], client) -> None:
 
 async def handle_resolve(room_id: str, args: list[str], client) -> None:
     if not args:
-        await client.send_text_async(
-            room_id, "Usage: !incident resolve <incident_id>"
-        )
+        await client.send_text_async(room_id, "Usage: !incident resolve <incident_id>")
         return
 
     try:
@@ -221,12 +207,16 @@ async def handle_resolve(room_id: str, args: list[str], client) -> None:
     with Session(engine) as session:
         record = session.get(IncidentRecord, incident_id)
         if not record:
-            await client.send_text_async(
-                room_id, f"Incident {incident_id} not found."
-            )
+            await client.send_text_async(room_id, f"Incident {incident_id} not found.")
             return
         final_status = next(
-            (s for s, cfg in __import__("incidentbot.configuration.settings", fromlist=["settings"]).settings.statuses.items() if cfg.final),
+            (
+                s
+                for s, cfg in __import__(
+                    "incidentbot.configuration.settings", fromlist=["settings"]
+                ).settings.statuses.items()
+                if cfg.final
+            ),
             "resolved",
         )
         record.status = final_status
@@ -238,13 +228,10 @@ async def handle_resolve(room_id: str, args: list[str], client) -> None:
         lead_participant = session.exec(
             select(IncidentParticipant).where(
                 IncidentParticipant.parent == record.id,
-                IncidentParticipant.is_lead == True,
+                IncidentParticipant.is_lead == True,  # noqa: E712
             )
         ).first()
-    topic = (
-        f"Severity: {record.severity.upper()} | "
-        f"Status: {record.status.title()}"
-    )
+    topic = f"Severity: {record.severity.upper()} | Status: {record.status.title()}"
     if lead_participant:
         topic += (
             f" | {lead_participant.role.replace('_', ' ').title()}: "
@@ -252,6 +239,4 @@ async def handle_resolve(room_id: str, args: list[str], client) -> None:
         )
     get_adapter().set_room_topic(room_id=record.channel_id, topic=topic)
 
-    await client.send_text_async(
-        room_id, f"{record.slug} marked as {final_status}."
-    )
+    await client.send_text_async(room_id, f"{record.slug} marked as {final_status}.")
