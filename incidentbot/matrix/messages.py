@@ -1,4 +1,3 @@
-from incidentbot.configuration.settings import settings
 from incidentbot.models.database import IncidentRecord
 
 
@@ -85,7 +84,9 @@ class MatrixMessages:
         return "\n".join(lines_plain), "".join(lines_html)
 
     @staticmethod
-    def jira_issue(key: str, summary: str, issue_type: str, link: str) -> tuple[str, str]:
+    def jira_issue(
+        key: str, summary: str, issue_type: str, link: str
+    ) -> tuple[str, str]:
         plain = f"Jira {issue_type}: {key} — {summary}\n{link}"
         html = (
             f"📋 <b>Jira {issue_type}:</b> "
@@ -98,16 +99,14 @@ class MatrixMessages:
     def gitlab_incident(incident_id: int, summary: str, link: str) -> tuple[str, str]:
         plain = f"GitLab Incident #{incident_id}: {summary}\n{link}"
         html = (
-            f"🦊 <b>GitLab Incident #{incident_id}:</b> "
-            f'<a href="{link}">{summary}</a>'
+            f'🦊 <b>GitLab Incident #{incident_id}:</b> <a href="{link}">{summary}</a>'
         )
         return plain, html
 
     @staticmethod
     def help(digest_room_id: str = "") -> tuple[str, str]:
-        create_hint = (
-            f"Open the widget panel in the incidents room "
-            + (f"(https://matrix.to/#/{digest_room_id})" if digest_room_id else "")
+        create_hint = "Open the widget panel in the incidents room " + (
+            f"(https://matrix.to/#/{digest_room_id})" if digest_room_id else ""
         )
         commands = [
             ("!incident help", "Show this help"),

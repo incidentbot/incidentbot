@@ -1,4 +1,3 @@
-from incidentbot.configuration.settings import settings
 from incidentbot.logging import logger
 from incidentbot.matrix.client import MatrixClient
 from incidentbot.matrix.messages import MatrixMessages
@@ -38,7 +37,9 @@ class MatrixAdapter(PlatformAdapter):
     def add_bookmark(self, room_id: str, title: str, url: str, emoji: str = "") -> None:
         # Matrix has no bookmark feature; post as a pinned message instead
         event_id = self._matrix.send_text(
-            room_id, f"🔖 {title}: {url}", f'🔖 <b>{title}:</b> <a href="{url}">{url}</a>'
+            room_id,
+            f"🔖 {title}: {url}",
+            f'🔖 <b>{title}:</b> <a href="{url}">{url}</a>',
         )
         if event_id:
             self._matrix.pin_message(room_id, event_id)

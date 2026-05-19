@@ -1,4 +1,3 @@
-from incidentbot.configuration.settings import settings
 from incidentbot.exceptions import IndexNotFoundError
 from incidentbot.logging import logger
 from incidentbot.models.incident import IncidentDatabaseInterface
@@ -44,13 +43,9 @@ def extract_role_owner(message_blocks: dict[Any, Any], block_id: str) -> str:
 
     index = gen.find_index_in_list(message_blocks, "block_id", block_id)
     if index == -1:
-        raise IndexNotFoundError(
-            f"Could not find index for block_id {block_id}"
-        )
+        raise IndexNotFoundError(f"Could not find index for block_id {block_id}")
 
-    return (
-        message_blocks[index]["text"]["text"].split("\n")[1].replace(" ", "")
-    )
+    return message_blocks[index]["text"]["text"].split("\n")[1].replace(" ", "")
 
 
 def role_watcher(channel_id: str):
