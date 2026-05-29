@@ -35,6 +35,7 @@ Interested in a web interface to use with Incident Bot? Check out the console pr
 - [Create a Slack app](https://api.slack.com/apps?new_app=1) for this application. You can name it whatever you'd like.
 - Select `from an app manifest` and copy `manifest.yaml` out of this repository and paste it in to automatically configure the app and its required settings. Be sure to override any customizable settings like name, etc.
 - You'll need the app token, bot token, and user token for your application and provide those as the `SLACK_APP_TOKEN`, `SLACK_BOT_TOKEN`, and `SLACK_USER_TOKEN` environment variables - these can be found within the app's configuration page in Slack. For more information on Slack tokens, see the documentation [here](https://api.slack.com/authentication/token-types).
+- If your digest channel is private, set `options.include_private_channels: true` in your `config.yaml` and ensure the bot is invited to the digest channel.
 - You'll need a Postgres instance to connect to. If trying the bot out using Docker Compose or Helm, there are options to run a database alongside the app.
 - Configure and deploy the application using one of the methods described in the documentation, or however you choose. (There's a Docker image available.)
 
