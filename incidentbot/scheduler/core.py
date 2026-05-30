@@ -6,12 +6,6 @@ from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from incidentbot.logging import logger
 from incidentbot.models.incident import IncidentDatabaseInterface
 from apscheduler.schedulers.background import BackgroundScheduler
-from incidentbot.slack.client import (
-    get_digest_channel_id,
-    slack_web_client,
-    store_slack_channel_list_db,
-    store_slack_user_list_db,
-)
 from incidentbot.util import gen
 from zoneinfo import ZoneInfo
 
@@ -150,6 +144,11 @@ def scrape_for_aging_incidents():
             )
             formatted_incidents.append({"type": "divider"})
     if len(formatted_incidents) > 0:
+        from incidentbot.slack.client import (
+            get_digest_channel_id,
+            slack_web_client,
+        )
+
         for inc in formatted_incidents:
             base_block.append(inc)
         try:
@@ -180,6 +179,7 @@ def update_slack_channel_list():
     """
     Uses Slack API to fetch the list of current channels
     """
+    from incidentbot.slack.client import store_slack_channel_list_db
 
     try:
         store_slack_channel_list_db()
@@ -189,20 +189,11 @@ def update_slack_channel_list():
         )
 
 
-process.scheduler.add_job(
-    id="update_slack_channel_list",
-    func=update_slack_channel_list,
-    trigger="interval",
-    name="Update local copy of Slack channels",
-    minutes=15,
-    replace_existing=True,
-)
-
-
 def update_slack_user_list():
     """
     Uses Slack API to fetch the list of current users
     """
+    from incidentbot.slack.client import store_slack_user_list_db
 
     try:
         store_slack_user_list_db()
@@ -212,14 +203,24 @@ def update_slack_user_list():
         )
 
 
-process.scheduler.add_job(
-    id="update_slack_user_list",
-    func=update_slack_user_list,
-    trigger="interval",
-    name="Update local copy of Slack users",
-    minutes=15,
-    replace_existing=True,
-)
+if settings.platform == "slack":
+    process.scheduler.add_job(
+        id="update_slack_channel_list",
+        func=update_slack_channel_list,
+        trigger="interval",
+        name="Update local copy of Slack channels",
+        minutes=15,
+        replace_existing=True,
+    )
+
+    process.scheduler.add_job(
+        id="update_slack_user_list",
+        func=update_slack_user_list,
+        trigger="interval",
+        name="Update local copy of Slack users",
+        minutes=15,
+        replace_existing=True,
+    )
 
 if (
     settings.integrations

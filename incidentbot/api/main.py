@@ -7,6 +7,7 @@ from incidentbot.api.routes import (
     pager,
     setting,
     users,
+    widget,
 )
 from incidentbot.configuration.settings import settings, __version__
 
@@ -75,3 +76,6 @@ if settings.api.enabled:
     api_router.include_router(users.router, tags=["users"])
 
 app.include_router(api_router, prefix=settings.api.v1_str)
+
+# Widget routes are served outside the API prefix (no auth required, accessed by browsers)
+app.include_router(widget.router)

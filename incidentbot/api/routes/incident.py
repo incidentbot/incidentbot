@@ -3,11 +3,6 @@ import base64
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from incidentbot.api.deps import get_current_active_superuser, SessionDep
-from incidentbot.incident.actions import (
-    set_description,
-    set_severity,
-    set_status,
-)
 from incidentbot.incident.core import Incident, IncidentRequestParameters
 from incidentbot.incident.event import EventLogHandler
 from incidentbot.models.database import (
@@ -346,6 +341,8 @@ def patch_incident(incident: IncidentRecord, field: str):
 
     match field:
         case "description":
+            from incidentbot.incident.actions import set_description
+
             asyncio.run(
                 set_description(
                     channel_id=incident.channel_id,
@@ -354,6 +351,8 @@ def patch_incident(incident: IncidentRecord, field: str):
             )
 
         case "severity":
+            from incidentbot.incident.actions import set_severity
+
             asyncio.run(
                 set_severity(
                     channel_id=incident.channel_id,
@@ -362,6 +361,8 @@ def patch_incident(incident: IncidentRecord, field: str):
                 )
             )
         case "status":
+            from incidentbot.incident.actions import set_status
+
             asyncio.run(
                 set_status(
                     channel_id=incident.channel_id,

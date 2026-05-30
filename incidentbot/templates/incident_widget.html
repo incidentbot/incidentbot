@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Incident</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; font-size: 14px; background: #fff; color: #1a1a1a; padding: 16px; }
+    h2 { font-size: 16px; margin-bottom: 16px; }
+    label { display: block; font-weight: 600; margin-bottom: 4px; margin-top: 12px; }
+    input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+    textarea { resize: vertical; min-height: 60px; }
+    button { margin-top: 16px; width: 100%; padding: 10px; background: #c92424; color: #fff; border: none; border-radius: 4px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    button:hover { background: #a81e1e; }
+    button:disabled { background: #aaa; cursor: not-allowed; }
+    #status { margin-top: 12px; padding: 8px; border-radius: 4px; display: none; }
+    #status.success { background: #e6f4ea; color: #1e7e34; display: block; }
+    #status.error { background: #fdecea; color: #b71c1c; display: block; }
+    #auth-error { padding: 16px; background: #fdecea; color: #b71c1c; border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+  <div id="auth-error" style="display:none">
+    ⛔ Access denied. This widget can only be opened from an authorised Matrix room.
+  </div>
+
+  <div id="app" style="display:none">
+    <h2>🚨 Create Incident</h2>
+    <form id="form">
+      <label for="incident_description">Description *</label>
+      <input type="text" id="incident_description" name="incident_description" required placeholder="Brief description of the incident">
+
+      <label for="severity">Severity *</label>
+      <select id="severity" name="severity" required>
+        <option value="">Select severity</option>
+        <option value="sev1">SEV1 — Critical</option>
+        <option value="sev2">SEV2 — Major</option>
+        <option value="sev3">SEV3 — Minor</option>
+        <option value="sev4">SEV4 — Investigating</option>
+      </select>
+
+      <label for="incident_components">Components *</label>
+      <input type="text" id="incident_components" name="incident_components" required placeholder="Affected components (e.g. API, Database)">
+
+      <label for="incident_impact">Impact</label>
+      <textarea id="incident_impact" name="incident_impact" placeholder="Describe the user or business impact"></textarea>
+
+      <label>
+        <input type="checkbox" id="is_security_incident" name="is_security_incident">
+        Security incident (private room)
+      </label>
+
+      <button type="submit" id="submit-btn">Declare Incident</button>
+    </form>
+    <div id="status"></div>
+  </div>
+
+  <script>
+    function readParam(name) {
+      var search = new URLSearchParams(location.search);
+      if (search.has(name)) return search.get(name) || '';
+
+      var hash = location.hash ? location.hash.replace(/^#/, '') : '';
+      var hashParams = new URLSearchParams(hash);
+      if (hashParams.has(name)) return hashParams.get(name) || '';
+
+      return '';
+    }
+
+    var WIDGET_TOKEN = readParam('token');
+    var MATRIX_USER =
+      readParam('matrix_user_id') ||
+      readParam('userId') ||
+      readParam('user_id');
+
+    // Matrix Widget API handshake
+    var widgetId = readParam('widgetId') || '';
+    var parentUrl = readParam('parentUrl') || '*';
+    var seq = 0;
+
+    function widgetSend(action, data, reqId) {
+      window.parent.postMessage({
+        api: 'fromWidget',
+        widgetId: widgetId,
+        action: action,
+        requestId: reqId || ('r' + (++seq)),
+        data: data || {}
+      }, parentUrl);
+    }
+
+    window.addEventListener('message', function(e) {
+      var d = e.data;
+      if (!d || d.api !== 'toWidget') return;
+      if (d.action === 'capabilities') {
+        widgetSend('capabilities', { capabilities: [] }, d.requestId);
+      } else if (d.action === 'supported_api_versions') {
+        widgetSend('supported_api_versions', { supported_versions: ['0.0.1', '0.0.2'] }, d.requestId);
+      }
+    });
+
+    // Guard: token must be present (server already validated it, but belt-and-suspenders)
+    if (!WIDGET_TOKEN) {
+      document.getElementById('auth-error').style.display = 'block';
+    } else {
+      document.getElementById('app').style.display = 'block';
+    }
+
+    document.getElementById('form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      var btn = document.getElementById('submit-btn');
+      var statusEl = document.getElementById('status');
+      btn.disabled = true;
+      statusEl.className = '';
+      statusEl.style.display = 'none';
+
+      var body = {
+        incident_description: document.getElementById('incident_description').value,
+        severity: document.getElementById('severity').value,
+        incident_components: document.getElementById('incident_components').value,
+        incident_impact: document.getElementById('incident_impact').value || null,
+        is_security_incident: document.getElementById('is_security_incident').checked,
+        user: MATRIX_USER || null,
+      };
+
+      try {
+        var resp = await fetch('/widget/api/incident', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Widget-Token': WIDGET_TOKEN,
+          },
+          body: JSON.stringify(body),
+        });
+        if (resp.ok) {
+          statusEl.textContent = 'Incident created. Check your incident room.';
+          statusEl.className = 'success';
+          document.getElementById('form').reset();
+        } else {
+          var err = await resp.json().catch(() => ({ detail: resp.statusText }));
+          statusEl.textContent = 'Error: ' + (err.detail || resp.statusText);
+          statusEl.className = 'error';
+        }
+      } catch (err) {
+        statusEl.textContent = 'Network error: ' + err.message;
+        statusEl.className = 'error';
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

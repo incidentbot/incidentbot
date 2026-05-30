@@ -1,4 +1,3 @@
-from incidentbot.configuration.settings import settings
 from incidentbot.exceptions import IndexNotFoundError
 from incidentbot.logging import logger
 from incidentbot.models.incident import IncidentDatabaseInterface
@@ -10,11 +9,6 @@ from incidentbot.util import gen
 from slack_sdk.errors import SlackApiError
 from typing import Any
 
-if not settings.IS_TEST_ENVIRONMENT:
-    from incidentbot.slack.client import (
-        slack_web_client,
-    )
-
 
 def comms_reminder(channel_id: str):
     """
@@ -23,6 +17,7 @@ def comms_reminder(channel_id: str):
     Parameters:
         channel_id (str): The incident channel id
     """
+    from incidentbot.slack.client import slack_web_client
 
     try:
         slack_web_client.chat_postMessage(
@@ -48,13 +43,9 @@ def extract_role_owner(message_blocks: dict[Any, Any], block_id: str) -> str:
 
     index = gen.find_index_in_list(message_blocks, "block_id", block_id)
     if index == -1:
-        raise IndexNotFoundError(
-            f"Could not find index for block_id {block_id}"
-        )
+        raise IndexNotFoundError(f"Could not find index for block_id {block_id}")
 
-    return (
-        message_blocks[index]["text"]["text"].split("\n")[1].replace(" ", "")
-    )
+    return message_blocks[index]["text"]["text"].split("\n")[1].replace(" ", "")
 
 
 def role_watcher(channel_id: str):
@@ -69,6 +60,8 @@ def role_watcher(channel_id: str):
     participants = IncidentDatabaseInterface.list_participants(record)
 
     if not participants:
+        from incidentbot.slack.client import slack_web_client
+
         try:
             slack_web_client.chat_postMessage(
                 channel=channel_id,

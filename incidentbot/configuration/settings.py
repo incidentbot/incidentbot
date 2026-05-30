@@ -15,7 +15,7 @@ from pydantic_settings import (
     SettingsConfigDict,
     YamlConfigSettingsSource,
 )
-from typing import Annotated, Any, Tuple, Type
+from typing import Annotated, Any, Literal, Tuple, Type
 from typing_extensions import Self
 
 __version__ = "v2.2.3"
@@ -217,6 +217,19 @@ class PhareIntegration(BaseModel):
     permissions: PhareIntegrationPermissions | None = None
 
 
+class MatrixSettings(BaseModel):
+    """
+    Model for the matrix field (required when platform = 'matrix')
+    """
+
+    homeserver: str
+    user_id: str
+    access_token: str
+    device_id: str = "INCIDENTBOT"
+    digest_room_id: str
+    widget_base_url: str | None = None
+
+
 class PagerDutyIntegration(BaseModel):
     """
     Model for the pagerduty field
@@ -321,11 +334,12 @@ class Settings(BaseSettings):
     initial_role_watcher_minutes: int = 10
     integrations: Integrations | None = None
     jobs: Jobs | None = None
+    matrix: MatrixSettings | None = None
     links: list[Link] | None = None
     maintenance_windows: MaintenanceWindows | None = None
     options: Options | None = Options()
     pin_content_reacji: str = "pushpin"
-    platform: str = "slack"
+    platform: Literal["slack", "matrix"] = "slack"
     roles: dict[str, RoleDefinition] = {
         "incident_commander": {
             "description": "The Incident Commander is the decision maker during a major incident, delegating tasks and listening to input from subject matter experts in order to bring the incident to resolution. They become the highest ranking individual on any major incident call, regardless of their day-to-day rank. Their decisions made as commander are final.\n\nYour job as an Incident Commander is to listen to the call and to watch the incident Slack room in order to provide clear coordination, recruiting others to gather context and details. You should not be performing any actions or remediations, checking graphs, or investigating logs. Those tasks should be delegated.\n\nAn IC should also be considering next steps and backup plans at every opportunity, in an effort to avoid getting stuck without any clear options to proceed and to keep things moving towards resolution.\n\nMore information: https://response.pagerduty.com/training/incident_commander/",
@@ -408,6 +422,12 @@ class Settings(BaseSettings):
     SLACK_APP_TOKEN: str | None = None
     SLACK_BOT_TOKEN: str | None = None
     SLACK_USER_TOKEN: str | None = None
+    MATRIX_HOMESERVER: str | None = None
+    MATRIX_USER_ID: str | None = None
+    MATRIX_ACCESS_TOKEN: str | None = None
+    MATRIX_DEVICE_ID: str | None = None
+    MATRIX_DIGEST_ROOM_ID: str | None = None
+    MATRIX_WIDGET_BASE_URL: str | None = None
 
     PHARE_API_KEY: str | None = None
     PHARE_PROJECT_ID: int | None = None
@@ -454,6 +474,26 @@ class Settings(BaseSettings):
             message = f"The value of {var_name} cannot be empty when enabling the {integration} integration."
             raise ValueError(message)
 
+    def _resolve_matrix_settings(self) -> MatrixSettings | None:
+        matrix_env_values = {
+            "homeserver": self.MATRIX_HOMESERVER,
+            "user_id": self.MATRIX_USER_ID,
+            "access_token": self.MATRIX_ACCESS_TOKEN,
+            "device_id": self.MATRIX_DEVICE_ID,
+            "digest_room_id": self.MATRIX_DIGEST_ROOM_ID,
+            "widget_base_url": self.MATRIX_WIDGET_BASE_URL,
+        }
+
+        if not self.matrix and not any(matrix_env_values.values()):
+            return None
+
+        matrix_values = self.matrix.model_dump() if self.matrix else {}
+        for key, value in matrix_env_values.items():
+            if value is not None:
+                matrix_values[key] = value
+
+        return MatrixSettings(**matrix_values)
+
     @model_validator(mode="after")
     def _check_required_vars(self) -> Self:
         self._check_required_var("POSTGRES_DB", self.POSTGRES_DB)
@@ -462,13 +502,30 @@ class Settings(BaseSettings):
         self._check_required_var("POSTGRES_PORT", self.POSTGRES_PORT)
         self._check_required_var("POSTGRES_USER", self.POSTGRES_USER)
 
+        if self.platform == "matrix":
+            self.matrix = self._resolve_matrix_settings()
+
         if not (
             TypeAdapter(bool).validate_python(self.IS_MIGRATION)
             or TypeAdapter(bool).validate_python(self.IS_TEST_ENVIRONMENT)
         ):
-            self._check_required_var("SLACK_APP_TOKEN", self.SLACK_APP_TOKEN)
-            self._check_required_var("SLACK_BOT_TOKEN", self.SLACK_BOT_TOKEN)
-            self._check_required_var("SLACK_USER_TOKEN", self.SLACK_USER_TOKEN)
+            if self.platform == "slack":
+                self._check_required_var("SLACK_APP_TOKEN", self.SLACK_APP_TOKEN)
+                self._check_required_var("SLACK_BOT_TOKEN", self.SLACK_BOT_TOKEN)
+                self._check_required_var("SLACK_USER_TOKEN", self.SLACK_USER_TOKEN)
+            elif self.platform == "matrix":
+                if not self.matrix:
+                    raise ValueError(
+                        "Matrix configuration is required when platform = 'matrix'."
+                    )
+                self._check_required_var("matrix.homeserver", self.matrix.homeserver)
+                self._check_required_var("matrix.user_id", self.matrix.user_id)
+                self._check_required_var(
+                    "matrix.access_token", self.matrix.access_token
+                )
+                self._check_required_var(
+                    "matrix.digest_room_id", self.matrix.digest_room_id
+                )
 
             if (
                 self.integrations
