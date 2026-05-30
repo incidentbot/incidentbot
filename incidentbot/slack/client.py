@@ -121,11 +121,17 @@ def get_channel_list() -> dict[str, str]:
     """
 
     channels = []
+    channel_types = (
+        "public_channel,private_channel"
+        if settings.options and settings.options.include_private_channels
+        else "public_channel"
+    )
 
     try:
         res = slack_web_client.conversations_list(
             exclude_archived=True,
             limit=1000,
+            types=channel_types,
         )
 
         while res:
@@ -136,6 +142,7 @@ def get_channel_list() -> dict[str, str]:
                     exclude_archived=True,
                     limit=1000,
                     cursor=res.get("response_metadata").get("next_cursor"),
+                    types=channel_types,
                 )
             else:
                 res = None
@@ -149,6 +156,7 @@ def get_channel_list() -> dict[str, str]:
             res = slack_web_client.conversations_list(
                 exclude_archived=True,
                 limit=1000,
+                types=channel_types,
             )
 
             while res:
@@ -159,6 +167,7 @@ def get_channel_list() -> dict[str, str]:
                         exclude_archived=True,
                         limit=1000,
                         cursor=res.get("response_metadata").get("next_cursor"),
+                        types=channel_types,
                     )
                 else:
                     res = None

@@ -18,7 +18,7 @@ from pydantic_settings import (
 from typing import Annotated, Any, Literal, Tuple, Type
 from typing_extensions import Self
 
-__version__ = "v2.2.3"
+__version__ = "v2.3.0"
 
 pagerduty_logo_url = "https://i.imgur.com/IVvdFCV.png"
 statuspage_logo_url = "https://i.imgur.com/v4xmF6u.png"
@@ -110,6 +110,7 @@ class Options(BaseModel):
     slack_items_pagination_per_page: int = 5
     timezone: str = "UTC"
     updates_in_threads: bool | None = False
+    include_private_channels: bool = False
 
 
 """
