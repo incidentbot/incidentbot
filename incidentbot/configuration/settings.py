@@ -1,243 +1,62 @@
 import os
 import secrets
+from typing import Literal
 
-from pydantic import (
-    AnyUrl,
-    BaseModel,
-    BeforeValidator,
-    computed_field,
-    model_validator,
-    TypeAdapter,
-)
+from pydantic import computed_field, Field, model_validator
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
     SettingsConfigDict,
     YamlConfigSettingsSource,
 )
-from typing import Annotated, Any, Tuple, Type
-from typing_extensions import Self
+from typing import Self
 
-__version__ = "v2.0.14"
+from incidentbot.configuration.schema import (
+    Automation,
+    Integrations,
+    Jobs,
+    Link,
+    MatrixSettings,
+    Options,
+    Reminder,
+    ReminderAction,
+    Conditions,
+    RoleDefinition,
+    StatusDefinition,
+)
 
-opsgenie_logo_url = "https://i.imgur.com/NjiEBCu.png"
+
 pagerduty_logo_url = "https://i.imgur.com/IVvdFCV.png"
 statuspage_logo_url = "https://i.imgur.com/v4xmF6u.png"
 
 
-def parse_cors(v: Any) -> list[str] | str:
-    if isinstance(v, str) and not v.startswith("["):
-        return [i.strip() for i in v.split(",")]
-    elif isinstance(v, list | str):
-        return v
-
-    raise ValueError(v)
-
-
-"""
-API
-"""
-
-
-class API(BaseModel):
-    enabled: bool | None = False
-    enable_docs_endpoint: bool | None = False
-    enable_openapi_endpoint: bool | None = False
-    enable_redoc_endpoint: bool | None = False
-    v1_str: str | None = "/api/v1"
-
-
-"""
-Jobs
-"""
-
-
-class ScrapeForAgingIncidentsJob(BaseModel):
-    """
-    Model for the jobs scrape_for_aging_incidents_job field
-    """
-
-    enabled: bool = True
-    ignore_statuses: list = []
-
-
-class Jobs(BaseModel):
-    """
-    Model for the jobs field
-    """
-
-    scrape_for_aging_incidents: ScrapeForAgingIncidentsJob
-
-
-"""
-Options
-"""
-
-
-class Options(BaseModel):
-    """
-    Model for the options field
-    """
-
-    auto_invite_groups: list[str] | None = None
-    channel_name_prefix: str | None = "inc"
-    meeting_link: str | None = None
-    skip_logs_for_user_agent: list[str] | None = None
-    show_most_recent_incidents_app_home_limit: int = 5
-    slack_items_pagination_per_page: int = 5
-    timezone: str = "UTC"
-
-
-"""
-Integrations
-"""
-
-
-class ConfluenceIntegration(BaseModel):
-    """
-    Model for the confluence field
-    """
-
-    auto_create_postmortem: bool | None = False
-    enabled: bool = False
-    parent: str
-    space: str
-    template_id: int
-
-
-class JiraIntegration(BaseModel):
-    """
-    Model for the jira field
-    """
-
-    auto_create_issue: bool = False
-    auto_create_issue_type: str | None = None
-    enabled: bool = False
-    issue_types: list[str]
-    labels: list[str] | None = None
-    priorities: list[str] | None = None
-    project: str
-    status_mapping: list[dict[str, str]]
-
-
-class OpsgenieIntegration(BaseModel):
-    """
-    Model for the opsgenie field
-    """
-
-    enabled: bool = False
-    team: str
-
-
-class StatuspageIntegrationPermissions(BaseModel):
-    """
-    Model for the statuspage permissions field
-    """
-
-    groups: list[str] | None = None
-
-
-class StatuspageIntegration(BaseModel):
-    """
-    Model for the statuspage field
-    """
-
-    enabled: bool = False
-    permissions: StatuspageIntegrationPermissions | None = None
-    url: str
-
-
-class AtlassianIntegration(BaseModel):
-    """
-    Model for the atlaassian field
-    """
-
-    confluence: ConfluenceIntegration | None = None
-    jira: JiraIntegration | None = None
-    opsgenie: OpsgenieIntegration | None = None
-    statuspage: StatuspageIntegration | None = None
-
-
-class PagerDutyIntegration(BaseModel):
-    """
-    Model for the pagerduty field
-    """
-
-    enabled: bool = False
-
-
-class ZoomIntegration(BaseModel):
-    """
-    Model for the zoom field
-    """
-
-    auto_creating_meeting: bool
-    enabled: bool = False
-
-
-class Integrations(BaseModel):
-    """
-    Model for the integrations field
-    """
-
-    atlassian: AtlassianIntegration | None = None
-    pagerduty: PagerDutyIntegration | None = None
-    zoom: ZoomIntegration | None = None
-
-
-"""
-Root
-"""
-
-
-class Link(BaseModel):
-    """
-    Model for the links field
-    """
-
-    title: str
-    url: str
-
-
-class MaintenanceWindows(BaseModel):
-    """
-    Model for the maintenance_windows field
-    """
-
-    components: list[str]
-    statuses: list[str] | None = ["Scheduled", "In Progress", "Complete"]
-
-
-class RoleDefinition(BaseModel):
-    """
-    Model for defining roles for incident participants
-    """
-
-    description: str
-    is_lead: bool | None = False
-
-
-class StatusDefinition(BaseModel):
-    """
-    Model for defining statuses for incidents
-    """
-
-    initial: bool | None = False
-    final: bool | None = False
+_DEFAULT_REMINDERS: list[Reminder] = [
+    Reminder(
+        id="comms_reminder",
+        message="Time to send a status update?",
+        interval_minutes=30,
+        actions=[
+            ReminderAction(type="send_update", label="Send Update"),
+            ReminderAction(type="snooze", intervals=[30, 60, 90]),
+            ReminderAction(type="dismiss", label="Stop Reminders"),
+        ],
+    ),
+    Reminder(
+        id="role_watcher",
+        message="No roles have been assigned yet — please review and claim as needed.",
+        interval_minutes=10,
+        once=True,
+        conditions=Conditions(no_roles_claimed=True),
+        include_role_buttons=True,
+        actions=[ReminderAction(type="dismiss", label="Dismiss")],
+    ),
+]
 
 
 class Settings(BaseSettings):
-    """
-    Root settings model
-    """
+    # ── YAML config fields ────────────────────────────────────────────────────
 
-    """
-    yaml
-    """
-
-    api: API | None = API()
     digest_channel: str = "incidents"
-    emails_enabled: bool = False
     enable_pinned_images: bool = True
     icons: dict[str, dict[str, str]] = {
         "slack": {
@@ -245,7 +64,6 @@ class Settings(BaseSettings):
             "components": ":jigsaw:",
             "description": ":mag_right:",
             "impact": ":chart_with_upwards_trend:",
-            "maintenance": ":hammer_and_wrench:",
             "meeting": ":busts_in_silhouette:",
             "postmortem": ":book:",
             "role": ":bust_in_silhouette:",
@@ -256,15 +74,15 @@ class Settings(BaseSettings):
             "update": ":incoming_envelope:",
         },
     }
-    initial_comms_reminder_minutes: int = 30
-    initial_role_watcher_minutes: int = 10
     integrations: Integrations | None = None
-    jobs: Jobs | None = None
+    jobs: Jobs = Field(default_factory=Jobs)
+    matrix: MatrixSettings | None = None
+    reminders: list[Reminder] = Field(default_factory=lambda: list(_DEFAULT_REMINDERS))
+    automations: list[Automation] = Field(default_factory=list)
     links: list[Link] | None = None
-    maintenance_windows: MaintenanceWindows | None = None
     options: Options | None = Options()
     pin_content_reacji: str = "pushpin"
-    platform: str = "slack"
+    platform: Literal["slack", "matrix"] = "slack"
     roles: dict[str, RoleDefinition] = {
         "incident_commander": {
             "description": "The Incident Commander is the decision maker during a major incident, delegating tasks and listening to input from subject matter experts in order to bring the incident to resolution. They become the highest ranking individual on any major incident call, regardless of their day-to-day rank. Their decisions made as commander are final.\n\nYour job as an Incident Commander is to listen to the call and to watch the incident Slack room in order to provide clear coordination, recruiting others to gather context and details. You should not be performing any actions or remediations, checking graphs, or investigating logs. Those tasks should be delegated.\n\nAn IC should also be considering next steps and backup plans at every opportunity, in an effort to avoid getting stuck without any clear options to proceed and to keep things moving towards resolution.\n\nMore information: https://response.pagerduty.com/training/incident_commander/",
@@ -277,7 +95,7 @@ class Settings(BaseSettings):
             "description": "A Subject Matter Expert (SME) is a domain expert or designated owner of a component or service that is part of the software stack. These are critical members of the incident response process that play pivotal roles in identifying and resolving individual components of impacted ecosystems.\n\nMore information: https://response.pagerduty.com/training/subject_matter_expert/",
         },
         "communications_liaison": {
-            "description": "The purpose of the Communications Liaison is to be the primary individual in charge of notifying our customers of the current conditions, and informing the Incident Commander of any relevant feedback from customers as the incident progresses.\n\nIt's important for the rest of the command staff to be able to focus on the problem at hand, rather than worrying about crafting messages to customers.\nYour job as Communications Liaison is to listen to the call, watch the incident Slack room, and track incoming customer support requests, keeping track of what's going on and how far the incident is progressing (still investigating vs close to resolution).\n\nThe Incident Commander will instruct you to notify customers of the incident and keep them updated at various points throughout the call. You will be required to craft the message, gain approval from the IC, and then disseminate that message to customers.\n\nMore information: https://response.pagerduty.com/training/customer_liaison/"
+            "description": "The purpose of the Communications Liaison is to be the primary individual in charge of notifying our customers of the current conditions, and informing the Incident Commander of any relevant feedback from customers as the incident progresses.\n\nIt's important for the rest of the command staff to be able to focus on the problem at hand, rather than worrying about crafting messages to customers.\nYour job as Communications Liaison is to listen to the call, watch the incident Slack room, and track incoming customer support requests, keeping track of what's going on and how far the incident is progressing (still investigating vs close to resolution).\n\nThe Incident Commander will instruct you to notify customers of the incident and keep them updated at various points throughout the call. You will be required to craft the message, gain approval from the IC, and then disseminate that message to customers.\n\nMore information: https://response.pagerduty.com/training/customer_liaison/",
         },
     }
     root_slash_command: str = "/incidentbot"
@@ -289,41 +107,15 @@ class Settings(BaseSettings):
     }
     components: list[str] | None = ["Component1", "Component2", "Component3", "Component4"]
     statuses: dict[str, StatusDefinition] = {
-        "investigating": {
-            "initial": True,
-        },
+        "investigating": {"initial": True},
         "identified": {},
         "monitoring": {},
-        "resolved": {
-            "final": True,
-        },
+        "resolved": {"final": True},
     }
 
-    """
-    .env
-    """
+    # ── Environment variable fields ───────────────────────────────────────────
 
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
     SECRET_KEY: str = secrets.token_urlsafe(32)
-
-    DOMAIN: str = "localhost"
-    SMTP_TLS: bool = True
-    SMTP_SSL: bool = False
-    SMTP_PORT: int = 587
-    SMTP_HOST: str | None = None
-    SMTP_USER: str | None = None
-    SMTP_PASSWORD: str | None = None
-
-    EMAILS_FROM_EMAIL: str | None = None
-    EMAILS_FROM_NAME: str | None = None
-    EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 48
-
-    FIRST_SUPERUSER: str = "admin@example.com"
-    FIRST_SUPERUSER_PASSWORD: str = "changethis"
-
-    BACKEND_CORS_ORIGINS: Annotated[
-        list[AnyUrl] | str, BeforeValidator(parse_cors)
-    ] = []
 
     POSTGRES_DB: str
     POSTGRES_HOST: str
@@ -339,10 +131,6 @@ class Settings(BaseSettings):
     ATLASSIAN_API_URL: str | None = None
     ATLASSIAN_API_USERNAME: str | None = None
     ATLASSIAN_API_TOKEN: str | None = None
-    ATLASSIAN_OPSGENIE_API_KEY: str | None = None
-    ATLASSIAN_OPSGENIE_API_TEAM_INTEGRATION_KEY: str | None = None
-
-    BETTERSTACK_UPTIME_API_TOKEN: str | None = None
 
     PAGERDUTY_API_TOKEN: str | None = None
     PAGERDUTY_API_USERNAME: str | None = None
@@ -351,6 +139,16 @@ class Settings(BaseSettings):
     SLACK_BOT_TOKEN: str | None = None
     SLACK_USER_TOKEN: str | None = None
 
+    MATRIX_HOMESERVER: str | None = None
+    MATRIX_USER_ID: str | None = None
+    MATRIX_ACCESS_TOKEN: str | None = None
+    MATRIX_DEVICE_ID: str | None = None
+    MATRIX_DIGEST_ROOM_ID: str | None = None
+    MATRIX_WIDGET_BASE_URL: str | None = None
+
+    PHARE_API_KEY: str | None = None
+    PHARE_PROJECT_ID: int | None = None
+
     STATUSPAGE_API_KEY: str | None = None
     STATUSPAGE_PAGE_ID: str | None = None
 
@@ -358,124 +156,122 @@ class Settings(BaseSettings):
     ZOOM_CLIENT_ID: str | None = None
     ZOOM_CLIENT_SECRET: str | None = None
 
+    GITLAB_URL: str | None = None
+    GITLAB_API_TOKEN: str | None = None
+
+    API_KEY: str | None = None
+    ENABLE_API_DOCS: bool = False
+
     IS_MIGRATION: bool | None = False
     IS_TEST_ENVIRONMENT: bool | None = False
 
     LOG_LEVEL: str = "INFO"
-    LOG_TYPE: str | None = None
-
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def server_host(self) -> str:
-        # Use HTTPS for anything other than local development
-        if self.ENVIRONMENT == "local":
-            return f"http://{self.DOMAIN}"
-        return f"https://{self.DOMAIN}"
 
     model_config = SettingsConfigDict(
         env_file=".env",
         env_ignore_empty=True,
+        extra="ignore",
         yaml_file=os.getenv("CONFIG_FILE_PATH", "config.yaml"),
     )
 
     def _check_required_var(self, var_name: str, value: str | None) -> None:
         if not value:
-            message = f"The value of {var_name} cannot be empty."
-            raise ValueError(message)
+            raise ValueError(f"The value of {var_name} cannot be empty.")
 
     def _check_required_integration_var(
         self, var_name: str, value: str | None, integration: str
     ) -> None:
         if not value:
-            message = f"The value of {var_name} cannot be empty when enabling the {integration} integration."
-            raise ValueError(message)
+            raise ValueError(
+                f"The value of {var_name} cannot be empty when enabling the {integration} integration."
+            )
+
+    def _resolve_matrix_settings(self) -> MatrixSettings | None:
+        matrix_env_values = {
+            "homeserver": self.MATRIX_HOMESERVER,
+            "user_id": self.MATRIX_USER_ID,
+            "access_token": self.MATRIX_ACCESS_TOKEN,
+            "device_id": self.MATRIX_DEVICE_ID,
+            "digest_room_id": self.MATRIX_DIGEST_ROOM_ID,
+            "widget_base_url": self.MATRIX_WIDGET_BASE_URL,
+        }
+
+        if not self.matrix and not any(matrix_env_values.values()):
+            return None
+
+        matrix_values = self.matrix.model_dump() if self.matrix else {}
+        for key, value in matrix_env_values.items():
+            if value is not None:
+                matrix_values[key] = value
+
+        return MatrixSettings(**matrix_values)
 
     @model_validator(mode="after")
     def _check_required_vars(self) -> Self:
         self._check_required_var("POSTGRES_DB", self.POSTGRES_DB)
         self._check_required_var("POSTGRES_HOST", self.POSTGRES_HOST)
         self._check_required_var("POSTGRES_PASSWORD", self.POSTGRES_PASSWORD)
-        self._check_required_var("POSTGRES_PORT", self.POSTGRES_PORT)
+        self._check_required_var("POSTGRES_PORT", str(self.POSTGRES_PORT))
         self._check_required_var("POSTGRES_USER", self.POSTGRES_USER)
 
-        if not (
-            TypeAdapter(bool).validate_python(self.IS_MIGRATION)
-            or TypeAdapter(bool).validate_python(self.IS_TEST_ENVIRONMENT)
-        ):
-            self._check_required_var("SLACK_APP_TOKEN", self.SLACK_APP_TOKEN)
-            self._check_required_var("SLACK_BOT_TOKEN", self.SLACK_BOT_TOKEN)
-            self._check_required_var("SLACK_USER_TOKEN", self.SLACK_USER_TOKEN)
+        if self.platform == "matrix":
+            self.matrix = self._resolve_matrix_settings()
 
-            if (
-                self.integrations
-                and self.integrations.atlassian
-                and self.integrations.atlassian.confluence
-                and self.integrations.atlassian.confluence.enabled
-            ):
+        from pydantic import TypeAdapter
+
+        skip_platform_check = TypeAdapter(bool).validate_python(
+            self.IS_MIGRATION
+        ) or TypeAdapter(bool).validate_python(self.IS_TEST_ENVIRONMENT)
+
+        if not skip_platform_check:
+            if self.platform == "slack":
+                self._check_required_var("SLACK_APP_TOKEN", self.SLACK_APP_TOKEN)
+                self._check_required_var("SLACK_BOT_TOKEN", self.SLACK_BOT_TOKEN)
+                self._check_required_var("SLACK_USER_TOKEN", self.SLACK_USER_TOKEN)
+            elif self.platform == "matrix":
+                if not self.matrix:
+                    raise ValueError(
+                        "Matrix configuration is required when platform = 'matrix'."
+                    )
+                self._check_required_var("matrix.homeserver", self.matrix.homeserver)
+                self._check_required_var("matrix.user_id", self.matrix.user_id)
+                self._check_required_var(
+                    "matrix.access_token", self.matrix.access_token
+                )
+                self._check_required_var(
+                    "matrix.digest_room_id", self.matrix.digest_room_id
+                )
+
+            atlassian = self.integrations and self.integrations.atlassian
+
+            if atlassian and atlassian.confluence and atlassian.confluence.enabled:
                 self._check_required_integration_var(
                     "ATLASSIAN_API_URL", self.ATLASSIAN_API_URL, "Confluence"
                 )
                 self._check_required_integration_var(
-                    "ATLASSIAN_API_USERNAME",
-                    self.ATLASSIAN_API_USERNAME,
-                    "Confluence",
+                    "ATLASSIAN_API_USERNAME", self.ATLASSIAN_API_USERNAME, "Confluence"
                 )
                 self._check_required_integration_var(
-                    "ATLASSIAN_API_TOKEN",
-                    self.ATLASSIAN_API_TOKEN,
-                    "Confluence",
+                    "ATLASSIAN_API_TOKEN", self.ATLASSIAN_API_TOKEN, "Confluence"
                 )
 
-            if (
-                self.integrations
-                and self.integrations.atlassian
-                and self.integrations.atlassian.jira
-                and self.integrations.atlassian.jira.enabled
-            ):
+            if atlassian and atlassian.jira and atlassian.jira.enabled:
                 self._check_required_integration_var(
                     "ATLASSIAN_API_URL", self.ATLASSIAN_API_URL, "Jira"
                 )
                 self._check_required_integration_var(
-                    "ATLASSIAN_API_USERNAME",
-                    self.ATLASSIAN_API_USERNAME,
-                    "Jira",
+                    "ATLASSIAN_API_USERNAME", self.ATLASSIAN_API_USERNAME, "Jira"
                 )
                 self._check_required_integration_var(
                     "ATLASSIAN_API_TOKEN", self.ATLASSIAN_API_TOKEN, "Jira"
                 )
 
-            if (
-                self.integrations
-                and self.integrations.atlassian
-                and self.integrations.atlassian.opsgenie
-                and self.integrations.atlassian.opsgenie.enabled
-            ):
-                if self.integrations.atlassian.opsgenie.team:
-                    self._check_required_integration_var(
-                        "ATLASSIAN_OPSGENIE_API_TEAM_INTEGRATION_KEY",
-                        self.ATLASSIAN_OPSGENIE_API_TEAM_INTEGRATION_KEY,
-                        "Opsgenie",
-                    )
-                else:
-                    self._check_required_integration_var(
-                        "ATLASSIAN_OPSGENIE_API_KEY",
-                        self.ATLASSIAN_OPSGENIE_API_KEY,
-                        "Opsgenie",
-                    )
-
-            if (
-                self.integrations
-                and self.integrations.atlassian
-                and self.integrations.atlassian.statuspage
-                and self.integrations.atlassian.statuspage.enabled
-            ):
+            if atlassian and atlassian.statuspage and atlassian.statuspage.enabled:
                 self._check_required_integration_var(
                     "STATUSPAGE_API_KEY", self.STATUSPAGE_API_KEY, "Statuspage"
                 )
                 self._check_required_integration_var(
-                    "STATUSPAGE_PAGE_ID",
-                    self.STATUSPAGE_PAGE_ID,
-                    "Statuspage",
+                    "STATUSPAGE_PAGE_ID", self.STATUSPAGE_PAGE_ID, "Statuspage"
                 )
 
             if (
@@ -484,14 +280,10 @@ class Settings(BaseSettings):
                 and self.integrations.pagerduty.enabled
             ):
                 self._check_required_integration_var(
-                    "PAGERDUTY_API_USERNAME",
-                    self.PAGERDUTY_API_USERNAME,
-                    "PagerDuty",
+                    "PAGERDUTY_API_USERNAME", self.PAGERDUTY_API_USERNAME, "PagerDuty"
                 )
                 self._check_required_integration_var(
-                    "PAGERDUTY_API_TOKEN",
-                    self.PAGERDUTY_API_TOKEN,
-                    "PagerDuty",
+                    "PAGERDUTY_API_TOKEN", self.PAGERDUTY_API_TOKEN, "PagerDuty"
                 )
 
             if (
@@ -509,17 +301,38 @@ class Settings(BaseSettings):
                     "ZOOM_CLIENT_SECRET", self.ZOOM_CLIENT_SECRET, "Zoom"
                 )
 
+            if (
+                self.integrations
+                and self.integrations.gitlab
+                and self.integrations.gitlab.enabled
+            ):
+                self._check_required_integration_var(
+                    "GITLAB_URL", self.GITLAB_URL, "Gitlab"
+                )
+                self._check_required_integration_var(
+                    "GITLAB_API_TOKEN", self.GITLAB_API_TOKEN, "Gitlab"
+                )
+
+            if (
+                self.integrations
+                and self.integrations.phare
+                and self.integrations.phare.enabled
+            ):
+                self._check_required_integration_var(
+                    "PHARE_API_KEY", self.PHARE_API_KEY, "Phare"
+                )
+
         return self
 
     @classmethod
     def settings_customise_sources(
         cls,
-        settings_cls: Type[BaseSettings],
+        settings_cls: type[BaseSettings],
         init_settings: PydanticBaseSettingsSource,
         env_settings: PydanticBaseSettingsSource,
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
-    ) -> Tuple[PydanticBaseSettingsSource, ...]:
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
         return (
             env_settings,
             YamlConfigSettingsSource(settings_cls),

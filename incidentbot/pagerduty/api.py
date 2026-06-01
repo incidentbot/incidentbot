@@ -8,9 +8,8 @@ from incidentbot.models.database import (
     IncidentRecord,
     PagerDutyIncidentRecord,
 )
-from incidentbot.slack.client import slack_workspace_id
 from incidentbot.util.gen import fetch_timestamp
-from pdpyras import APISession, PDClientError
+from pagerduty import RestApiV2Client, Error as PDClientError
 from sqlalchemy import update
 from sqlmodel import Session, select
 
@@ -20,8 +19,8 @@ class PagerDutyInterface:
         self.escalation_policy = escalation_policy
 
     @classmethod
-    def session(self) -> APISession:
-        return APISession(
+    def session(self) -> RestApiV2Client:
+        return RestApiV2Client(
             settings.PAGERDUTY_API_TOKEN,
             default_from=settings.PAGERDUTY_API_USERNAME,
         )
@@ -69,8 +68,8 @@ class PagerDutyInterface:
                     )
                 ).first()
         except Exception as error:
-            logger.error(
-                f"Error retrieving list of Slack users from db: {error}"
+            logger.exception(
+                "error retrieving list of slack users from db", error=error
             )
 
         slack_users = {
@@ -82,7 +81,7 @@ class PagerDutyInterface:
         oncalls = self.session().iter_all("oncalls")
 
         if oncalls is None:
-            logger.warn("PagerDuty schedule information returned as empty")
+            logger.warning("pagerduty schedule information returned as empty")
 
             return {}
         else:
@@ -107,8 +106,8 @@ class PagerDutyInterface:
                             ],
                         }
                         for item in self.session().iter_all("oncalls")
-                        if item.get("start") != None
-                        and item.get("end") != None
+                        if item.get("start") is not None
+                        and item.get("end") is not None
                     ],
                     key=lambda x: x.get("escalation_level"),
                 )
@@ -117,7 +116,7 @@ class PagerDutyInterface:
                     item.get("escalation_policy").get("summary")
                 )
 
-        logger.info(f"PagerDuty returned {len(on_call)} schedules")
+        logger.info("pagerduty returned schedules", count=len(on_call))
 
         if short:
             return auto_mapping
@@ -142,6 +141,8 @@ class PagerDutyInterface:
         """
 
         if self.escalation_policy_id is not None:
+            from incidentbot.slack.client import slack_workspace_id
+
             pagerduty_incident_data = {
                 "incident": {
                     "type": "incident",
@@ -171,9 +172,7 @@ class PagerDutyInterface:
 
                 if not response.ok:
                     raise Exception(
-                        "Error creating PagerDuty incident: {}".format(
-                            response.json()
-                        )
+                        f"Error creating PagerDuty incident: {response.json()}"
                     )
                 else:
                     try:
@@ -195,16 +194,16 @@ class PagerDutyInterface:
                             session.add(record)
                             session.commit()
                     except Exception as error:
-                        logger.error(
-                            f"Error updating incident with PagerDuty incident data: {error}"
+                        logger.exception(
+                            "error updating incident with pagerduty incident data", error=error
                         )
 
                 return created_incident.get("html_url")
             except PDClientError as error:
-                logger.error(f"Error creating PagerDuty incident: {error}")
+                logger.exception("error creating pagerduty incident", error=error)
         else:
             logger.error(
-                f"Error during PagerDuty incident creation - could not find escalation policy id for policy {self.escalation_policy}"
+                "error during pagerduty incident creation - could not find escalation policy id", policy=self.escalation_policy
             )
 
     def resolve(self, pagerduty_incident_id: str):
@@ -229,16 +228,14 @@ class PagerDutyInterface:
 
             if not response.ok:
                 logger.error(
-                    "Error patching PagerDuty incident: {}".format(
-                        response.json()
-                    )
+                    "error patching pagerduty incident", response=response.json()
                 )
             else:
                 logger.info(
-                    f"Successfully resolved PagerDuty incident {pagerduty_incident_id}"
+                    "successfully resolved pagerduty incident", incident_id=pagerduty_incident_id
                 )
         except PDClientError as error:
-            logger.error(f"Error patching PagerDuty incident: {error}")
+            logger.exception("error patching pagerduty incident", error=error)
 
     @classmethod
     def store_on_call_data(self):
@@ -265,8 +262,8 @@ class PagerDutyInterface:
                         session.add(row)
                         session.commit()
                     except Exception as error:
-                        logger.error(
-                            f"ApplicationData row create failed for {record_name}: {error}"
+                        logger.exception(
+                            "applicationdata row create failed", record_name=record_name, error=error
                         )
 
                 session.exec(
@@ -278,8 +275,8 @@ class PagerDutyInterface:
                 )
                 session.commit()
             except Exception as error:
-                logger.error(
-                    f"ApplicationData row edit failed for {record_name}: {error}"
+                logger.exception(
+                    "applicationdata row edit failed", record_name=record_name, error=error
                 )
 
             try:
@@ -296,8 +293,8 @@ class PagerDutyInterface:
                         session.add(row)
                         session.commit()
                     except Exception as error:
-                        logger.error(
-                            f"ApplicationData row create failed for {record_name}: {error}"
+                        logger.exception(
+                            "applicationdata row create failed", record_name=record_name, error=error
                         )
 
                 session.exec(
@@ -309,8 +306,8 @@ class PagerDutyInterface:
                 )
                 session.commit()
             except Exception as error:
-                logger.error(
-                    f"ApplicationData row edit failed for {record_name}: {error}"
+                logger.exception(
+                    "applicationdata row edit failed", record_name=record_name, error=error
                 )
 
     @classmethod
@@ -318,4 +315,4 @@ class PagerDutyInterface:
         try:
             return [sch for sch in self.session().iter_all("oncalls")]
         except Exception as error:
-            logger.error(f"Error during validation of PagerDuty auth: {error}")
+            logger.exception("error during validation of pagerduty auth", error=error)

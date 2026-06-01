@@ -1,45 +1,54 @@
-from incidentbot.api.routes import (
-    health,
-    incident,
-    job,
-    login,
-    maintenance_window,
-    pager,
-    setting,
-    users,
-)
-from incidentbot.configuration.settings import settings, __version__
+from contextlib import asynccontextmanager
 
-from fastapi import (
-    APIRouter,
-    FastAPI,
-    Request,
-    status,
-)
+from fastapi import FastAPI, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-"""
-Run Init Tasks
-"""
+from incidentbot.api.routes import incidents, widget
+from incidentbot.configuration.settings import settings
+from incidentbot.version import APP_VERSION
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    from incidentbot.scheduler.core import process as task_scheduler
+    from incidentbot.startup import (
+        connect_platform,
+        db_check,
+        emit_startup_log,
+        init_platform,
+        post_startup_checks,
+        startup_tasks,
+    )
+
+    db_check()
+    startup_tasks()
+    task_scheduler.start()
+    init_platform()
+    connect_platform()
+    post_startup_checks()
+    emit_startup_log()
+
+    yield
+
+    task_scheduler.scheduler.shutdown(wait=False)
+
 
 app = FastAPI(
     title="incidentbot",
-    summary="Incident Bot API",
-    version=__version__,
-    docs_url="/docs" if settings.api.enable_docs_endpoint else None,
-    openapi_url=(
-        "/openapi.json" if settings.api.enable_openapi_endpoint else None
-    ),
-    redoc_url="/redoc" if settings.api.enable_redoc_endpoint else None,
+    summary="Incident management API",
+    version=APP_VERSION,
+    docs_url="/api/v1/docs" if settings.ENABLE_API_DOCS else None,
+    openapi_url="/api/v1/openapi.json" if settings.ENABLE_API_DOCS else None,
+    redoc_url=None,
+    lifespan=lifespan,
 )
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
@@ -56,22 +65,10 @@ async def validation_exception_handler(
     )
 
 
-"""
-Router
-"""
+@app.get("/health")
+async def health():
+    return {"healthy": True}
 
-api_router = APIRouter()
-api_router.include_router(health.router, tags=["health"])
 
-if settings.api.enabled:
-    api_router.include_router(incident.router, tags=["incident"])
-    api_router.include_router(job.router, tags=["job"])
-    api_router.include_router(login.router, tags=["login"])
-    api_router.include_router(
-        maintenance_window.router, tags=["maintenance_window"]
-    )
-    api_router.include_router(pager.router, tags=["pager"])
-    api_router.include_router(setting.router, tags=["setting"])
-    api_router.include_router(users.router, tags=["users"])
-
-app.include_router(api_router, prefix=settings.api.v1_str)
+app.include_router(incidents.router)
+app.include_router(widget.router)

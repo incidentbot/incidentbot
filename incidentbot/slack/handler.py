@@ -1,9 +1,10 @@
 import asyncio
-
+import re
 import requests
 import slack_sdk
 
-from incidentbot.configuration.settings import settings, __version__
+from incidentbot.configuration.settings import settings
+from incidentbot.version import APP_VERSION
 from incidentbot.incident.actions import (
     archive_incident_channel,
     export_chat_logs,
@@ -11,13 +12,12 @@ from incidentbot.incident.actions import (
     leave_incident_as_role,
     set_severity as set_incident_severity,
     set_status as set_incident_status,
+    sync_postmortem,
 )
 from incidentbot.incident.event import EventLogHandler
 from incidentbot.logging import logger
+from incidentbot.models.database import ApplicationData, engine
 from incidentbot.models.incident import IncidentDatabaseInterface
-from incidentbot.models.maintenance_window import (
-    MaintenanceWindowDatabaseInterface,
-)
 from incidentbot.models.slack import SlackBlockActionsResponse
 from incidentbot.slack.client import (
     get_slack_user,
@@ -26,10 +26,14 @@ from incidentbot.slack.client import (
 from incidentbot.slack.messages import (
     BlockBuilder,
 )
-from incidentbot.slack.util import handle_comms_reminder
+from incidentbot.slack.postmortem_sync_guard import (
+    begin_postmortem_sync,
+    end_postmortem_sync,
+)
 from incidentbot.util import gen
 from slack_bolt import App
 from slack_sdk.errors import SlackApiError
+from sqlmodel import Session, select
 
 ## The xoxb oauth token for the bot is called here to provide bot privileges.
 app = App(token=settings.SLACK_BOT_TOKEN)
@@ -37,12 +41,12 @@ app = App(token=settings.SLACK_BOT_TOKEN)
 
 @app.error
 def custom_error_handler(error, body, logger):
-    logger.exception(f"Error: {error}")
-    logger.debug(f"Request body: {body}")
+    logger.exception("error", error=error)
+    logger.debug("request body", body=body)
 
 
-from . import command
-from . import modals
+from . import command  # noqa: F401 E402
+from . import modals  # noqa: F401 E402
 
 
 @app.event("message")
@@ -59,7 +63,7 @@ Handle Mentions
 @app.event("app_mention")
 def handle_mention(body, say, logger):
     message = body.get("event").get("text").split(" ")
-    user = body["event"]["user"]
+    _ = body["event"]["user"]
     logger.debug(body)
 
     if len(message) == 1:
@@ -106,7 +110,7 @@ def handle_mention(body, say, logger):
                     )
 
                     # Iterate over schedules
-                    if pd_oncall_data is not {}:
+                    if pd_oncall_data != {}:
                         # Get length of returned objects
                         # If returned objects is greater than 5, paginate over them 5 at a time and include 5 in each message
                         # Send a separate message for each grouping of 5 to avoid block limits from the Slack API
@@ -142,9 +146,7 @@ def handle_mention(body, say, logger):
                                 base_block.append(
                                     {
                                         "type": "section",
-                                        "block_id": "ping_oncall_{}".format(
-                                            gen.random_string_generator()
-                                        ),
+                                        "block_id": f"ping_oncall_{gen.random_string_generator()}",
                                         "text": {
                                             "type": "mrkdwn",
                                             "text": f"*{key}*",
@@ -185,97 +187,6 @@ def handle_mention(body, say, logger):
                         ],
                         text="Oncall information was sent.",
                     )
-            elif (
-                settings.integrations
-                and settings.integrations.atlassian
-                and settings.integrations.atlassian.opsgenie
-                and settings.integrations.atlassian.opsgenie.enabled
-            ):
-                from incidentbot.configuration.settings import (
-                    opsgenie_logo_url,
-                )
-                from incidentbot.opsgenie import api as opsgenie
-
-                sess = opsgenie.OpsgenieAPI()
-                og_oncall_data = sess.list_rotations()
-
-                if og_oncall_data:
-                    # Header
-                    say(
-                        blocks=[
-                            {
-                                "type": "header",
-                                "text": {
-                                    "type": "plain_text",
-                                    "text": ":pager: Who is on call right now?",
-                                },
-                            },
-                            {"type": "divider"},
-                        ],
-                        text="Oncall information was sent.",
-                    )
-
-                    base_block = []
-
-                    # Iterate over schedules
-                    for item in og_oncall_data:
-                        options = []
-                        for user in item.get("participants"):
-                            options.append(
-                                {
-                                    "text": {
-                                        "type": "plain_text",
-                                        "text": user.get("username"),
-                                    },
-                                    "value": user.get("username"),
-                                },
-                            )
-                        base_block.append(
-                            {
-                                "type": "section",
-                                "block_id": "ping_oncall_{}".format(
-                                    gen.random_string_generator()
-                                ),
-                                "text": {
-                                    "type": "mrkdwn",
-                                    "text": f"*{item.get('name')}*",
-                                },
-                                "accessory": {
-                                    "type": "overflow",
-                                    "options": options,
-                                    "action_id": "incident.add_on_call_to_channel",
-                                },
-                            }
-                        )
-                    say(
-                        blocks=base_block,
-                        text="Oncall information was sent.",
-                    )
-                else:
-                    say(
-                        text="No data regarding schedule rotations was returned from Opsgenie."
-                    )
-
-                # Footer
-                say(
-                    blocks=[
-                        {
-                            "type": "context",
-                            "elements": [
-                                {
-                                    "type": "image",
-                                    "image_url": opsgenie_logo_url,
-                                    "alt_text": "opsgenie",
-                                },
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f"This information is sourced from Opsgenie and is accurate as of {gen.fetch_timestamp()}.",
-                                },
-                            ],
-                        }
-                    ],
-                    text="Oncall information was sent.",
-                )
             else:
                 say(
                     text=":no_entry: Sorry - no platforms have been added for handling paging yet. Ask the administrator about adding one."
@@ -283,7 +194,7 @@ def handle_mention(body, say, logger):
         case "ping":
             say(text="pong")
         case "version":
-            say(text=f"I am currently running version: {__version__}")
+            say(text=f"I am currently running version: {APP_VERSION}")
         case _:
             resp = " ".join(message[1:])
             say(text=f"Sorry, I don't know the command `{resp}` yet.")
@@ -316,16 +227,16 @@ def handle_incident_archive_incident_channel(ack, body):
 
 
 @app.action("incident.clicked_meeting_link")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     logger.debug(body)
     ack()
 
 
 if settings.links:
-    for l in settings.links:
+    for link in settings.links:
 
         @app.action(
-            f"incident.clicked_link_{l.title.lower().replace(' ', '_')}"
+            f"incident.clicked_link_{link.title.lower().replace(' ', '_')}"
         )
         def handle_static_action(ack, body, logger):
             logger.debug(body)
@@ -333,19 +244,19 @@ if settings.links:
 
 
 @app.action("incident.declare_incident_modal.set_additional_comms_channel")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     ack()
     logger.info(body)
 
 
 @app.action("incident.declare_incident_modal.set_private")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     logger.debug(body)
     ack()
 
 
 @app.action("incident.declare_incident_modal.set_security_type")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     logger.debug(body)
     ack()
 
@@ -373,11 +284,11 @@ def handle_static_action(ack, body, logger):
             },
         )
     except slack_sdk.errors.SlackApiError as error:
-        logger.error(f"Error deleting message: {error}")
+        logger.exception("error deleting message", error=error)
 
 
 @app.action("incident.declare_incident_modal.set_severity")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     logger.debug(body)
     ack()
 
@@ -416,7 +327,7 @@ for role in [key for key, _ in settings.roles.items()]:
 
 
 @app.action("incident.get_help_for_this_incident")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     ack()
     logger.info(body)
 
@@ -431,85 +342,53 @@ def handle_static_action(ack, body, logger):
             blocks=BlockBuilder.help_message(),
         )
     except SlackApiError as error:
-        logger.error(f"error sending help message: {error}")
+        logger.exception("error sending help message", error=error)
 
 
-@app.action("incident.handle_initial_comms_reminder_30m")
-def handle_static_action(ack, body, logger):
+@app.action(re.compile(r"^reminder\.snooze\."))
+def handle_reminder_snooze(ack, body, logger):
     ack()
-    logger.info(body)
+    logger.debug(body)
 
-    parsed_body = SlackBlockActionsResponse(**body)
+    try:
+        action_id = body["actions"][0]["action_id"]
+        # format: reminder.snooze.{reminder_id}.{minutes}
+        # maxsplit=3 keeps reminder_id intact even if it contains dots (defensive)
+        _, _, reminder_id, minutes_str = action_id.split(".", maxsplit=3)
+        minutes = int(minutes_str)
+    except (KeyError, ValueError):
+        logger.warning("malformed reminder snooze action_id", action_id=body.get("actions", [{}])[0].get("action_id"))
+        return
 
-    channel_id = parsed_body.channel.id
-    interval = int(parsed_body.actions[0].get("text").get("text").rstrip("m"))
-    record = IncidentDatabaseInterface.get_one(channel_id=channel_id)
+    channel_id = body["channel"]["id"]
+    ts = body["message"]["ts"]
 
-    handle_comms_reminder(
-        channel_id=channel_id,
-        interval=interval,
-        record=record,
-        ts=parsed_body.message.ts,
-    )
+    from incidentbot.incident.reminders import handle_snooze
+    handle_snooze(channel_id=channel_id, reminder_id=reminder_id, minutes=minutes, ts=ts)
 
 
-@app.action("incident.handle_initial_comms_reminder_60m")
-def handle_static_action(ack, body, logger):
+@app.action(re.compile(r"^reminder\.dismiss\."))
+def handle_reminder_dismiss(ack, body, logger):
     ack()
-    logger.info(body)
+    logger.debug(body)
 
-    parsed_body = SlackBlockActionsResponse(**body)
+    try:
+        action_id = body["actions"][0]["action_id"]
+        # format: reminder.dismiss.{reminder_id}
+        _, _, reminder_id = action_id.split(".", maxsplit=2)
+    except (KeyError, ValueError):
+        logger.warning("malformed reminder dismiss action_id", action_id=body.get("actions", [{}])[0].get("action_id"))
+        return
 
-    channel_id = parsed_body.channel.id
-    interval = int(parsed_body.actions[0].get("text").get("text").rstrip("m"))
-    record = IncidentDatabaseInterface.get_one(channel_id=channel_id)
+    channel_id = body["channel"]["id"]
+    ts = body["message"]["ts"]
 
-    handle_comms_reminder(
-        channel_id=channel_id,
-        interval=interval,
-        record=record,
-        ts=parsed_body.message.ts,
-    )
-
-
-@app.action("incident.handle_initial_comms_reminder_90m")
-def handle_static_action(ack, body, logger):
-    ack()
-    logger.info(body)
-
-    parsed_body = SlackBlockActionsResponse(**body)
-
-    channel_id = parsed_body.channel.id
-    interval = int(parsed_body.actions[0].get("text").get("text").rstrip("m"))
-    record = IncidentDatabaseInterface.get_one(channel_id=channel_id)
-
-    handle_comms_reminder(
-        channel_id=channel_id,
-        interval=interval,
-        record=record,
-        ts=parsed_body.message.ts,
-    )
-
-
-@app.action("incident.handle_initial_comms_reminder_never")
-def handle_static_action(ack, body, logger):
-    ack()
-    logger.info(body)
-
-    parsed_body = SlackBlockActionsResponse(**body)
-
-    channel_id = parsed_body.channel.id
-    record = IncidentDatabaseInterface.get_one(channel_id=channel_id)
-
-    handle_comms_reminder(
-        channel_id=channel_id,
-        record=record,
-        ts=parsed_body.message.ts,
-    )
+    from incidentbot.incident.reminders import handle_dismiss
+    handle_dismiss(channel_id=channel_id, reminder_id=reminder_id, ts=ts)
 
 
 @app.action("incident.leave_this_incident")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     logger.debug(body)
     ack()
 
@@ -538,7 +417,7 @@ def handle_static_action(ack, body, logger):
 
 
 @app.action("incident.list_incidents")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     logger.debug(body)
     ack()
 
@@ -559,9 +438,7 @@ def handle_static_action(ack, body, logger):
             blocks=open_incidents,
         )
     except SlackApiError as error:
-        logger.error(
-            f"error sending message back to user via slash command invocation: {error}"
-        )
+        logger.exception("error sending message via slash command", error=error)
 
 
 @app.action("incident.set_severity")
@@ -598,52 +475,9 @@ def handle_incident_set_status(ack, body):
 
 
 @app.action("incident.update_modal.select_incident")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     logger.debug(body)
     ack()
-
-
-"""
-Maintenance Windows
-"""
-
-
-@app.action("maintenance_window.delete")
-def handle_static_action(ack, body, logger):
-    ack()
-    parsed_body = SlackBlockActionsResponse(**body)
-
-    maintenance_window_id = (
-        parsed_body.actions[0].get("block_id").split("_")[-1:][0]
-    )
-    record = MaintenanceWindowDatabaseInterface.get_one(
-        id=maintenance_window_id
-    )
-    MaintenanceWindowDatabaseInterface.delete_one(record)
-
-    slack_web_client.chat_postEphemeral(
-        channel=parsed_body.channel.id,
-        user=parsed_body.user.id,
-        text=f"I have deleted the maintenance window {record.title}.",
-    )
-
-
-@app.action("maintenance_window.set_channels")
-def handle_static_action(ack, body, logger):
-    ack()
-    logger.debug(body)
-
-
-@app.action("maintenance_window.set_components")
-def handle_static_action(ack, body, logger):
-    ack()
-    logger.debug(body)
-
-
-@app.action("maintenance_window.set_contact")
-def handle_static_action(ack, body, logger):
-    ack()
-    logger.debug(body)
 
 
 """
@@ -652,7 +486,7 @@ Other
 
 
 @app.action("view_upstream_incident")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     ack()
     logger.info(body)
 
@@ -699,8 +533,8 @@ def reaction_added(event, say):
                                             token=settings.SLACK_USER_TOKEN,
                                         )
                                     except SlackApiError as error:
-                                        logger.error(
-                                            f"Error preparing pinned file for copy: {error}"
+                                        logger.exception(
+                                            "error preparing pinned file for copy", error=error
                                         )
 
                                 # Copy the attachment into the database
@@ -723,8 +557,8 @@ def reaction_added(event, say):
                                         token=settings.SLACK_USER_TOKEN,
                                     )
                                 except SlackApiError as error:
-                                    logger.error(
-                                        f"Error preparing pinned file for copy during public url revoke: {error}"
+                                    logger.exception(
+                                        "error revoking public url for pinned file", error=error
                                     )
 
                                 try:
@@ -732,7 +566,7 @@ def reaction_added(event, say):
                                         image=response.content,
                                         incident_id=incident.id,
                                         incident_slug=incident.slug,
-                                        message_ts=message_timestamp,
+                                        message_ts=message["ts"],
                                         mimetype=file["mimetype"],
                                         title=file["name"],
                                         source="pin",
@@ -760,20 +594,24 @@ def reaction_added(event, say):
                             else:
                                 say(
                                     channel=channel_id,
-                                    text=f":wave: It looks like that's not an image. I can currently only attach images.",
+                                    text=":wave: It looks like that's not an image. I can currently only attach images.",
                                 )
                     else:
                         say(
                             channel=channel_id,
-                            text=f":wave: Attaching images is currently disabled.",
+                            text=":wave: Attaching images is currently disabled.",
                         )
                 else:
                     try:
+                        # Parse elements in message text
+
                         result = EventLogHandler.create(
-                            event=message["text"],
+                            event=parse_pinned_message_content(
+                                message["text"]
+                            ),
                             incident_id=incident.id,
                             incident_slug=incident.slug,
-                            message_ts=message_timestamp,
+                            message_ts=message["ts"],
                             source="pin",
                             user=get_slack_user(message.get("user")).get(
                                 "real_name", "NotAvailable"
@@ -796,9 +634,82 @@ def reaction_added(event, say):
                             text=f":wave: I was unable to pin that message. {reason}",
                         )
             except Exception as error:
-                logger.error(
-                    f"Error when trying to retrieve a message: {error}"
+                logger.exception(
+                    "error when trying to retrieve a message", error=error
                 )
+
+
+def parse_pinned_message_content(message: str) -> str:
+    """
+    Replace components in pinned message
+
+    Args:
+        message (str): The message content to parse
+    """
+
+    channel_pattern = r"<#([A-Z0-9]+)\|?.*?>"
+    url_patterns = [
+        r"<(https?://[^|]+)\|([^>]+)>",
+        r"<(https?://[^|]+)>",
+    ]
+    username_pattern = r"<@([A-Z0-9]+)>"
+
+    if re.search(channel_pattern, message):
+        with Session(engine) as session:
+            match = re.search(channel_pattern, message)
+            channel_list = session.exec(
+                select(ApplicationData).filter(
+                    ApplicationData.name == "slack_channels"
+                )
+            ).one()
+            matched_channels = [
+                channel
+                for channel in channel_list.json_data
+                if channel.get("id") == match.group(1)
+            ]
+            if matched_channels:
+                matched_channel = matched_channels[0]
+                message = message.replace(
+                    match.group(0),
+                    f"#{matched_channel.get("name")}",
+                )
+            else:
+                # Keep original format if channel not found
+                pass
+
+    for pattern in url_patterns:
+        if re.search(pattern, message):
+            with Session(engine) as session:
+                match = re.search(pattern, message)
+                message = message.replace(
+                    match.group(0),
+                    match.group(1),
+                )
+
+    if re.search(username_pattern, message):
+        with Session(engine) as session:
+            match = re.search(username_pattern, message)
+            user_list = session.exec(
+                select(ApplicationData).filter(
+                    ApplicationData.name == "slack_users"
+                )
+            ).one()
+            matched_users = [
+                user
+                for user in user_list.json_data
+                if user.get("id") == match.group(1)
+            ]
+            if matched_users:
+                matched_user = matched_users[0]
+                message = message.replace(
+                    match.group(0),
+                    f"@{matched_user.get("real_name")}",
+                )
+            else:
+                # Keep original format if user not found
+                pass
+
+    return message
 
 
 """
@@ -807,31 +718,66 @@ Jira
 
 
 @app.action("jira.description_input")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     logger.debug(body)
     ack()
 
 
 @app.action("jira.priority_select")
-def handle_static_action(ack, body):
+def handle_static_action(ack, body):  # noqa: F811
     logger.debug(body)
     ack()
 
 
 @app.action("jira.summary_input")
-def handle_static_action(ack, body):
+def handle_static_action(ack, body):  # noqa: F811
     logger.debug(body)
     ack()
 
 
 @app.action("jira.type_select")
-def handle_static_action(ack, body):
+def handle_static_action(ack, body):  # noqa: F811
     logger.debug(body)
     ack()
 
 
 @app.action("jira.view_issue")
-def handle_static_action(ack, body):
+def handle_static_action(ack, body):  # noqa: F811
+    logger.debug(body)
+    ack()
+
+
+"""
+Gitlab
+"""
+
+
+@app.action("gitlab.description_input")
+def handle_static_action(ack, body, logger):  # noqa: F811
+    logger.debug(body)
+    ack()
+
+
+@app.action("gitlab.priority_select")
+def handle_static_action(ack, body):  # noqa: F811
+    logger.debug(body)
+    ack()
+
+
+@app.action("gitlab.summary_input")
+def handle_static_action(ack, body):  # noqa: F811
+    logger.debug(body)
+    ack()
+
+
+@app.action("gitlab.type_select")
+def handle_static_action(ack, body):  # noqa: F811
+    logger.debug(body)
+    ack()
+
+
+@app.action("gitlab.view_issue")
+def handle_static_action(ack, body):  # noqa: F811
     logger.debug(body)
     ack()
 
@@ -842,37 +788,67 @@ Statuspage
 
 
 @app.action("statuspage.components_select")
-def handle_static_action(ack, body):
+def handle_static_action(ack, body):  # noqa: F811
     logger.debug(body)
     ack()
 
 
 @app.action("statuspage.components_status_select")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     logger.debug(body)
     ack()
 
 
 @app.action("statuspage.impact_select")
-def handle_static_action(ack, body):
+def handle_static_action(ack, body):  # noqa: F811
+    logger.debug(body)
+    ack()
+
+
+@app.action("phare.impact_select")
+def handle_static_action(ack, body):  # noqa: F811
+    logger.debug(body)
+    ack()
+
+
+@app.action("phare.monitors_select")
+def handle_static_action(ack, body):  # noqa: F811
+    logger.debug(body)
+    ack()
+
+
+@app.action("phare.open")
+def handle_static_action(ack, body):  # noqa: F811
+    logger.debug(body)
+    ack()
+
+
+@app.action("phare.update_status")
+def handle_static_action(ack, body):  # noqa: F811
+    logger.debug(body)
+    ack()
+
+
+@app.action("phare.view_incident")
+def handle_static_action(ack, body):  # noqa: F811
     logger.debug(body)
     ack()
 
 
 @app.action("statuspage.open")
-def handle_static_action(ack, body):
+def handle_static_action(ack, body):  # noqa: F811
     logger.debug(body)
     ack()
 
 
 @app.action("statuspage.update_status")
-def handle_static_action(ack, body):
+def handle_static_action(ack, body):  # noqa: F811
     logger.debug(body)
     ack()
 
 
 @app.action("statuspage.view_incident")
-def handle_static_action(ack, body):
+def handle_static_action(ack, body):  # noqa: F811
     logger.debug(body)
     ack()
 
@@ -891,10 +867,54 @@ def handle_dismiss_message(ack, body):
             channel=body["channel"]["id"], ts=body["actions"][0]["value"]
         )
     except slack_sdk.errors.SlackApiError as error:
-        logger.error(f"Error deleting message: {error}")
+        logger.exception("error deleting message", error=error)
 
 
 @app.action("view_postmortem")
-def handle_static_action(ack, body, logger):
+def handle_static_action(ack, body, logger):  # noqa: F811
     logger.debug(body)
     ack()
+
+
+@app.action("incident.join_meeting")
+def handle_static_action(ack, body, logger):  # noqa: F811
+    logger.debug(body)
+    ack()
+
+
+@app.action("incident.sync_postmortem")
+def handle_sync_postmortem(ack, body):
+    ack()
+    parsed_body = SlackBlockActionsResponse(**body)
+    channel_id = parsed_body.channel.id
+    user_id = parsed_body.user.id
+
+    if not begin_postmortem_sync(channel_id):
+        slack_web_client.chat_postEphemeral(
+            channel=channel_id,
+            user=user_id,
+            text="Pinned-content sync is already in progress for this incident.",
+        )
+        return
+
+    slack_web_client.chat_postEphemeral(
+        channel=channel_id,
+        user=user_id,
+        text="Pinned-content sync has started. This can take a minute.",
+    )
+
+    try:
+        asyncio.run(sync_postmortem(channel_id=channel_id))
+    finally:
+        end_postmortem_sync(channel_id)
+
+
+@app.action("incident.sync_postmortem.disabled")
+def handle_sync_postmortem_disabled(ack, body):
+    ack()
+    parsed_body = SlackBlockActionsResponse(**body)
+    slack_web_client.chat_postEphemeral(
+        channel=parsed_body.channel.id,
+        user=parsed_body.user.id,
+        text="Pinned-content sync is not available for this incident.",
+    )
