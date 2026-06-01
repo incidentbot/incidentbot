@@ -1,0 +1,168 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+  packages: write        # needed to push to GHCR
+  pull-requests: write   # lets Codecov post coverage comments on PRs
+
+jobs:
+  # ── Lint ────────────────────────────────────────────────────────────────────
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14.5"
+
+      - uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+
+      - name: Cache venv
+        uses: actions/cache@v5
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('poetry.lock') }}
+
+      - name: Install dependencies
+        run: poetry install --no-interaction --no-root
+
+      - name: Lint
+        run: make lint
+
+  # ── Test ────────────────────────────────────────────────────────────────────
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: pytest
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      # threading mode is more stable than multiprocessing on GitHub Actions
+      BOLT_PYTHON_MOCK_SERVER_MODE: threading
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14.5"
+
+      - uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+
+      - name: Cache venv
+        uses: actions/cache@v5
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('poetry.lock') }}
+
+      - name: Install dependencies
+        run: poetry install --no-interaction --no-root
+
+      - name: Run tests with coverage
+        env:
+          IS_TEST_ENVIRONMENT: "true"
+          POSTGRES_DB: postgres
+          POSTGRES_HOST: localhost
+          POSTGRES_PASSWORD: pytest
+          POSTGRES_PORT: "5432"
+          POSTGRES_USER: postgres
+        run: |
+          poetry run pytest tests/ -q \
+            --cov=incidentbot \
+            --cov-report=term-missing \
+            --cov-report=xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false   # don't fail CI if Codecov is unreachable
+          # Add CODECOV_TOKEN to repository secrets for private repos or for
+          # a more reliable upload on public repos:
+          # token: ${{ secrets.CODECOV_TOKEN }}
+
+  # ── Build & Push ─────────────────────────────────────────────────────────────
+  # Runs only on pushes to main (not on PRs).
+  # Images are tagged: latest, YYYY.MM.DD, sha-<short>
+  build-and-push:
+    name: Build & Push
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Compute version tags
+        id: version
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          DATE=$(date -u +%Y.%m.%d)
+          echo "app_version=${DATE}-${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "calver=${DATE}" >> $GITHUB_OUTPUT
+          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest
+            type=raw,value=${{ steps.version.outputs.calver }}
+            type=raw,value=sha-${{ steps.version.outputs.short_sha }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          target: app
+          push: true
+          build-args: |
+            APP_VERSION=${{ steps.version.outputs.app_version }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

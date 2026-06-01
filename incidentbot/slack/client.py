@@ -51,6 +51,19 @@ slack_workspace_id = (
 skip_invite_for_users = ["api", "web"]
 
 
+def _slack_call_with_retry(fn, *args, **kwargs):
+    """Execute a single Slack API call, retrying once on HTTP 429."""
+    try:
+        return fn(*args, **kwargs)
+    except SlackApiError as error:
+        if error.response.status_code == 429:
+            delay = int(error.response.headers.get("Retry-After", 5))
+            logger.warning("rate limited by slack api, retrying", delay_seconds=delay)
+            time.sleep(delay)
+            return fn(*args, **kwargs)
+        raise
+
+
 """
 Conversations
 """
@@ -64,55 +77,22 @@ def get_channel_history(channel_id: str) -> str:
         channel_id (str): The ID of the Slack channel to retrieve history from
     """
 
-    history_dict_list = []
-
-    try:
-        res = slack_web_client.conversations_history(
-            channel=channel_id, limit=200
-        )
-
-        while res:
-            history_dict_list += res.get("messages")
-
-            if res.get("has_more"):
-                res = slack_web_client.conversations_history(
-                    channel=channel_id,
-                    limit=200,
-                    cursor=res.get("response_metadata").get("next_cursor"),
-                )
-            else:
-                res = None
-    except SlackApiError as error:
-        if error.response.status_code == 429:
-            delay = int(error.response.headers["Retry-After"])
-            logger.warning(
-                f"Rate limited by Slack API. Retrying in {delay} seconds..."
+    history: list = []
+    res = _slack_call_with_retry(
+        slack_web_client.conversations_history, channel=channel_id, limit=200
+    )
+    while res:
+        history += res.get("messages", [])
+        if res.get("has_more"):
+            res = _slack_call_with_retry(
+                slack_web_client.conversations_history,
+                channel=channel_id,
+                limit=200,
+                cursor=res.get("response_metadata", {}).get("next_cursor"),
             )
-            time.sleep(delay)
-            res = slack_web_client.conversations_history(
-                channel=channel_id, limit=200
-            )
-
-            while res:
-                history_dict_list += res.get("messages")
-
-                if res.get("has_more"):
-                    res = slack_web_client.conversations_history(
-                        channel=channel_id,
-                        limit=200,
-                        cursor=res.get("response_metadata").get("next_cursor"),
-                    )
-                else:
-                    res = None
         else:
-            raise error
-
-    history_dict_reversed = []
-
-    for item in reversed(history_dict_list):
-        history_dict_reversed.append(item)
-
-    return json.dumps(history_dict_reversed)
+            res = None
+    return json.dumps(list(reversed(history)))
 
 
 def get_channel_list() -> dict[str, str]:
@@ -121,52 +101,23 @@ def get_channel_list() -> dict[str, str]:
     """
 
     channels = []
-
-    try:
-        res = slack_web_client.conversations_list(
-            exclude_archived=True,
-            limit=1000,
-        )
-
-        while res:
-            channels += res.get("channels")
-
-            if res.get("response_metadata").get("next_cursor") != "":
-                res = slack_web_client.conversations_list(
-                    exclude_archived=True,
-                    limit=1000,
-                    cursor=res.get("response_metadata").get("next_cursor"),
-                )
-            else:
-                res = None
-    except SlackApiError as error:
-        if error.response.status_code == 429:
-            delay = int(error.response.headers["Retry-After"])
-            logger.warning(
-                f"Rate limited by Slack API. Retrying in {delay} seconds..."
-            )
-            time.sleep(delay)
-            res = slack_web_client.conversations_list(
+    res = _slack_call_with_retry(
+        slack_web_client.conversations_list, exclude_archived=True, limit=1000
+    )
+    while res:
+        channels += res.get("channels", [])
+        next_cursor = res.get("response_metadata", {}).get("next_cursor", "")
+        if next_cursor:
+            res = _slack_call_with_retry(
+                slack_web_client.conversations_list,
                 exclude_archived=True,
                 limit=1000,
+                cursor=next_cursor,
             )
-
-            while res:
-                channels += res.get("channels")
-
-                if res.get("response_metadata").get("next_cursor") != "":
-                    res = slack_web_client.conversations_list(
-                        exclude_archived=True,
-                        limit=1000,
-                        cursor=res.get("response_metadata").get("next_cursor"),
-                    )
-                else:
-                    res = None
         else:
-            raise error
+            res = None
 
-    logger.info(f"Found {len(channels)} Slack channels")
-
+    logger.info("found slack channels", count=len(channels))
     return channels
 
 
@@ -229,70 +180,23 @@ def get_formatted_channel_history(channel_id: str, channel_name: str) -> str:
         channel_name (str): The name of the Slack channel to retrieve history from
     """
 
-    try:
-        users = slack_web_client.users_list()["members"]
-        replaced_messages_string = replace_user_ids(
-            get_channel_history(channel_id), users
-        )
+    users = _slack_call_with_retry(slack_web_client.users_list)["members"]
+    replaced_messages_string = replace_user_ids(get_channel_history(channel_id), users)
 
-        formatted_channel_history = str()
-        formatted_channel_history += (
-            f"Slack channel history for incident {channel_name}\n"
-        )
-
-        for message in replaced_messages_string:
-            user = message["user"]
-            text = message["text"]
-            timestamp = datetime.datetime.fromtimestamp(
-                int(message["ts"].split(".")[0])
-            )
-            prefix = f"* {timestamp}"
-            if "has joined the channel" in text:
-                formatted_channel_history += (
-                    f"{prefix} {user} joined the channel\n"
-                )
-            elif "set the channel topic" in text:
-                formatted_channel_history += f"{prefix} {user} {text}\n"
-            elif "This content can't be displayed." in text:
-                pass
-            else:
-                formatted_channel_history += f"{prefix} {user}: {text}\n"
-    except SlackApiError as error:
-        if error.response.status_code == 429:
-            delay = int(error.response.headers["Retry-After"])
-            logger.warning(
-                f"Rate limited by Slack API. Retrying in {delay} seconds..."
-            )
-            time.sleep(delay)
-            users = slack_web_client.users_list()["members"]
-            replaced_messages_string = replace_user_ids(
-                get_channel_history(channel_id), users
-            )
-
-            formatted_channel_history = str()
-            formatted_channel_history += (
-                f"Slack channel history for incident {channel_name}\n"
-            )
-
-            for message in replaced_messages_string:
-                user = message["user"]
-                text = message["text"]
-                timestamp = datetime.datetime.fromtimestamp(
-                    int(message["ts"].split(".")[0])
-                )
-                prefix = f"* {timestamp}"
-                if "has joined the channel" in text:
-                    formatted_channel_history += (
-                        f"{prefix} {user} joined the channel\n"
-                    )
-                elif "set the channel topic" in text:
-                    formatted_channel_history += f"{prefix} {user} {text}\n"
-                elif "This content can't be displayed." in text:
-                    pass
-                else:
-                    formatted_channel_history += f"{prefix} {user}: {text}\n"
+    formatted_channel_history = f"Slack channel history for incident {channel_name}\n"
+    for message in replaced_messages_string:
+        user = message["user"]
+        text = message["text"]
+        timestamp = datetime.datetime.fromtimestamp(int(message["ts"].split(".")[0]))
+        prefix = f"* {timestamp}"
+        if "has joined the channel" in text:
+            formatted_channel_history += f"{prefix} {user} joined the channel\n"
+        elif "set the channel topic" in text:
+            formatted_channel_history += f"{prefix} {user} {text}\n"
+        elif "This content can't be displayed." in text:
+            pass
         else:
-            raise error
+            formatted_channel_history += f"{prefix} {user}: {text}\n"
 
     return formatted_channel_history
 
@@ -306,48 +210,21 @@ def get_conversation_members(channel_id: str) -> list[str]:
     """
 
     members = []
-
-    try:
-        res = slack_web_client.conversations_members(
-            channel=channel_id, limit=200
-        )
-
-        while res:
-            members += res.get("members")
-
-            if res.get("response_metadata").get("next_cursor") != "":
-                res = slack_web_client.conversations_members(
-                    channel=channel_id,
-                    cursor=res.get("response_metadata").get("next_cursor"),
-                    limit=200,
-                )
-            else:
-                res = None
-    except SlackApiError as error:
-        if error.response.status_code == 429:
-            delay = int(error.response.headers["Retry-After"])
-            logger.warning(
-                f"Rate limited by Slack API. Retrying in {delay} seconds..."
+    res = _slack_call_with_retry(
+        slack_web_client.conversations_members, channel=channel_id, limit=200
+    )
+    while res:
+        members += res.get("members", [])
+        next_cursor = res.get("response_metadata", {}).get("next_cursor", "")
+        if next_cursor:
+            res = _slack_call_with_retry(
+                slack_web_client.conversations_members,
+                channel=channel_id,
+                cursor=next_cursor,
+                limit=200,
             )
-            time.sleep(delay)
-            res = slack_web_client.conversations_members(
-                channel=channel_id, limit=200
-            )
-
-            while res:
-                members += res.get("members")
-
-                if res.get("response_metadata").get("next_cursor") != "":
-                    res = slack_web_client.conversations_members(
-                        channel=channel_id,
-                        cursor=res.get("response_metadata").get("next_cursor"),
-                        limit=200,
-                    )
-                else:
-                    res = None
         else:
-            raise error
-
+            res = None
     return members
 
 
@@ -361,23 +238,13 @@ def get_message_content(conversation_id: str, ts: str):
         ts (str): Timestamp field
     """
 
-    try:
-        result = slack_web_client.conversations_history(
-            channel=conversation_id, inclusive=True, oldest=ts, limit=1
-        )
-    except SlackApiError as error:
-        if error.response.status_code == 429:
-            delay = int(error.response.headers["Retry-After"])
-            logger.warning(
-                f"Rate limited by Slack API. Retrying in {delay} seconds..."
-            )
-            time.sleep(delay)
-            result = slack_web_client.conversations_history(
-                channel=conversation_id, inclusive=True, oldest=ts, limit=1
-            )
-        else:
-            raise error
-
+    result = _slack_call_with_retry(
+        slack_web_client.conversations_history,
+        channel=conversation_id,
+        inclusive=True,
+        oldest=ts,
+        limit=1,
+    )
     return result["messages"][0]
 
 
@@ -396,8 +263,8 @@ def get_slack_channel_list_db() -> list[dict]:
 
             return record.json_data
     except Exception as error:
-        logger.error(
-            f"Error retrieving list of Slack channels from db: {error}"
+        logger.exception(
+            "error retrieving list of slack channels from db", error=error
         )
 
 
@@ -414,24 +281,9 @@ def invite_user_to_channel(channel_id: str, user: str):
         user not in get_conversation_members(channel_id)
         and user not in skip_invite_for_users
     ):
-        try:
-            slack_web_client.conversations_invite(
-                channel=channel_id,
-                users=user,
-            )
-        except SlackApiError as error:
-            if error.response.status_code == 429:
-                delay = int(error.response.headers["Retry-After"])
-                logger.warning(
-                    f"Rate limited by Slack API. Retrying in {delay} seconds..."
-                )
-                time.sleep(delay)
-                slack_web_client.conversations_invite(
-                    channel=channel_id,
-                    users=user,
-                )
-            else:
-                raise error
+        _slack_call_with_retry(
+            slack_web_client.conversations_invite, channel=channel_id, users=user
+        )
 
 
 def store_slack_channel_list_db():
@@ -440,7 +292,7 @@ def store_slack_channel_list_db():
     it in the database
     """
 
-    logger.info("[running task update_slack_channel_list]")
+    logger.info("running task update_slack_channel_list")
 
     try:
         with Session(engine) as session:
@@ -457,8 +309,8 @@ def store_slack_channel_list_db():
                     session.add(row)
                     session.commit()
                 except Exception as error:
-                    logger.error(
-                        f"ApplicationData row create failed for {record_name}: {error}"
+                    logger.exception(
+                        "applicationdata row create failed", record_name=record_name, error=error
                     )
 
             session.exec(
@@ -469,10 +321,10 @@ def store_slack_channel_list_db():
                 )
             )
             session.commit()
-            logger.info("Stored current Slack channels in database...")
+            logger.info("stored current slack channels in database")
     except Exception as error:
-        logger.error(
-            f"ApplicationData row edit failed for {record_name}: {error}"
+        logger.exception(
+            "applicationdata row edit failed", record_name=record_name, error=error
         )
 
 
@@ -487,42 +339,16 @@ def check_bot_user_in_digest_channel():
     """
 
     digest_channel_id = get_digest_channel_id()
+    members = _slack_call_with_retry(
+        slack_web_client.conversations_members, channel=digest_channel_id
+    )["members"]
+    channel_name = get_channel_name(channel_id=digest_channel_id)
 
-    try:
-        if (
-            bot_user_id
-            not in slack_web_client.conversations_members(
-                channel=digest_channel_id
-            )["members"]
-        ):
-            slack_web_client.conversations_join(channel=digest_channel_id)
-            logger.info(
-                f"Added bot user to digest channel #{get_channel_name(channel_id=digest_channel_id)}"
-            )
-    except SlackApiError as error:
-        if error.response.status_code == 429:
-            delay = int(error.response.headers["Retry-After"])
-            logger.warning(
-                f"Rate limited by Slack API. Retrying in {delay} seconds..."
-            )
-            time.sleep(delay)
-
-            if (
-                bot_user_id
-                not in slack_web_client.conversations_members(
-                    channel=digest_channel_id
-                )["members"]
-            ):
-                slack_web_client.conversations_join(channel=digest_channel_id)
-                logger.info(
-                    f"Added bot user to digest channel #{get_channel_name(channel_id=digest_channel_id)}"
-                )
-        else:
-            raise error
+    if bot_user_id not in members:
+        slack_web_client.conversations_join(channel=digest_channel_id)
+        logger.info("added bot user to digest channel", channel=channel_name)
     else:
-        logger.info(
-            f"Bot user is already present in digest channel #{get_channel_name(channel_id=digest_channel_id)}"
-        )
+        logger.info("bot user is already present in digest channel", channel=channel_name)
 
 
 def check_user_in_group(user_id: str, group_name: str) -> bool:
@@ -535,41 +361,19 @@ def check_user_in_group(user_id: str, group_name: str) -> bool:
         group_name (str): Name of the group
     """
 
-    all_groups = all_workspace_groups.get("usergroups")
+    all_groups = all_workspace_groups.get("usergroups", [])
+    target_group = [g for g in all_groups if g["handle"] == group_name]
 
-    try:
-        target_group = [g for g in all_groups if g["handle"] == group_name]
+    if not target_group:
+        logger.error("group not found", group=group_name)
+        return False
 
-        if len(target_group) == 0:
-            logger.error(f"Couldn't find group {group_name}")
-            return False
+    target_group_members = _slack_call_with_retry(
+        slack_web_client.usergroups_users_list,
+        usergroup=target_group[0].get("id"),
+    ).get("users", [])
 
-        target_group_members = slack_web_client.usergroups_users_list(
-            usergroup=target_group[0].get("id"),
-        ).get("users")
-    except SlackApiError as error:
-        if error.response.status_code == 429:
-            delay = int(error.response.headers["Retry-After"])
-            logger.warning(
-                f"Rate limited by Slack API. Retrying in {delay} seconds..."
-            )
-            time.sleep(delay)
-            target_group = [g for g in all_groups if g["handle"] == group_name]
-
-            if len(target_group) == 0:
-                logger.error(f"Couldn't find group {group_name}")
-                return False
-
-            target_group_members = slack_web_client.usergroups_users_list(
-                usergroup=target_group[0].get("id"),
-            ).get("users")
-        else:
-            raise error
-
-    if user_id in target_group_members:
-        return True
-
-    return False
+    return user_id in target_group_members
 
 
 def get_slack_user(user_id: str) -> dict | None:
@@ -602,45 +406,20 @@ def get_slack_users() -> list[dict[str, Any]]:
     Retrieves Slack users from a workspace using pagination
     """
 
-    users = []
-
-    try:
-        res = slack_web_client.users_list()
-
-        while res:
-            users += res.get("members")
-
-            if res.get("response_metadata").get("next_cursor") != "":
-                res = slack_web_client.users_list(
-                    cursor=res.get("response_metadata").get("next_cursor")
-                )
-            else:
-                res = None
-    except SlackApiError as error:
-        if error.response.status_code == 429:
-            delay = int(error.response.headers["Retry-After"])
-            logger.warning(
-                f"Rate limited by Slack API. Retrying in {delay} seconds..."
-            )
-            time.sleep(delay)
-            res = slack_web_client.users_list()
-
-            while res:
-                users += res.get("members")
-
-                if res.get("response_metadata").get("next_cursor") != "":
-                    res = slack_web_client.users_list(
-                        cursor=res.get("response_metadata").get("next_cursor")
-                    )
-                else:
-                    res = None
+    users: list = []
+    res = _slack_call_with_retry(slack_web_client.users_list)
+    while res:
+        users += res.get("members") or []
+        next_cursor = res.get("response_metadata", {}).get("next_cursor")
+        if next_cursor:
+            res = _slack_call_with_retry(slack_web_client.users_list, cursor=next_cursor)
         else:
-            raise error
+            res = None
 
     users_array = [
         {
             "name": user["name"],
-            "real_name": user["profile"]["real_name"],
+            "real_name": user["profile"].get("real_name", ""),
             "email": user["profile"].get("email"),
             "id": user["id"],
         }
@@ -649,7 +428,7 @@ def get_slack_users() -> list[dict[str, Any]]:
 
     jdata = sorted(users_array, key=lambda d: d["name"])
 
-    logger.info(f"Found {len(users_array)} Slack users")
+    logger.info("found slack users", count=len(users_array))
 
     return jdata
 
@@ -678,7 +457,7 @@ def store_slack_user_list_db():
     is desired
     """
 
-    logger.info("[running task update_slack_user_list]")
+    logger.info("running task update_slack_user_list")
 
     try:
         with Session(engine) as session:
@@ -704,8 +483,8 @@ def store_slack_user_list_db():
 
             session.add(row)
             session.commit()
-            logger.info("Stored current Slack users in database...")
+            logger.info("stored current slack users in database")
     except Exception as error:
-        logger.error(
-            f"ApplicationData row create failed for slack_users: {error}"
+        logger.exception(
+            "applicationdata row create failed", record_name="slack_users", error=error
         )

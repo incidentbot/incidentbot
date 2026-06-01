@@ -121,7 +121,7 @@ async def handle_join(room_id: str, args: list[str], sender: str, client) -> Non
 
     if role_config and role_config.is_lead:
         logger.info(
-            f"Updating topic for incident room {incident_channel_id} with role {assigned_role}"
+            "updating topic for incident room", room_id=incident_channel_id, role=assigned_role
         )
         await client.set_room_topic_async(
             incident_channel_id,
@@ -131,8 +131,7 @@ async def handle_join(room_id: str, args: list[str], sender: str, client) -> Non
         )
     else:
         logger.debug(
-            f"Skipping topic update: role_config={role_config}, "
-            f"is_lead={getattr(role_config, 'is_lead', None)}"
+            "skipping topic update", role_config=role_config, is_lead=getattr(role_config, "is_lead", None)
         )
 
     await client.send_text_async(

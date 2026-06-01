@@ -1,3 +1,4 @@
+import importlib
 import unittest
 from unittest.mock import patch, MagicMock, call
 
@@ -19,6 +20,10 @@ with (
     patch("slack_sdk.WebClient", return_value=MagicMock()),
     patch("apscheduler.schedulers.background.BackgroundScheduler"),
 ):
+    import incidentbot.phare.handler as _phare_handler_mod
+    # Force a reload so phare.handler.settings binds to our mock_settings,
+    # even if another test file already imported it with a different mock.
+    importlib.reload(_phare_handler_mod)
     from incidentbot.phare.handler import PhareMonitors, PhareIncident, PhareIncidentUpdate
     from incidentbot.slack.util import parse_modal_values
 
@@ -103,9 +108,10 @@ class TestPhareMonitors(unittest.TestCase):
 
     @patch("incidentbot.phare.handler.requests.get")
     def test_http_error_raises(self, mock_get):
-        mock_get.return_value.raise_for_status.side_effect = Exception("401")
+        import requests as _requests
+        mock_get.return_value.raise_for_status.side_effect = _requests.exceptions.HTTPError("401")
         mock_get.return_value.json.return_value = {}
-        with self.assertRaises(Exception):
+        with self.assertRaises(_requests.exceptions.HTTPError):
             PhareMonitors()
 
 

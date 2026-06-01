@@ -63,8 +63,8 @@ class EventLogHandler:
                 session.add(event)
                 session.commit()
             except Exception as error:
-                logger.error(
-                    f"Event log creation failed for incident {incident_id}: {error}"
+                logger.exception(
+                    "event log creation failed", incident_id=incident_id, error=error
                 )
 
     @classmethod
@@ -88,10 +88,10 @@ class EventLogHandler:
                 session.delete(record)
                 session.commit()
 
-                logger.info(f"deleted incident event {id}")
+                logger.info("deleted incident event", event_id=id)
             except Exception as error:
-                logger.error(
-                    f"Event log delete failed for record {id}: {error}"
+                logger.exception(
+                    "event log delete failed", event_id=id, error=error
                 )
 
                 return False, error
@@ -127,8 +127,8 @@ class EventLogHandler:
 
                 return records
             except Exception as error:
-                logger.error(
-                    f"Event log lookup failed for incident {incident_id}: {error}"
+                logger.exception(
+                    "event log lookup failed", incident_id=incident_id, error=error
                 )
 
     @classmethod
@@ -162,8 +162,8 @@ class EventLogHandler:
 
                 return records
             except Exception as error:
-                logger.error(
-                    f"Event log lookup failed for incident {incident_id}: {error}"
+                logger.exception(
+                    "event log lookup failed", incident_id=incident_id, error=error
                 )
 
     @classmethod
@@ -200,6 +200,6 @@ class EventLogHandler:
                 session.add(record)
                 session.commit()
 
-                logger.info(f"edited event {request.id}")
+                logger.info("edited event", event_id=request.id)
             except Exception as error:
-                logger.error(f"Event log updated failed: {error}")
+                logger.exception("event log update failed", error=error)

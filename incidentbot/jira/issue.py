@@ -48,12 +48,12 @@ class JiraIssue:
             )
 
             logger.info(
-                f"Created Jira issue {issue_link} for incident {self.incident_id}"
+                "created jira issue", link=issue_link, incident_id=self.incident_id
             )
 
             return resp
         except requests.exceptions.HTTPError as error:
-            logger.error(f"Error creating Jira issue: {error}")
+            logger.exception("error creating jira issue", error=error)
 
     def __get_priority_id(self, priority: str):
         """
@@ -72,4 +72,4 @@ class JiraIssue:
                 None,
             )
         except requests.exceptions.HTTPError as error:
-            logger.error(f"Error finding Jira priority ID: {error}")
+            logger.exception("error finding jira priority id", error=error)

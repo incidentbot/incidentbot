@@ -2,7 +2,6 @@ import datetime
 
 from incidentbot.configuration.settings import settings
 from apscheduler.job import Job
-from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from incidentbot.logging import logger
 from incidentbot.models.incident import IncidentDatabaseInterface
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -10,13 +9,14 @@ from incidentbot.util import gen
 from zoneinfo import ZoneInfo
 
 configured_timezone = settings.options.timezone
-jobstores = {"default": SQLAlchemyJobStore(url=settings.DATABASE_URI)}
 
 
 class TaskScheduler:
     def __init__(self):
+        # Use the default in-memory job store — all jobs are interval-based and
+        # do not need to survive a restart, so there is no value in persisting
+        # them to the database.
         self.scheduler = BackgroundScheduler(
-            jobstores=jobstores,
             timezone=ZoneInfo(configured_timezone),
         )
 
@@ -24,7 +24,7 @@ class TaskScheduler:
         try:
             self.scheduler.remove_job(job_id=job_to_delete)
         except Exception as error:
-            logger.error(f"Unable to delete job {job_to_delete}: {error}")
+            logger.exception("unable to delete job", job=job_to_delete, error=error)
 
     def get_job(self, job_id: str) -> Job:
         return self.scheduler.get_job(job_id=job_id)
@@ -42,15 +42,15 @@ class TaskScheduler:
     def remove_jobs(self):
         jobs = self.list_jobs()
         num_jobs = len(jobs)
-        logger.info(f"Removing {num_jobs} jobs from the scheduler.")
+        logger.info("removing jobs from the scheduler", count=num_jobs)
         self.scheduler.remove_all_jobs()
 
     def start(self):
-        logger.info("Starting task scheduler...")
+        logger.info("starting task scheduler")
         try:
             self.scheduler.start()
         except Exception as error:
-            logger.error(f"Error starting task scheduler: {error}")
+            logger.exception("error starting task scheduler", error=error)
 
 
 process = TaskScheduler()
@@ -66,10 +66,10 @@ def scrape_for_aging_incidents():
     incidents channel to check on them
     """
 
-    logger.info("[running task scrape_for_aging_incidents]")
+    logger.info("running task scrape_for_aging_incidents")
 
     # Max age, in days, of a channel before it's considered stale
-    max_age = 7
+    max_age = settings.jobs.scrape_for_aging_incidents.max_age_days
 
     # Base block to build message on
     base_block = [
@@ -90,10 +90,7 @@ def scrape_for_aging_incidents():
     open_incidents = IncidentDatabaseInterface.list_all()
 
     # Exclude statuses if provided
-    if (
-        settings.jobs
-        and settings.jobs.scrape_for_aging_incidents.ignore_statuses
-    ):
+    if settings.jobs.scrape_for_aging_incidents.ignore_statuses:
         open_incidents = [
             i
             for i in open_incidents
@@ -111,8 +108,9 @@ def scrape_for_aging_incidents():
         old = datetime.timedelta(days=max_age) < time_open
         if old:
             logger.info(
-                f"{inc.channel_id} is older than {max_age} days and will be "
-                + "added to the weekly reminder"
+                "incident is older than max age and will be added to the weekly reminder",
+                channel_id=inc.channel_id,
+                max_age_days=max_age,
             )
 
             formatted_incidents.append(
@@ -156,21 +154,21 @@ def scrape_for_aging_incidents():
                 channel=get_digest_channel_id(), blocks=base_block
             )
         except Exception as error:
-            logger.error(error)
+            logger.exception(error)
     else:
         logger.info(
-            f"Checked for incidents older than {max_age} days and did not find"
-            + " any. No alert will be sent."
+            "checked for aging incidents and did not find any, no alert will be sent",
+            max_age_days=max_age,
         )
 
 
-if settings.jobs and not settings.jobs.scrape_for_aging_incidents.enabled:
+if settings.jobs.scrape_for_aging_incidents.enabled:
     process.scheduler.add_job(
         id="scrape_for_aging_incidents",
         func=scrape_for_aging_incidents,
         trigger="interval",
         name="Look for stale incidents and inform the digest channel",
-        days=2,
+        days=settings.jobs.scrape_for_aging_incidents.interval_days,
         replace_existing=True,
     )
 
@@ -184,8 +182,8 @@ def update_slack_channel_list():
     try:
         store_slack_channel_list_db()
     except Exception as error:
-        logger.error(
-            f"Error updating Slack channel list information in scheduled job: {error}"
+        logger.exception(
+            "error updating slack channel list information in scheduled job", error=error
         )
 
 
@@ -198,18 +196,18 @@ def update_slack_user_list():
     try:
         store_slack_user_list_db()
     except Exception as error:
-        logger.error(
-            f"Error updating Slack user list information in scheduled job: {error}"
+        logger.exception(
+            "error updating slack user list information in scheduled job", error=error
         )
 
 
-if settings.platform == "slack":
+if settings.platform == "slack" and settings.jobs.update_slack_cache.enabled:
     process.scheduler.add_job(
         id="update_slack_channel_list",
         func=update_slack_channel_list,
         trigger="interval",
         name="Update local copy of Slack channels",
-        minutes=15,
+        minutes=settings.jobs.update_slack_cache.interval_minutes,
         replace_existing=True,
     )
 
@@ -218,7 +216,7 @@ if settings.platform == "slack":
         func=update_slack_user_list,
         trigger="interval",
         name="Update local copy of Slack users",
-        minutes=15,
+        minutes=settings.jobs.update_slack_cache.interval_minutes,
         replace_existing=True,
     )
 
@@ -226,6 +224,7 @@ if (
     settings.integrations
     and settings.integrations.pagerduty
     and settings.integrations.pagerduty.enabled
+    and settings.jobs.update_pagerduty_oc_data.enabled
 ):
     from incidentbot.pagerduty.api import PagerDutyInterface
 
@@ -236,13 +235,13 @@ if (
         Uses PagerDuty API to fetch information about on-call schedules
         """
 
-        logger.info("[running task update_pagerduty_oc_data]")
+        logger.info("running task update_pagerduty_oc_data")
 
         try:
             pagerduty_interface.store_on_call_data()
         except Exception as error:
-            logger.error(
-                f"Error updating PagerDuty on-call information in scheduled job: {error}"
+            logger.exception(
+                "error updating pagerduty on-call information in scheduled job", error=error
             )
 
     process.scheduler.add_job(
@@ -250,6 +249,6 @@ if (
         func=update_pagerduty_oc_data,
         trigger="interval",
         name="Update PagerDuty on-call information",
-        minutes=30,
+        minutes=settings.jobs.update_pagerduty_oc_data.interval_minutes,
         replace_existing=True,
     )

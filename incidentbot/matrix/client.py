@@ -52,7 +52,7 @@ class MatrixClient:
         resp = await self._client.room_send(room_id, "m.room.message", content)
         if isinstance(resp, RoomSendResponse):
             return resp.event_id
-        logger.error(f"Matrix send_text failed for {room_id}: {resp}")
+        logger.error("matrix send_text failed", room_id=room_id, resp=resp)
         return ""
 
     async def _get_display_name_async(self, user_id: str) -> str:
@@ -63,7 +63,7 @@ class MatrixClient:
         resp = await self._client.join(room_id)
         if isinstance(resp, JoinResponse):
             return True
-        logger.error(f"Matrix join failed for {room_id}: {resp}")
+        logger.error("matrix join failed", room_id=room_id, resp=resp)
         return False
 
     # ------------------------------------------------------------------
@@ -90,7 +90,7 @@ class MatrixClient:
         )
         if isinstance(resp, RoomCreateResponse):
             return {"id": resp.room_id, "name": name}
-        logger.error(f"Matrix room creation failed: {resp}")
+        logger.error("matrix room creation failed", resp=resp)
         return {}
 
     def set_room_topic(self, room_id: str, topic: str) -> None:
@@ -100,7 +100,7 @@ class MatrixClient:
             )
         )
         if isinstance(resp, RoomPutStateError):
-            logger.error(f"Matrix set_room_topic failed for {room_id}: {resp}")
+            logger.error("matrix set_room_topic failed", room_id=room_id, resp=resp)
 
     def send_text(self, room_id: str, text: str, html: str | None = None) -> str:
         """Send a message. Returns event_id on success, empty string on failure."""
@@ -149,7 +149,7 @@ class MatrixClient:
             put_resp, "event_id"
         ):
             logger.error(
-                f"Matrix set admin failed for {user_id} in {room_id}: {put_resp}"
+                "matrix set admin failed", user_id=user_id, room_id=room_id, resp=put_resp
             )
 
     def join_room(self, room_id: str) -> bool:
@@ -173,7 +173,7 @@ class MatrixClient:
     async def set_room_topic_async(self, room_id: str, topic: str) -> None:
         resp = await self._client.room_put_state(room_id, "m.room.topic", {"topic": topic})
         if isinstance(resp, RoomPutStateError):
-            logger.error(f"Matrix set_room_topic_async failed for {room_id}: {resp}")
+            logger.error("matrix set_room_topic_async failed", room_id=room_id, resp=resp)
 
     async def invite_user_async(self, room_id: str, user_id: str) -> None:
         await self._client.room_invite(room_id, user_id)
@@ -205,17 +205,17 @@ class MatrixClient:
                 resp = await self._client.sync(timeout=30000, full_state=False)
                 for room_id in resp.rooms.invite:
                     if await self._join_room_async(room_id):
-                        logger.info(f"Accepted Matrix invite for room {room_id}")
+                        logger.info("accepted matrix invite for room", room_id=room_id)
                     else:
                         logger.error(
-                            f"Failed to accept Matrix invite for room {room_id}"
+                            "failed to accept matrix invite for room", room_id=room_id
                         )
                 for room_id, room in resp.rooms.join.items():
                     for event in room.timeline.events:
                         if hasattr(event, "body"):
                             await on_message(room_id, event)
             except Exception as exc:
-                logger.error(f"Matrix sync error: {exc}")
+                logger.exception("matrix sync error", error=exc)
                 await asyncio.sleep(5)
 
     def start_sync(self, on_message) -> None:

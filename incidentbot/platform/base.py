@@ -65,6 +65,11 @@ class PlatformAdapter(ABC):
         ...
 
     @abstractmethod
+    def post_roles_panel(self, room_id: str, incident: Any, participants: list) -> str:
+        """Post the live role-assignment panel. Returns the message event id / TS."""
+        ...
+
+    @abstractmethod
     def post_digest_notification(
         self,
         channel_id: str,

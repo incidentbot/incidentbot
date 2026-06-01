@@ -20,14 +20,57 @@ class SlackAdapter(PlatformAdapter):
     def create_room(self, name: str, topic: str = "", private: bool = False) -> dict:
         import slack_sdk.errors
 
-        logger.info(f"Creating Slack channel: {name}")
+        logger.info("creating slack channel", name=name)
         try:
             resp = self._client.conversations_create(name=name, is_private=private)
             channel = resp.get("channel")
             return {"id": channel["id"], "name": channel["name"]}
         except slack_sdk.errors.SlackApiError as error:
-            logger.error(f"Error creating channel {name}: {error}")
+            if error.response.get("error") == "name_taken":
+                # Channel already exists (e.g. from a previous failed attempt).
+                # Locate it and return it so incident creation can continue.
+                logger.warning(
+                    "channel already exists, looking up existing channel", name=name
+                )
+                return self._find_channel_by_name(name)
+            logger.exception("error creating channel", name=name, error=error)
             return {}
+
+    def _find_channel_by_name(self, name: str) -> dict:
+        """Look up an existing Slack channel by name; unarchive it if necessary."""
+        import slack_sdk.errors
+        from incidentbot.slack.client import get_slack_channel_list_db
+        from incidentbot.util import gen
+
+        # Fast path: check the cached channel list
+        channels = get_slack_channel_list_db() or []
+        idx = gen.find_index_in_list(channels, "name", name)
+        if idx != -1:
+            ch = channels[idx]
+            return {"id": ch["id"], "name": ch["name"]}
+
+        # Slow path: walk the full list including archived channels
+        try:
+            cursor = None
+            while True:
+                kwargs = {"exclude_archived": False, "limit": 1000}
+                if cursor:
+                    kwargs["cursor"] = cursor
+                resp = self._client.conversations_list(**kwargs)
+                for ch in resp.get("channels", []):
+                    if ch.get("name") == name:
+                        if ch.get("is_archived"):
+                            logger.info("unarchiving existing channel", name=name, channel_id=ch["id"])
+                            self._client.conversations_unarchive(channel=ch["id"])
+                        return {"id": ch["id"], "name": ch["name"]}
+                cursor = resp.get("response_metadata", {}).get("next_cursor")
+                if not cursor:
+                    break
+        except slack_sdk.errors.SlackApiError as error:
+            logger.exception("error looking up existing channel", name=name, error=error)
+
+        logger.error("could not locate existing channel, incident creation will fail", name=name)
+        return {}
 
     def set_room_topic(self, room_id: str, topic: str) -> None:
         import slack_sdk.errors
@@ -35,7 +78,7 @@ class SlackAdapter(PlatformAdapter):
         try:
             self._client.conversations_setTopic(channel=room_id, topic=topic)
         except slack_sdk.errors.SlackApiError as error:
-            logger.error(f"Error setting topic for {room_id}: {error}")
+            logger.exception("error setting topic", room_id=room_id, error=error)
 
     def send_text(self, room_id: str, text: str) -> str:
         import slack_sdk.errors
@@ -44,7 +87,7 @@ class SlackAdapter(PlatformAdapter):
             resp = self._client.chat_postMessage(channel=room_id, text=text)
             return resp.get("ts", "")
         except slack_sdk.errors.SlackApiError as error:
-            logger.error(f"Error sending message to {room_id}: {error}")
+            logger.exception("error sending message", room_id=room_id, error=error)
             return ""
 
     def pin_message(self, room_id: str, event_id: str) -> None:
@@ -53,7 +96,7 @@ class SlackAdapter(PlatformAdapter):
         try:
             self._client.pins_add(channel=room_id, timestamp=event_id)
         except slack_sdk.errors.SlackApiError as error:
-            logger.error(f"Error pinning message in {room_id}: {error}")
+            logger.exception("error pinning message", room_id=room_id, error=error)
 
     def add_bookmark(self, room_id: str, title: str, url: str, emoji: str = "") -> None:
         import slack_sdk.errors
@@ -67,7 +110,7 @@ class SlackAdapter(PlatformAdapter):
                 emoji=emoji if emoji else None,
             )
         except slack_sdk.errors.SlackApiError as error:
-            logger.error(f"Error adding bookmark to {room_id}: {error}")
+            logger.exception("error adding bookmark", room_id=room_id, error=error)
 
     def invite_user(self, room_id: str, user_id: str) -> None:
         from incidentbot.slack.client import invite_user_to_channel
@@ -82,7 +125,7 @@ class SlackAdapter(PlatformAdapter):
         try:
             self._client.conversations_invite(channel=room_id, users=",".join(user_ids))
         except slack_sdk.errors.SlackApiError as error:
-            logger.error(f"Error inviting users to {room_id}: {error}")
+            logger.exception("error inviting users", room_id=room_id, error=error)
 
     def make_room_admin(self, room_id: str, user_id: str) -> None:
         # Slack channels do not have a room-admin concept analogous to Matrix power levels.
@@ -94,13 +137,13 @@ class SlackAdapter(PlatformAdapter):
         groups = self._workspace_groups.get("usergroups", [])
         matched = [g for g in groups if g["handle"] == group_name]
         if not matched:
-            logger.warning(f"Slack usergroup '{group_name}' not found")
+            logger.warning("slack usergroup not found", group_name=group_name)
             return []
         try:
             resp = self._client.usergroups_users_list(usergroup=matched[0]["id"])
             return resp.get("users", [])
         except slack_sdk.errors.SlackApiError as error:
-            logger.error(f"Error getting members for group '{group_name}': {error}")
+            logger.exception("error getting members for group", group_name=group_name, error=error)
             return []
 
     def get_user_display_name(self, user_id: str) -> str:
@@ -122,7 +165,7 @@ class SlackAdapter(PlatformAdapter):
             )
             return resp.get("ts", "")
         except slack_sdk.errors.SlackApiError as error:
-            logger.error(f"Error sending boilerplate message: {error}")
+            logger.exception("error sending boilerplate message", error=error)
             return ""
 
     def post_welcome_message(self, room_id: str) -> None:
@@ -136,7 +179,24 @@ class SlackAdapter(PlatformAdapter):
                 text="Welcome to this incident channel.",
             )
         except slack_sdk.errors.SlackApiError as error:
-            logger.error(f"Error sending welcome message to {room_id}: {error}")
+            logger.exception("error sending welcome message", room_id=room_id, error=error)
+
+    def post_roles_panel(self, room_id: str, incident: Any, participants: list) -> str:
+        import slack_sdk.errors
+        from incidentbot.slack.messages import BlockBuilder
+
+        try:
+            resp = self._client.chat_postMessage(
+                channel=room_id,
+                blocks=BlockBuilder.roles_panel(
+                    incident=incident, participants=participants
+                ),
+                text="Role assignments for this incident.",
+            )
+            return resp.get("ts", "")
+        except slack_sdk.errors.SlackApiError as error:
+            logger.exception("error posting roles panel", room_id=room_id, error=error)
+            return ""
 
     def post_digest_notification(
         self,
@@ -170,7 +230,7 @@ class SlackAdapter(PlatformAdapter):
             )
             return resp.get("ts", "")
         except slack_sdk.errors.SlackApiError as error:
-            logger.error(f"Error sending digest notification: {error}")
+            logger.exception("error sending digest notification", error=error)
             return ""
 
     def post_jira_issue(
@@ -189,7 +249,7 @@ class SlackAdapter(PlatformAdapter):
             )
             return resp.get("ts", "")
         except slack_sdk.errors.SlackApiError as error:
-            logger.error(f"Error posting Jira issue to {room_id}: {error}")
+            logger.exception("error posting jira issue", room_id=room_id, error=error)
             return ""
 
     def post_gitlab_incident(
@@ -208,7 +268,7 @@ class SlackAdapter(PlatformAdapter):
             )
             return resp.get("ts", "")
         except slack_sdk.errors.SlackApiError as error:
-            logger.error(f"Error posting GitLab incident to {room_id}: {error}")
+            logger.exception("error posting gitlab incident", room_id=room_id, error=error)
             return ""
 
     def post_statuspage_prompt(self, room_id: str) -> None:
@@ -221,7 +281,7 @@ class SlackAdapter(PlatformAdapter):
                 text="Statuspage prompt has been posted.",
             )
         except slack_sdk.errors.SlackApiError as error:
-            logger.error(f"Error posting Statuspage prompt to {room_id}: {error}")
+            logger.exception("error posting statuspage prompt", room_id=room_id, error=error)
 
     def post_phare_prompt(self, room_id: str) -> None:
         import slack_sdk.errors
@@ -233,4 +293,4 @@ class SlackAdapter(PlatformAdapter):
                 text="Phare prompt has been posted to an incident.",
             )
         except slack_sdk.errors.SlackApiError as error:
-            logger.error(f"Error posting Phare prompt to {room_id}: {error}")
+            logger.exception("error posting phare prompt", room_id=room_id, error=error)

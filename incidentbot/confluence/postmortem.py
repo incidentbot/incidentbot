@@ -41,7 +41,10 @@ class IncidentPostmortem:
                 self.space, self.parent_page
             )
             logger.info(
-                f"Creating postmortem {self.title} in Confluence space {self.space} under parent {self.parent_page}..."
+                "creating postmortem in confluence",
+                title=self.title,
+                space=self.space,
+                parent=self.parent_page,
             )
 
             # Fetch template content
@@ -109,10 +112,10 @@ class IncidentPostmortem:
                             + created_page_info["_links"]["webui"]
                         )
                     except HTTPError as error:
-                        logger.error(
-                            f"Error creating postmortem page: {error}"
+                        logger.exception(
+                            "error creating postmortem page", error=error
                         )
-                        raise PostmortemException(error)
+                        raise PostmortemException(error) from error
 
                     try:
                         # Replace timeline tag if one exists
@@ -136,13 +139,13 @@ class IncidentPostmortem:
 
                         return url
                     except HTTPError as error:
-                        logger.error(
-                            f"Error updating postmortem page: {error}"
+                        logger.exception(
+                            "error updating postmortem page", error=error
                         )
-                        raise PostmortemException(error)
+                        raise PostmortemException(error) from error
                 else:
                     logger.error(
-                        "Couldn't create postmortem page, does the parent page exist?"
+                        "could not create postmortem page - does the parent page exist"
                     )
                     raise PostmortemException(
                         "Couldn't create postmortem page, does the parent page exist?"
@@ -150,7 +153,7 @@ class IncidentPostmortem:
             else:
                 return None
         except Exception as error:
-            logger.error(f"Error generating postmortem: {error}")
+            logger.exception("error generating postmortem", error=error)
 
     def __generate_participants(self) -> str:
         """
@@ -187,8 +190,8 @@ class IncidentPostmortem:
                         title=item.title,
                     )
                 except Exception as error:
-                    logger.error(
-                        f"Error attaching file {item.title} to postmortem: {error}"
+                    logger.exception(
+                        "error attaching file to postmortem", title=item.title, error=error
                     )
 
                 all_items_formatted += f'<tr><td><p>{item.created_at}</p></td><td><p /><ac:image ac:align="center" ac:layout="center" ac:alt="{item.title}"><ri:attachment ri:filename="{item.title}" ri:version-at-save="1" /></ac:image><p /></td></tr>'
