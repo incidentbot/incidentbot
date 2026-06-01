@@ -3,7 +3,8 @@ import re
 import requests
 import slack_sdk
 
-from incidentbot.configuration.settings import settings, __version__
+from incidentbot.configuration.settings import settings
+from incidentbot.version import APP_VERSION
 from incidentbot.incident.actions import (
     archive_incident_channel,
     export_chat_logs,
@@ -11,14 +12,12 @@ from incidentbot.incident.actions import (
     leave_incident_as_role,
     set_severity as set_incident_severity,
     set_status as set_incident_status,
+    sync_postmortem,
 )
 from incidentbot.incident.event import EventLogHandler
 from incidentbot.logging import logger
 from incidentbot.models.database import ApplicationData, engine
 from incidentbot.models.incident import IncidentDatabaseInterface
-from incidentbot.models.maintenance_window import (
-    MaintenanceWindowDatabaseInterface,
-)
 from incidentbot.models.slack import SlackBlockActionsResponse
 from incidentbot.slack.client import (
     get_slack_user,
@@ -27,7 +26,10 @@ from incidentbot.slack.client import (
 from incidentbot.slack.messages import (
     BlockBuilder,
 )
-from incidentbot.slack.util import handle_comms_reminder
+from incidentbot.slack.postmortem_sync_guard import (
+    begin_postmortem_sync,
+    end_postmortem_sync,
+)
 from incidentbot.util import gen
 from slack_bolt import App
 from slack_sdk.errors import SlackApiError
@@ -39,8 +41,8 @@ app = App(token=settings.SLACK_BOT_TOKEN)
 
 @app.error
 def custom_error_handler(error, body, logger):
-    logger.exception(f"Error: {error}")
-    logger.debug(f"Request body: {body}")
+    logger.exception("error", error=error)
+    logger.debug("request body", body=body)
 
 
 from . import command  # noqa: F401 E402
@@ -144,9 +146,7 @@ def handle_mention(body, say, logger):
                                 base_block.append(
                                     {
                                         "type": "section",
-                                        "block_id": "ping_oncall_{}".format(
-                                            gen.random_string_generator()
-                                        ),
+                                        "block_id": f"ping_oncall_{gen.random_string_generator()}",
                                         "text": {
                                             "type": "mrkdwn",
                                             "text": f"*{key}*",
@@ -194,7 +194,7 @@ def handle_mention(body, say, logger):
         case "ping":
             say(text="pong")
         case "version":
-            say(text=f"I am currently running version: {__version__}")
+            say(text=f"I am currently running version: {APP_VERSION}")
         case _:
             resp = " ".join(message[1:])
             say(text=f"Sorry, I don't know the command `{resp}` yet.")
@@ -284,7 +284,7 @@ def handle_static_action(ack, body, logger):  # noqa: F811
             },
         )
     except slack_sdk.errors.SlackApiError as error:
-        logger.error(f"Error deleting message: {error}")
+        logger.exception("error deleting message", error=error)
 
 
 @app.action("incident.declare_incident_modal.set_severity")
@@ -342,81 +342,49 @@ def handle_static_action(ack, body, logger):  # noqa: F811
             blocks=BlockBuilder.help_message(),
         )
     except SlackApiError as error:
-        logger.error(f"error sending help message: {error}")
+        logger.exception("error sending help message", error=error)
 
 
-@app.action("incident.handle_initial_comms_reminder_30m")
-def handle_static_action(ack, body, logger):  # noqa: F811
+@app.action(re.compile(r"^reminder\.snooze\."))
+def handle_reminder_snooze(ack, body, logger):
     ack()
-    logger.info(body)
+    logger.debug(body)
 
-    parsed_body = SlackBlockActionsResponse(**body)
+    try:
+        action_id = body["actions"][0]["action_id"]
+        # format: reminder.snooze.{reminder_id}.{minutes}
+        # maxsplit=3 keeps reminder_id intact even if it contains dots (defensive)
+        _, _, reminder_id, minutes_str = action_id.split(".", maxsplit=3)
+        minutes = int(minutes_str)
+    except (KeyError, ValueError):
+        logger.warning("malformed reminder snooze action_id", action_id=body.get("actions", [{}])[0].get("action_id"))
+        return
 
-    channel_id = parsed_body.channel.id
-    interval = int(parsed_body.actions[0].get("text").get("text").rstrip("m"))
-    record = IncidentDatabaseInterface.get_one(channel_id=channel_id)
+    channel_id = body["channel"]["id"]
+    ts = body["message"]["ts"]
 
-    handle_comms_reminder(
-        channel_id=channel_id,
-        interval=interval,
-        record=record,
-        ts=parsed_body.message.ts,
-    )
+    from incidentbot.incident.reminders import handle_snooze
+    handle_snooze(channel_id=channel_id, reminder_id=reminder_id, minutes=minutes, ts=ts)
 
 
-@app.action("incident.handle_initial_comms_reminder_60m")
-def handle_static_action(ack, body, logger):  # noqa: F811
+@app.action(re.compile(r"^reminder\.dismiss\."))
+def handle_reminder_dismiss(ack, body, logger):
     ack()
-    logger.info(body)
+    logger.debug(body)
 
-    parsed_body = SlackBlockActionsResponse(**body)
+    try:
+        action_id = body["actions"][0]["action_id"]
+        # format: reminder.dismiss.{reminder_id}
+        _, _, reminder_id = action_id.split(".", maxsplit=2)
+    except (KeyError, ValueError):
+        logger.warning("malformed reminder dismiss action_id", action_id=body.get("actions", [{}])[0].get("action_id"))
+        return
 
-    channel_id = parsed_body.channel.id
-    interval = int(parsed_body.actions[0].get("text").get("text").rstrip("m"))
-    record = IncidentDatabaseInterface.get_one(channel_id=channel_id)
+    channel_id = body["channel"]["id"]
+    ts = body["message"]["ts"]
 
-    handle_comms_reminder(
-        channel_id=channel_id,
-        interval=interval,
-        record=record,
-        ts=parsed_body.message.ts,
-    )
-
-
-@app.action("incident.handle_initial_comms_reminder_90m")
-def handle_static_action(ack, body, logger):  # noqa: F811
-    ack()
-    logger.info(body)
-
-    parsed_body = SlackBlockActionsResponse(**body)
-
-    channel_id = parsed_body.channel.id
-    interval = int(parsed_body.actions[0].get("text").get("text").rstrip("m"))
-    record = IncidentDatabaseInterface.get_one(channel_id=channel_id)
-
-    handle_comms_reminder(
-        channel_id=channel_id,
-        interval=interval,
-        record=record,
-        ts=parsed_body.message.ts,
-    )
-
-
-@app.action("incident.handle_initial_comms_reminder_never")
-def handle_static_action(ack, body, logger):  # noqa: F811
-    ack()
-    logger.info(body)
-
-    parsed_body = SlackBlockActionsResponse(**body)
-
-    channel_id = parsed_body.channel.id
-    record = IncidentDatabaseInterface.get_one(channel_id=channel_id)
-
-    handle_comms_reminder(
-        channel_id=channel_id,
-        record=record,
-        ts=parsed_body.message.ts,
-    )
+    from incidentbot.incident.reminders import handle_dismiss
+    handle_dismiss(channel_id=channel_id, reminder_id=reminder_id, ts=ts)
 
 
 @app.action("incident.leave_this_incident")
@@ -470,9 +438,7 @@ def handle_static_action(ack, body, logger):  # noqa: F811
             blocks=open_incidents,
         )
     except SlackApiError as error:
-        logger.error(
-            f"error sending message back to user via slash command invocation: {error}"
-        )
+        logger.exception("error sending message via slash command", error=error)
 
 
 @app.action("incident.set_severity")
@@ -512,49 +478,6 @@ def handle_incident_set_status(ack, body):
 def handle_static_action(ack, body, logger):  # noqa: F811
     logger.debug(body)
     ack()
-
-
-"""
-Maintenance Windows
-"""
-
-
-@app.action("maintenance_window.delete")
-def handle_static_action(ack, body):  # noqa: F811
-    ack()
-    parsed_body = SlackBlockActionsResponse(**body)
-
-    maintenance_window_id = (
-        parsed_body.actions[0].get("block_id").split("_")[-1:][0]
-    )
-    record = MaintenanceWindowDatabaseInterface.get_one(
-        id=maintenance_window_id
-    )
-    MaintenanceWindowDatabaseInterface.delete_one(record)
-
-    slack_web_client.chat_postEphemeral(
-        channel=parsed_body.channel.id,
-        user=parsed_body.user.id,
-        text=f"I have deleted the maintenance window {record.title}.",
-    )
-
-
-@app.action("maintenance_window.set_channels")
-def handle_static_action(ack, body, logger):  # noqa: F811
-    ack()
-    logger.debug(body)
-
-
-@app.action("maintenance_window.set_components")
-def handle_static_action(ack, body, logger):  # noqa: F811
-    ack()
-    logger.debug(body)
-
-
-@app.action("maintenance_window.set_contact")
-def handle_static_action(ack, body, logger):  # noqa: F811
-    ack()
-    logger.debug(body)
 
 
 """
@@ -610,8 +533,8 @@ def reaction_added(event, say):
                                             token=settings.SLACK_USER_TOKEN,
                                         )
                                     except SlackApiError as error:
-                                        logger.error(
-                                            f"Error preparing pinned file for copy: {error}"
+                                        logger.exception(
+                                            "error preparing pinned file for copy", error=error
                                         )
 
                                 # Copy the attachment into the database
@@ -634,8 +557,8 @@ def reaction_added(event, say):
                                         token=settings.SLACK_USER_TOKEN,
                                     )
                                 except SlackApiError as error:
-                                    logger.error(
-                                        f"Error preparing pinned file for copy during public url revoke: {error}"
+                                    logger.exception(
+                                        "error revoking public url for pinned file", error=error
                                     )
 
                                 try:
@@ -711,8 +634,8 @@ def reaction_added(event, say):
                             text=f":wave: I was unable to pin that message. {reason}",
                         )
             except Exception as error:
-                logger.error(
-                    f"Error when trying to retrieve a message: {error}"
+                logger.exception(
+                    "error when trying to retrieve a message", error=error
                 )
 
 
@@ -944,10 +867,54 @@ def handle_dismiss_message(ack, body):
             channel=body["channel"]["id"], ts=body["actions"][0]["value"]
         )
     except slack_sdk.errors.SlackApiError as error:
-        logger.error(f"Error deleting message: {error}")
+        logger.exception("error deleting message", error=error)
 
 
 @app.action("view_postmortem")
 def handle_static_action(ack, body, logger):  # noqa: F811
     logger.debug(body)
     ack()
+
+
+@app.action("incident.join_meeting")
+def handle_static_action(ack, body, logger):  # noqa: F811
+    logger.debug(body)
+    ack()
+
+
+@app.action("incident.sync_postmortem")
+def handle_sync_postmortem(ack, body):
+    ack()
+    parsed_body = SlackBlockActionsResponse(**body)
+    channel_id = parsed_body.channel.id
+    user_id = parsed_body.user.id
+
+    if not begin_postmortem_sync(channel_id):
+        slack_web_client.chat_postEphemeral(
+            channel=channel_id,
+            user=user_id,
+            text="Pinned-content sync is already in progress for this incident.",
+        )
+        return
+
+    slack_web_client.chat_postEphemeral(
+        channel=channel_id,
+        user=user_id,
+        text="Pinned-content sync has started. This can take a minute.",
+    )
+
+    try:
+        asyncio.run(sync_postmortem(channel_id=channel_id))
+    finally:
+        end_postmortem_sync(channel_id)
+
+
+@app.action("incident.sync_postmortem.disabled")
+def handle_sync_postmortem_disabled(ack, body):
+    ack()
+    parsed_body = SlackBlockActionsResponse(**body)
+    slack_web_client.chat_postEphemeral(
+        channel=parsed_body.channel.id,
+        user=parsed_body.user.id,
+        text="Pinned-content sync is not available for this incident.",
+    )

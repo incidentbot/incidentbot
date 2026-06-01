@@ -49,12 +49,12 @@ class ZoomMeeting:
             )
             res_json = json.loads(res.text)
             if res.status_code != 201:
-                logger.error(f"Error creating Zoom meeting: {res.status_code}")
+                logger.error("error creating zoom meeting", status_code=res.status_code)
                 return None
 
             return res_json["join_url"]
         except Exception as error:
-            logger.error(f"Error creating Zoom meeting: {error}")
+            logger.exception("error creating zoom meeting", error=error)
 
     def __generate_token(self) -> str:
         try:
@@ -75,11 +75,8 @@ class ZoomMeeting:
             else:
                 return None
         except Exception as error:
-            logger.error(f"Error creating token for Zoom API: {error}")
+            logger.exception("error creating token for zoom api", error=error)
 
     def test_auth(self) -> bool:
         token = self.__generate_token()
-        if not token:
-            return False
-
-        return True
+        return bool(token)

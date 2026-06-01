@@ -1,2 +1,61 @@
+# Version control
+.git/
+.gitignore
+.github/
+.circleci/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtualenv (Docker installs its own)
+.venv/
+venv/
+env/
+
+# Testing / coverage / linting
+tests/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.ruff_cache/
+.mypy_cache/
+.tox/
+ruff.toml
+
+# Dev tooling
+Makefile
+.python-version
+poetry.toml
+scripts/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Secrets & local config
 .env
 .env.sample
+*secret.json
+*secret-sealed.json
+config.yaml
+
+# Docker files (not needed inside the image)
+docker-compose*.yml
+.dockerignore
+
+# Docs / assets / misc
+*.md
+assets/
+logs/
+tmp/
+manifest.yaml

@@ -1,15 +1,14 @@
 from incidentbot.logging import logger
 from incidentbot.configuration.settings import settings
-from typing import Dict, List, Optional
 import gitlab
 
 
-def get_severity_label_mapping() -> Dict[str, List[str]]:
+def get_severity_label_mapping() -> dict[str, list[str]]:
     """
     Extracts and maps only the gitlab_labels from the settings.
     Returns: A dictionary mapping incident severity (lower) to a list of labels.
     """
-    label_mapping: Dict[str, List[str]] = {}
+    label_mapping: dict[str, list[str]] = {}
     try:
         for mapping in settings.integrations.gitlab.severity_mapping:
             incident_severity = mapping.get("incident_severity")
@@ -21,12 +20,12 @@ def get_severity_label_mapping() -> Dict[str, List[str]]:
         return label_mapping
 
     except AttributeError:
-        logger.error(
-            "Configuration error: Label mapping settings are missing or malformed."
+        logger.exception(
+            "configuration error: label mapping settings are missing or malformed"
         )
         return {}
     except Exception as e:
-        logger.error(f"Unexpected error processing label mapping: {e}")
+        logger.exception("unexpected error processing label mapping", error=e)
         return {}
 
 
@@ -49,12 +48,12 @@ def map_severity(severity: str) -> str:
         return mapping_dict.get(severity.lower(), "UNKNOWN")
 
     except AttributeError:
-        logger.error(
-            "Configuration error: Severity mapping settings are missing or malformed."
+        logger.exception(
+            "configuration error: severity mapping settings are missing or malformed"
         )
         return "UNKNOWN"
     except Exception as e:
-        logger.error(f"Error processing severity mapping from settings: {e}")
+        logger.exception("error processing severity mapping from settings", error=e)
         return "UNKNOWN"
 
 
@@ -92,15 +91,15 @@ def build_mapping_dict(mapping_list: list, incident_key: str) -> dict:
             if item is not None
         }
     except AttributeError:
-        logger.error(
-            f"Invalid item found in mapping list for key '{incident_key}'."
+        logger.exception(
+            "invalid item found in mapping list for key", incident_key=incident_key
         )
         return {}
 
 
 def find_issue_by_label(
-    project, channel_name: str, issue_type: Optional[str] = None
-) -> Optional[object]:
+    project, channel_name: str, issue_type: str | None = None
+) -> object | None:
     """
     Finds a GitLab issue by channel name label.
 
@@ -114,7 +113,7 @@ def find_issue_by_label(
         First matching issue or None
     """
     if not project:
-        logger.error("No project provided for issue search.")
+        logger.error("no project provided for issue search")
         return None
 
     try:
@@ -128,25 +127,25 @@ def find_issue_by_label(
         issues = project.issues.list(**search_params)
 
         if not issues:
-            logger.warning(f"No GitLab issue found with label {search_label}.")
+            logger.warning("no gitlab issue found with label", label=search_label)
             return None
 
         return issues[0]
 
     except gitlab.exceptions.GitlabListError as error:
-        logger.error(
-            f"Error listing GitLab issues by label {channel_name}: {error}"
+        logger.exception(
+            "error listing gitlab issues by label", channel_name=channel_name, error=error
         )
         return None
     except Exception as error:
-        logger.error(f"Unexpected error retrieving GitLab issue: {error}")
+        logger.exception("unexpected error retrieving gitlab issue", error=error)
         return None
 
 
 def find_issues_by_label(
     project,
     channel_name: str,
-    issue_type: Optional[str] = None,
+    issue_type: str | None = None,
     use_label_template: bool = True,
 ) -> list:
     """
@@ -162,7 +161,7 @@ def find_issues_by_label(
         List of matching issues (empty list if none found)
     """
     if not project:
-        logger.error("No project provided for issue search.")
+        logger.error("no project provided for issue search")
         return []
 
     try:
@@ -181,25 +180,25 @@ def find_issues_by_label(
 
         if not issues:
             logger.warning(
-                f"No GitLab issues found with label {search_label}."
+                "no gitlab issues found with label", label=search_label
             )
             return []
 
         return issues
 
     except gitlab.exceptions.GitlabListError as error:
-        logger.error(
-            f"Error listing GitLab issues by label {channel_name}: {error}"
+        logger.exception(
+            "error listing gitlab issues by label", channel_name=channel_name, error=error
         )
         return []
     except Exception as error:
-        logger.error(f"Unexpected error retrieving GitLab issues: {error}")
+        logger.exception("unexpected error retrieving gitlab issues", error=error)
         return []
 
 
 def update_issue_labels(
-    issue, new_labels: List[str], remove_scoped_prefixes: bool = True
-) -> List[str]:
+    issue, new_labels: list[str], remove_scoped_prefixes: bool = True
+) -> list[str]:
     """
     Updates issue labels, optionally removing existing scoped labels with the same prefix.
 
@@ -224,7 +223,7 @@ def update_issue_labels(
 
         if scoped_prefixes:
             logger.debug(
-                f"Removing existing scoped labels with prefixes: {scoped_prefixes}"
+                "removing existing scoped labels with prefixes", prefixes=scoped_prefixes
             )
             current_labels = [
                 label
@@ -239,7 +238,7 @@ def update_issue_labels(
     return list(set(current_labels + new_labels))
 
 
-def get_initial_status_labels() -> List[str]:
+def get_initial_status_labels() -> list[str]:
     """
     Gets the labels for the initial 'investigating' status from configuration.
 

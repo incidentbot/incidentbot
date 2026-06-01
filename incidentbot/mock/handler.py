@@ -36,8 +36,8 @@ def create_mock_incident_data(amount: int):
                 session.add(incident)
                 session.commit()
         except Exception as error:
-            logger.fatal(f"error writing mock entry to database: {error}")
+            logger.exception("error writing mock entry to database", error=error)
 
-        logger.info(f"added {identifier} to db")
+        logger.info("added mock incident to db", identifier=identifier)
 
         i += 1

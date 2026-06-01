@@ -1,19 +1,12 @@
-from datetime import datetime
 from incidentbot.configuration.settings import (
     settings,
     statuspage_logo_url,
-    __version__,
 )
-from incidentbot.exceptions import ConfigurationError
+from incidentbot.version import APP_VERSION
 from incidentbot.incident.core import Incident, IncidentRequestParameters
-from incidentbot.incident.event import EventLogHandler
 from incidentbot.jira.issue import JiraIssue
 from incidentbot.gitlab.issue import GitLabIncident
 from incidentbot.logging import logger
-from incidentbot.maintenance_window.core import (
-    MaintenanceWindow,
-    MaintenanceWindowRequestParameters,
-)
 from incidentbot.models.database import (
     engine,
     ApplicationData,
@@ -21,9 +14,6 @@ from incidentbot.models.database import (
     GitlabIssueRecord,
 )
 from incidentbot.models.incident import IncidentDatabaseInterface
-from incidentbot.models.maintenance_window import (
-    MaintenanceWindowDatabaseInterface,
-)
 from incidentbot.slack.client import check_user_in_group, get_digest_channel_id
 from incidentbot.slack.handler import app
 from incidentbot.slack.messages import BlockBuilder, IncidentUpdate
@@ -42,78 +32,67 @@ from incidentbot.util import gen
 from sqlmodel import Session, select
 
 
+def _open_modal_if_permitted(
+    client,
+    body: dict,
+    view: dict,
+    channel_id: str,
+    user: str,
+    permissions,
+    unauthorized_text: str,
+) -> None:
+    """Open a modal gated behind group membership.
+
+    If `permissions` has groups, the modal opens only when the user belongs to
+    at least one of them; otherwise it opens unconditionally.
+    """
+    if permissions and permissions.groups:
+        if any(
+            check_user_in_group(user_id=user, group_name=group)
+            for group in permissions.groups
+        ):
+            client.views_open(trigger_id=body["trigger_id"], view=view)
+        else:
+            client.chat_postEphemeral(
+                channel=channel_id,
+                user=user,
+                text=unauthorized_text,
+            )
+    else:
+        client.views_open(trigger_id=body["trigger_id"], view=view)
+
+
 @app.event("app_home_opened")
 def update_home_tab(client, event, logger):
     """
     Provide information via the app's home screen
     """
 
-    button_el = [
-        {
-            "type": "button",
-            "text": {
-                "type": "plain_text",
-                "text": "Declare Incident",
-                "emoji": True,
-            },
-            "value": "show_declare_incident_modal",
-            "action_id": "declare_incident_modal",
-            "style": "danger",
-        }
-    ]
-
-    if (
-        settings.maintenance_windows
-        and settings.maintenance_windows.components
-    ):
-        button_el.append(
-            {
-                "type": "button",
-                "text": {
-                    "type": "plain_text",
-                    "text": "Create a Maintenance Window",
-                    "emoji": True,
-                },
-                "value": "show_maintenance_window_modal",
-                "action_id": "maintenance_window_modal",
-                "style": "primary",
-            },
-        )
-
     base_blocks = [
-        {"type": "actions", "elements": button_el},
-        {
-            "type": "header",
-            "text": {
-                "type": "plain_text",
-                "text": ":firefighter: Creating Incidents",
-            },
-        },
-        {"type": "divider"},
         {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "To start a new incident, you can do the following:\n"
-                + "> Use the button here :point_up:\n"
-                + f"> Use my slash command: `{settings.root_slash_command}`",
+                "text": f"Declare a new incident below or use `{settings.root_slash_command}` anywhere in Slack.",
             },
         },
         {
-            "type": "header",
-            "text": {
-                "type": "plain_text",
-                "text": ":point_right: Documentation and Learning Materials",
-            },
+            "type": "actions",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Declare Incident",
+                        "emoji": True,
+                    },
+                    "value": "show_declare_incident_modal",
+                    "action_id": "declare_incident_modal",
+                    "style": "danger",
+                }
+            ],
         },
         {"type": "divider"},
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": "Check out Incident Bot's <https://docs.incidentbot.io/|docs>.",
-            },
-        },
     ]
 
     database_data = IncidentDatabaseInterface.list_recent(
@@ -122,29 +101,16 @@ def update_home_tab(client, event, logger):
     open_incidents = BlockBuilder.incident_list(incidents=database_data)
     base_blocks.extend(open_incidents)
 
-    if (
-        settings.maintenance_windows
-        and settings.maintenance_windows.components
-    ):
-        database_data = MaintenanceWindowDatabaseInterface.list_all()
-        open_incidents = BlockBuilder.maintenance_window_list(
-            maintenance_windows=database_data
-        )
-        base_blocks.extend(open_incidents)
-
-    base_blocks.extend(
-        [
-            {"type": "divider"},
-            {
-                "type": "context",
-                "elements": [
-                    {
-                        "type": "mrkdwn",
-                        "text": f"Version {__version__}",
-                    }
-                ],
-            },
-        ]
+    base_blocks.append(
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": f"Version {APP_VERSION}  ·  <https://docs.incidentbot.io/|Documentation>",
+                }
+            ],
+        }
     )
 
     try:
@@ -156,11 +122,11 @@ def update_home_tab(client, event, logger):
             },
         )
     except Exception as e:
-        logger.error(f"Error publishing home tab: {e}")
+        logger.exception("error publishing home tab", error=e)
 
 
 @app.action("declare_incident_modal")
-def show_modal(ack, body, client):  # noqa: F811
+def show_declare_incident_modal(ack, body, client):
     """
     Provides the modal that will display for declaring an incident
     """
@@ -180,7 +146,7 @@ def show_modal(ack, body, client):  # noqa: F811
 
 
 @app.view("declare_incident_modal")
-def handle_submission(ack, body, client):  # noqa: F811
+def handle_declare_incident_submission(ack, body, client):
     """
     Handles declare_incident_modal
     """
@@ -228,15 +194,13 @@ def handle_submission(ack, body, client):  # noqa: F811
             )
         )
 
-        resp = incident.start()
-
-        client.chat_postMessage(channel=user, text=resp)
+        incident.start()
     except Exception as error:
-        logger.error(error)
+        logger.exception("error starting incident", error=error)
 
 
 @app.action("incident_update_modal")
-def show_modal(ack, body, client):  # noqa: F811
+def show_incident_update_modal(ack, body, client):
     """
     Provides the modal that will display when the shortcut is used to provide an incident update
     """
@@ -360,7 +324,7 @@ def show_modal(ack, body, client):  # noqa: F811
 
 
 @app.view("incident_update_modal")
-def handle_submission(ack, body, client):  # noqa: F811
+def handle_incident_update_submission(ack, body, client):
     """
     Handles incident_update_modal
     """
@@ -399,248 +363,7 @@ def handle_submission(ack, body, client):  # noqa: F811
             ),
         )
     except Exception as error:
-        logger.error(
-            f"Error sending update out for {inc.channel_name}: {error}"
-        )
-
-
-"""
-Maintenance Windows
-"""
-
-
-@app.action("maintenance_window_modal")
-def show_modal(ack, body, client):  # noqa: F811
-    """
-    Provides the modal that will display when the shortcut is used to create a maintenance window
-    """
-
-    base_blocks = [
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": "This will create a new maintenance window.",
-            },
-        },
-        {
-            "type": "input",
-            "block_id": "title",
-            "element": {
-                "type": "plain_text_input",
-                "action_id": "maintenance_window.set_title",
-                "placeholder": {
-                    "type": "plain_text",
-                    "text": "Title",
-                },
-            },
-            "label": {"type": "plain_text", "text": "Title"},
-        },
-        {
-            "type": "input",
-            "block_id": "description",
-            "element": {
-                "type": "plain_text_input",
-                "multiline": True,
-                "action_id": "maintenance_window.set_description",
-                "placeholder": {
-                    "type": "plain_text",
-                    "text": "A description of the maintenance window.",
-                },
-            },
-            "label": {"type": "plain_text", "text": "Description"},
-        },
-        {
-            "block_id": "components",
-            "type": "input",
-            "element": {
-                "type": "multi_static_select",
-                "placeholder": {
-                    "type": "plain_text",
-                    "text": "Select components...",
-                    "emoji": True,
-                },
-                "options": [
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": component,
-                            "emoji": True,
-                        },
-                        "value": component,
-                    }
-                    for component in settings.maintenance_windows.components
-                ],
-                "action_id": "maintenance_window.set_components",
-            },
-            "label": {
-                "type": "plain_text",
-                "text": "Components",
-                "emoji": True,
-            },
-        },
-        {
-            "type": "section",
-            "block_id": "channels",
-            "text": {"type": "mrkdwn", "text": "Channels to be notified"},
-            "accessory": {
-                "type": "multi_conversations_select",
-                "placeholder": {
-                    "type": "plain_text",
-                    "text": "Select channels...",
-                    "emoji": True,
-                },
-                "action_id": "maintenance_window.set_channels",
-            },
-        },
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": "Who is the contact point for this maintenance window?",
-            },
-            "accessory": {
-                "type": "users_select",
-                "placeholder": {
-                    "type": "plain_text",
-                    "text": "Select a user",
-                    "emoji": True,
-                },
-                "action_id": "maintenance_window.set_contact",
-            },
-        },
-        {
-            "type": "header",
-            "text": {
-                "type": "plain_text",
-                "text": ":white_check_mark: Start time",
-            },
-        },
-        {
-            "type": "input",
-            "block_id": "start_date",
-            "element": {
-                "type": "datepicker",
-                "placeholder": {
-                    "type": "plain_text",
-                    "text": "Select a date",
-                    "emoji": True,
-                },
-                "action_id": "maintenance_window.set_start_date",
-            },
-            "label": {"type": "plain_text", "text": "Date", "emoji": True},
-        },
-        {
-            "type": "input",
-            "block_id": "start_time",
-            "element": {
-                "type": "timepicker",
-                "placeholder": {
-                    "type": "plain_text",
-                    "text": "Select time",
-                    "emoji": True,
-                },
-                "action_id": "maintenance_window.set_start_time",
-            },
-            "label": {"type": "plain_text", "text": "Time", "emoji": True},
-        },
-        {
-            "type": "header",
-            "text": {
-                "type": "plain_text",
-                "text": ":checkered_flag: End time",
-            },
-        },
-        {
-            "type": "input",
-            "block_id": "end_date",
-            "element": {
-                "type": "datepicker",
-                "placeholder": {
-                    "type": "plain_text",
-                    "text": "Select a date",
-                    "emoji": True,
-                },
-                "action_id": "maintenance_window.set_end_date",
-            },
-            "label": {"type": "plain_text", "text": "Date", "emoji": True},
-        },
-        {
-            "type": "input",
-            "block_id": "end_time",
-            "element": {
-                "type": "timepicker",
-                "placeholder": {
-                    "type": "plain_text",
-                    "text": "Select time",
-                    "emoji": True,
-                },
-                "action_id": "maintenance_window.set_end_time",
-            },
-            "label": {"type": "plain_text", "text": "Time", "emoji": True},
-        },
-    ]
-    ack()
-    client.views_open(
-        trigger_id=body["trigger_id"],
-        view={
-            "type": "modal",
-            # View identifier
-            "callback_id": "maintenance_window_modal",
-            "title": {
-                "type": "plain_text",
-                "text": "Maintenance window",
-            },
-            "submit": {"type": "plain_text", "text": "Create"},
-            "blocks": base_blocks,
-        },
-    )
-
-
-@app.view("maintenance_window_modal")
-def handle_submission(ack, body, client):  # noqa: F811
-    """
-    Handles maintenance_window_modal
-    """
-
-    ack()
-    parsed = parse_modal_values(body)
-    user = body.get("user").get("id")
-
-    end_date = parsed.get("maintenance_window.set_end_date")
-    end_time = parsed.get("maintenance_window.set_end_time")
-    start_date = parsed.get("maintenance_window.set_start_date")
-    start_time = parsed.get("maintenance_window.set_start_time")
-
-    end_timestamp = datetime.strptime(
-        f"{end_date} {end_time}", "%Y-%m-%d %H:%M"
-    )
-    start_timestamp = datetime.strptime(
-        f"{start_date} {start_time}", "%Y-%m-%d %H:%M"
-    )
-
-    try:
-        maintenance_window = MaintenanceWindow(
-            params=MaintenanceWindowRequestParameters(
-                channels=parsed.get("maintenance_window.set_channels"),
-                components=parsed.get("maintenance_window.set_components"),
-                contact=parsed.get("maintenance_window.set_contact"),
-                description=parsed.get("maintenance_window.set_description"),
-                end_timestamp=end_timestamp,
-                start_timestamp=start_timestamp,
-                title=parsed.get("maintenance_window.set_title"),
-            )
-        )
-        maintenance_window.create()
-    except Exception as error:
-        logger.error(error)
-
-    try:
-        client.chat_postMessage(
-            channel=user, text="I've created the maintenance window."
-        )
-    except ConfigurationError as error:
-        logger.error(error)
+        logger.exception("error sending incident update", channel=inc.channel_name, error=error)
 
 
 """
@@ -650,7 +373,7 @@ Paging
 
 @app.action("pager")
 @app.shortcut("pager")
-def show_modal(ack, body, client):  # noqa: F811
+def show_pager_modal(ack, body, client):
     # Acknowledge the command request
     ack()
 
@@ -825,7 +548,7 @@ def show_modal(ack, body, client):  # noqa: F811
 
 
 @app.action("update_pager_selected_incident")
-def update_modal(ack, body, client):
+def update_pager_incident_modal(ack, body, client):
     # Acknowledge the button request
     ack()
 
@@ -901,29 +624,40 @@ def update_modal(ack, body, client):
 
 
 @app.action("update_pager_selected_team")
-def handle_static_action(ack, body, logger):  # noqa: F811
+def handle_pager_team_select(ack, body, logger):
     ack()
     logger.debug(body)
 
 
 @app.action("update_pager_selected_priority")
-def handle_static_action(ack, body, logger):  # noqa: F811
+def handle_pager_priority_select(ack, body, logger):
     ack()
     logger.debug(body)
 
 
 @app.view("pager_modal")
-def handle_submission(ack, body, say, view):  # noqa: F811
+def handle_pager_submission(ack, body, say, view):
     """
-    Handles pager
+    Handles pager_modal
     """
 
     ack()
 
-    team = view["blocks"][2]["block_id"].split("/")[1]
-    priority = view["blocks"][3]["block_id"].split("/")[1]
-    incident_channel_name = view["blocks"][4]["block_id"].split("/")[1]
-    incident_channel_id = view["blocks"][4]["block_id"].split("/")[2]
+    # The updated modal encodes selected values in block_id fields with
+    # prefixed keys: "team/{value}", "priority/{value}", "incident/{name}/{id}".
+    # Look up by prefix so block reordering never silently reads the wrong field.
+    _blocks_by_prefix: dict[str, str] = {}
+    for _b in view["blocks"]:
+        _bid = _b.get("block_id", "")
+        for _prefix in ("team/", "priority/", "incident/"):
+            if _bid.startswith(_prefix):
+                _blocks_by_prefix[_prefix] = _bid
+                break
+
+    team = _blocks_by_prefix.get("team/", "/unknown").split("/", 1)[1]
+    priority = _blocks_by_prefix.get("priority/", "/unknown").split("/", 1)[1]
+    _incident_bid = _blocks_by_prefix.get("incident/", "incident/unknown/unknown")
+    _, incident_channel_name, incident_channel_id = _incident_bid.split("/", 2)
     paging_user = body["user"]["name"]
 
     if (
@@ -1004,226 +738,12 @@ def handle_submission(ack, body, say, view):  # noqa: F811
 
 
 """
-Timeline
-"""
-
-
-@app.action("incident_timeline_modal")
-def show_modal(ack, body, client):  # noqa: F811
-    # Acknowledge the command request
-    ack()
-
-    # Format incident list
-    database_data = IncidentDatabaseInterface.list_open()
-
-    # Call views_open with the built-in client
-    client.views_open(
-        # Pass a valid trigger_id within 3 seconds of receiving it
-        trigger_id=body["trigger_id"],
-        # View payload
-        view={
-            "type": "modal",
-            "callback_id": "incident_timeline_modal",
-            "title": {"type": "plain_text", "text": "Incident timeline"},
-            "blocks": [
-                (
-                    {
-                        "type": "section",
-                        "block_id": "incident_timeline_incident_select",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "Choose an incident to add an event to:",
-                        },
-                        "accessory": {
-                            "action_id": "update_timeline_selected_incident",
-                            "type": "static_select",
-                            "placeholder": {
-                                "type": "plain_text",
-                                "text": "Incident...",
-                            },
-                            "options": [
-                                {
-                                    "text": {
-                                        "type": "plain_text",
-                                        "text": inc.channel_name,
-                                        "emoji": True,
-                                    },
-                                    "value": f"{inc.channel_name}/{inc.channel_id}",
-                                }
-                                for inc in database_data
-                                if inc.status
-                                not in [
-                                    status
-                                    for status, config in settings.statuses.items()
-                                    if config.final
-                                ]
-                            ],
-                        },
-                    }
-                    if database_data
-                    else {
-                        "type": "section",
-                        "block_id": "no_incidents",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "There are currently no open incidents.\n\nYou can only add timeline events to open incidents.",
-                        },
-                    }
-                )
-            ],
-        },
-    )
-
-
-@app.action("update_timeline_selected_incident")
-def update_modal(ack, body, client):  # noqa: F811
-    # Acknowledge the button request
-    ack()
-
-    parsed = parse_modal_values(body)
-    incident = parsed.get("update_timeline_selected_incident")
-    incident_channel_name = incident.split("/")[0]
-    base_blocks = [
-        {
-            "type": "header",
-            "text": {
-                "type": "plain_text",
-                "text": incident_channel_name,
-            },
-        },
-        {
-            "type": "section",
-            "block_id": "timeline_info",
-            "text": {
-                "type": "mrkdwn",
-                "text": "Add a new event to the incident's timeline.",
-            },
-        },
-        {"type": "divider"},
-        {
-            "type": "input",
-            "block_id": "date",
-            "element": {
-                "type": "datepicker",
-                "placeholder": {
-                    "type": "plain_text",
-                    "text": "Select a date",
-                    "emoji": True,
-                },
-                "action_id": "update_timeline_date",
-            },
-            "label": {"type": "plain_text", "text": "Date", "emoji": True},
-        },
-        {
-            "type": "input",
-            "block_id": "time",
-            "element": {
-                "type": "timepicker",
-                "placeholder": {
-                    "type": "plain_text",
-                    "text": "Select time",
-                    "emoji": True,
-                },
-                "action_id": "update_timeline_time",
-            },
-            "label": {"type": "plain_text", "text": "Time", "emoji": True},
-        },
-        {
-            "type": "input",
-            "block_id": "text",
-            "element": {
-                "type": "plain_text_input",
-                "action_id": "update_timeline_text",
-            },
-            "label": {"type": "plain_text", "text": "Text", "emoji": True},
-        },
-    ]
-
-    # Call views_update with the built-in client
-    client.views_update(
-        # Pass the view_id
-        view_id=body["view"]["id"],
-        # String that represents view state to protect against race conditions
-        hash=body["view"]["hash"],
-        # View payload with updated blocks
-        view={
-            "type": "modal",
-            "callback_id": "incident_timeline_modal_add",
-            "title": {"type": "plain_text", "text": "Incident timeline"},
-            "submit": {"type": "plain_text", "text": "Add"},
-            "blocks": base_blocks,
-        },
-    )
-
-
-@app.action("update_timeline_date")
-def handle_static_action(ack, body, logger):  # noqa: F811
-    ack()
-    logger.debug(body)
-
-
-@app.action("update_timeline_time")
-def handle_static_action(ack, body, logger):  # noqa: F811
-    ack()
-    logger.debug(body)
-
-
-@app.action("update_timeline_text")
-def handle_static_action(ack, body, logger):  # noqa: F811
-    ack()
-    logger.debug(body)
-
-
-@app.view("incident_timeline_modal_add")
-def handle_submission(ack, body, say, view):  # noqa: F811
-    """
-    Handles
-    """
-    ack()
-
-    parsed = parse_modal_values(body)
-    channel_name = view["blocks"][0]["text"]["text"]
-    event_date = parsed.get("update_timeline_date")
-    event_time = parsed.get("update_timeline_time")
-    event_text = parsed.get("update_timeline_text")
-    ts = datetime.strptime(f"{event_date} {event_time}", "%Y-%m-%d %H:%M")
-
-    record = IncidentDatabaseInterface.get_one(channel_name=channel_name)
-
-    try:
-        EventLogHandler.create(
-            event=event_text,
-            incident_id=record.id,
-            incident_slug=record.slug,
-            source="user",
-            timestamp=ts,
-            user=body["user"]["id"],
-        )
-    except Exception as error:
-        logger.error(error)
-    finally:
-        say(
-            channel=record.channel_id,
-            text=f"Event added to timeline: {ts} - {event_text}",
-            blocks=[
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": f"> {ts} - {event_text} (added to timeline)",
-                    },
-                },
-            ],
-        )
-
-
-"""
 Statuspage
 """
 
 
 @app.action("statuspage_incident_modal")
-def show_modal(ack, body, client):  # noqa: F811
+def show_statuspage_incident_modal(ack, body, client):
     """
     Provides the modal that will display when the shortcut is
     used to start a Statuspage incident
@@ -1408,52 +928,25 @@ def show_modal(ack, body, client):  # noqa: F811
 
     ack()
 
-    # Return modal only if user has permissions
-    if (
-        settings.integrations.atlassian.statuspage.permissions
-        and settings.integrations.atlassian.statuspage.permissions.groups
-    ):
-        for (
-            group
-        ) in settings.integrations.atlassian.statuspage.permissions.groups:
-            if check_user_in_group(user_id=user, group_name=group):
-                client.views_open(
-                    trigger_id=body["trigger_id"],
-                    view={
-                        "type": "modal",
-                        "callback_id": "statuspage_incident_modal",
-                        "title": {
-                            "type": "plain_text",
-                            "text": "Statuspage Incident",
-                        },
-                        "submit": {"type": "plain_text", "text": "Start"},
-                        "blocks": blocks,
-                    },
-                )
-            else:
-                client.chat_postEphemeral(
-                    channel=channel_id,
-                    user=user,
-                    text="You don't have permissions to manage Statuspage incidents.",
-                )
-    else:
-        client.views_open(
-            trigger_id=body["trigger_id"],
-            view={
-                "type": "modal",
-                "callback_id": "statuspage_incident_modal",
-                "title": {
-                    "type": "plain_text",
-                    "text": "Statuspage Incident",
-                },
-                "submit": {"type": "plain_text", "text": "Start"},
-                "blocks": blocks,
-            },
-        )
+    _open_modal_if_permitted(
+        client=client,
+        body=body,
+        view={
+            "type": "modal",
+            "callback_id": "statuspage_incident_modal",
+            "title": {"type": "plain_text", "text": "Statuspage Incident"},
+            "submit": {"type": "plain_text", "text": "Start"},
+            "blocks": blocks,
+        },
+        channel_id=channel_id,
+        user=user,
+        permissions=settings.integrations.atlassian.statuspage.permissions,
+        unauthorized_text="You don't have permissions to manage Statuspage incidents.",
+    )
 
 
 @app.view("statuspage_incident_modal")
-def handle_submission(ack, body, client, view):  # noqa: F811
+def handle_statuspage_incident_submission(ack, body, client, view):
     """
     Handles statuspage_incident_modal
     """
@@ -1498,7 +991,7 @@ def handle_submission(ack, body, client, view):  # noqa: F811
 
 
 @app.action("statuspage_incident_update_modal")
-def show_modal(ack, body, client):  # noqa: F811
+def show_statuspage_incident_update_modal(ack, body, client):
     """
     Provides the modal that will display when the shortcut is used to update a Statuspage incident
     """
@@ -1522,11 +1015,7 @@ def show_modal(ack, body, client):  # noqa: F811
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "*Name*: {}\n*Status*: {}\nLast Updated: {}\n".format(
-                    record.name,
-                    record.status,
-                    record.updated_at,
-                ),
+                "text": f"*Name*: {record.name}\n*Status*: {record.status}\nLast Updated: {record.updated_at}\n",
             },
         },
         {"type": "divider"},
@@ -1596,54 +1085,25 @@ def show_modal(ack, body, client):  # noqa: F811
 
     ack()
 
-    # Return modal only if user has permissions
-    if (
-        settings.integrations.atlassian.statuspage.permissions
-        and settings.integrations.atlassian.statuspage.permissions.groups
-    ):
-        for (
-            group
-        ) in settings.integrations.atlassian.statuspage.permissions.groups:
-            if check_user_in_group(user_id=user, group_name=group):
-                client.views_open(
-                    trigger_id=body["trigger_id"],
-                    view={
-                        "type": "modal",
-                        # View identifier
-                        "callback_id": "statuspage_incident_update_modal",
-                        "title": {
-                            "type": "plain_text",
-                            "text": "Update Incident",
-                        },
-                        "submit": {"type": "plain_text", "text": "Update"},
-                        "blocks": blocks,
-                    },
-                )
-            else:
-                client.chat_postEphemeral(
-                    channel=channel_id,
-                    user=user,
-                    text="You don't have permissions to manage Statuspage incidents.",
-                )
-    else:
-        client.views_open(
-            trigger_id=body["trigger_id"],
-            view={
-                "type": "modal",
-                # View identifier
-                "callback_id": "statuspage_incident_update_modal",
-                "title": {
-                    "type": "plain_text",
-                    "text": "Update Incident",
-                },
-                "submit": {"type": "plain_text", "text": "Update"},
-                "blocks": blocks,
-            },
-        )
+    _open_modal_if_permitted(
+        client=client,
+        body=body,
+        view={
+            "type": "modal",
+            "callback_id": "statuspage_incident_update_modal",
+            "title": {"type": "plain_text", "text": "Update Incident"},
+            "submit": {"type": "plain_text", "text": "Update"},
+            "blocks": blocks,
+        },
+        channel_id=channel_id,
+        user=user,
+        permissions=settings.integrations.atlassian.statuspage.permissions,
+        unauthorized_text="You don't have permissions to manage Statuspage incidents.",
+    )
 
 
 @app.view("statuspage_incident_update_modal")
-def handle_submission(ack, body):  # noqa: F811
+def handle_statuspage_incident_update_submission(ack, body):
     """
     Handles statuspage_incident_update_modal
     """
@@ -1671,7 +1131,7 @@ def handle_submission(ack, body):  # noqa: F811
             channel_id=channel_id, message=update_message, status=update_status
         )
     except Exception as error:
-        logger.error(f"Error updating Statuspage incident: {error}")
+        logger.exception("error updating statuspage incident", error=error)
 
 
 """
@@ -1680,7 +1140,7 @@ Phare Uptime
 
 
 @app.action("phare_incident_modal")
-def show_modal(ack, body, client):  # noqa: F811
+def show_phare_incident_modal(ack, body, client):
     """
     Provides the modal that will display when the shortcut is
     used to start a Phare incident
@@ -1705,7 +1165,7 @@ def show_modal(ack, body, client):  # noqa: F811
             for name, monitor_id in entry.items()
         ]
     except Exception as error:
-        logger.error(f"Error fetching Phare monitors: {error}")
+        logger.exception("error fetching phare monitors", error=error)
         monitor_options = []
 
     blocks = [
@@ -1832,42 +1292,25 @@ def show_modal(ack, body, client):  # noqa: F811
 
     ack()
 
-    phare_permissions = settings.integrations.phare.permissions
-
-    if phare_permissions and phare_permissions.groups:
-        for group in phare_permissions.groups:
-            if check_user_in_group(user_id=user, group_name=group):
-                client.views_open(
-                    trigger_id=body["trigger_id"],
-                    view={
-                        "type": "modal",
-                        "callback_id": "phare_incident_modal",
-                        "title": {"type": "plain_text", "text": "Phare Uptime Incident"},
-                        "submit": {"type": "plain_text", "text": "Start"},
-                        "blocks": blocks,
-                    },
-                )
-            else:
-                client.chat_postEphemeral(
-                    channel=channel_id,
-                    user=user,
-                    text="You don't have permissions to manage Phare Uptime incidents.",
-                )
-    else:
-        client.views_open(
-            trigger_id=body["trigger_id"],
-            view={
-                "type": "modal",
-                "callback_id": "phare_incident_modal",
-                "title": {"type": "plain_text", "text": "Phare Incident"},
-                "submit": {"type": "plain_text", "text": "Start"},
-                "blocks": blocks,
-            },
-        )
+    _open_modal_if_permitted(
+        client=client,
+        body=body,
+        view={
+            "type": "modal",
+            "callback_id": "phare_incident_modal",
+            "title": {"type": "plain_text", "text": "Phare Uptime Incident"},
+            "submit": {"type": "plain_text", "text": "Start"},
+            "blocks": blocks,
+        },
+        channel_id=channel_id,
+        user=user,
+        permissions=settings.integrations.phare.permissions,
+        unauthorized_text="You don't have permissions to manage Phare Uptime incidents.",
+    )
 
 
 @app.view("phare_incident_modal")
-def handle_submission(ack, body, client, view):  # noqa: F811
+def handle_phare_incident_submission(ack, body, client, view):
     """
     Handles phare_incident_modal submission
     """
@@ -1910,7 +1353,7 @@ def handle_submission(ack, body, client, view):  # noqa: F811
 
 
 @app.action("phare_incident_update_modal")
-def show_modal(ack, body, client):  # noqa: F811
+def show_phare_incident_update_modal(ack, body, client):
     """
     Provides the modal that will display when the shortcut is used to update a Phare incident
     """
@@ -1927,11 +1370,7 @@ def show_modal(ack, body, client):  # noqa: F811
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "*Name*: {}\n*State*: {}\nLast Updated: {}\n".format(
-                    record.name,
-                    record.state,
-                    record.updated_at,
-                ),
+                "text": f"*Name*: {record.name}\n*State*: {record.state}\nLast Updated: {record.updated_at}\n",
             },
         },
         {"type": "divider"},
@@ -2025,42 +1464,25 @@ def show_modal(ack, body, client):  # noqa: F811
 
     ack()
 
-    phare_permissions = settings.integrations.phare.permissions
-
-    if phare_permissions and phare_permissions.groups:
-        for group in phare_permissions.groups:
-            if check_user_in_group(user_id=user, group_name=group):
-                client.views_open(
-                    trigger_id=body["trigger_id"],
-                    view={
-                        "type": "modal",
-                        "callback_id": "phare_incident_update_modal",
-                        "title": {"type": "plain_text", "text": "Update Incident"},
-                        "submit": {"type": "plain_text", "text": "Update"},
-                        "blocks": blocks,
-                    },
-                )
-            else:
-                client.chat_postEphemeral(
-                    channel=channel_id,
-                    user=user,
-                    text="You don't have permissions to manage Phare Uptime incidents.",
-                )
-    else:
-        client.views_open(
-            trigger_id=body["trigger_id"],
-            view={
-                "type": "modal",
-                "callback_id": "phare_incident_update_modal",
-                "title": {"type": "plain_text", "text": "Update Incident"},
-                "submit": {"type": "plain_text", "text": "Update"},
-                "blocks": blocks,
-            },
-        )
+    _open_modal_if_permitted(
+        client=client,
+        body=body,
+        view={
+            "type": "modal",
+            "callback_id": "phare_incident_update_modal",
+            "title": {"type": "plain_text", "text": "Update Incident"},
+            "submit": {"type": "plain_text", "text": "Update"},
+            "blocks": blocks,
+        },
+        channel_id=channel_id,
+        user=user,
+        permissions=settings.integrations.phare.permissions,
+        unauthorized_text="You don't have permissions to manage Phare Uptime incidents.",
+    )
 
 
 @app.view("phare_incident_update_modal")
-def handle_submission(ack, body):  # noqa: F811
+def handle_phare_incident_update_submission(ack, body):
     """
     Handles phare_incident_update_modal
     """
@@ -2094,13 +1516,13 @@ def handle_submission(ack, body):  # noqa: F811
             channel_id=channel_id, content=content, state=state
         )
     except Exception as error:
-        logger.error(f"Error updating Phare incident: {error}")
+        logger.exception("error updating phare incident", error=error)
 
     if impact:
         try:
             PhareIncidentUpdate.update_impact(channel_id=channel_id, impact=impact)
         except Exception as error:
-            logger.error(f"Error updating Phare incident impact: {error}")
+            logger.exception("error updating phare incident impact", error=error)
 
 
 """
@@ -2109,7 +1531,7 @@ Jira
 
 
 @app.action("incident_create_jira_issue_modal")
-def show_modal(ack, body, client):  # noqa: F811
+def show_jira_issue_modal(ack, body, client):
     """
     Provides the modal that will display when the shortcut is used to create a Jira issue
     """
@@ -2132,9 +1554,7 @@ def show_modal(ack, body, client):  # noqa: F811
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "This issue will be created in the project: *{}*".format(
-                    settings.integrations.atlassian.jira.project
-                ),
+                "text": f"This issue will be created in the project: *{settings.integrations.atlassian.jira.project}*",
             },
         },
         {"type": "divider"},
@@ -2198,38 +1618,6 @@ def show_modal(ack, body, client):  # noqa: F811
                 ],
             },
         },
-        # {
-        #     "block_id": "jira_issue_priority_select",
-        #     "type": "section",
-        #     "text": {"type": "mrkdwn", "text": "*Priority:*"},
-        #     "accessory": {
-        #         "type": "static_select",
-        #         "action_id": "jira.priority_select",
-        #         "placeholder": {
-        #             "type": "plain_text",
-        #             "text": j.priorities[0],
-        #             "emoji": True,
-        #         },
-        #         "initial_option": {
-        #             "text": {
-        #                 "type": "plain_text",
-        #                 "text": j.priorities[0],
-        #             },
-        #             "value": j.priorities[0],
-        #         },
-        #         "options": [
-        #             {
-        #                 "text": {
-        #                     "type": "plain_text",
-        #                     "text": priority,
-        #                     "emoji": True,
-        #                 },
-        #                 "value": priority,
-        #             }
-        #             for priority in j.priorities
-        #         ],
-        #     },
-        # },
     ]
 
     ack()
@@ -2250,7 +1638,7 @@ def show_modal(ack, body, client):  # noqa: F811
 
 
 @app.view("incident_create_jira_issue_modal")
-def handle_submission(ack, body, client):  # noqa: F811
+def handle_jira_issue_submission(ack, body, client):
     """
     Handles incident_create_jira_issue_modal
     """
@@ -2309,16 +1697,14 @@ def handle_submission(ack, body, client):  # noqa: F811
                     timestamp=resp.get("ts"),
                 )
             except Exception as error:
-                logger.error(
-                    f"Error sending Jira issue message for {incident_data.id}: {error}"
-                )
+                logger.exception("error sending jira issue message", incident_id=incident_data.id, error=error)
         else:
             resp = client.chat_postMessage(
                 channel=channel_id,
                 text="Hmmm.. that didn't work. Check my logs for more information.",
             )
     except Exception as error:
-        logger.error(error)
+        logger.exception("error creating jira issue", error=error)
 
 
 """
@@ -2327,7 +1713,7 @@ Gitlab
 
 
 @app.action("incident_create_gitlab_incident_modal")
-def show_modal(ack, body, client):  # noqa: F811
+def show_gitlab_incident_modal(ack, body, client):
     """
     Provides the modal that will display when the shortcut is used to create a Gitlab issue
     """
@@ -2350,9 +1736,7 @@ def show_modal(ack, body, client):  # noqa: F811
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "This incident will be created in the project: *{}*".format(
-                    settings.integrations.gitlab.project_id
-                ),
+                "text": f"This incident will be created in the project: *{settings.integrations.gitlab.project_id}*",
             },
         },
         {"type": "divider"},
@@ -2407,7 +1791,7 @@ def show_modal(ack, body, client):  # noqa: F811
 
 
 @app.view("incident_create_gitlab_incident_modal")
-def handle_submission(ack, body, client):  # noqa: F811
+def handle_gitlab_incident_submission(ack, body, client):
     """
     Handles incident_create_gitlab_incident_modal
     """
@@ -2464,13 +1848,11 @@ def handle_submission(ack, body, client):  # noqa: F811
                     timestamp=resp.get("ts"),
                 )
             except Exception as error:
-                logger.error(
-                    f"Error sending Gitlab issue message for incident #{incident_data.id}: {error}"
-                )
+                logger.exception("error sending gitlab issue message", incident_id=incident_data.id, error=error)
         else:
             resp = client.chat_postMessage(
                 channel=channel_id,
                 text="Hmmm.. that didn't work. Check my logs for more information.",
             )
     except Exception as error:
-        logger.error(error)
+        logger.exception("error creating gitlab issue", error=error)

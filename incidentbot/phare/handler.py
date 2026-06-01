@@ -1,6 +1,6 @@
 import requests
 
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from incidentbot.configuration.settings import settings
 from incidentbot.logging import logger
 from incidentbot.models.database import engine, PhareIncidentRecord
@@ -91,7 +91,7 @@ class PhareIncident:
             )
             resp.raise_for_status()
             self.info = resp.json()
-            logger.info(f"Created Phare incident: {self.info.get('title')}")
+            logger.info("created phare incident", title=self.info.get("title"))
 
             requests.post(
                 f"{api}/uptime/incidents/{self.info['id']}/updates",
@@ -101,7 +101,7 @@ class PhareIncident:
 
             incident_data = IncidentDatabaseInterface.get_one(channel_id=channel_id)
         except Exception as error:
-            logger.error(f"Error during Phare incident creation: {error}")
+            logger.exception("error during phare incident creation", error=error)
             return None
 
         try:
@@ -111,7 +111,7 @@ class PhareIncident:
                 name=self.info.get("title"),
                 parent=incident_data.id,
                 state=self.info.get("state", "investigating"),
-                updated_at=datetime.now(tz=timezone.utc),
+                updated_at=datetime.now(tz=UTC),
                 updates=[],
                 upstream_id=self.info.get("id"),
                 url=self.info.get("url"),
@@ -123,7 +123,7 @@ class PhareIncident:
 
             return message_ts
         except Exception as error:
-            logger.error(f"Error during Phare incident record creation: {error}")
+            logger.exception("error during phare incident record creation", error=error)
             return None
 
     @property
@@ -159,10 +159,10 @@ class PhareIncidentUpdate:
                 )
                 resp.raise_for_status()
             except Exception as error:
-                logger.error(f"Error updating Phare incident impact: {error}")
+                logger.exception("error updating phare incident impact", error=error)
                 return
 
-            record.updated_at = datetime.now(tz=timezone.utc)
+            record.updated_at = datetime.now(tz=UTC)
             session.add(record)
             session.commit()
 
@@ -200,16 +200,16 @@ class PhareIncidentUpdate:
                         {
                             "content": content,
                             "state": state,
-                            "time": datetime.now(tz=timezone.utc).isoformat(),
+                            "time": datetime.now(tz=UTC).isoformat(),
                         }
                     )
                     record.updates = updates
             except Exception as error:
-                logger.error(f"Error updating Phare incident: {error}")
+                logger.exception("error updating phare incident", error=error)
                 return
 
             record.state = state
-            record.updated_at = datetime.now(tz=timezone.utc)
+            record.updated_at = datetime.now(tz=UTC)
 
             session.add(record)
             session.commit()
@@ -224,8 +224,8 @@ class PhareIncidentUpdate:
                     ),
                 )
             except Exception as error:
-                logger.error(
-                    f"Error updating Phare message for {incident_data.channel_name}: {error}"
+                logger.exception(
+                    "error updating phare message", channel_name=incident_data.channel_name, error=error
                 )
 
     @staticmethod

@@ -50,7 +50,7 @@ def _check_token(token: str | None) -> dict:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"Invalid widget token: {exc}",
-        )
+        ) from exc
 
 
 def _get_incident_for_room(room_id: str) -> IncidentRecord:
@@ -149,7 +149,7 @@ async def widget_create_incident(
         incident.start()
         return SuccessResponse(result="success", message="Incident created")
     except Exception as error:
-        raise HTTPException(status_code=500, detail=str(error))
+        raise HTTPException(status_code=500, detail=str(error)) from error
 
 
 @router.post("/widget/api/incident-room", status_code=status.HTTP_200_OK)

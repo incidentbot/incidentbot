@@ -11,7 +11,6 @@ from incidentbot.models.database import (
     IncidentRecord,
 )
 from incidentbot.logging import logger
-from typing import Optional, Dict
 
 from .utils import find_issue_by_label
 
@@ -66,7 +65,7 @@ class IncidentPostmortem:
         """
         proj = self.gitlab_api.project
         if not proj:
-            logger.error("Could not retrieve GitLab project for postmortem.")
+            logger.error("could not retrieve gitlab project for postmortem")
             return None
 
         # Use raw channel_name (no template) to match how original postmortem worked
@@ -76,7 +75,7 @@ class IncidentPostmortem:
             issue_type=settings.integrations.gitlab.issue_type,
         )
 
-    def create(self) -> Optional[str]:
+    def create(self) -> str | None:
         """
         Creates a postmortem as a comment on the GitLab incident and returns the comment URL.
         """
@@ -84,13 +83,13 @@ class IncidentPostmortem:
 
         if not incident_issue:
             logger.error(
-                "Could not find corresponding GitLab issue for postmortem."
+                "could not find corresponding gitlab issue for postmortem"
             )
             return None  # Error logged in helper method
 
         proj = self.gitlab_api.project  # Project is guaranteed to be in cache
         logger.info(
-            f"Creating postmortem comment for {self.title} on GitLab issue #{incident_issue.iid}..."
+            "creating postmortem comment on gitlab issue", title=self.title, iid=incident_issue.iid
         )
 
         try:
@@ -107,22 +106,22 @@ class IncidentPostmortem:
 
             url = f"{settings.GITLAB_URL}/{proj.path_with_namespace}/-/issues/{incident_issue.iid}#note_{note.id}"
 
-            logger.info(f"Created postmortem comment on incident: {url}")
+            logger.info("created postmortem comment on incident", url=url)
             return url
 
         except gitlab.exceptions.GitlabCreateError as error:
-            logger.error(f"Error creating postmortem comment: {error}")
-            raise PostmortemException(error)
+            logger.exception("error creating postmortem comment", error=error)
+            raise PostmortemException(error) from error
         except PostmortemException:
             raise
         except Exception as error:
-            logger.error(
-                f"Unexpected error during postmortem creation: {error}"
+            logger.exception(
+                "unexpected error during postmortem creation", error=error
             )
-            raise PostmortemException(error)
+            raise PostmortemException(error) from error
 
     def _generate_postmortem_content(
-        self, image_references: Dict[str, str]
+        self, image_references: dict[str, str]
     ) -> str:
         """Generates postmortem content in markdown format."""
         duration_str = self._get_duration(
@@ -172,7 +171,7 @@ class IncidentPostmortem:
 
         return "\n".join(rows) + "\n"
 
-    def _generate_timeline(self, image_references: Dict[str, str]) -> str:
+    def _generate_timeline(self, image_references: dict[str, str]) -> str:
         """Generates the postmortem section for timeline (markdown table)."""
         if not self.timeline:
             return "*No timeline events recorded.*\n"
@@ -195,7 +194,7 @@ class IncidentPostmortem:
 
     def _upload_timeline_images(
         self, proj, incident_iid: int
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """
         Uploads images from timeline events to the GitLab project.
         Returns a dict mapping event titles to their markdown references.
@@ -221,25 +220,24 @@ class IncidentPostmortem:
                     if markdown:
                         image_references[event.title] = markdown
                         logger.info(
-                            f"Uploaded image {filename} for issue #{incident_iid}."
+                            "uploaded image for issue", filename=filename, iid=incident_iid
                         )
                     else:
                         logger.warning(
-                            f"Upload succeeded but no markdown returned for {filename}."
+                            "upload succeeded but no markdown returned", filename=filename
                         )
                 else:
                     logger.error(
-                        f"Failed to upload image {filename} for issue #{incident_iid}. "
-                        "Response was empty."
+                        "failed to upload image for issue - response was empty", filename=filename, iid=incident_iid
                     )
 
             except gitlab.exceptions.GitlabHttpError as error:
-                logger.error(
-                    f"HTTP error uploading file {event.title} to project {proj_id}: {error}"
+                logger.exception(
+                    "http error uploading file to project", title=event.title, project_id=proj_id, error=error
                 )
             except Exception as error:
-                logger.error(
-                    f"Unexpected error uploading file {event.title}: {error}"
+                logger.exception(
+                    "unexpected error uploading file", title=event.title, error=error
                 )
 
         return image_references

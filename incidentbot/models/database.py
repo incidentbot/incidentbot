@@ -2,8 +2,7 @@ import uuid
 
 from datetime import datetime
 from incidentbot.configuration.settings import settings
-from incidentbot.util.security import get_password_hash
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from sqlalchemy import DateTime, func, text
 from sqlalchemy.ext.mutable import MutableDict, MutableList
 from sqlmodel import (
@@ -14,11 +13,9 @@ from sqlmodel import (
     JSON,
     LargeBinary,
     Relationship,
-    select,
-    Session,
     SQLModel,
 )
-from typing import Annotated, Optional
+from typing import Annotated
 
 engine = create_engine(
     settings.DATABASE_URI,
@@ -40,77 +37,6 @@ def db_verify():
 
 
 """
-Models
-"""
-
-
-# Shared properties
-class UserBase(SQLModel):
-    email: EmailStr = Field(unique=True, index=True, max_length=255)
-    is_active: bool = True
-    is_superuser: bool = False
-    full_name: str | None = Field(default=None, max_length=255)
-
-
-# Properties to receive via API on creation
-class UserCreate(UserBase):
-    password: str = Field(min_length=8, max_length=40)
-
-
-class UserRegister(SQLModel):
-    email: EmailStr = Field(max_length=255)
-    password: str = Field(min_length=8, max_length=40)
-    full_name: str | None = Field(default=None, max_length=255)
-
-
-# Properties to receive via API on update, all are optional
-class UserUpdate(UserBase):
-    email: EmailStr | None = Field(default=None, max_length=255)  # type: ignore
-    password: str | None = Field(default=None, min_length=8, max_length=40)
-
-
-class UserUpdateMe(SQLModel):
-    full_name: str | None = Field(default=None, max_length=255)
-    email: EmailStr | None = Field(default=None, max_length=255)
-
-
-class UpdatePassword(SQLModel):
-    current_password: str = Field(min_length=8, max_length=40)
-    new_password: str = Field(min_length=8, max_length=40)
-
-
-# Properties to return via API, id is always required
-class UserPublic(UserBase):
-    id: uuid.UUID
-
-
-class UsersPublic(SQLModel):
-    data: list[UserPublic]
-    count: int
-
-
-# Generic message
-class Message(SQLModel):
-    message: str
-
-
-# JSON payload containing access token
-class Token(SQLModel):
-    access_token: str
-    token_type: str = "bearer"
-
-
-# Contents of JWT token
-class TokenPayload(SQLModel):
-    sub: str | None = None
-
-
-class NewPassword(SQLModel):
-    token: str
-    new_password: str = Field(min_length=8, max_length=40)
-
-
-"""
 Tables
 """
 
@@ -129,7 +55,7 @@ class ApplicationData(SQLModel, table=True):
         sa_column=Column(JSON), default_factory=dict
     )
     name: str
-    updated_at: Optional[datetime] = Field(
+    updated_at: datetime | None = Field(
         sa_column=Column(
             DateTime(),
             onupdate=func.now(),
@@ -154,7 +80,7 @@ class IncidentRecord(SQLModel, table=True):
     )
     description: str | None = None
     digest_message_ts: str | None = None
-    events: list["IncidentEvent"] = Relationship(
+    events: list[IncidentEvent] = Relationship(
         back_populates="incident",
         sa_relationship_kwargs={
             "primaryjoin": "IncidentEvent.parent == IncidentRecord.id",
@@ -166,7 +92,7 @@ class IncidentRecord(SQLModel, table=True):
     id: int = Field(primary_key=True)
     impact: str | None = None
     is_security_incident: bool | None = None
-    last_update_sent: Optional[datetime] = Field(
+    last_update_sent: datetime | None = Field(
         sa_column=Column(
             DateTime(),
         )
@@ -191,7 +117,7 @@ class IncidentRecord(SQLModel, table=True):
     tags: list | None = Field(
         sa_column=Column(MutableList.as_mutable(JSON)), default_factory=list
     )
-    updated_at: Optional[datetime] = Field(
+    updated_at: datetime | None = Field(
         sa_column=Column(
             DateTime(),
             onupdate=func.now(),
@@ -219,9 +145,9 @@ class IncidentEventBase(BaseModel):
     ]
     source: str
     text: str | None = None
-    timestamp: Optional[datetime]
+    timestamp: datetime | None
     title: str | None = None
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
     user: str | None = None
 
 
@@ -255,13 +181,13 @@ class IncidentEvent(SQLModel, table=True):
     )
     source: str
     text: str | None = None
-    timestamp: Optional[datetime] = Field(
+    timestamp: datetime | None = Field(
         sa_column=Column(
             DateTime(),
         )
     )
     title: str | None = None
-    updated_at: Optional[datetime] = Field(
+    updated_at: datetime | None = Field(
         sa_column=Column(
             DateTime(),
             onupdate=func.now(),
@@ -287,7 +213,7 @@ class IncidentParticipant(SQLModel, table=True):
         ),
     ]
     role: str
-    updated_at: Optional[datetime] = Field(
+    updated_at: datetime | None = Field(
         sa_column=Column(
             DateTime(),
             onupdate=func.now(),
@@ -329,41 +255,6 @@ class GitlabIssueRecord(SQLModel, table=True):
     url: str | None = None
 
 
-class MaintenanceWindowRecord(SQLModel, table=True):
-    channels: list = Field(
-        sa_column=Column(MutableList.as_mutable(JSON)), default_factory=list
-    )
-    components: list = Field(
-        sa_column=Column(MutableList.as_mutable(JSON)), default_factory=list
-    )
-    contact: str | None = None
-    created_at: datetime = Field(
-        sa_column_kwargs={
-            "server_default": text("CURRENT_TIMESTAMP"),
-        }
-    )
-    description: str
-    end_timestamp: datetime = Field(
-        sa_column=Column(
-            DateTime(),
-        )
-    )
-    id: uuid.UUID = Field(primary_key=True, default_factory=uuid.uuid4)
-    start_timestamp: datetime = Field(
-        sa_column=Column(
-            DateTime(),
-        )
-    )
-    status: str
-    title: str
-    updated_at: Optional[datetime] = Field(
-        sa_column=Column(
-            DateTime(),
-            onupdate=func.now(),
-        )
-    )
-
-
 class PagerDutyIncidentRecord(SQLModel, table=True):
     created_at: datetime = Field(
         sa_column_kwargs={
@@ -379,7 +270,7 @@ class PagerDutyIncidentRecord(SQLModel, table=True):
             exclude=True,
         ),
     ]
-    updated_at: Optional[datetime] = Field(
+    updated_at: datetime | None = Field(
         sa_column=Column(
             DateTime(),
             onupdate=func.now(),
@@ -416,7 +307,7 @@ class StatuspageIncidentRecord(SQLModel, table=True):
     ]
     shortlink: str | None = None
     status: str | None = None
-    updated_at: Optional[datetime] = Field(
+    updated_at: datetime | None = Field(
         sa_column=Column(
             DateTime(),
             onupdate=func.now(),
@@ -442,7 +333,7 @@ class PhareIncidentRecord(SQLModel, table=True):
         ),
     ]
     state: str | None = None
-    updated_at: Optional[datetime] = Field(
+    updated_at: datetime | None = Field(
         sa_column=Column(
             DateTime(),
             onupdate=func.now(),
@@ -455,42 +346,9 @@ class PhareIncidentRecord(SQLModel, table=True):
     url: str | None = None
 
 
-class User(UserBase, table=True):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    hashed_password: str
-
-
 def create_models():
     """
     Create Models
     """
 
     SQLModel.metadata.create_all(engine)
-
-
-def create_default_admin_user():
-    """
-    Create default admin user
-    """
-
-    user = session.exec(
-        select(User).where(User.email == settings.FIRST_SUPERUSER)
-    ).first()
-
-    if not user:
-        user_in = UserCreate(
-            email=settings.FIRST_SUPERUSER,
-            password=settings.FIRST_SUPERUSER_PASSWORD,
-            is_superuser=True,
-        )
-
-        db_obj = User.model_validate(
-            user_in,
-            update={"hashed_password": get_password_hash(user_in.password)},
-        )
-        session.add(db_obj)
-        session.commit()
-        session.refresh(db_obj)
-
-
-session = Session(engine)

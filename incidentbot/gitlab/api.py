@@ -2,7 +2,6 @@ import gitlab
 
 from incidentbot.configuration.settings import settings
 from incidentbot.logging import logger
-from typing import Optional
 
 from .utils import (
     build_mapping_dict,
@@ -55,19 +54,19 @@ class GitLabApi:
             self._project = self.gitlab.projects.get(project_id)
             return self._project
         except gitlab.exceptions.GitlabGetError as error:
-            logger.error(
-                f"Error getting GitLab project ID {project_id}: {error}"
+            logger.exception(
+                "error getting gitlab project", project_id=project_id, error=error
             )
             return None
 
     @property
-    def project_id(self) -> Optional[str]:
+    def project_id(self) -> str | None:
         """Returns the configured GitLab project's ID."""
         proj = self.project
         return str(proj.id) if proj else None
 
     @property
-    def project_path(self) -> Optional[str]:
+    def project_path(self) -> str | None:
         """Returns the configured GitLab project's path_with_namespace."""
         proj = self.project
         return proj.path_with_namespace if proj else None
@@ -85,8 +84,8 @@ class GitLabApi:
             labels = proj.labels.list(get_all=True)
             return [label.name for label in labels]
         except gitlab.exceptions.GitlabListError as error:
-            logger.error(
-                f"Error listing GitLab labels for project {proj.id}: {error}"
+            logger.exception(
+                "error listing gitlab labels for project", project_id=proj.id, error=error
             )
             return []
 
@@ -98,16 +97,16 @@ class GitLabApi:
             proj = self.project
             if proj is None or proj.id is None:
                 logger.error(
-                    "GitLab connection failed. Project could not be retrieved."
+                    "gitlab connection failed - project could not be retrieved"
                 )
                 logger.error(
-                    "Please check GitLab configuration and try again."
+                    "please check gitlab configuration and try again"
                 )
                 return False
             return True
         except Exception as error:
-            logger.error(f"Unexpected error authenticating to GitLab: {error}")
-            logger.error("Please check GitLab configuration and try again.")
+            logger.exception("unexpected error authenticating to gitlab", error=error)
+            logger.exception("please check gitlab configuration and try again")
             return False
 
     def _update_issues_with_mapping(
@@ -117,7 +116,7 @@ class GitLabApi:
         mapping_list: list,
         mapping_key: str,
         gitlab_value_key: str,
-        update_field: Optional[str] = None,
+        update_field: str | None = None,
     ):
         """
         Generic method to update issues based on severity or status mappings.
@@ -132,7 +131,7 @@ class GitLabApi:
         """
         if not mapping_list:
             logger.warning(
-                f"No {mapping_key} mapping found for GitLab integration."
+                "no mapping found for gitlab integration", mapping_key=mapping_key
             )
             return
 
@@ -141,7 +140,7 @@ class GitLabApi:
 
         if not mapping:
             logger.warning(
-                f"No mapping found for {mapping_key}={incident_value}."
+                "no mapping found for incident value", mapping_key=mapping_key, incident_value=incident_value
             )
             return
 
@@ -150,19 +149,22 @@ class GitLabApi:
 
         if not gitlab_value and not gitlab_labels:
             logger.warning(
-                f"No GitLab {gitlab_value_key} or labels mapped for {incident_value}."
+                "no gitlab value or labels mapped for incident value", gitlab_value_key=gitlab_value_key, incident_value=incident_value
             )
             return
 
         proj = self.project
         if not proj:
-            logger.error("Could not retrieve GitLab project for update.")
+            logger.error("could not retrieve gitlab project for update")
             return
 
         try:
             logger.info(
-                f"Updating GitLab issues with label {incident_name} to "
-                f"{gitlab_value_key}={gitlab_value}, labels={gitlab_labels}."
+                "updating gitlab issues with label",
+                label=incident_name,
+                gitlab_value_key=gitlab_value_key,
+                gitlab_value=gitlab_value,
+                labels=gitlab_labels,
             )
 
             issues = find_issues_by_label(proj, incident_name)
@@ -172,8 +174,11 @@ class GitLabApi:
 
             for issue in issues:
                 logger.debug(
-                    f"Updating GitLab issue #{issue.iid}: "
-                    f"{gitlab_value_key}={gitlab_value}, labels={gitlab_labels}."
+                    "updating gitlab issue",
+                    iid=issue.iid,
+                    gitlab_value_key=gitlab_value_key,
+                    gitlab_value=gitlab_value,
+                    labels=gitlab_labels,
                 )
 
                 # Update labels if specified
@@ -194,16 +199,16 @@ class GitLabApi:
                     and gitlab_value
                 ):
                     logger.info(
-                        f"Setting incident severity of #{issue.iid} to {gitlab_value}"
+                        "setting incident severity", iid=issue.iid, severity=gitlab_value
                     )
                     self.set_incident_severity(
                         issue_iid=issue.iid, severity=gitlab_value
                     )
 
         except gitlab.exceptions.GitlabUpdateError as error:
-            logger.error(f"Error updating GitLab issue: {error}")
+            logger.exception("error updating gitlab issue", error=error)
         except Exception as error:
-            logger.error(f"Unexpected error updating GitLab issue: {error}")
+            logger.exception("unexpected error updating gitlab issue", error=error)
 
     def update_issue_severity(
         self, incident_name: str, incident_severity: str
@@ -246,15 +251,14 @@ class GitLabApi:
         valid_severities = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"]
         if severity not in valid_severities:
             logger.error(
-                f"Invalid severity level {severity}. "
-                f"Must be one of: {', '.join(valid_severities)}"
+                "invalid severity level", severity=severity, valid=valid_severities
             )
             return False
 
         project_path = self.project_path
         if not project_path:
             logger.error(
-                "Could not retrieve project path for GraphQL mutation."
+                "could not retrieve project path for graphql mutation"
             )
             return False
 
@@ -289,22 +293,22 @@ class GitLabApi:
             )
             if errors:
                 logger.error(
-                    f"GraphQL error setting issue severity for #{issue_iid}: {errors}"
+                    "graphql error setting issue severity", iid=issue_iid, errors=errors
                 )
                 return False
 
             logger.info(
-                f"Set GitLab issue #{issue_iid} severity to {severity}."
+                "set gitlab issue severity", iid=issue_iid, severity=severity
             )
             return True
         except Exception as error:
-            logger.error(
-                f"Error setting GitLab issue severity via GraphQL for #{issue_iid}: {error}"
+            logger.exception(
+                "error setting gitlab issue severity via graphql", iid=issue_iid, error=error
             )
             return False
 
     def add_issue_resource_link(
-        self, issue_id: int, link: str, title: Optional[str] = None
+        self, issue_id: int, link: str, title: str | None = None
     ) -> bool:
         """
         Adds a related resource link to a specific issue using the GitLab GraphQL API.
@@ -350,16 +354,16 @@ class GitLabApi:
             )
             if errors:
                 logger.error(
-                    f"GraphQL error adding resource link to #{issue_id}: {errors}"
+                    "graphql error adding resource link to issue", issue_id=issue_id, errors=errors
                 )
                 return False
 
             logger.info(
-                f"Added resource link ({title}) to GitLab issue #{issue_id}."
+                "added resource link to gitlab issue", issue_id=issue_id, title=title
             )
             return True
         except Exception as error:
-            logger.error(
-                f"Error adding resource link via GraphQL for #{issue_id}: {error}"
+            logger.exception(
+                "error adding resource link via graphql", issue_id=issue_id, error=error
             )
             return False

@@ -1,53 +1,88 @@
 [tool.poetry]
 name = "incidentbot"
-version = "2.2.3"
+version = "0.0.0"  # not used for releases; version is derived from git in CI
 description = "The open source incident management framework."
 authors = ["Scott Hawkins <scott@echoboomer.net>"]
 license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.14.2"
+python = "^3.14.5"
 alembic = "^1.17.2"
 apscheduler = "^3.11.2"
 atlassian-python-api = "^4.0.7"
-bcrypt = "^5.0.0"
-emails = "^0.6"
 fastapi = "^0.127.0"
 jinja2 = "^3.1.6"
-mkdocs-glightbox = "^0.5.2"
-mkdocs-material = "^9.7.1"
 pagerduty = "^6.1.0"
 psycopg2-binary = "^2.9.11"
 pydantic = {extras = ["email"], version = "^2.12.5"}
 pydantic-settings = {extras = ["yaml"], version = "^2.12.0"}
 pyjwt = "^2.10.1"
-pytest = "^8.4.1"
-pytest-asyncio = "^1.3.0"
-pytest-env = "^1.2.0"
-pytest-mock = "^3.15.1"
-pytest-sqlalchemy-mock = "^0.1.7"
 python-dotenv = "^1.2.1"
 python-gitlab = {extras = ["graphql"], version = "^7.0.0"}
-python-json-logger = "^4.0.0"
-python-multipart = "^0.0.21"
 requests = "^2.32.5"
-requests-mock = "^1.12.1"
-ruff = "^0.14.10"
 matrix-nio = "^0.24"
 slack-bolt = "^1.27.0"
 slack-sdk = "^3.39.0"
 sqlmodel = "^0.0.28"
 structlog = "^25.5.0"
-uvicorn = "^0.40.0"
+granian = "^2.0"
+sqlalchemy = "^2.0.50"
 
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.4.1"
+deptry = "^0.25.1"
+pytest = "^9.0.3"
+pytest-asyncio = "^1.4.0"
+pytest-env = "^1.6.0"
+pytest-mock = "^3.15.1"
+pytest-sqlalchemy-mock = "^0.1.7"
+requests-mock = "^1.12.1"
+ruff = "^0.15.15"
+pytest-cov = "^7.1.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.deptry]
+# Exclude alembic migrations — they import sqlalchemy directly but that's intentional
+extend_exclude = ["alembic"]
+
+[tool.deptry.per_rule_ignores]
+# Runtime deps with no direct import:
+#   alembic       — used via CLI (`alembic upgrade head`) and excluded migration dir
+#   psycopg2-binary — loaded by SQLAlchemy from the connection URL at runtime
+#   python-dotenv — loaded by pydantic-settings automatically
+#   jinja2        — required by FastAPI's Jinja2Templates used in widget.py
+DEP002 = ["alembic", "psycopg2-binary", "python-dotenv", "jinja2"]
+# typing_extensions is a transitive dep used directly in schema/settings
+DEP003 = ["typing_extensions"]
+
+[tool.coverage.run]
+source = ["incidentbot"]
+branch = true            # measure branch coverage, not just line coverage
+omit = [
+    "incidentbot/alembic/*",
+]
+
+[tool.coverage.report]
+show_missing = true      # list uncovered line numbers next to each file
+precision = 1
+sort = "cover"           # lowest-coverage files printed first — offenders at top
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
+title = "incidentbot coverage"
+
+[tool.coverage.xml]
+output = "coverage.xml"
 
 [tool.black]
 line-length = 79

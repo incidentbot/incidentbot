@@ -3,7 +3,6 @@ from incidentbot.configuration.settings import settings
 from incidentbot.models.database import (
     IncidentParticipant,
     IncidentRecord,
-    MaintenanceWindowRecord,
 )
 from incidentbot.models.incident import IncidentDatabaseInterface
 from incidentbot.models.pager import read_pager_auto_page_targets
@@ -18,6 +17,8 @@ class BlockBuilder:
 
     @staticmethod
     def boilerplate_message(incident: IncidentRecord):
+        icon = settings.icons.get(settings.platform, {})
+
         blocks = [
             {"type": "divider"},
             {
@@ -29,41 +30,34 @@ class BlockBuilder:
                 },
             },
             {
+                # block_id preserved: set_description in actions.py locates
+                # this block by block_id and updates its text in-place.
                 "block_id": "digest_channel_description",
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": "{} *Description:* {}".format(
-                        settings.icons.get(settings.platform).get(
-                            "description"
-                        ),
-                        incident.description,
-                    ),
+                    "text": incident.description,
                 },
             },
             {
-                "block_id": "digest_channel_components",
+                "block_id": "digest_channel_components_impact",
                 "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "{} *Components:* {}".format(
-                        settings.icons.get(settings.platform).get(
-                            "components"
+                "fields": [
+                    {
+                        "type": "mrkdwn",
+                        "text": "{} *Components:*\n{}".format(
+                            icon.get("components"),
+                            incident.components,
                         ),
-                        incident.components,
-                    ),
-                },
-            },
-            {
-                "block_id": "digest_channel_impact",
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "{} *Impact:* {}".format(
-                        settings.icons.get(settings.platform).get("impact"),
-                        incident.impact,
-                    ),
-                },
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": "{} *Impact:*\n{}".format(
+                            icon.get("impact"),
+                            incident.impact,
+                        ),
+                    },
+                ],
             },
             {"type": "divider"},
         ]
@@ -141,82 +135,81 @@ class BlockBuilder:
         }
 
     @staticmethod
-    def comms_reminder_message() -> list[dict[str, Any]]:
-        """
-        Return a message containing a reminder to handle communications at intervals
-        """
+    def reminder_message(reminder, slug: str) -> list[dict]:
+        """Build Slack blocks for a config-driven reminder message."""
 
-        blocks = [
+        blocks: list[dict] = [
             {
-                "block_id": "initial_comms_reminder_message",
                 "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "Some time has passed since this incident was declared. "
-                    + "How about updating others on its status? If now isn't "
-                    + "the right time, consider delaying this message using the "
-                    + "buttons below. If you don't want any more reminders, you "
-                    + "can also disable them.",
-                },
-            },
-            {
-                "block_id": "initial_comms_reminder_actions",
-                "type": "actions",
-                "elements": [
+                "text": {"type": "mrkdwn", "text": reminder.message},
+            }
+        ]
+
+        elements: list[dict] = []
+        for action in reminder.actions:
+            if action.type == "send_update":
+                elements.append(
                     {
                         "type": "button",
                         "text": {
                             "type": "plain_text",
-                            "text": "Send Update",
+                            "text": action.label or "Send Update",
                             "emoji": True,
                         },
                         "value": "show_incident_update_modal",
                         "action_id": "incident_update_modal",
                         "style": "primary",
-                    },
+                    }
+                )
+            elif action.type == "snooze" and action.intervals:
+                for minutes in action.intervals:
+                    if minutes < 60:
+                        label = f"Snooze {minutes}m"
+                    elif minutes == 60:
+                        label = "Snooze 1h"
+                    else:
+                        label = f"Snooze {minutes // 60}h{minutes % 60:02d}m" if minutes % 60 else f"Snooze {minutes // 60}h"
+                    elements.append(
+                        {
+                            "type": "button",
+                            "text": {"type": "plain_text", "text": label, "emoji": True},
+                            "action_id": f"reminder.snooze.{reminder.id}.{minutes}",
+                            "value": str(minutes),
+                        }
+                    )
+            elif action.type == "dismiss":
+                elements.append(
                     {
                         "type": "button",
                         "text": {
                             "type": "plain_text",
-                            "text": "30m",
+                            "text": action.label or "Dismiss",
                             "emoji": True,
                         },
-                        "value": "handle_initial_comms_reminder_30m",
-                        "action_id": "incident.handle_initial_comms_reminder_30m",
-                    },
+                        "action_id": f"reminder.dismiss.{reminder.id}",
+                        "value": "dismiss",
+                    }
+                )
+
+        if reminder.include_role_buttons:
+            for role in settings.roles:
+                elements.append(
                     {
                         "type": "button",
                         "text": {
                             "type": "plain_text",
-                            "text": "60m",
+                            "text": "👤 Join as {}".format(
+                                " ".join(role.split("_")).title()
+                            ),
                             "emoji": True,
                         },
-                        "value": "handle_initial_comms_reminder_60m",
-                        "action_id": "incident.handle_initial_comms_reminder_60m",
-                    },
-                    {
-                        "type": "button",
-                        "text": {
-                            "type": "plain_text",
-                            "text": "90m",
-                            "emoji": True,
-                        },
-                        "value": "handle_initial_comms_reminder_90m",
-                        "action_id": "incident.handle_initial_comms_reminder_90m",
-                    },
-                    {
-                        "type": "button",
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Never",
-                            "emoji": True,
-                        },
-                        "value": "handle_initial_comms_reminder_never",
-                        "action_id": "incident.handle_initial_comms_reminder_never",
-                    },
-                ],
-            },
-        ]
+                        "value": f"join_this_incident_{role}",
+                        "action_id": f"incident.join_this_incident_{role}",
+                    }
+                )
+
+        if elements:
+            blocks.append({"type": "actions", "elements": elements})
 
         return blocks
 
@@ -512,7 +505,7 @@ class BlockBuilder:
                 )
 
                 for i in auto_page_targets:
-                    for k, v in i.items():
+                    for k, _ in i.items():
                         blocks.extend(
                             [
                                 {
@@ -553,10 +546,7 @@ class BlockBuilder:
 
             for responder in responders:
                 role_normalized = responder.role.replace("_", " ").title()
-                responders_ += "👤 *{}:* <@{}>\n\n".format(
-                    role_normalized,
-                    responder.user_id,
-                )
+                responders_ += f"👤 *{role_normalized}:* <@{responder.user_id}>\n\n"
 
             blocks.append(
                 {
@@ -581,6 +571,109 @@ class BlockBuilder:
                 ],
             }
         )
+
+        return blocks
+
+    @staticmethod
+    def events_list(
+        incident: IncidentRecord,
+        events: list,
+    ) -> list[dict[str, Any]]:
+        blocks = [
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": f"Events - {incident.slug.upper()}",
+                },
+            },
+            {"type": "divider"},
+            {
+                "type": "actions",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Add Entry",
+                            "emoji": True,
+                        },
+                        "action_id": "incident.add_event_modal",
+                        "style": "primary",
+                    }
+                ],
+            },
+            {"type": "divider"},
+        ]
+
+        if not events:
+            blocks.append(
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "No events recorded for this incident.",
+                    },
+                }
+            )
+            return blocks
+
+        limit = 25
+        shown = events[:limit]
+
+        for event in shown:
+            parts = []
+            if event.timestamp:
+                parts.append(f"*{event.timestamp.strftime('%Y-%m-%d %H:%M')}*")
+            if event.user:
+                parts.append(f"by {event.user}")
+            if event.source:
+                parts.append(f"[{event.source}]")
+            header = "  ".join(parts) if parts else "—"
+            body = event.text or event.title or "_no description_"
+
+            blocks.append(
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": f"{header}\n{body}",
+                    },
+                    "accessory": {
+                        "type": "button",
+                        "text": {"type": "plain_text", "text": "Delete"},
+                        "style": "danger",
+                        "action_id": "incident.delete_event",
+                        "value": str(event.id),
+                        "confirm": {
+                            "title": {
+                                "type": "plain_text",
+                                "text": "Delete this event?",
+                            },
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": f"_{body[:100]}_",
+                            },
+                            "confirm": {"type": "plain_text", "text": "Delete"},
+                            "deny": {"type": "plain_text", "text": "Cancel"},
+                        },
+                    },
+                }
+            )
+
+        if len(events) > limit:
+            blocks.append(
+                {
+                    "type": "context",
+                    "elements": [
+                        {
+                            "type": "mrkdwn",
+                            "text": f"Showing the {limit} most recent events. "
+                            + f"{len(events) - limit} older events are not shown.",
+                        }
+                    ],
+                }
+            )
 
         return blocks
 
@@ -723,15 +816,15 @@ class BlockBuilder:
                 "fields": [
                     {
                         "type": "mrkdwn",
-                        "text": "*Key:* {}".format(key),
+                        "text": f"*Key:* {key}",
                     },
                     {
                         "type": "mrkdwn",
-                        "text": "*Summary:* {}".format(summary),
+                        "text": f"*Summary:* {summary}",
                     },
                     {
                         "type": "mrkdwn",
-                        "text": "*Type:* {}".format(type),
+                        "text": f"*Type:* {type}",
                     },
                 ],
             },
@@ -770,11 +863,11 @@ class BlockBuilder:
                 "fields": [
                     {
                         "type": "mrkdwn",
-                        "text": "*Issue ID:* {}".format(id),
+                        "text": f"*Issue ID:* {id}",
                     },
                     {
                         "type": "mrkdwn",
-                        "text": "*Summary:* {}".format(summary),
+                        "text": f"*Summary:* {summary}",
                     },
                 ],
             },
@@ -797,199 +890,18 @@ class BlockBuilder:
         ]
 
     @staticmethod
-    def maintenance_window_list(
-        maintenance_windows: list[MaintenanceWindowRecord],
-    ) -> list[dict[str, Any]]:
-        """
-        Return a message containing details on maintenance windows
-
-        Parameters:
-            maintenance_windows (list[MaintenanceWindowRecord]): Maintenance windows to include in message
-        """
-
-        blocks = [
-            {
-                "type": "header",
-                "text": {
-                    "type": "plain_text",
-                    "text": "{} Maintenance Windows".format(
-                        settings.icons.get(settings.platform).get(
-                            "maintenance"
-                        )
-                    ),
-                },
-            },
-            {"type": "divider"},
-        ]
-
-        for window in maintenance_windows:
-            if window.status != settings.maintenance_windows.statuses[-1]:
-                base = [
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": f"> {window.title} *|* "
-                            + f"*Components:* `{window.components}` *|* "
-                            + f"*Status:* `{window.status.title()}` *|* "
-                            + f"*Start:* `{window.start_timestamp}` *|* "
-                            + f"*End:* `{window.end_timestamp}` *|* "
-                            + f"*Contact:* <@{window.contact}>",
-                        },
-                    },
-                    {
-                        "block_id": f"maintenance_window_actions_{window.id}",
-                        "type": "actions",
-                        "elements": [
-                            {
-                                "type": "button",
-                                "text": {
-                                    "type": "plain_text",
-                                    "text": "Set Status",
-                                    "emoji": True,
-                                },
-                                "value": "maintenance_window_set_status",
-                                "action_id": "maintenance_window.set_this_status_modal",
-                                "style": "primary",
-                            },
-                            {
-                                "type": "button",
-                                "text": {
-                                    "type": "plain_text",
-                                    "text": "Delete",
-                                    "emoji": True,
-                                },
-                                "value": "maintenance_window_delete",
-                                "action_id": "maintenance_window.delete",
-                                "style": "danger",
-                            },
-                        ],
-                    },
-                ]
-
-                blocks.extend(base)
-
-        if (
-            len(
-                [
-                    window
-                    for window in maintenance_windows
-                    if window.status
-                    != settings.maintenance_windows.statuses[-1]
-                ]
-            )
-            == 0
-        ):
-            blocks.append(
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": "No scheduled maintenance windows.",
-                    },
-                },
-            )
-
-        return blocks
-
-    @staticmethod
-    def maintenance_window_notification(
-        record: MaintenanceWindowRecord,
-        status: str,
+    def resolution_message(
+        channel: str,
+        postmortem_link: str | None = None,
+        sync_pinned_content_enabled: bool = False,
     ) -> dict[str, Any]:
-        """
-        Return a message for maintenance window notifications
-
-        Parameters:
-            record (MaintenanceWindowRecord): Maintenance window to include in message
-        """
-
-        blocks = [
-            {
-                "type": "header",
-                "text": {
-                    "type": "plain_text",
-                    "text": "{} Scheduled Maintenance Notification".format(
-                        settings.icons.get(settings.platform).get(
-                            "maintenance"
-                        )
-                    ),
-                },
-            },
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": record.title,
-                },
-            },
-            {"type": "divider"},
-            {
-                "block_id": "maintenance_window_notification_description",
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "{} *Description:* {}".format(
-                        settings.icons.get(settings.platform).get(
-                            "description"
-                        ),
-                        record.description,
-                    ),
-                },
-            },
-            {
-                "block_id": "maintenance_window_notification_components",
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "{} *Components:* `{}`".format(
-                        settings.icons.get(settings.platform).get(
-                            "components"
-                        ),
-                        record.components,
-                    ),
-                },
-            },
-            {
-                "block_id": "maintenance_window_notification_start",
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "{} *Start Time:* `{}`".format(
-                        settings.icons.get(settings.platform).get("stopwatch"),
-                        record.start_timestamp,
-                    ),
-                },
-            },
-            {
-                "block_id": "maintenance_window_notification_end",
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "{} *End Time:* `{}`".format(
-                        settings.icons.get(settings.platform).get("stopwatch"),
-                        record.end_timestamp,
-                    ),
-                },
-            },
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": f"This maintenance window's status has changed to *{status}*.",
-                },
-            },
-        ]
-
-        return blocks
-
-    @staticmethod
-    def resolution_message(channel: str) -> dict[str, Any]:
         """
         Return a message containing resolution information for an incident
 
         Parameters:
             channel (str): channel_id to send message to
+            postmortem_link (str | None): URL of an existing postmortem, if any
+            sync_pinned_content_enabled (bool): whether pinned-content sync is available
         """
         button_el = [
             {
@@ -1011,6 +923,45 @@ class BlockBuilder:
                 "action_id": "incident.archive_incident_channel",
             },
         ]
+
+        postmortem_buttons: list[dict] = []
+        if postmortem_link:
+            postmortem_buttons.append(
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "View Postmortem",
+                    },
+                    "style": "primary",
+                    "url": postmortem_link,
+                    "action_id": "view_postmortem",
+                },
+            )
+        else:
+            postmortem_buttons.append(
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Generate Postmortem",
+                    },
+                    "style": "primary",
+                    "action_id": "incident.generate_postmortem",
+                },
+            )
+
+        if sync_pinned_content_enabled and postmortem_link:
+            postmortem_buttons.append(
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Sync Pinned Content",
+                    },
+                    "action_id": "incident.sync_postmortem",
+                },
+            )
 
         if settings.links:
             for link in settings.links:
@@ -1049,6 +1000,23 @@ class BlockBuilder:
                     "type": "mrkdwn",
                     "text": f":tada: This incident has been marked as *{status_definition.title()}*.",
                 },
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "Use *Generate Postmortem* to create a postmortem document."
+                    + (
+                        " Use *Sync Pinned Content* to push pinned messages into Confluence."
+                        if sync_pinned_content_enabled
+                        else ""
+                    ),
+                },
+            },
+            {
+                "block_id": "resolution_postmortem_buttons",
+                "type": "actions",
+                "elements": postmortem_buttons,
             },
             {
                 "block_id": "resolution_buttons",
@@ -1157,41 +1125,89 @@ class BlockBuilder:
         return blocks
 
     @staticmethod
-    def role_assignment_message() -> list[dict[str, Any]]:
+    def roles_panel(
+        incident: IncidentRecord,
+        participants: list[IncidentParticipant],
+    ) -> list[dict[str, Any]]:
         """
-        Return a message containing a reminder to claim roles
+        Live role-assignment panel posted to the incident channel and updated
+        in-place whenever a role is claimed or released.
+
+        Each role shows its current holder(s) (or "Open") with a Join button.
+        If a role is assigned, a Leave button is also rendered — the action
+        handler validates that the clicking user actually holds the role before
+        removing them.
         """
 
-        blocks = [
+        blocks: list[dict[str, Any]] = [
             {
-                "block_id": "role_assignment_reminder_message",
-                "type": "section",
+                "type": "header",
                 "text": {
-                    "type": "mrkdwn",
-                    "text": ":point_right: @here No roles have been assigned for this incident yet. "
-                    + "Please review, assess, and claim as-needed.",
+                    "type": "plain_text",
+                    "text": f"👥  Roles — {incident.slug.upper()}",
                 },
             },
-            {
-                "block_id": "role_assignment_reminder_message_actions",
-                "type": "actions",
-                "elements": [
-                    {
+            {"type": "divider"},
+        ]
+
+        for role, _cfg in settings.roles.items():
+            role_normalized = " ".join(role.split("_")).title()
+            assignees = [p for p in participants if p.role == role]
+
+            if assignees:
+                names = "  ".join(f"<@{p.user_id}>" for p in assignees)
+                row_text = f"*{role_normalized}*\n{names}"
+            else:
+                row_text = f"*{role_normalized}*\n_Open_"
+
+            blocks.append(
+                {
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": row_text},
+                    "accessory": {
                         "type": "button",
                         "text": {
                             "type": "plain_text",
-                            "text": "👤 Join as {}".format(
-                                " ".join(role.split("_")).title()
-                            ),
+                            "text": "Join",
                             "emoji": True,
                         },
-                        "value": f"join_this_incident_{role}",
                         "action_id": f"incident.join_this_incident_{role}",
+                        "value": f"join_this_incident_{role}",
+                    },
+                }
+            )
+
+            if assignees:
+                blocks.append(
+                    {
+                        "type": "actions",
+                        "elements": [
+                            {
+                                "type": "button",
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": f"Leave {role_normalized}",
+                                    "emoji": True,
+                                },
+                                "action_id": "incident.leave_this_incident",
+                                "value": f"leave_this_incident_as_{role}",
+                            }
+                        ],
                     }
-                    for role in [key for key, _ in settings.roles.items()]
+                )
+
+        blocks.append({"type": "divider"})
+        blocks.append(
+            {
+                "type": "context",
+                "elements": [
+                    {
+                        "type": "mrkdwn",
+                        "text": "Click *Join* to claim a role. *Leave* only applies to roles you currently hold.",
+                    }
                 ],
-            },
-        ]
+            }
+        )
 
         return blocks
 
@@ -1314,209 +1330,111 @@ class BlockBuilder:
 
     @staticmethod
     def set_this_status_modal(
-        object_type: str,
-        record: IncidentRecord | MaintenanceWindowRecord,
+        record: IncidentRecord,
     ) -> list[dict[str, Any]]:
-        """
-        Blocks for the status select modal
-
-        Parameters:
-            object_type (str): One of incident,maintenance_window
-            record (IncidentRecord | MaintenanceWindowRecord): The record for the object
-        """
-
-        match object_type:
-            case "incident":
-                blocks = [
+        return [
+            {
+                "block_id": f"set_this_status_modal_header_{record.channel_id}",
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": record.slug.upper(),
+                },
+            },
+            {
+                "block_id": "set_this_status_modal_description",
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "{} *Description:* {}".format(
+                        settings.icons.get(settings.platform).get(
+                            "description"
+                        ),
+                        record.description,
+                    ),
+                },
+            },
+            {
+                "block_id": "set_this_status_modal_components",
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "{} *Components:* {}".format(
+                        settings.icons.get(settings.platform).get(
+                            "components"
+                        ),
+                        record.components,
+                    ),
+                },
+            },
+            {
+                "block_id": "set_this_status_modal_impact",
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "{} *Impact:* {}".format(
+                        settings.icons.get(settings.platform).get("impact"),
+                        record.impact,
+                    ),
+                },
+            },
+            {"type": "divider"},
+            {
+                "block_id": "set_this_status_modal_current_status_header",
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": "Set Status",
+                },
+            },
+            {
+                "block_id": "set_this_status_modal_status_select",
+                "type": "actions",
+                "elements": [
                     {
-                        "block_id": f"set_this_status_modal_header_{record.channel_id}",
-                        "type": "header",
-                        "text": {
+                        "type": "static_select",
+                        "action_id": "incident.set_this_status",
+                        "placeholder": {
                             "type": "plain_text",
-                            "text": record.slug.upper(),
+                            "text": record.status.title(),
+                            "emoji": True,
                         },
-                    },
-                    {
-                        "block_id": "set_this_status_modal_description",
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "{} *Description:* {}".format(
-                                settings.icons.get(settings.platform).get(
-                                    "description"
-                                ),
-                                record.description,
-                            ),
+                        "initial_option": {
+                            "text": {
+                                "type": "plain_text",
+                                "text": record.status.title(),
+                                "emoji": True,
+                            },
+                            "value": record.status,
                         },
-                    },
-                    {
-                        "block_id": "set_this_status_modal_components",
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "{} *Components:* {}".format(
-                                settings.icons.get(settings.platform).get(
-                                    "components"
-                                ),
-                                record.components,
-                            ),
-                        },
-                    },
-                    {
-                        "block_id": "set_this_status_modal_impact",
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "{} *Impact:* {}".format(
-                                settings.icons.get(settings.platform).get(
-                                    "impact"
-                                ),
-                                record.impact,
-                            ),
-                        },
-                    },
-                    {"type": "divider"},
-                    {
-                        "block_id": "set_this_status_modal_current_status_header",
-                        "type": "header",
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Set Status",
-                        },
-                    },
-                    {
-                        "block_id": "set_this_status_modal_status_select",
-                        "type": "actions",
-                        "elements": [
+                        "options": [
                             {
-                                "type": "static_select",
-                                "action_id": "incident.set_this_status",
-                                "placeholder": {
+                                "text": {
                                     "type": "plain_text",
-                                    "text": record.status.title(),
+                                    "text": st.title(),
                                     "emoji": True,
                                 },
-                                "initial_option": {
-                                    "text": {
-                                        "type": "plain_text",
-                                        "text": record.status.title(),
-                                        "emoji": True,
-                                    },
-                                    "value": record.status,
-                                },
-                                "options": [
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": st.title(),
-                                            "emoji": True,
-                                        },
-                                        "value": st,
-                                    }
-                                    for st in [
-                                        status
-                                        for status in settings.statuses.keys()
-                                    ]
-                                ],
+                                "value": st,
                             }
+                            for st in settings.statuses
                         ],
-                    },
-                    {"type": "divider"},
+                    }
+                ],
+            },
+            {"type": "divider"},
+            {
+                "type": "context",
+                "elements": [
                     {
-                        "type": "context",
-                        "elements": [
-                            {
-                                "type": "mrkdwn",
-                                "text": "When you click Done, the status will be "
-                                + "updated to the value selected above. The channel "
-                                + "will be notified of this change. The home message "
-                                + "in the digest channel will also be updated.",
-                            }
-                        ],
-                    },
-                ]
-            case "maintenance_window":
-                blocks = [
-                    {
-                        "block_id": f"set_this_status_modal_header_{record.id}",
-                        "type": "header",
-                        "text": {
-                            "type": "plain_text",
-                            "text": record.description,
-                        },
-                    },
-                    {
-                        "block_id": "set_this_status_modal_description",
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "{} *Description:* {}".format(
-                                settings.icons.get(settings.platform).get(
-                                    "description"
-                                ),
-                                record.description,
-                            ),
-                        },
-                    },
-                    {
-                        "block_id": "set_this_status_modal_components",
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "{} *Components:* {}".format(
-                                settings.icons.get(settings.platform).get(
-                                    "components"
-                                ),
-                                record.components,
-                            ),
-                        },
-                    },
-                    {"type": "divider"},
-                    {
-                        "block_id": "set_this_status_modal_current_status_header",
-                        "type": "header",
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Set Status",
-                        },
-                    },
-                    {
-                        "block_id": "set_this_status_modal_status_select",
-                        "type": "actions",
-                        "elements": [
-                            {
-                                "type": "static_select",
-                                "action_id": "maintenance_window.set_this_status",
-                                "placeholder": {
-                                    "type": "plain_text",
-                                    "text": record.status,
-                                    "emoji": True,
-                                },
-                                "initial_option": {
-                                    "text": {
-                                        "type": "plain_text",
-                                        "text": record.status,
-                                        "emoji": True,
-                                    },
-                                    "value": record.status,
-                                },
-                                "options": [
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": st,
-                                            "emoji": True,
-                                        },
-                                        "value": st,
-                                    }
-                                    for st in settings.maintenance_windows.statuses
-                                ],
-                            }
-                        ],
-                    },
-                ]
-
-        return blocks
+                        "type": "mrkdwn",
+                        "text": "When you click Done, the status will be "
+                        + "updated to the value selected above. The channel "
+                        + "will be notified of this change. The home message "
+                        + "in the digest channel will also be updated.",
+                    }
+                ],
+            },
+        ]
 
     @staticmethod
     def statuspage_incident_list(
@@ -1873,16 +1791,24 @@ class BlockBuilder:
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": "Here are some actions to help your team get started "
-                    + "with this new incident.",
+                    "text": "A new incident is active. *Claim a role* to coordinate the response.",
                 },
             },
             {
-                "block_id": "welcome_actions",
+                "block_id": "welcome_role_actions",
                 "type": "actions",
-                "elements": join_buttons + other_buttons,
+                "elements": join_buttons,
             },
         ]
+
+        if other_buttons:
+            blocks.append(
+                {
+                    "block_id": "welcome_actions",
+                    "type": "actions",
+                    "elements": other_buttons,
+                }
+            )
 
         return blocks
 
@@ -1913,12 +1839,22 @@ def digest_base(
             header = incident_slug.upper()
             status_format = status.title()
 
+    icon = settings.icons.get(settings.platform, {})
+
     return [
         {
             "type": "header",
             "text": {
                 "type": "plain_text",
                 "text": header,
+            },
+        },
+        {
+            "block_id": "digest_channel_description",
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": incident_description,
             },
         },
         {"type": "divider"},
@@ -1928,65 +1864,50 @@ def digest_base(
             "text": {
                 "type": "mrkdwn",
                 "text": "{} *Channel:* <#{}>".format(
-                    settings.icons.get(settings.platform).get("channel"),
+                    icon.get("channel"),
                     channel_id,
                 ),
             },
         },
         {
-            "block_id": "digest_channel_description",
+            "block_id": "digest_channel_components_impact",
             "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": "{} *Description:* {}".format(
-                    settings.icons.get(settings.platform).get("description"),
-                    incident_description,
-                ),
-            },
+            "fields": [
+                {
+                    "type": "mrkdwn",
+                    "text": "{} *Components:*\n{}".format(
+                        icon.get("components"),
+                        incident_components,
+                    ),
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": "{} *Impact:*\n{}".format(
+                        icon.get("impact"),
+                        incident_impact or "None",
+                    ),
+                },
+            ],
         },
         {
-            "block_id": "digest_channel_components",
+            "block_id": "digest_channel_status_severity",
             "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": "{} *Components:* {}".format(
-                    settings.icons.get(settings.platform).get("components"),
-                    incident_components,
-                ),
-            },
-        },
-        {
-            "block_id": "digest_channel_impact",
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": "{} *Impact:* {}".format(
-                    settings.icons.get(settings.platform).get("impact"),
-                    incident_impact,
-                ),
-            },
-        },
-        {
-            "block_id": "digest_channel_status",
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": "{} *Status:* {}".format(
-                    settings.icons.get(settings.platform).get("status"),
-                    status_format,
-                ),
-            },
-        },
-        {
-            "block_id": "digest_channel_severity",
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": "{} *Severity:* {}".format(
-                    settings.icons.get(settings.platform).get("severity"),
-                    severity.upper(),
-                ),
-            },
+            "fields": [
+                {
+                    "type": "mrkdwn",
+                    "text": "{} *Status:*\n{}".format(
+                        icon.get("status"),
+                        status_format,
+                    ),
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": "{} *Severity:*\n{}".format(
+                        icon.get("severity"),
+                        severity.upper(),
+                    ),
+                },
+            ],
         },
     ]
 
@@ -2019,46 +1940,39 @@ class IncidentChannelDigestNotification:
             status=initial_status,
         )
 
+        action_buttons = []
+
         if meeting_link and (not has_private_channel):
-            blocks.extend(
-                [
-                    {
-                        "block_id": "digest_channel_meeting",
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "{} *Meeting:* <{}|Join>".format(
-                                settings.icons.get(settings.platform).get(
-                                    "meeting"
-                                ),
-                                meeting_link,
-                            ),
-                        },
-                    }
-                ]
+            action_buttons.append(
+                {
+                    "type": "button",
+                    "text": {"type": "plain_text", "text": "Join Meeting", "emoji": True},
+                    "url": meeting_link,
+                    "action_id": "incident.join_meeting",
+                }
             )
 
         if postmortem_link:
-            blocks.extend(
-                [
-                    {
-                        "block_id": "postmortem_link",
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "{} *Postmortem:* <{}|View>".format(
-                                settings.icons.get(settings.platform).get(
-                                    "postmortem"
-                                ),
-                                postmortem_link,
-                            ),
-                        },
-                    },
-                    {"type": "divider"},
-                ]
+            action_buttons.append(
+                {
+                    "type": "button",
+                    "text": {"type": "plain_text", "text": "View Postmortem", "emoji": True},
+                    "url": postmortem_link,
+                    "style": "primary",
+                    "action_id": "view_postmortem",
+                }
             )
-        else:
-            blocks.append({"type": "divider"})
+
+        if action_buttons:
+            blocks.append(
+                {
+                    "block_id": "digest_channel_actions",
+                    "type": "actions",
+                    "elements": action_buttons,
+                }
+            )
+
+        blocks.append({"type": "divider"})
 
         return {
             "channel": settings.digest_channel,
@@ -2092,44 +2006,39 @@ class IncidentChannelDigestNotification:
             status=status,
         )
 
+        action_buttons = []
+
         if meeting_link and (not has_private_channel):
-            blocks.append(
+            action_buttons.append(
                 {
-                    "block_id": "digest_channel_meeting",
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": "{} *Meeting:* <{}|Join>".format(
-                            settings.icons.get(settings.platform).get(
-                                "meeting"
-                            ),
-                            meeting_link,
-                        ),
-                    },
-                },
+                    "type": "button",
+                    "text": {"type": "plain_text", "text": "Join Meeting", "emoji": True},
+                    "url": meeting_link,
+                    "action_id": "incident.join_meeting",
+                }
             )
 
         if postmortem_link:
-            blocks.extend(
-                [
-                    {
-                        "block_id": "postmortem_link",
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "{} *Postmortem:* <{}|View>".format(
-                                settings.icons.get(settings.platform).get(
-                                    "postmortem"
-                                ),
-                                postmortem_link,
-                            ),
-                        },
-                    },
-                    {"type": "divider"},
-                ]
+            action_buttons.append(
+                {
+                    "type": "button",
+                    "text": {"type": "plain_text", "text": "View Postmortem", "emoji": True},
+                    "url": postmortem_link,
+                    "style": "primary",
+                    "action_id": "view_postmortem",
+                }
             )
-        else:
-            blocks.append({"type": "divider"})
+
+        if action_buttons:
+            blocks.append(
+                {
+                    "block_id": "digest_channel_actions",
+                    "type": "actions",
+                    "elements": action_buttons,
+                }
+            )
+
+        blocks.append({"type": "divider"})
 
         return blocks
 

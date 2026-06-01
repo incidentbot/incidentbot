@@ -56,8 +56,8 @@ class MatrixAdapter(PlatformAdapter):
 
     def get_group_members_by_name(self, group_name: str) -> list[str]:
         logger.warning(
-            f"Matrix does not support usergroups. Cannot auto-invite group '{group_name}'. "
-            "Configure individual user IDs via matrix.auto_invite_users instead."
+            "matrix does not support usergroups, cannot auto-invite group; configure individual user ids via matrix.auto_invite_users instead",
+            group_name=group_name,
         )
         return []
 
@@ -74,6 +74,11 @@ class MatrixAdapter(PlatformAdapter):
     def post_welcome_message(self, room_id: str) -> None:
         plain, html = MatrixMessages.welcome(room_id)
         self._matrix.send_text(room_id, plain, html)
+
+    def post_roles_panel(self, room_id: str, incident: Any, participants: list) -> str:
+        # Roles panel is Slack-specific (uses in-place message updates).
+        # Matrix support is not yet implemented.
+        return ""
 
     def post_digest_notification(
         self,

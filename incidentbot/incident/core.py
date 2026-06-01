@@ -4,7 +4,8 @@ import re
 
 from incidentbot.configuration.settings import settings
 from incidentbot.incident.event import EventLogHandler
-from incidentbot.incident.util import comms_reminder, role_watcher
+from incidentbot.incident.automations import run as run_automations
+from incidentbot.incident.reminders import register_reminder_jobs
 from incidentbot.logging import logger
 from incidentbot.models.database import IncidentRecord, engine
 from incidentbot.models.pager import read_pager_auto_page_targets
@@ -113,7 +114,7 @@ class Incident:
                         (status for status, config in settings.statuses.items() if config.initial),
                         list(settings.statuses.keys())[0] if settings.statuses else None
                     ),
-                    statuses=[status for status in settings.statuses.keys()],
+                    statuses=[status for status in settings.statuses],
                 )
 
                 session.add(record)
@@ -139,7 +140,36 @@ class Incident:
                 Update record
                 """
 
-                record.channel_id = channel.get("id")
+                channel_id = channel.get("id")
+                if not channel_id:
+                    # Channel creation failed entirely — delete the stub record so we
+                    # don't leave an orphaned row with channel_id=None in the DB.
+                    session.delete(record)
+                    session.commit()
+                    logger.error(
+                        "aborting incident creation: could not obtain a channel id", channel_name=channel_name
+                    )
+                    return None
+
+                # Guard against duplicate records pointing at the same channel (e.g. a
+                # previous failed attempt that did successfully create the Slack channel).
+                duplicate = session.exec(
+                    select(IncidentRecord).filter(
+                        IncidentRecord.channel_id == channel_id,
+                        IncidentRecord.id != record.id,
+                    )
+                ).first()
+                if duplicate:
+                    session.delete(record)
+                    session.commit()
+                    logger.warning(
+                        "channel already has an incident record, reusing existing incident",
+                        channel_id=channel_id,
+                        existing_slug=duplicate.slug,
+                    )
+                    return channel_id
+
+                record.channel_id = channel_id
                 record.channel_name = channel_name
                 record.has_private_channel = (
                     self.params.private_channel or self.params.is_security_incident
@@ -157,7 +187,7 @@ class Incident:
                 """
 
                 logger.info(
-                    f"Sending message to digest channel for: {record.channel_name}"
+                    "sending message to digest channel", channel=record.channel_name
                 )
                 digest_event_id = adapter.post_digest_notification(
                     channel_id=record.channel_id,
@@ -195,6 +225,27 @@ class Incident:
 
                 adapter.post_welcome_message(room_id=record.channel_id)
 
+                """
+                Post live roles panel (updated in-place as roles are claimed)
+                """
+
+                roles_panel_ts = adapter.post_roles_panel(
+                    room_id=record.channel_id,
+                    incident=record,
+                    participants=[],
+                )
+                if roles_panel_ts:
+                    from incidentbot.models.database import ApplicationData
+
+                    with Session(engine) as sess:
+                        sess.add(
+                            ApplicationData(
+                                name=f"role_panel_{record.channel_id}",
+                                json_data={"ts": roles_panel_ts},
+                            )
+                        )
+                        sess.commit()
+
                 if (
                     settings.platform == "matrix"
                     and settings.matrix
@@ -216,11 +267,11 @@ class Incident:
                             url=widget_url,
                         )
                         logger.info(
-                            f"Incident controls widget registered in room {record.channel_id}"
+                            "incident controls widget registered in room", room_id=record.channel_id
                         )
                     except Exception as error:
-                        logger.error(
-                            f"Failed to register incident controls widget in {record.channel_id}: {error}"
+                        logger.exception(
+                            "failed to register incident controls widget", room_id=record.channel_id, error=error
                         )
 
                 """
@@ -271,7 +322,9 @@ class Incident:
                 # Invite the user who started the incident to the room
                 if self.params.user:
                     logger.info(
-                        f"Inviting declaring user {self.params.user} to {record.channel_id}"
+                        "inviting declaring user to incident room",
+                        user=self.params.user,
+                        room_id=record.channel_id,
                     )
                     adapter.invite_user(room_id=record.channel_id, user_id=self.params.user)
                     try:
@@ -279,15 +332,21 @@ class Incident:
                             room_id=record.channel_id, user_id=self.params.user
                         )
                         logger.info(
-                            f"Granted room admin to declaring user {self.params.user} in {record.channel_id}"
+                            "granted room admin to declaring user",
+                            user=self.params.user,
+                            room_id=record.channel_id,
                         )
                     except Exception as error:
-                        logger.error(
-                            f"Failed to grant room admin to {self.params.user} in {record.channel_id}: {error}"
+                        logger.exception(
+                            "failed to grant room admin to declaring user",
+                            user=self.params.user,
+                            room_id=record.channel_id,
+                            error=error,
                         )
                 else:
                     logger.info(
-                        f"No declaring user provided for incident {record.channel_id}; skipping auto-invite"
+                        "no declaring user provided for incident, skipping auto-invite",
+                        room_id=record.channel_id,
                     )
 
                 # Write event log
@@ -306,7 +365,7 @@ class Incident:
 
                 return record.channel_id
         except Exception as error:
-            logger.error(f"Error during incident creation: {error}")
+            logger.exception("error during incident creation", error=error)
             return
 
     @staticmethod
@@ -338,7 +397,7 @@ class Incident:
 
                 return True
         except Exception as error:
-            logger.error(f"Error deleting incident: {error}")
+            logger.exception("error deleting incident", error=error)
             return
 
     async def handle_incident_optional_features(self, id: int):
@@ -354,52 +413,7 @@ class Incident:
                 select(IncidentRecord).filter(IncidentRecord.id == id)
             ).one()
 
-            if settings.options.auto_invite_groups:
-                for gr in settings.options.auto_invite_groups:
-                    if (
-                        record.severity in gr.severities.split(",")
-                        or gr.severities == "all"
-                    ):
-                        members = adapter.get_group_members_by_name(gr.name)
-                        if members:
-                            try:
-                                adapter.invite_users(
-                                    room_id=record.channel_id, user_ids=members
-                                )
-                                EventLogHandler.create(
-                                    event=f"Group {gr.name} was invited to the incident channel based on configured settings",
-                                    incident_id=record.id,
-                                    incident_slug=record.slug,
-                                    source="system",
-                                )
-                            except Exception as error:
-                                logger.error(
-                                    f"Error when inviting auto users: {error}"
-                                )
-
-                        if (
-                            settings.integrations
-                            and settings.integrations.pagerduty
-                            and settings.integrations.pagerduty.enabled
-                            and gr.pagerduty_escalation_policy
-                        ):
-                            from incidentbot.pagerduty.api import PagerDutyInterface
-
-                            pagerduty_interface = PagerDutyInterface(
-                                escalation_policy=gr.pagerduty_escalation_policy
-                            )
-                            pagerduty_interface.page(
-                                priority=gr.pagerduty_escalation_priority,
-                                channel_name=record.channel_name,
-                                channel_id=record.channel_id,
-                                paging_user="auto",
-                            )
-                            EventLogHandler.create(
-                                event="Created PagerDuty incident based on automatic configuration",
-                                incident_id=record.id,
-                                incident_slug=record.slug,
-                                source="system",
-                            )
+            run_automations("on_open", record)
 
             """
             Post prompt for creating Statuspage incident if enabled (optional)
@@ -411,7 +425,7 @@ class Incident:
                 and settings.integrations.atlassian.statuspage
                 and settings.integrations.atlassian.statuspage.enabled
             ):
-                logger.info(f"Sending Statuspage prompt to {record.channel_name}")
+                logger.info("sending statuspage prompt", channel=record.channel_name)
                 adapter.post_statuspage_prompt(room_id=record.channel_id)
 
             """
@@ -423,7 +437,7 @@ class Incident:
                 and settings.integrations.phare
                 and settings.integrations.phare.enabled
             ):
-                logger.info(f"Sending Phare prompt to {record.channel_name}")
+                logger.info("sending phare prompt", channel=record.channel_name)
                 adapter.post_phare_prompt(record.channel_id)
 
             """
@@ -442,7 +456,7 @@ class Incident:
                 if auto_page_targets:
                     for i in auto_page_targets:
                         for k, v in i.items():
-                            logger.info(f"Paging {k}...")
+                            logger.info("paging team", team=k)
                             pagerduty_interface = PagerDutyInterface(escalation_policy=v)
                             pagerduty_interface.page(
                                 priority="low",
@@ -516,12 +530,12 @@ class Incident:
                                     room_id=record.channel_id, event_id=event_id
                                 )
                         except Exception as error:
-                            logger.error(
-                                f"Error sending Jira issue message for {record.channel_name}: {error}"
+                            logger.exception(
+                                "error sending jira issue message", channel=record.channel_name, error=error
                             )
                 except Exception as error:
-                    logger.error(
-                        f"Error creating Jira incident for {record.channel_name}: {error}"
+                    logger.exception(
+                        "error creating jira incident", channel=record.channel_name, error=error
                     )
 
             """
@@ -570,12 +584,12 @@ class Incident:
                                     room_id=record.channel_id, event_id=event_id
                                 )
                         except Exception as error:
-                            logger.error(
-                                f"Error sending GitLab incident message for {record.channel_name}: {error}"
+                            logger.exception(
+                                "error sending gitlab incident message", channel=record.channel_name, error=error
                             )
                 except Exception as error:
-                    logger.error(
-                        f"Error creating GitLab incident for {record.channel_name}: {error}"
+                    logger.exception(
+                        "error creating gitlab incident", channel=record.channel_name, error=error
                     )
 
             """
@@ -604,43 +618,16 @@ class Incident:
                     record.additional_comms_channel_id = comms_id
                     record.additional_comms_channel_link = adapter.room_url(comms_id)
                 except Exception as error:
-                    logger.error(f"Error creating comms channel: {error}")
+                    logger.exception("error creating comms channel", error=error)
 
             """
-            Create task to remind channel about status updates
-            """
-
-            try:
-                if settings.initial_comms_reminder_minutes != 0:
-                    TaskScheduler.scheduler.add_job(
-                        id=f"{record.slug}_comms_reminder",
-                        func=comms_reminder,
-                        args=[record.channel_id],
-                        trigger="interval",
-                        name=f"{record.slug}_comms_reminder",
-                        minutes=settings.initial_comms_reminder_minutes,
-                        replace_existing=True,
-                    )
-            except Exception as error:
-                logger.error(f"Error adding job: {error}")
-
-            """
-            Create task to watch for unassigned roles
+            Register per-incident reminder jobs
             """
 
             try:
-                if settings.initial_role_watcher_minutes != 0:
-                    TaskScheduler.scheduler.add_job(
-                        id=f"{record.slug}_role_watcher",
-                        func=role_watcher,
-                        args=[record.channel_id],
-                        trigger="interval",
-                        name=f"{record.slug}_role_watcher",
-                        minutes=settings.initial_role_watcher_minutes,
-                        replace_existing=True,
-                    )
+                register_reminder_jobs(record)
             except Exception as error:
-                logger.error(f"Error adding job: {error}")
+                logger.exception("error registering reminder jobs", error=error)
 
             """
             Additional welcome messages
@@ -657,8 +644,8 @@ class Incident:
                                 room_id=record.channel_id, event_id=event_id
                             )
             except Exception as error:
-                logger.error(
-                    f"Error sending additional welcome message to {record.slug}: {error}"
+                logger.exception(
+                    "error sending additional welcome message", slug=record.slug, error=error
                 )
 
             """
