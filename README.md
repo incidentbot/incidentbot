@@ -10,7 +10,15 @@ An incident management framework centralized around a ChatOps bot to allow your 
 
 [Incident Bot's Documentation](https://docs.incidentbot.io)
 
-**NOTICE:** As of February 2nd, 2025, the Helm charts repository has moved from https://charts.incidentbot.io to https://docs.incidentbot.io/charts - please update your usage accordingly.
+> [!NOTE]
+> As of February 2nd, 2025, the Helm charts repository has moved from https://charts.incidentbot.io to https://docs.incidentbot.io/charts — please update your usage accordingly.
+
+> [!WARNING]
+> **The image registry and versioning scheme have changed.** The official image has moved from Docker Hub (`eb129/incidentbot`) to the GitHub Container Registry, and releases now use CalVer instead of semantic versioning. If you are running an older version, see the [migration guide](https://docs.incidentbot.io/#migration-steps) before upgrading.
+>
+> ```
+> ghcr.io/incidentbot/incidentbot:latest
+> ```
 
 - [Incident Bot](#incident-bot)
   - [Features](#features)
