@@ -66,14 +66,14 @@ class StatuspageIncident:
             self.info = json.loads(resp.text)
 
             logger.info(
-                "Created Statuspage incident: {}".format(self.info.get("name"))
+                "created statuspage incident", name=self.info.get("name")
             )
 
             incident_data = IncidentDatabaseInterface.get_one(
                 channel_id=self.channel_id
             )
         except Exception as error:
-            logger.error(f"Error during statuspage incident creation: {error}")
+            logger.exception("error during statuspage incident creation", error=error)
 
             return
 
@@ -95,8 +95,8 @@ class StatuspageIncident:
 
             return message_ts
         except Exception as error:
-            logger.error(
-                f"Error during statuspage incident record creation: {error}"
+            logger.exception(
+                "error during statuspage incident record creation", error=error
             )
 
             return
@@ -160,9 +160,7 @@ class StatuspageIncidentUpdate:
 
             # Patch the incident
             resp = requests.patch(
-                "{}/pages/{}/incidents/{}".format(
-                    api, settings.STATUSPAGE_PAGE_ID, record.upstream_id
-                ),
+                f"{api}/pages/{settings.STATUSPAGE_PAGE_ID}/incidents/{record.upstream_id}",
                 headers=headers,
                 json=payload,
             )
@@ -183,8 +181,8 @@ class StatuspageIncidentUpdate:
                     ),
                 )
             except Exception as error:
-                logger.error(
-                    f"Error updating Statuspage message for {incident_data.channel_name}: {error}"
+                logger.exception(
+                    "error updating statuspage message", channel_name=incident_data.channel_name, error=error
                 )
 
     @staticmethod
@@ -222,10 +220,7 @@ class StatuspageIncidentUpdate:
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "*Name*: {}\n*Status*: {}\n".format(
-                            record.name,
-                            record.status.title(),
-                        ),
+                        "text": f"*Name*: {record.name}\n*Status*: {record.status.title()}\n",
                     },
                 },
                 {"type": "divider"},

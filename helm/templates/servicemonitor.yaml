@@ -1,0 +1,22 @@
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: incident-bot
+  labels:
+    app.kubernetes.io/name: incidentbot
+    # Must match the Prometheus Operator's serviceMonitorSelector.
+    release: {{ .Values.serviceMonitor.release }}
+spec:
+  selector:
+    matchLabels:
+      # Matches the Service created by the incidentbot subchart. Its instance
+      # label is the umbrella release name (ArgoCD sets releaseName: incident-bot).
+      app.kubernetes.io/name: incidentbot
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scheme: http
+{{- end }}

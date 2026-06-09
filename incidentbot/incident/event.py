@@ -3,13 +3,26 @@ from datetime import datetime
 from incidentbot.configuration.settings import settings
 from incidentbot.logging import logger
 from incidentbot.models.database import engine, IncidentEvent
+from incidentbot.util.gen import fetch_timestamp
 from sqlmodel import Session, select, or_
-
-if not settings.IS_TEST_ENVIRONMENT:
-    from incidentbot.slack.client import get_slack_user
 
 
 class EventLogHandler:
+    @staticmethod
+    def _resolve_user_display_name(user: str | None) -> str:
+        if not user:
+            return "NotAvailable"
+
+        if settings.IS_TEST_ENVIRONMENT:
+            return user
+
+        try:
+            from incidentbot.platform import get_adapter
+
+            return get_adapter().get_user_display_name(user)
+        except Exception:
+            return user
+
     @classmethod
     def create(
         self,
@@ -33,21 +46,25 @@ class EventLogHandler:
                 event = IncidentEvent(
                     image=image,
                     incident_slug=incident_slug,
-                    message_ts=message_ts,
+                    message_ts=(
+                        message_ts
+                        if message_ts
+                        else fetch_timestamp(epoch=True)
+                    ),
                     mimetype=mimetype,
                     parent=incident_id,
                     source=source,
                     text=event,
                     timestamp=timestamp,
                     title=title,
-                    user=get_slack_user(user).get("real_name", "NotAvailable"),
+                    user=self._resolve_user_display_name(user),
                 )
 
                 session.add(event)
                 session.commit()
             except Exception as error:
-                logger.error(
-                    f"Event log creation failed for incident {incident_id}: {error}"
+                logger.exception(
+                    "event log creation failed", incident_id=incident_id, error=error
                 )
 
     @classmethod
@@ -71,10 +88,10 @@ class EventLogHandler:
                 session.delete(record)
                 session.commit()
 
-                logger.info(f"deleted incident event {id}")
+                logger.info("deleted incident event", event_id=id)
             except Exception as error:
-                logger.error(
-                    f"Event log delete failed for record {id}: {error}"
+                logger.exception(
+                    "event log delete failed", event_id=id, error=error
                 )
 
                 return False, error
@@ -96,18 +113,22 @@ class EventLogHandler:
         with Session(engine) as session:
             try:
                 records = session.exec(
-                    select(IncidentEvent).filter(
+                    select(IncidentEvent)
+                    .filter(
                         or_(
                             IncidentEvent.incident_slug == incident_slug,
                             IncidentEvent.parent == incident_id,
                         )
                     )
+                    .order_by(
+                        IncidentEvent.message_ts, IncidentEvent.created_at
+                    )
                 ).all()
 
                 return records
             except Exception as error:
-                logger.error(
-                    f"Event log lookup failed for incident {incident_id}: {error}"
+                logger.exception(
+                    "event log lookup failed", incident_id=incident_id, error=error
                 )
 
     @classmethod
@@ -129,16 +150,20 @@ class EventLogHandler:
         with Session(engine) as session:
             try:
                 records = session.exec(
-                    select(IncidentEvent).filter(
+                    select(IncidentEvent)
+                    .filter(
                         IncidentEvent.incident_slug == incident_slug,
                         IncidentEvent.id == id,
+                    )
+                    .order_by(
+                        IncidentEvent.message_ts, IncidentEvent.created_at
                     )
                 ).one()
 
                 return records
             except Exception as error:
-                logger.error(
-                    f"Event log lookup failed for incident {incident_id}: {error}"
+                logger.exception(
+                    "event log lookup failed", incident_id=incident_id, error=error
                 )
 
     @classmethod
@@ -175,6 +200,6 @@ class EventLogHandler:
                 session.add(record)
                 session.commit()
 
-                logger.info(f"edited event {request.id}")
+                logger.info("edited event", event_id=request.id)
             except Exception as error:
-                logger.error(f"Event log updated failed: {error}")
+                logger.exception("event log update failed", error=error)

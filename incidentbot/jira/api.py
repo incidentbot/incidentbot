@@ -51,7 +51,7 @@ class JiraApi:
 
             return issue_types
         except requests.exceptions.HTTPError as error:
-            logger.error(f"Error finding Jira issue types: {error}")
+            logger.exception("error finding jira issue types", error=error)
 
     @property
     def priorities(self) -> list[str]:
@@ -70,7 +70,7 @@ class JiraApi:
 
             return priorities
         except requests.exceptions.HTTPError as error:
-            logger.error(f"Error finding Jira priorities: {error}")
+            logger.exception("error finding jira priorities", error=error)
 
     def test(self) -> bool:
         try:
@@ -78,8 +78,8 @@ class JiraApi:
                 settings.integrations.atlassian.jira.project
             ).get("id")
         except Exception as error:
-            logger.error(f"Error authenticating to Jira: {error}")
-            logger.error(f"Please check Jira configuration and try again.")
+            logger.exception("error authenticating to jira", error=error)
+            logger.exception("please check jira configuration and try again")
 
     def update_issue_status(
         self,
@@ -88,7 +88,7 @@ class JiraApi:
     ):
         status_mapping = settings.integrations.atlassian.jira.status_mapping
         if not status_mapping:
-            logger.debug("No status mapping found for Jira integration")
+            logger.debug("no status mapping found for jira integration")
 
             return
 
@@ -104,7 +104,7 @@ class JiraApi:
 
         if not jira_status:
             logger.debug(
-                f"No Jira status found for incident status {incident_status}"
+                "no jira status found for incident status", incident_status=incident_status
             )
             return
 
@@ -113,7 +113,7 @@ class JiraApi:
             labels = [incident_name]
             issue_type = settings.integrations.atlassian.jira.issue_types
             logger.info(
-                f"Updating Jira issues with labels {labels} and issue type {issue_type} to status {jira_status}"
+                "updating jira issues to status", labels=labels, issue_type=issue_type, status=jira_status
             )
             issues = self.jira.jql_get_list_of_tickets(
                 f"project=\"{project}\" and labels in ({','.join(labels)})"
@@ -121,8 +121,8 @@ class JiraApi:
 
             for issue in issues:
                 logger.debug(
-                    f"Updating Jira issue {issue.get('key')} to status {jira_status}"
+                    "updating jira issue to status", key=issue.get("key"), status=jira_status
                 )
                 self.jira.set_issue_status(issue.get("key"), jira_status)
         except requests.exceptions.HTTPError as error:
-            logger.error(f"Error updating Jira issue: {error}")
+            logger.exception("error updating jira issue", error=error)

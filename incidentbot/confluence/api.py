@@ -38,13 +38,13 @@ class ConfluenceApi:
         try:
             response = self.confluence.get_content_template(template_id)
         except ApiError as error:
-            logger.error(
-                f"Could not find Confluence template with ID {template_id}"
+            logger.exception(
+                f"Could not find Confluence template with ID {template_id}: {error}"
             )
 
             return None
         except HTTPError as error:
-            logger.error(
+            logger.exception(
                 f"Error fetching template body from Confluence for template id {template_id}: {error}"
             )
 
@@ -52,7 +52,7 @@ class ConfluenceApi:
 
         return TemplateResponse(
             name=response.get("name"),
-            labels=[l["label"] for l in response.get("labels", [])],
+            labels=[label["label"] for label in response.get("labels", [])],
             body=response.get("body").get("storage").get("value"),
         )
 
@@ -63,7 +63,7 @@ class ConfluenceApi:
                 settings.integrations.atlassian.confluence.parent,
             )
         except Exception as error:
-            logger.error(f"Error authenticating to Confluence: {error}")
-            logger.error(
-                f"Please check Confluence configuration and try again."
+            logger.exception("error authenticating to confluence", error=error)
+            logger.exception(
+                "please check confluence configuration and try again"
             )

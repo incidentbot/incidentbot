@@ -92,4 +92,5 @@ class TestUtils:
             "event_id",
             "Ev222",
         )
+
         assert index == 1, "find_index_in_list should return the correct index"

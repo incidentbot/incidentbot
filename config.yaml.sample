@@ -1,0 +1,370 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# incidentbot — sample configuration
+#
+# Copy this file to config.yaml and adjust as needed.
+# Values shown are defaults unless a comment says otherwise.
+# All sections are optional — omitting a section uses the built-in defaults.
+# ──────────────────────────────────────────────────────────────────────────────
+
+# ── Platform ──────────────────────────────────────────────────────────────────
+
+# Which chat platform to connect to. Valid values: slack, matrix
+platform: slack
+
+# ── API ───────────────────────────────────────────────────────────────────────
+
+# Enables the lightweight API that serves the optional web UI and incident
+# status widgets. Only needed if you are running the web interface.
+api:
+  enabled: false
+
+# ── Metrics ───────────────────────────────────────────────────────────────────
+
+# Exposes Prometheus metrics at GET /metrics (port 3000) for scraping. Includes
+# open incidents by component/severity/status, per-incident open duration,
+# resolved incident counts, and mean time to resolution (MTTR). Enabled by
+# default; set to false to disable the endpoint (returns 404).
+metrics:
+  enabled: true
+
+# ── Digest Channel ────────────────────────────────────────────────────────────
+
+# Channel where incident summaries and updates are posted.
+# Use the channel name without the # prefix.
+digest_channel: incidents
+
+# ── Slash Command ─────────────────────────────────────────────────────────────
+
+# The root slash command registered in your Slack app manifest.
+# If you change this value, update your app manifest to match.
+root_slash_command: /incidentbot
+
+# ── Pinned Content ────────────────────────────────────────────────────────────
+
+# Whether to pin images shared in incident channels to the channel's pin list.
+# Note: may not work on free Slack plans (files.sharedPublicURL restriction).
+enable_pinned_images: true
+
+# Emoji reaction that triggers message pinning when added to a post.
+pin_content_reacji: pushpin
+
+# ── Links ─────────────────────────────────────────────────────────────────────
+
+# Quick-access buttons added to incident messages for frequently-needed resources.
+# links:
+#   - title: Runbooks
+#     url: https://runbooks.example.com
+#   - title: Monitoring
+#     url: https://grafana.example.com
+
+# ── Options ───────────────────────────────────────────────────────────────────
+
+options:
+  # Extra messages posted when an incident channel is created.
+  # additional_welcome_messages:
+  #   - message: "Welcome! Please review the runbook before taking action."
+  #     pin: true  # pin this message to the channel (default: false)
+
+  # Prefix used when naming incident channels.
+  # e.g. "inc" → #inc-2024-01-15-database-outage
+  channel_name_prefix: inc
+
+  # Date format token used in channel names (dayjs / moment style).
+  channel_name_date_format: YYYY-MM-DD
+
+  # Prepend the date to the channel name so channels sort chronologically.
+  channel_name_use_date_prefix: false
+
+  # A static meeting URL to attach to every incident.
+  # Leave unset when using the Zoom integration (meetings are created automatically).
+  # meeting_link: https://meet.example.com/oncall
+
+  # Pin the meeting link inside the incident channel when the incident is opened.
+  pin_meeting_link_to_channel: false
+
+  # How many recent incidents to show on the Slack app home page.
+  # Keep this low — Slack limits the number of blocks in a single view.
+  show_most_recent_incidents_app_home_limit: 5
+
+  # Number of items per page in paginated Slack list views.
+  slack_items_pagination_per_page: 5
+
+  # Application timezone. Used for scheduling and all displayed timestamps.
+  timezone: UTC
+
+  # If true, status updates are posted directly to the digest channel.
+  # If false (default), updates are threaded under the original incident message.
+  updates_in_threads: false
+
+  # User-agents to suppress from API access logs (e.g. to silence health probes).
+  # skip_logs_for_user_agent:
+  #   - kube-probe
+
+# ── Roles ─────────────────────────────────────────────────────────────────────
+
+# Roles that participants can claim during an incident.
+# Exactly one role must have is_lead: true — this is the Incident Commander role.
+# Omit this section entirely to use the four built-in default roles.
+#
+# roles:
+#   incident_commander:
+#     description: "Decision maker. Delegates tasks and drives resolution."
+#     is_lead: true
+#   scribe:
+#     description: "Maintains the incident timeline and tracks follow-up items."
+#   subject_matter_expert:
+#     description: "Domain expert for a specific service or component."
+#   communications_liaison:
+#     description: "Handles customer-facing communication during the incident."
+
+# ── Severities ────────────────────────────────────────────────────────────────
+
+# Severity levels available when opening or updating an incident.
+# Omit this section entirely to use the four built-in default severities.
+#
+# severities:
+#   sev1: "Critical — major impact on all users. All-hands response required."
+#   sev2: "High — significant degradation for a large portion of users."
+#   sev3: "Moderate — minor degradation; worth coordinating but not critical."
+#   sev4: "Investigating — potential issue, no confirmed impact yet. Default."
+
+# ── Statuses ──────────────────────────────────────────────────────────────────
+
+# Lifecycle statuses for incidents.
+# Exactly one status must be marked initial: true and one must be final: true.
+# Omit this section entirely to use the four built-in default statuses.
+#
+# statuses:
+#   investigating:
+#     initial: true
+#   identified: {}
+#   monitoring: {}
+#   resolved:
+#     final: true
+
+# ── Jobs ──────────────────────────────────────────────────────────────────────
+
+# Global scheduled maintenance jobs. All are enabled by default.
+# Uncomment and adjust any values you want to change.
+#
+# jobs:
+#   scrape_for_aging_incidents:
+#     enabled: true
+#     # How often (in days) to check for aging open incidents.
+#     interval_days: 2
+#     # Incidents open longer than this (in days) trigger a digest-channel alert.
+#     max_age_days: 7
+#     # Statuses excluded from the aging check.
+#     # ignore_statuses:
+#     #   - monitoring
+#
+#   update_slack_cache:
+#     enabled: true
+#     # How often (in minutes) to refresh the local copy of Slack channels and users.
+#     interval_minutes: 15
+#
+#   update_pagerduty_oc_data:
+#     enabled: true
+#     # How often (in minutes) to refresh on-call schedule data from PagerDuty.
+#     # Only active when the PagerDuty integration is enabled.
+#     interval_minutes: 30
+
+# ── Reminders ─────────────────────────────────────────────────────────────────
+
+# Per-incident reminders are posted inside each incident channel on a repeating
+# timer for as long as the incident is open.
+#
+# The two entries below are the built-in defaults.
+# - Remove an entry to disable it entirely.
+# - Add new entries to create additional reminders.
+# - Omit this section to keep the defaults unchanged.
+#
+# Fields:
+#   id                — unique identifier; used in Slack action IDs
+#   message           — text shown in the reminder post
+#   interval_minutes  — how often the reminder fires
+#   once              — if true, fires at most once then removes itself (default: false)
+#   enabled           — set to false to disable without removing the entry (default: true)
+#   include_role_buttons — append a "Join as <role>" button for each configured role
+#   conditions        — all must be true for the reminder to fire (all optional)
+#     severity_is         — only fire if incident severity is in this list
+#     status_is           — only fire if incident status is in this list
+#     status_is_final     — only fire when the incident is in a terminal status
+#     no_roles_claimed    — only fire when no participant has claimed a role yet
+#   actions           — interactive buttons shown on the reminder message
+#     send_update         — opens the status update modal
+#     snooze              — reschedules the reminder; provide an intervals list (minutes)
+#     dismiss             — permanently stops this reminder for the incident
+
+reminders:
+  - id: comms_reminder
+    message: "Time to send a status update?"
+    interval_minutes: 30
+    actions:
+      - type: send_update
+        label: "Send Update"
+      - type: snooze
+        intervals: [30, 60, 90]
+      - type: dismiss
+        label: "Stop Reminders"
+
+  - id: role_watcher
+    message: "No roles have been assigned yet — please review and claim as needed."
+    interval_minutes: 10
+    once: true
+    conditions:
+      no_roles_claimed: true
+    include_role_buttons: true
+    actions:
+      - type: dismiss
+        label: "Dismiss"
+
+# ── Automations ───────────────────────────────────────────────────────────────
+
+# Automations fire once in response to incident lifecycle events, optionally
+# filtered by conditions. Unlike reminders, they are not repeating.
+#
+# Triggers:
+#   on_open           — incident is first created
+#   on_severity_change — incident severity is updated
+#   on_status_change  — incident status is updated
+#   on_final_status   — incident reaches a terminal status
+#
+# Conditions (same as reminders — all must be true to fire):
+#   severity_is, status_is, status_is_final, no_roles_claimed
+#
+# Action types:
+#   invite_group    — invite a Slack user group into the incident channel
+#     name: slack-group-handle
+#   page_pagerduty  — trigger a PagerDuty escalation (requires PD integration)
+#     escalation_policy: POLICY_ID
+#     priority: high  # low (default) | high
+#   post_message    — post a plain-text message to the incident channel
+#     message: "Some message text."
+
+automations: []
+
+# Examples:
+#
+# automations:
+#   # Invite the on-call team and page PagerDuty for all sev1 incidents
+#   - id: sev1_response
+#     trigger: on_open
+#     conditions:
+#       severity_is: [sev1]
+#     actions:
+#       - type: invite_group
+#         name: sre-oncall
+#       - type: page_pagerduty
+#         escalation_policy: PXXXXXX
+#         priority: high
+#
+#   # Remind responders to update the status page for sev1/sev2
+#   - id: status_page_nudge
+#     trigger: on_open
+#     conditions:
+#       severity_is: [sev1, sev2]
+#     actions:
+#       - type: post_message
+#         message: "Remember to update the status page if customers may be affected."
+#
+#   # Post a postmortem reminder when an incident is resolved
+#   - id: postmortem_reminder
+#     trigger: on_final_status
+#     actions:
+#       - type: post_message
+#         message: "Incident resolved. Please open a postmortem within 48 hours."
+
+# ── Integrations ──────────────────────────────────────────────────────────────
+
+# integrations:
+
+  # ── Zoom ──────────────────────────────────────────────────────────────────
+  # Automatically creates a Zoom meeting when an incident is opened.
+  # Requires env vars: ZOOM_ACCOUNT_ID, ZOOM_CLIENT_ID, ZOOM_CLIENT_SECRET
+  #
+  # zoom:
+  #   enabled: true
+  #   auto_creating_meeting: true
+
+  # ── PagerDuty ─────────────────────────────────────────────────────────────
+  # Enables on-call lookup and manual/automatic paging from incident channels.
+  # Requires env vars: PAGERDUTY_API_TOKEN, PAGERDUTY_API_USERNAME
+  #
+  # pagerduty:
+  #   enabled: true
+
+  # ── Atlassian ─────────────────────────────────────────────────────────────
+
+  # atlassian:
+
+    # Confluence — automatically create a postmortem page per incident
+    # Requires env vars: ATLASSIAN_API_URL, ATLASSIAN_API_USERNAME, ATLASSIAN_API_TOKEN
+    #
+    # confluence:
+    #   enabled: true
+    #   auto_create_postmortem: true
+    #   space: ENG           # Confluence space key
+    #   parent: Postmortems  # Title of the parent page under which to create pages
+    #   template_id: 12345   # Numeric ID of the Confluence postmortem template page
+
+    # Jira — automatically create and sync issues for each incident
+    # Requires env vars: ATLASSIAN_API_URL, ATLASSIAN_API_USERNAME, ATLASSIAN_API_TOKEN
+    #
+    # jira:
+    #   enabled: true
+    #   auto_create_issue: true
+    #   auto_create_issue_type: Bug  # optional; defaults to issue_types[0]
+    #   project: OPS
+    #   issue_types: [Bug, Task, Incident]
+    #   labels: [incident]           # optional labels applied to created issues
+    #   priorities: [High, Medium, Low]  # optional; surfaced in the Jira modal
+    #   status_mapping:              # maps incident statuses → Jira statuses
+    #     - investigating: In Progress
+    #     - identified: In Progress
+    #     - monitoring: In Review
+    #     - resolved: Done
+
+    # Statuspage (Atlassian) — manage a status page from incident channels
+    # Requires env vars: STATUSPAGE_API_KEY, STATUSPAGE_PAGE_ID
+    #
+    # statuspage:
+    #   enabled: true
+    #   url: https://status.example.com
+    #   permissions:              # optional: restrict access to these Slack groups
+    #     groups: [sre, leadership]
+
+  # ── GitLab ────────────────────────────────────────────────────────────────
+  # Automatically create GitLab incidents or issues and sync status/severity.
+  # Requires env vars: GITLAB_URL, GITLAB_API_TOKEN
+  #
+  # gitlab:
+  #   enabled: true
+  #   project_id: 42
+  #   issue_type: incident      # incident | issue
+  #   auto_create_incident: true
+  #   auto_create_postmortem: false
+  #   incident_confidential: false
+  #   labels: [incident]        # optional labels applied to created issues
+  #   security_labels: [security]  # optional; applied only to confidential incidents
+  #   priorities: [high, medium, low]  # optional; surfaced in the GitLab modal
+  #   label_template: null      # optional Jinja2 template for dynamic label generation
+  #   status_mapping:           # maps incident statuses → GitLab label values
+  #     - investigating: "status::investigating"
+  #     - identified: "status::identified"
+  #     - monitoring: "status::monitoring"
+  #     - resolved: "status::resolved"
+  #   severity_mapping:         # maps severities → GitLab severity values
+  #     - sev1: critical
+  #     - sev2: high
+  #     - sev3: medium
+  #     - sev4: low
+
+  # ── Phare ─────────────────────────────────────────────────────────────────
+  # Manage a Phare status page from incident channels.
+  # Requires env vars: PHARE_API_KEY, PHARE_PROJECT_ID
+  #
+  # phare:
+  #   enabled: true
+  #   permissions:              # optional: restrict access to these Slack groups
+  #     groups: [sre]

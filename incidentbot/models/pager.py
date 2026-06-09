@@ -32,6 +32,6 @@ def read_pager_auto_page_targets():
 
             return [{t: mappings[t]} for t in targets]
     except sqlalchemy.exc.NoResultFound as error:
-        logger.error(f"Setting lookup failed for {name}: {error}")
+        logger.exception("setting lookup failed", name=name, error=error)
     except Exception as error:
-        logger.error(f"Setting lookup failed for {name}: {error}")
+        logger.exception("setting lookup failed", name=name, error=error)
