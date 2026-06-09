@@ -660,6 +660,11 @@ def _postmortem_link_blocks(summary: str, postmortem_link: str) -> list[dict]:
     ]
 
 
+# "incident.generate_postmortem" is the action_id of the "Generate Postmortem"
+# button rendered in the resolution message (messages.py). Upstream never
+# registered a handler for it, leaving the button dead. Wire it to the same
+# generate-and-sync logic as the incident pane's "Postmortem" button.
+@app.action("incident.generate_postmortem")
 @app.action("incident.sync_or_create_postmortem")
 def handle_sync_or_create_postmortem(ack, body):
     """
