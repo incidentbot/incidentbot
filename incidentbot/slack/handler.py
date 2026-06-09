@@ -293,6 +293,12 @@ def handle_static_action(ack, body, logger):  # noqa: F811
     ack()
 
 
+@app.action("incident.declare_incident_modal.set_components")
+def handle_static_action(ack, body, logger):  # noqa: F811
+    logger.debug(body)
+    ack()
+
+
 @app.action("incident.export_chat_logs")
 def handle_incident_export_chat_logs(ack, body):
     logger.debug(body)
