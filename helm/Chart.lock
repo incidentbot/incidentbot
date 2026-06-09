@@ -1,0 +1,6 @@
+dependencies:
+- name: incidentbot
+  repository: https://docs.incidentbot.io/charts
+  version: 3.0.3
+digest: sha256:52890316b6ceb9ea6c021beb5f97aaec45408a67ed317c25dcb84cfb9bdc0318
+generated: "2026-06-09T19:05:21.503194+01:00"
