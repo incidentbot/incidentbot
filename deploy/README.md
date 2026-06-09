@@ -9,41 +9,48 @@ chart is not vendored in this repo. We only keep our **values**, a
 deploy/
   values.yaml          # Helm values for our deployment
   servicemonitor.yaml  # Prometheus Operator scrape config for /metrics
-.circleci/config.yml   # build -> push to Artifact Registry -> helm upgrade
+.circleci/config.yml   # build (benefex/docker orb) -> helm upgrade
 ```
 
 ## How it works
 
 On every push to `main`, CircleCI:
-1. Builds the image from this repo's `Dockerfile` (target `app`) so our custom
-   code (Prometheus metrics, Slack fixes, multi-select components) is included.
-   The upstream image does **not** contain these changes.
-2. Pushes it to Artifact Registry as `…/incident-bot:sha-<short>` and `:latest`.
-3. `helm upgrade --install`s the chart with `deploy/values.yaml`, overriding the
-   image to our freshly-built one.
-4. Applies `deploy/servicemonitor.yaml` so Prometheus scrapes `/metrics`.
+1. **`build-push`** — uses the shared **`benefex/docker`** orb to build this
+   repo's `Dockerfile` (so our custom code — Prometheus metrics, Slack fixes,
+   multi-select components — is included; the upstream image does not contain
+   these). It pushes to
+   `europe-docker.pkg.dev/benefex-assets/benefex-images/incident-bot:latest`
+   and persists the image digest to the workspace.
+2. **`deploy`** — uses the **`benefex/helm`** orb's `configure-kubernetes` for
+   GKE auth, then `helm upgrade --install`s the **external** `incidentbot`
+   chart with `deploy/values.yaml`, pointing the image at our build, and applies
+   `deploy/servicemonitor.yaml`.
+
+> The upstream chart's image template is `repository:tag` only (no digest), so
+> we deploy the `:latest` tag and set a `commit-sha` pod annotation each build
+> to force a fresh rollout (pods pull `:latest`, which is the new build).
+>
+> We don't use the `benefex/helm` orb's `deploy` command because it's wired to
+> Benefex's own base charts (`benefex/<chart>`, `--set image/deploymentEnv/...`)
+> and can't drive this third-party chart.
 
 ## Required CircleCI configuration
 
-Set these in a context named `gcp` (or as project env vars):
+The pipeline relies on the standard Benefex contexts:
 
-| Variable | Purpose |
-|---|---|
-| `GCLOUD_SERVICE_KEY` | GCP service-account JSON key (full file contents) |
-| `GCP_PROJECT` | GCP project ID |
-| `GAR_LOCATION` | Artifact Registry region, e.g. `europe-west2` |
-| `GAR_REPO` | Artifact Registry repository name, e.g. `incident-bot` |
-| `GKE_CLUSTER` | GKE cluster name |
-| `GKE_LOCATION` | GKE cluster region/zone |
-| `K8S_NAMESPACE` | target namespace, e.g. `incidentbot` |
+| Context | Provides | Used for |
+|---|---|---|
+| `gcloud` | `GCLOUD_GCR_SERVICE_ACCOUNT` | push/pull the image in Artifact Registry |
+| `gcp_prod` | `GCLOUD_GKE_PROD_SERVICE_ACCOUNT`, `GCLOUD_GKE_PROD_CLUSTER_NAME`, `GCLOUD_GKE_PROD_PROJECT_NAME` | authenticate to the prod GKE cluster |
 
-The service account needs **Artifact Registry Writer** and **Kubernetes Engine
-Developer** (on the target cluster). Create the Artifact Registry repo once:
+Plus one project/env var:
 
-```bash
-gcloud artifacts repositories create incident-bot \
-  --repository-format=docker --location="$GAR_LOCATION" --project="$GCP_PROJECT"
-```
+| Variable | Purpose | Default |
+|---|---|---|
+| `K8S_NAMESPACE` | target namespace | `incidentbot` |
+
+The orb pushes to `benefex-images` and names the image after the repo
+(`incident-bot`). If you want a different image name, set `BUILD_RELEASE_NAME`.
 
 ## Required Kubernetes Secret (not committed)
 

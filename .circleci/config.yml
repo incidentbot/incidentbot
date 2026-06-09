@@ -1,117 +1,96 @@
 version: 2.1
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Build the fork image, push to Google Artifact Registry, then helm-upgrade the
+# Build the fork image with the shared benefex/docker orb, then helm-upgrade the
 # GKE deployment. Runs automatically on `main`.
 #
-# Required CircleCI env vars (set them in a context named "gcp" or the project):
-#   GCLOUD_SERVICE_KEY  - GCP service-account JSON key (whole file contents)
-#   GCP_PROJECT         - GCP project ID
-#   GAR_LOCATION        - Artifact Registry region, e.g. europe-west2
-#   GAR_REPO            - Artifact Registry repository name, e.g. incident-bot
-#   GKE_CLUSTER         - GKE cluster name
-#   GKE_LOCATION        - GKE cluster region or zone
-#   K8S_NAMESPACE       - target namespace, e.g. incidentbot
+# Build/publish uses benefex/docker (build-push): it builds this repo's
+# Dockerfile and pushes to
+#   europe-docker.pkg.dev/benefex-assets/benefex-images/incident-bot:latest
+# (image name = repo name), persisting the image digest (docker-url) to the
+# workspace. Auth uses GCLOUD_GCR_SERVICE_ACCOUNT (provided by the `gcloud`
+# context).
 #
-# The SA needs: Artifact Registry Writer, and Kubernetes Engine Developer on the
-# cluster. Image is tagged sha-<short> (matches the chart's expected tag format)
-# plus :latest.
+# Deploy uses the benefex/helm orb only for GKE auth (configure-kubernetes); the
+# helm upgrade targets the EXTERNAL upstream chart (incidentbot/incidentbot at
+# docs.incidentbot.io/charts), so the orb's chart-specific deploy command isn't
+# used. The chart image helper is repository:tag only (no digest), so we deploy
+# :latest and force a fresh rollout each build via a commit annotation.
 #
-# NOTE: the app image runs `alembic upgrade head` on startup (entrypoint). This
-# pipeline does NOT gate migrations behind a separate step — see deploy/README.md
-# for the production-migration safety checklist (clone-test + backup) before the
-# first v3 rollout against the existing Cloud SQL database.
+# Required env vars / contexts:
+#   gcloud context:    GCLOUD_GCR_SERVICE_ACCOUNT (image push + pull image auth)
+#   gcp_prod context:  GCLOUD_GKE_PROD_SERVICE_ACCOUNT, GCLOUD_GKE_PROD_CLUSTER_NAME,
+#                      GCLOUD_GKE_PROD_PROJECT_NAME
+#   project/env:       K8S_NAMESPACE (defaults to "incidentbot")
+#
+# NOTE on migrations: the app image runs `alembic upgrade head` on pod start
+# (replicaCount is pinned to 1 in deploy/values.yaml). See deploy/README.md for
+# the production-migration safety checklist before the first v3 rollout.
 # ──────────────────────────────────────────────────────────────────────────────
 
-executors:
-  gcloud:
-    docker:
-      - image: google/cloud-sdk:slim
-
-commands:
-  gcp-auth:
-    description: Authenticate gcloud with the service-account key.
-    steps:
-      - run:
-          name: Authenticate to GCP
-          command: |
-            echo "$GCLOUD_SERVICE_KEY" | gcloud auth activate-service-account --key-file=-
-            gcloud config set project "$GCP_PROJECT"
+orbs:
+  docker: benefex/docker@volatile
+  helm: benefex/helm@volatile
 
 jobs:
-  build-and-push:
-    machine:
-      image: ubuntu-2404:current
+  build-push:
+    executor: docker/default
+    resource_class: medium
     steps:
-      - checkout
-      - gcp-auth
-      - run:
-          name: Configure Docker for Artifact Registry
-          command: gcloud auth configure-docker "${GAR_LOCATION}-docker.pkg.dev" --quiet
-      - run:
-          name: Build and push image
-          command: |
-            IMAGE="${GAR_LOCATION}-docker.pkg.dev/${GCP_PROJECT}/${GAR_REPO}/incident-bot"
-            TAG="sha-${CIRCLE_SHA1:0:7}"
-            docker build \
-              --target app \
-              --build-arg APP_VERSION="$TAG" \
-              -t "${IMAGE}:${TAG}" \
-              -t "${IMAGE}:latest" \
-              .
-            docker push "${IMAGE}:${TAG}"
-            docker push "${IMAGE}:latest"
+      - docker/build-push:
+          docker-build-args: "--build-arg APP_VERSION=git-${CIRCLE_SHA1:0:7}"
 
   deploy:
-    executor: gcloud
+    executor: helm/default
     steps:
       - checkout
-      - gcp-auth
+      - attach_workspace:
+          at: .
+      - helm/configure-kubernetes:
+          service-account: GCLOUD_GKE_PROD_SERVICE_ACCOUNT
+          cluster-name: GCLOUD_GKE_PROD_CLUSTER_NAME
+          cluster-project: GCLOUD_GKE_PROD_PROJECT_NAME
       - run:
-          name: Install kubectl, gke-auth-plugin, and helm
+          name: Helm upgrade incident-bot (external chart)
+          shell: /bin/bash
           command: |
-            apt-get update -qq
-            apt-get install -y -qq kubectl google-cloud-cli-gke-gcloud-auth-plugin
-            curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-      - run:
-          name: Get GKE credentials
-          command: |
-            export USE_GKE_GCLOUD_AUTH_PLUGIN=True
-            gcloud container clusters get-credentials "$GKE_CLUSTER" \
-              --location "$GKE_LOCATION" --project "$GCP_PROJECT"
-      - run:
-          name: Helm upgrade
-          command: |
-            export USE_GKE_GCLOUD_AUTH_PLUGIN=True
-            IMAGE="${GAR_LOCATION}-docker.pkg.dev/${GCP_PROJECT}/${GAR_REPO}/incident-bot"
-            TAG="sha-${CIRCLE_SHA1:0:7}"
+            set -euo pipefail
+            IMAGE_REPO="europe-docker.pkg.dev/benefex-assets/benefex-images/${BUILD_RELEASE_NAME:-$CIRCLE_PROJECT_REPONAME}"
+            NAMESPACE="${K8S_NAMESPACE:-incidentbot}"
+
             helm repo add incidentbot https://docs.incidentbot.io/charts
             helm repo update incidentbot
+
             helm upgrade --install incidentbot incidentbot/incidentbot \
               --version 3.0.3 \
-              --namespace "$K8S_NAMESPACE" --create-namespace \
+              --namespace "$NAMESPACE" --create-namespace \
               -f deploy/values.yaml \
-              --set image.repository="$IMAGE" \
-              --set image.tag="$TAG" \
+              --set image.repository="$IMAGE_REPO" \
+              --set image.tag=latest \
+              --set podAnnotations.commit-sha="$CIRCLE_SHA1" \
               --wait --timeout 5m
       - run:
           name: Apply ServiceMonitor
+          shell: /bin/bash
           command: |
-            export USE_GKE_GCLOUD_AUTH_PLUGIN=True
-            kubectl apply -n "$K8S_NAMESPACE" -f deploy/servicemonitor.yaml
+            NAMESPACE="${K8S_NAMESPACE:-incidentbot}"
+            kubectl apply -n "$NAMESPACE" -f deploy/servicemonitor.yaml
 
 workflows:
   build-and-deploy:
     jobs:
-      - build-and-push:
-          context: gcp
+      - build-push:
+          context:
+            - gcloud
           filters:
             branches:
               only: main
       - deploy:
-          context: gcp
+          context:
+            - gcloud
+            - gcp_prod
           requires:
-            - build-and-push
+            - build-push
           filters:
             branches:
               only: main
