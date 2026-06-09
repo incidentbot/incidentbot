@@ -40,21 +40,47 @@ incidentbot:
     data:
       platform: slack
       digest_channel: incidents
+      # Prometheus metrics (this fork's feature) — not in the legacy config.
       metrics:
         enabled: true
       components:
         - All
         - Benefits
+        - Delta Report
         - Discounts
+        - FPS
         - Home
         - Recognition
         - Reward
         - Wallet
         - Wellbeing
         - Other
+      links:
+        - title: incident_guide
+          url: https://benefex.atlassian.net/wiki/spaces/OneHub/pages/1548943405/Incident+Guide
+        - title: incident_postmortems
+          url: https://benefex.atlassian.net/wiki/spaces/OneHub/pages/1533280291/Incident+Postmortems
       options:
         timezone: UTC
+        # Legacy options.channel_naming.time_format_in_channel_name '%Y-%m-%d'
+        # maps to these two keys in v3 (date prefixed to channel names).
+        channel_name_use_date_prefix: true
+        channel_name_date_format: YYYY-MM-DD
+      roles:
+        incident_lead:
+          is_lead: true
+          description: "Your job as an Incident lead is to listen to the call and to watch the incident Slack room in order to provide clear coordination, recruiting others to gather context and details. You should not be performing any actions or remediations, checking graphs, or investigating logs."
+      # Legacy options.auto_invite_groups: [platform] -> v3 automations.
+      automations:
+        - id: invite-platform
+          trigger: on_open
+          actions:
+            - type: invite_group
+              name: platform
       integrations:
+        zoom:
+          enabled: true
+          auto_creating_meeting: true
         atlassian:
           confluence:
             enabled: true
@@ -62,10 +88,16 @@ incidentbot:
             parent: Incident Postmortems
             space: OneHub
             template_id: 1533083725
+          statuspage:
+            enabled: true
+            url: https://status.onehub.global/
+            permissions:
+              groups:
+                - platform
       severities:
-        sev1: "Critical production impact for most or all users with major SLA impact. All-hands; customers must be notified."
-        sev2: "Significant production degradation impacting a large portion of users."
-        sev3: "Minor production scenario; worth coordinating but not a critical loss of service."
+        sev1: "This signifies a critical production scenario that impacts most or all users with a major impact on SLAs. This is an all-hands-on-deck scenario that requires swift action to restore operation. Customers must be notified."
+        sev2: "This signifies a significant production degradation scenario impacting a large portion of users."
+        sev3: "This signifies a minor production scenario that may or may not result in degradation. This situation is worth coordination to resolve quickly but does not indicate a critical loss of service for users."
       statuses:
         investigating:
           initial: true
