@@ -50,6 +50,7 @@ def _make_incident(
     inc.channel_name = channel_name
     inc.severity = severity
     inc.status = status
+    inc.resolved_at = None
     inc.description = "test incident"
     inc.components = "api"
     inc.impact = "high"
@@ -213,6 +214,32 @@ class TestSetStatus:
             asyncio.run(set_status("C123", "resolved", "api"))
 
         mock_cancel.assert_called_once_with(incident.slug)
+
+    def test_sets_resolved_at_on_final_status(self):
+        incident = _make_incident(status="investigating")
+        incident.resolved_at = None
+        mock_client = MagicMock()
+
+        with (
+            patch("incidentbot.incident.actions.IncidentDatabaseInterface.get_one", return_value=incident),
+            patch("incidentbot.incident.actions.IncidentDatabaseInterface.update_col") as mock_update,
+            patch("incidentbot.incident.actions.IncidentDatabaseInterface.get_postmortem", return_value=MagicMock()),
+            patch("incidentbot.incident.actions.IncidentDatabaseInterface.list_pagerduty_incident_records", return_value=[]),
+            patch("incidentbot.incident.actions.EventLogHandler.create"),
+            patch("incidentbot.incident.actions.slack_web_client", mock_client),
+            patch("incidentbot.incident.actions.get_digest_channel_id", return_value="C-digest"),
+            patch("incidentbot.incident.actions.run_automations"),
+            patch("incidentbot.incident.actions.cancel_reminder_jobs"),
+            patch("incidentbot.incident.actions._get_channel_topic", return_value=["Severity: SEV2", "Status: Investigating"]),
+        ):
+            asyncio.run(set_status("C123", "resolved", "api"))
+
+        resolved_calls = [
+            c for c in mock_update.call_args_list
+            if c.kwargs.get("col_name") == "resolved_at"
+        ]
+        assert len(resolved_calls) == 1
+        assert resolved_calls[0].kwargs["value"] is not None
 
     def test_posts_error_when_incident_not_found(self):
         mock_client = MagicMock()

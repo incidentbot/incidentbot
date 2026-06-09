@@ -105,6 +105,11 @@ class IncidentRecord(SQLModel, table=True):
     roles_all: list | None = Field(
         sa_column=Column(MutableList.as_mutable(JSON)), default_factory=list
     )
+    # Set when the incident transitions to a final status; used to compute MTTR.
+    # Cleared if the incident is moved back out of a final status.
+    resolved_at: datetime | None = Field(
+        sa_column=Column(DateTime(), nullable=True), default=None
+    )
     severity: str | None = None
     severities: list | None = Field(
         sa_column=Column(MutableList.as_mutable(JSON)), default_factory=list

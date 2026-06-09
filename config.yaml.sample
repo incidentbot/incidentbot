@@ -18,6 +18,15 @@ platform: slack
 api:
   enabled: false
 
+# ── Metrics ───────────────────────────────────────────────────────────────────
+
+# Exposes Prometheus metrics at GET /metrics (port 3000) for scraping. Includes
+# open incidents by component/severity/status, per-incident open duration,
+# resolved incident counts, and mean time to resolution (MTTR). Enabled by
+# default; set to false to disable the endpoint (returns 404).
+metrics:
+  enabled: true
+
 # ── Digest Channel ────────────────────────────────────────────────────────────
 
 # Channel where incident summaries and updates are posted.

@@ -1548,6 +1548,27 @@ async def set_status(
         except Exception as error:
             logger.exception("error updating entry in database", error=error)
 
+        # Track resolution time for MTTR metrics. Set resolved_at when the
+        # incident first enters a final status; clear it if it is reopened.
+        try:
+            if status in final_statuses:
+                if incident.resolved_at is None:
+                    IncidentDatabaseInterface.update_col(
+                        channel_id=incident.channel_id,
+                        col_name="resolved_at",
+                        value=datetime.datetime.now(
+                            datetime.timezone.utc
+                        ).replace(tzinfo=None),
+                    )
+            elif incident.resolved_at is not None:
+                IncidentDatabaseInterface.update_col(
+                    channel_id=incident.channel_id,
+                    col_name="resolved_at",
+                    value=None,
+                )
+        except Exception as error:
+            logger.exception("error updating resolved_at", error=error)
+
         # Write event log
         EventLogHandler.create(
             event=f"The incident status was changed to {status}",
