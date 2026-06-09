@@ -1,0 +1,117 @@
+version: 2.1
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Build the fork image, push to Google Artifact Registry, then helm-upgrade the
+# GKE deployment. Runs automatically on `main`.
+#
+# Required CircleCI env vars (set them in a context named "gcp" or the project):
+#   GCLOUD_SERVICE_KEY  - GCP service-account JSON key (whole file contents)
+#   GCP_PROJECT         - GCP project ID
+#   GAR_LOCATION        - Artifact Registry region, e.g. europe-west2
+#   GAR_REPO            - Artifact Registry repository name, e.g. incident-bot
+#   GKE_CLUSTER         - GKE cluster name
+#   GKE_LOCATION        - GKE cluster region or zone
+#   K8S_NAMESPACE       - target namespace, e.g. incidentbot
+#
+# The SA needs: Artifact Registry Writer, and Kubernetes Engine Developer on the
+# cluster. Image is tagged sha-<short> (matches the chart's expected tag format)
+# plus :latest.
+#
+# NOTE: the app image runs `alembic upgrade head` on startup (entrypoint). This
+# pipeline does NOT gate migrations behind a separate step — see deploy/README.md
+# for the production-migration safety checklist (clone-test + backup) before the
+# first v3 rollout against the existing Cloud SQL database.
+# ──────────────────────────────────────────────────────────────────────────────
+
+executors:
+  gcloud:
+    docker:
+      - image: google/cloud-sdk:slim
+
+commands:
+  gcp-auth:
+    description: Authenticate gcloud with the service-account key.
+    steps:
+      - run:
+          name: Authenticate to GCP
+          command: |
+            echo "$GCLOUD_SERVICE_KEY" | gcloud auth activate-service-account --key-file=-
+            gcloud config set project "$GCP_PROJECT"
+
+jobs:
+  build-and-push:
+    machine:
+      image: ubuntu-2404:current
+    steps:
+      - checkout
+      - gcp-auth
+      - run:
+          name: Configure Docker for Artifact Registry
+          command: gcloud auth configure-docker "${GAR_LOCATION}-docker.pkg.dev" --quiet
+      - run:
+          name: Build and push image
+          command: |
+            IMAGE="${GAR_LOCATION}-docker.pkg.dev/${GCP_PROJECT}/${GAR_REPO}/incident-bot"
+            TAG="sha-${CIRCLE_SHA1:0:7}"
+            docker build \
+              --target app \
+              --build-arg APP_VERSION="$TAG" \
+              -t "${IMAGE}:${TAG}" \
+              -t "${IMAGE}:latest" \
+              .
+            docker push "${IMAGE}:${TAG}"
+            docker push "${IMAGE}:latest"
+
+  deploy:
+    executor: gcloud
+    steps:
+      - checkout
+      - gcp-auth
+      - run:
+          name: Install kubectl, gke-auth-plugin, and helm
+          command: |
+            apt-get update -qq
+            apt-get install -y -qq kubectl google-cloud-cli-gke-gcloud-auth-plugin
+            curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      - run:
+          name: Get GKE credentials
+          command: |
+            export USE_GKE_GCLOUD_AUTH_PLUGIN=True
+            gcloud container clusters get-credentials "$GKE_CLUSTER" \
+              --location "$GKE_LOCATION" --project "$GCP_PROJECT"
+      - run:
+          name: Helm upgrade
+          command: |
+            export USE_GKE_GCLOUD_AUTH_PLUGIN=True
+            IMAGE="${GAR_LOCATION}-docker.pkg.dev/${GCP_PROJECT}/${GAR_REPO}/incident-bot"
+            TAG="sha-${CIRCLE_SHA1:0:7}"
+            helm repo add incidentbot https://docs.incidentbot.io/charts
+            helm repo update incidentbot
+            helm upgrade --install incidentbot incidentbot/incidentbot \
+              --version 3.0.3 \
+              --namespace "$K8S_NAMESPACE" --create-namespace \
+              -f deploy/values.yaml \
+              --set image.repository="$IMAGE" \
+              --set image.tag="$TAG" \
+              --wait --timeout 5m
+      - run:
+          name: Apply ServiceMonitor
+          command: |
+            export USE_GKE_GCLOUD_AUTH_PLUGIN=True
+            kubectl apply -n "$K8S_NAMESPACE" -f deploy/servicemonitor.yaml
+
+workflows:
+  build-and-deploy:
+    jobs:
+      - build-and-push:
+          context: gcp
+          filters:
+            branches:
+              only: main
+      - deploy:
+          context: gcp
+          requires:
+            - build-and-push
+          filters:
+            branches:
+              only: main

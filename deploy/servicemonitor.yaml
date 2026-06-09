@@ -1,0 +1,27 @@
+# Prometheus Operator ServiceMonitor for incident-bot.
+#
+# The upstream chart ships no ServiceMonitor, so we apply this separately
+# (the CI deploy job does `kubectl apply -f deploy/servicemonitor.yaml`).
+# Requires the Prometheus Operator CRDs (monitoring.coreos.com/v1).
+#
+# Scrapes GET /metrics on the chart's Service (port name "http", 3000).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: incidentbot
+  labels:
+    app.kubernetes.io/name: incidentbot
+    # IMPORTANT: this label must match your Prometheus Operator's
+    # serviceMonitorSelector. For kube-prometheus-stack the default is the
+    # Prometheus release name — adjust to match your install.
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: incidentbot
+      app.kubernetes.io/instance: incidentbot
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scheme: http

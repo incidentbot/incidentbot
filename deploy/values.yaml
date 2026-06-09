@@ -1,0 +1,94 @@
+# Helm values for deploying the BenefexLtd fork of incident-bot.
+#
+# Used with the upstream chart published at https://docs.incidentbot.io/charts
+# (chart: incidentbot/incidentbot). The CI pipeline overrides image.repository
+# and image.tag to point at our Artifact Registry image — see .circleci/config.yml.
+#
+#   helm upgrade --install incidentbot incidentbot/incidentbot \
+#     --version 3.0.3 -n <namespace> -f deploy/values.yaml \
+#     --set image.repository=<AR image> --set image.tag=<tag>
+
+# Image is set by CI (--set). These are placeholders for local/manual runs.
+image:
+  # repository: REGION-docker.pkg.dev/PROJECT/REPO/incident-bot
+  pullPolicy: Always
+  tag: latest
+
+# Single replica: the image entrypoint runs `alembic upgrade head` on every pod
+# start. Keeping one replica avoids concurrent migrations racing on rollout.
+# Do NOT raise this without moving migrations to a dedicated pre-deploy step.
+replicaCount: 1
+
+# "bot" connects to Slack. The HTTP server (and therefore /metrics and /health)
+# runs in every mode, so metrics work here. Set to "all" if you also want the
+# web API / incident status widgets served.
+appMode: bot
+
+# A Service is required so the ServiceMonitor (deploy/servicemonitor.yaml) can
+# scrape /metrics on port 3000.
+service:
+  enabled: true
+  type: ClusterIP
+  port: 3000
+
+# Secrets (Slack tokens, POSTGRES_*, ATLASSIAN_*, SECRET_KEY) come from a
+# pre-created Kubernetes Secret — never commit them. See deploy/README.md for
+# the required keys.
+envFromSecret:
+  enabled: true
+  secretName: incidentbot-secret
+
+# Production uses an external Cloud SQL (Postgres 17) instance, so the bundled
+# database is disabled. POSTGRES_HOST/PORT/etc. are provided via the secret
+# above (point POSTGRES_HOST at the Cloud SQL proxy / private IP).
+database:
+  enabled: false
+
+# config.yaml mounted into the container. Non-secret configuration only.
+configMap:
+  create: true
+  data:
+    platform: slack
+    digest_channel: incidents
+    # Prometheus metrics at GET /metrics (this fork's feature).
+    metrics:
+      enabled: true
+    components:
+      - All
+      - Benefits
+      - Discounts
+      - Home
+      - Recognition
+      - Reward
+      - Wallet
+      - Wellbeing
+      - Other
+    options:
+      timezone: UTC
+    integrations:
+      atlassian:
+        confluence:
+          enabled: true
+          auto_create_postmortem: true
+          parent: Incident Postmortems
+          space: OneHub
+          template_id: 1533083725
+    severities:
+      sev1: "Critical production impact for most or all users with major SLA impact. All-hands; customers must be notified."
+      sev2: "Significant production degradation impacting a large portion of users."
+      sev3: "Minor production scenario; worth coordinating but not a critical loss of service."
+    statuses:
+      investigating:
+        initial: true
+      identified: {}
+      monitoring: {}
+      resolved:
+        final: true
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512M
+  requests:
+    cpu: 250m
+    memory: 128M
