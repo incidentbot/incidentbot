@@ -87,7 +87,7 @@ jobs:
             # ArgoCD Application — pin the image to this build's digest. The
             # digest changes every build, so the manifest changes and ArgoCD
             # syncs + pulls the exact image.
-            cat <<EOF > "${SERVICE_PATH}"
+            cat \<<EOF > "${SERVICE_PATH}"
             apiVersion: argoproj.io/v1alpha1
             kind: Application
             metadata:
