@@ -1,10 +1,11 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request, Response, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 from incidentbot.api.routes import incidents, widget
 from incidentbot.configuration.settings import settings
@@ -68,6 +69,20 @@ async def validation_exception_handler(
 @app.get("/health")
 async def health():
     return {"healthy": True}
+
+
+@app.get("/metrics")
+async def metrics():
+    """Prometheus metrics endpoint. Disabled when metrics.enabled is false."""
+    if not settings.metrics.enabled:
+        return Response(status_code=status.HTTP_404_NOT_FOUND)
+
+    from incidentbot.metrics.collector import REGISTRY
+
+    return Response(
+        content=generate_latest(REGISTRY),
+        media_type=CONTENT_TYPE_LATEST,
+    )
 
 
 app.include_router(incidents.router)

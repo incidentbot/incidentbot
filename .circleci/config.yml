@@ -1,0 +1,144 @@
+version: 2.1
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Build the fork image with the shared benefex/docker orb, then deploy to the
+# ops cluster (onehub-ew3-ops-p) via GitOps: push the umbrella chart + an ArgoCD
+# Application into the kubernetes-resources repo, which ArgoCD auto-syncs.
+# Mirrors the platform-agent-gateway pipeline. Runs on `main`.
+#
+# build-push (benefex/docker) builds this repo's Dockerfile and pushes to
+#   europe-docker.pkg.dev/benefex-assets/benefex-images/incident-bot:latest
+# and persists the image digest (docker-url) to the workspace.
+#
+# deploy copies helm/ into gitops/onehub-ew3-ops-p/charts/incident-bot, writes
+# the ArgoCD Application (pinning the image to the freshly-built digest via
+# helm.parameters), and pushes to kubernetes-resources. ArgoCD does the rest.
+#
+# Contexts / env:
+#   gcloud:  GCLOUD_GCR_SERVICE_ACCOUNT (image push)
+#   argocd:  GITHUB_APP_ID, GITHUB_APP_INSTALLATION_ID, GITHUB_APP_PRIVATE_KEY
+#
+# NOTE on migrations: the app image runs `alembic upgrade head` on pod start
+# (replicaCount is pinned to 1 in helm/values.yaml). See helm/README.md for the
+# production-migration safety checklist before the first v3 rollout.
+# ──────────────────────────────────────────────────────────────────────────────
+
+orbs:
+  docker: benefex/docker@volatile
+
+jobs:
+  build-push:
+    executor: docker/default
+    resource_class: medium
+    steps:
+      - docker/build-push:
+          docker-build-args: "--build-arg APP_VERSION=git-${CIRCLE_SHA1:0:7}"
+
+  deploy:
+    docker:
+      - image: cimg/python:3.11
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: Generate GitHub App token
+          command: |
+            set -euo pipefail
+            for var in GITHUB_APP_ID GITHUB_APP_INSTALLATION_ID GITHUB_APP_PRIVATE_KEY; do
+              if [ -z "${!var:-}" ]; then echo "Missing required env var: $var" >&2; exit 1; fi
+            done
+            python3 -m pip install --quiet "pyjwt[crypto]==2.8.0" "requests==2.32.3"
+            TOKEN=$(python3 -c "import os, time, jwt, requests; \
+            now = int(time.time()); \
+            payload = {'iat': now-60, 'exp': now+600, 'iss': os.environ['GITHUB_APP_ID']}; \
+            jwt_token = jwt.encode(payload, os.environ['GITHUB_APP_PRIVATE_KEY'], algorithm='RS256'); \
+            jwt_token = jwt_token if isinstance(jwt_token, str) else jwt_token.decode('utf-8'); \
+            headers = {'Authorization': f'Bearer {jwt_token}', 'Accept': 'application/vnd.github+json'}; \
+            url = f\"https://api.github.com/app/installations/{os.environ['GITHUB_APP_INSTALLATION_ID']}/access_tokens\"; \
+            resp = requests.post(url, headers=headers); resp.raise_for_status(); \
+            print(resp.json()['token'])")
+            echo "export GITHUB_INSTALLATION_TOKEN=${TOKEN}" >> "$BASH_ENV"
+      - run:
+          name: Sync to GitOps repo
+          command: |
+            set -euo pipefail
+            APP_NAME="incident-bot"
+            ENV="onehub-ew3-ops-p"
+            NAMESPACE="incident-bot"
+
+            # Image digest captured by the build-push orb (repo@sha256:...).
+            if [ ! -s docker-url ]; then echo "docker-url missing from workspace" >&2; exit 1; fi
+            DIGEST="$(cut -d@ -f2 docker-url)"   # sha256:...
+
+            git clone --depth 1 "https://x-access-token:${GITHUB_INSTALLATION_TOKEN}@github.com/BenefexLtd/kubernetes-resources.git"
+            cd kubernetes-resources
+
+            CHART_PATH="gitops/${ENV}/charts/${APP_NAME}"
+            SERVICE_PATH="gitops/${ENV}/services/${APP_NAME}.yaml"
+            mkdir -p "${CHART_PATH}" "gitops/${ENV}/services"
+
+            # Replace the chart with this build's umbrella chart (incl. vendored
+            # dependency tarball + Chart.lock).
+            rm -rf "${CHART_PATH}"
+            mkdir -p "${CHART_PATH}"
+            cp -r ../helm/. "${CHART_PATH}/"
+
+            # ArgoCD Application — pin the image to this build's digest. The
+            # digest changes every build, so the manifest changes and ArgoCD
+            # syncs + pulls the exact image.
+            cat <<EOF > "${SERVICE_PATH}"
+            apiVersion: argoproj.io/v1alpha1
+            kind: Application
+            metadata:
+              name: ${APP_NAME}
+              namespace: argocd
+              labels:
+                app.kubernetes.io/instance: ${APP_NAME}-${ENV}
+            spec:
+              project: onehub-ops-ew3-p
+              source:
+                repoURL: 'git@github.com:BenefexLtd/kubernetes-resources.git'
+                path: gitops/${ENV}/charts/${APP_NAME}
+                targetRevision: HEAD
+                helm:
+                  releaseName: ${APP_NAME}
+                  parameters:
+                    - name: incidentbot.image.tag
+                      value: "latest@${DIGEST}"
+              destination:
+                name: ${ENV}_cluster
+                namespace: ${NAMESPACE}
+              syncPolicy:
+                automated:
+                  prune: true
+                  selfHeal: true
+            EOF
+
+            git config user.email "circleci@benifex.com"
+            git config user.name "CircleCI"
+            git add .
+            if git diff --staged --quiet; then
+              echo "No changes to commit."
+            else
+              git commit -m "Deploy ${APP_NAME} to ${ENV} (${DIGEST}) [build ${CIRCLE_BUILD_NUM}]"
+              git push "https://x-access-token:${GITHUB_INSTALLATION_TOKEN}@github.com/BenefexLtd/kubernetes-resources.git" HEAD:master
+            fi
+
+workflows:
+  build-and-deploy:
+    jobs:
+      - build-push:
+          context:
+            - gcloud
+          filters:
+            branches:
+              only: main
+      - deploy:
+          context:
+            - argocd
+          requires:
+            - build-push
+          filters:
+            branches:
+              only: main

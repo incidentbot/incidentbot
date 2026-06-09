@@ -288,6 +288,8 @@ class IncidentDatabaseInterface:
                         incident.description = value
                     case "last_update_sent":
                         incident.last_update_sent = value
+                    case "resolved_at":
+                        incident.resolved_at = value
                     case "severity":
                         incident.severity = value
                     case "status":

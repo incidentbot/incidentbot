@@ -17,6 +17,7 @@ from incidentbot.configuration.schema import (
     Jobs,
     Link,
     MatrixSettings,
+    Metrics,
     Options,
     Reminder,
     ReminderAction,
@@ -77,6 +78,7 @@ class Settings(BaseSettings):
     integrations: Integrations | None = None
     jobs: Jobs = Field(default_factory=Jobs)
     matrix: MatrixSettings | None = None
+    metrics: Metrics = Field(default_factory=Metrics)
     reminders: list[Reminder] = Field(default_factory=lambda: list(_DEFAULT_REMINDERS))
     automations: list[Automation] = Field(default_factory=list)
     links: list[Link] | None = None

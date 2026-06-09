@@ -91,6 +91,15 @@ class Automation(BaseModel):
     enabled: bool = True
 
 
+# ── Metrics ───────────────────────────────────────────────────────────────────
+
+
+class Metrics(BaseModel):
+    """Prometheus metrics exposed at GET /metrics."""
+
+    enabled: bool = True
+
+
 # ── Options ───────────────────────────────────────────────────────────────────
 
 

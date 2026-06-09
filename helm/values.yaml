@@ -1,0 +1,101 @@
+# Values for the incident-bot umbrella chart (ops cluster).
+#
+# Everything under `incidentbot:` is passed to the upstream incidentbot
+# subchart. The image tag is overridden per build by CI via the ArgoCD
+# Application's helm.parameters (pinned to the freshly-built image digest), so
+# the `tag` here is only a default for manual renders.
+
+incidentbot:
+  # Single replica: the image entrypoint runs `alembic upgrade head` on every
+  # pod start; one replica avoids concurrent migrations racing on rollout.
+  replicaCount: 1
+
+  # "bot" connects to Slack. The HTTP server (and /metrics, /health) runs in
+  # every mode. Use "all" to also serve the web API / status widgets.
+  appMode: bot
+
+  image:
+    repository: europe-docker.pkg.dev/benefex-assets/benefex-images/incident-bot
+    pullPolicy: IfNotPresent
+    tag: latest
+
+  # Required so the ServiceMonitor can scrape /metrics.
+  service:
+    enabled: true
+    type: ClusterIP
+    port: 3000
+
+  # Env (Slack tokens, POSTGRES_*, ATLASSIAN_*, SECRET_KEY) come from the
+  # secret materialised by the ExternalSecret below.
+  envFromSecret:
+    enabled: true
+    secretName: incident-bot-secrets
+
+  # External Cloud SQL (Postgres 17); POSTGRES_HOST/etc. come via the secret.
+  database:
+    enabled: false
+
+  configMap:
+    create: true
+    data:
+      platform: slack
+      digest_channel: incidents
+      metrics:
+        enabled: true
+      components:
+        - All
+        - Benefits
+        - Discounts
+        - Home
+        - Recognition
+        - Reward
+        - Wallet
+        - Wellbeing
+        - Other
+      options:
+        timezone: UTC
+      integrations:
+        atlassian:
+          confluence:
+            enabled: true
+            auto_create_postmortem: true
+            parent: Incident Postmortems
+            space: OneHub
+            template_id: 1533083725
+      severities:
+        sev1: "Critical production impact for most or all users with major SLA impact. All-hands; customers must be notified."
+        sev2: "Significant production degradation impacting a large portion of users."
+        sev3: "Minor production scenario; worth coordinating but not a critical loss of service."
+      statuses:
+        investigating:
+          initial: true
+        identified: {}
+        monitoring: {}
+        resolved:
+          final: true
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512M
+    requests:
+      cpu: 250m
+      memory: 128M
+
+# ExternalSecret (templates/external-secret.yaml) — materialises
+# `incident-bot-secrets` from GCP Secret Manager. The secret in Secret Manager
+# must hold SLACK_APP_TOKEN, SLACK_BOT_TOKEN, SLACK_USER_TOKEN, SECRET_KEY,
+# POSTGRES_HOST/PORT/DB/USER/PASSWORD, ATLASSIAN_API_URL/USERNAME/TOKEN.
+externalSecret:
+  enabled: true
+  secretName: incident-bot-secrets
+  backendType: gcpSecretsManager
+  projectId: onehub-production
+  dataFrom:
+    - incident-bot-secrets
+
+# Prometheus Operator scrape config for /metrics.
+serviceMonitor:
+  enabled: true
+  # Must match your Prometheus Operator's serviceMonitorSelector.
+  release: kube-prometheus-stack
