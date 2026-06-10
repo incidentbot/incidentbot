@@ -84,7 +84,7 @@ incidentbot:
           trigger: on_open
           actions:
             - type: invite_user
-              user: REPLACE_WITH_ODIN_USER_ID
+              user: U0B60D43BA4
       integrations:
         zoom:
           enabled: true
