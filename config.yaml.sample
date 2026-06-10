@@ -236,6 +236,8 @@ reminders:
 # Action types:
 #   invite_group    — invite a Slack user group into the incident channel
 #     name: slack-group-handle
+#   invite_user     — invite a single user or bot into the incident channel
+#     user: U0XXXXXXX  # Slack member/bot ID (not a display name)
 #   page_pagerduty  — trigger a PagerDuty escalation (requires PD integration)
 #     escalation_policy: POLICY_ID
 #     priority: high  # low (default) | high

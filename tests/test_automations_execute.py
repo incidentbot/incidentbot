@@ -15,7 +15,7 @@ with (
     patch("sqlmodel.create_engine", return_value=MagicMock()),
     patch("slack_sdk.WebClient", return_value=MagicMock()),
 ):
-    from incidentbot.incident.automations import _execute, _invite_group, _page_pagerduty, _post_message
+    from incidentbot.incident.automations import _execute, _invite_group, _invite_user, _page_pagerduty, _post_message
 
 
 def _make_record(channel_id="C123", channel_name="inc-test", slug="inc-test", status="investigating"):
@@ -41,6 +41,13 @@ class TestExecuteDispatch:
         action = _make_action("invite_group", name="oncall")
         record = _make_record()
         with patch("incidentbot.incident.automations._invite_group") as mock_fn:
+            _execute(action, record)
+        mock_fn.assert_called_once_with(action, record)
+
+    def test_dispatches_invite_user(self):
+        action = _make_action("invite_user", user="U999")
+        record = _make_record()
+        with patch("incidentbot.incident.automations._invite_user") as mock_fn:
             _execute(action, record)
         mock_fn.assert_called_once_with(action, record)
 
@@ -110,6 +117,50 @@ class TestInviteGroup:
             _invite_group(action, record)
 
         mock_log.warning.assert_called_once()
+
+
+class TestInviteUser:
+    def test_invites_user_and_logs_event(self):
+        action = _make_action("invite_user", user="U999")
+        record = _make_record()
+        mock_adapter = MagicMock()
+
+        with (
+            patch("incidentbot.incident.automations.get_adapter", return_value=mock_adapter),
+            patch("incidentbot.incident.automations.EventLogHandler") as mock_log,
+        ):
+            _invite_user(action, record)
+
+        mock_adapter.invite_user.assert_called_once_with(room_id="C123", user_id="U999")
+        mock_log.create.assert_called_once()
+
+    def test_logs_warning_when_no_user_configured(self):
+        action = _make_action("invite_user", user=None)
+        record = _make_record()
+        mock_adapter = MagicMock()
+
+        with (
+            patch("incidentbot.incident.automations.get_adapter", return_value=mock_adapter),
+            patch("incidentbot.incident.automations.logger") as mock_log,
+        ):
+            _invite_user(action, record)
+
+        mock_log.warning.assert_called_once()
+        mock_adapter.invite_user.assert_not_called()
+
+    def test_logs_exception_on_failure(self):
+        action = _make_action("invite_user", user="U999")
+        record = _make_record()
+        mock_adapter = MagicMock()
+        mock_adapter.invite_user.side_effect = Exception("boom")
+
+        with (
+            patch("incidentbot.incident.automations.get_adapter", return_value=mock_adapter),
+            patch("incidentbot.incident.automations.logger") as mock_log,
+        ):
+            _invite_user(action, record)
+
+        mock_log.exception.assert_called_once()
 
 
 class TestPagePagerDuty:

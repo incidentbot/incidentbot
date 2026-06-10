@@ -43,6 +43,8 @@ def _execute(action, record) -> None:
     match action.type:
         case "invite_group":
             _invite_group(action, record)
+        case "invite_user":
+            _invite_user(action, record)
         case "page_pagerduty":
             _page_pagerduty(action, record)
         case "post_message":
@@ -67,6 +69,23 @@ def _invite_group(action, record) -> None:
         )
     except Exception as error:
         logger.exception("automation invite_group failed", group=action.name, error=error)
+
+
+def _invite_user(action, record) -> None:
+    if not action.user:
+        logger.warning("automation invite_user: no user configured")
+        return
+    adapter = get_adapter()
+    try:
+        adapter.invite_user(room_id=record.channel_id, user_id=action.user)
+        EventLogHandler.create(
+            event=f"User {action.user} was invited via automation",
+            incident_id=record.id,
+            incident_slug=record.slug,
+            source="system",
+        )
+    except Exception as error:
+        logger.exception("automation invite_user failed", user=action.user, error=error)
 
 
 def _page_pagerduty(action, record) -> None:

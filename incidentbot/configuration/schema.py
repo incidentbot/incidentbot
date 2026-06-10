@@ -76,8 +76,9 @@ class Reminder(BaseModel):
 
 
 class AutomationAction(BaseModel):
-    type: Literal["invite_group", "page_pagerduty", "post_message"]
+    type: Literal["invite_group", "invite_user", "page_pagerduty", "post_message"]
     name: str | None = None            # invite_group: group name
+    user: str | None = None            # invite_user: user/bot member ID
     escalation_policy: str | None = None  # page_pagerduty: policy ID
     priority: Literal["low", "high"] = "low"
     message: str | None = None         # post_message: text

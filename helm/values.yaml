@@ -77,6 +77,14 @@ incidentbot:
           actions:
             - type: invite_group
               name: platform
+        # Auto-join the @odin bot to every incident channel on open.
+        # `user` must be Odin's Slack member ID (e.g. U0XXXXXXX / bot user ID),
+        # not its display name — find it via the bot's Slack profile.
+        - id: invite-odin
+          trigger: on_open
+          actions:
+            - type: invite_user
+              user: REPLACE_WITH_ODIN_USER_ID
       integrations:
         zoom:
           enabled: true
