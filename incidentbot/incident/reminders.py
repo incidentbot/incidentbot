@@ -2,10 +2,8 @@ from incidentbot.configuration.settings import settings
 from incidentbot.incident.conditions import evaluate
 from incidentbot.logging import logger
 from incidentbot.models.incident import IncidentDatabaseInterface
+from incidentbot.platform import get_adapter
 from incidentbot.scheduler.core import process as TaskScheduler
-from incidentbot.slack.client import slack_web_client
-from incidentbot.slack.messages import BlockBuilder
-from slack_sdk.errors import SlackApiError
 
 
 def _job_id(slug: str, reminder_id: str) -> str:
@@ -26,12 +24,8 @@ def run_reminder(channel_id: str, reminder_id: str) -> None:
         return
 
     try:
-        slack_web_client.chat_postMessage(
-            channel=channel_id,
-            blocks=BlockBuilder.reminder_message(reminder, record.slug),
-            text=reminder.message,
-        )
-    except SlackApiError as error:
+        get_adapter().post_reminder(channel_id, reminder, record.slug)
+    except Exception as error:
         logger.exception("error sending reminder message", reminder=reminder_id, error=error)
         return
 
@@ -77,6 +71,10 @@ def cancel_reminder_jobs(slug: str) -> None:
 
 def handle_snooze(channel_id: str, reminder_id: str, minutes: int, ts: str) -> None:
     """Reschedule a reminder job and acknowledge in channel."""
+    # ponytail: Slack-only — driven by a Block Kit button, and only called from
+    # slack/handler.py. Route through the adapter if Matrix ever grows an equivalent.
+    from incidentbot.slack.client import slack_web_client
+
     record = IncidentDatabaseInterface.get_one(channel_id=channel_id)
     if not record:
         return
@@ -97,6 +95,9 @@ def handle_snooze(channel_id: str, reminder_id: str, minutes: int, ts: str) -> N
 
 def handle_dismiss(channel_id: str, reminder_id: str, ts: str) -> None:
     """Permanently cancel a reminder job and acknowledge in channel."""
+    # ponytail: Slack-only, see handle_snooze.
+    from incidentbot.slack.client import slack_web_client
+
     record = IncidentDatabaseInterface.get_one(channel_id=channel_id)
     if not record:
         return

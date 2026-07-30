@@ -294,3 +294,14 @@ class SlackAdapter(PlatformAdapter):
             )
         except slack_sdk.errors.SlackApiError as error:
             logger.exception("error posting phare prompt", room_id=room_id, error=error)
+
+    def post_reminder(self, room_id: str, reminder: Any, slug: str) -> None:
+        # Raises on failure: the caller uses that to keep a once-only reminder job
+        # alive so it retries, instead of deleting it after a failed post.
+        from incidentbot.slack.messages import BlockBuilder
+
+        self._client.chat_postMessage(
+            channel=room_id,
+            blocks=BlockBuilder.reminder_message(reminder, slug),
+            text=reminder.message,
+        )
