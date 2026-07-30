@@ -162,7 +162,9 @@ def scrape_for_aging_incidents():
         )
 
 
-if settings.jobs.scrape_for_aging_incidents.enabled:
+# ponytail: Slack-only — the job builds Block Kit and posts to the Slack digest
+# channel. Route it through the adapter if Matrix users want the same nudge.
+if settings.platform == "slack" and settings.jobs.scrape_for_aging_incidents.enabled:
     process.scheduler.add_job(
         id="scrape_for_aging_incidents",
         func=scrape_for_aging_incidents,
