@@ -4,6 +4,8 @@ Tests for reminder execution functions in incidentbot/incident/reminders.py
 import sys
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 # Evict the module so this file always gets a fresh import with its own
 # _mock_settings (other test files import incidentbot.incident.actions, which
 # pulls in reminders as a side-effect and leaves it with incompatible settings).
@@ -54,72 +56,87 @@ class TestJobId:
 
 
 class TestRunReminder:
+    """Reminders post through the platform adapter, so they work on Slack and Matrix."""
+
     def test_posts_message_when_conditions_pass(self):
         record = _make_record()
-        mock_client = MagicMock()
-        mock_blocks = MagicMock()
+        mock_adapter = MagicMock()
 
         with (
             patch("incidentbot.incident.reminders.IncidentDatabaseInterface.get_one", return_value=record),
             patch("incidentbot.incident.reminders.evaluate", return_value=True),
-            patch("incidentbot.incident.reminders.slack_web_client", mock_client),
-            patch("incidentbot.incident.reminders.BlockBuilder") as mock_bb,
+            patch("incidentbot.incident.reminders.get_adapter", return_value=mock_adapter),
         ):
-            mock_bb.reminder_message.return_value = mock_blocks
             run_reminder("C123", "comms_reminder")
 
-        mock_client.chat_postMessage.assert_called_once()
+        mock_adapter.post_reminder.assert_called_once_with("C123", _reminder, record.slug)
 
     def test_returns_early_when_reminder_not_found(self):
-        mock_client = MagicMock()
+        mock_adapter = MagicMock()
         with (
             patch("incidentbot.incident.reminders.IncidentDatabaseInterface.get_one") as mock_db,
-            patch("incidentbot.incident.reminders.slack_web_client", mock_client),
+            patch("incidentbot.incident.reminders.get_adapter", return_value=mock_adapter),
         ):
             run_reminder("C123", "nonexistent_reminder")
         mock_db.assert_not_called()
-        mock_client.chat_postMessage.assert_not_called()
+        mock_adapter.post_reminder.assert_not_called()
 
     def test_returns_early_when_reminder_disabled(self):
         _reminder.enabled = False
-        mock_client = MagicMock()
-        with patch("incidentbot.incident.reminders.slack_web_client", mock_client):
+        mock_adapter = MagicMock()
+        with patch("incidentbot.incident.reminders.get_adapter", return_value=mock_adapter):
             run_reminder("C123", "comms_reminder")
-        mock_client.chat_postMessage.assert_not_called()
+        mock_adapter.post_reminder.assert_not_called()
         _reminder.enabled = True  # restore
 
     def test_returns_early_when_incident_not_found(self):
-        mock_client = MagicMock()
+        mock_adapter = MagicMock()
         with (
             patch("incidentbot.incident.reminders.IncidentDatabaseInterface.get_one", return_value=None),
-            patch("incidentbot.incident.reminders.slack_web_client", mock_client),
+            patch("incidentbot.incident.reminders.get_adapter", return_value=mock_adapter),
         ):
             run_reminder("C123", "comms_reminder")
-        mock_client.chat_postMessage.assert_not_called()
+        mock_adapter.post_reminder.assert_not_called()
 
     def test_returns_early_when_condition_fails(self):
         record = _make_record()
-        mock_client = MagicMock()
+        mock_adapter = MagicMock()
         with (
             patch("incidentbot.incident.reminders.IncidentDatabaseInterface.get_one", return_value=record),
             patch("incidentbot.incident.reminders.evaluate", return_value=False),
-            patch("incidentbot.incident.reminders.slack_web_client", mock_client),
+            patch("incidentbot.incident.reminders.get_adapter", return_value=mock_adapter),
         ):
             run_reminder("C123", "comms_reminder")
-        mock_client.chat_postMessage.assert_not_called()
+        mock_adapter.post_reminder.assert_not_called()
+
+    def test_does_not_delete_job_when_post_fails(self):
+        record = _make_record()
+        _reminder.once = True
+        mock_adapter = MagicMock()
+        mock_adapter.post_reminder.side_effect = RuntimeError("platform down")
+
+        with (
+            patch("incidentbot.incident.reminders.IncidentDatabaseInterface.get_one", return_value=record),
+            patch("incidentbot.incident.reminders.evaluate", return_value=True),
+            patch("incidentbot.incident.reminders.get_adapter", return_value=mock_adapter),
+            patch("incidentbot.incident.reminders.TaskScheduler") as mock_sched,
+        ):
+            run_reminder("C123", "comms_reminder")
+            mock_sched.delete_job.assert_not_called()
+
+        _reminder.once = False  # restore
 
     def test_deletes_job_when_once_is_true(self):
         _reminder.once = True
         record = _make_record()
-        mock_client = MagicMock()
+        mock_adapter = MagicMock()
         mock_job = MagicMock()
         mock_job.id = "inc-test_comms_reminder"
 
         with (
             patch("incidentbot.incident.reminders.IncidentDatabaseInterface.get_one", return_value=record),
             patch("incidentbot.incident.reminders.evaluate", return_value=True),
-            patch("incidentbot.incident.reminders.slack_web_client", mock_client),
-            patch("incidentbot.incident.reminders.BlockBuilder"),
+            patch("incidentbot.incident.reminders.get_adapter", return_value=mock_adapter),
             patch("incidentbot.incident.reminders.TaskScheduler") as mock_sched,
         ):
             mock_sched.get_job.return_value = mock_job
@@ -130,13 +147,12 @@ class TestRunReminder:
 
     def test_does_not_delete_job_when_once_is_false(self):
         record = _make_record()
-        mock_client = MagicMock()
+        mock_adapter = MagicMock()
 
         with (
             patch("incidentbot.incident.reminders.IncidentDatabaseInterface.get_one", return_value=record),
             patch("incidentbot.incident.reminders.evaluate", return_value=True),
-            patch("incidentbot.incident.reminders.slack_web_client", mock_client),
-            patch("incidentbot.incident.reminders.BlockBuilder"),
+            patch("incidentbot.incident.reminders.get_adapter", return_value=mock_adapter),
             patch("incidentbot.incident.reminders.TaskScheduler") as mock_sched,
         ):
             run_reminder("C123", "comms_reminder")
@@ -188,7 +204,7 @@ class TestHandleSnooze:
         with (
             patch("incidentbot.incident.reminders.IncidentDatabaseInterface.get_one", return_value=record),
             patch("incidentbot.incident.reminders.TaskScheduler") as mock_sched,
-            patch("incidentbot.incident.reminders.slack_web_client", mock_client),
+            patch("incidentbot.slack.client.slack_web_client", mock_client),
         ):
             mock_sched.get_job.return_value = mock_job
             handle_snooze("C123", "comms_reminder", 30, "ts-123")
@@ -201,7 +217,7 @@ class TestHandleSnooze:
         mock_client = MagicMock()
         with (
             patch("incidentbot.incident.reminders.IncidentDatabaseInterface.get_one", return_value=None),
-            patch("incidentbot.incident.reminders.slack_web_client", mock_client),
+            patch("incidentbot.slack.client.slack_web_client", mock_client),
         ):
             handle_snooze("C123", "comms_reminder", 30, "ts-123")
         mock_client.chat_postMessage.assert_not_called()
@@ -217,7 +233,7 @@ class TestHandleDismiss:
         with (
             patch("incidentbot.incident.reminders.IncidentDatabaseInterface.get_one", return_value=record),
             patch("incidentbot.incident.reminders.TaskScheduler") as mock_sched,
-            patch("incidentbot.incident.reminders.slack_web_client", mock_client),
+            patch("incidentbot.slack.client.slack_web_client", mock_client),
         ):
             mock_sched.get_job.return_value = mock_job
             handle_dismiss("C123", "comms_reminder", "ts-456")
@@ -230,7 +246,35 @@ class TestHandleDismiss:
         mock_client = MagicMock()
         with (
             patch("incidentbot.incident.reminders.IncidentDatabaseInterface.get_one", return_value=None),
-            patch("incidentbot.incident.reminders.slack_web_client", mock_client),
+            patch("incidentbot.slack.client.slack_web_client", mock_client),
         ):
             handle_dismiss("C123", "comms_reminder", "ts-456")
         mock_client.chat_postMessage.assert_not_called()
+
+
+class TestAdaptersRaiseOnFailedReminder:
+    """run_reminder relies on post_reminder raising, otherwise it deletes a
+    once-only job after a post that never landed. Assert the real adapters do."""
+
+    def test_slack_adapter_propagates_api_error(self):
+        from incidentbot.platform.slack import SlackAdapter
+        from slack_sdk.errors import SlackApiError
+
+        adapter = SlackAdapter()
+        error = SlackApiError("ratelimited", response=MagicMock())
+        with (
+            patch.object(adapter, "_client") as mock_client,
+            patch("incidentbot.slack.messages.BlockBuilder.reminder_message", return_value=[]),
+        ):
+            mock_client.chat_postMessage.side_effect = error
+            with pytest.raises(SlackApiError):
+                adapter.post_reminder("C123", _reminder, "inc-test")
+
+    def test_matrix_adapter_raises_on_empty_event_id(self):
+        from incidentbot.platform.matrix import MatrixAdapter
+
+        with patch("incidentbot.platform.matrix.MatrixClient") as mock_cls:
+            adapter = MatrixAdapter(MagicMock())
+            mock_cls.return_value.send_text.return_value = ""
+            with pytest.raises(RuntimeError):
+                adapter.post_reminder("!room:example.com", _reminder, "inc-test")

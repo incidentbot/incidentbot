@@ -1,3 +1,4 @@
+from html import escape
 from incidentbot.models.database import IncidentRecord
 
 
@@ -15,20 +16,19 @@ class MatrixMessages:
             f"Components: {incident.components}",
         ]
         lines_html = [
-            f"<h3>🚨 {incident.slug.upper()}</h3>",
-            f"<b>Description:</b> {incident.description}<br>",
-            f"<b>Severity:</b> {incident.severity.upper()}<br>",
-            f"<b>Status:</b> {incident.status.title()}<br>",
-            f"<b>Components:</b> {incident.components}<br>",
+            f"<h3>🚨 {escape(incident.slug.upper())}</h3>",
+            f"<b>Description:</b> {escape(incident.description)}<br>",
+            f"<b>Severity:</b> {escape(incident.severity.upper())}<br>",
+            f"<b>Status:</b> {escape(incident.status.title())}<br>",
+            f"<b>Components:</b> {escape(incident.components)}<br>",
         ]
         if incident.impact:
             lines_plain.append(f"Impact: {incident.impact}")
-            lines_html.append(f"<b>Impact:</b> {incident.impact}<br>")
+            lines_html.append(f"<b>Impact:</b> {escape(incident.impact)}<br>")
         if incident.meeting_link:
+            link = escape(incident.meeting_link)
             lines_plain.append(f"Meeting: {incident.meeting_link}")
-            lines_html.append(
-                f"<b>Meeting:</b> <a href='{incident.meeting_link}'>{incident.meeting_link}</a><br>"
-            )
+            lines_html.append(f"<b>Meeting:</b> <a href='{link}'>{link}</a><br>")
         return "\n".join(lines_plain), "".join(lines_html)
 
     @staticmethod
@@ -65,22 +65,21 @@ class MatrixMessages:
             f"Components: {incident_components}",
         ]
         lines_html = [
-            f"<h4>🚨 New Incident: <b>{incident_slug}</b>{privacy}</h4>",
-            f"<b>Description:</b> {incident_description}<br>",
-            f"<b>Severity:</b> {severity.upper()}<br>",
-            f"<b>Status:</b> {initial_status.title()}<br>",
-            f"<b>Components:</b> {incident_components}<br>",
+            f"<h4>🚨 New Incident: <b>{escape(incident_slug)}</b>{privacy}</h4>",
+            f"<b>Description:</b> {escape(incident_description)}<br>",
+            f"<b>Severity:</b> {escape(severity.upper())}<br>",
+            f"<b>Status:</b> {escape(initial_status.title())}<br>",
+            f"<b>Components:</b> {escape(incident_components)}<br>",
         ]
         if incident_impact:
             lines_plain.append(f"Impact: {incident_impact}")
-            lines_html.append(f"<b>Impact:</b> {incident_impact}<br>")
+            lines_html.append(f"<b>Impact:</b> {escape(incident_impact)}<br>")
         if meeting_link:
+            link = escape(meeting_link)
             lines_plain.append(f"Meeting: {meeting_link}")
-            lines_html.append(
-                f"<b>Meeting:</b> <a href='{meeting_link}'>{meeting_link}</a><br>"
-            )
+            lines_html.append(f"<b>Meeting:</b> <a href='{link}'>{link}</a><br>")
         lines_plain.append(f"Room: {room_link}")
-        lines_html.append(f'<a href="{room_link}">Join incident room →</a>')
+        lines_html.append(f'<a href="{escape(room_link)}">Join incident room →</a>')
         return "\n".join(lines_plain), "".join(lines_html)
 
     @staticmethod
@@ -89,9 +88,9 @@ class MatrixMessages:
     ) -> tuple[str, str]:
         plain = f"Jira {issue_type}: {key} — {summary}\n{link}"
         html = (
-            f"📋 <b>Jira {issue_type}:</b> "
-            f'<a href="{link}">{key}</a><br>'
-            f"<b>Summary:</b> {summary}"
+            f"📋 <b>Jira {escape(issue_type)}:</b> "
+            f'<a href="{escape(link)}">{escape(key)}</a><br>'
+            f"<b>Summary:</b> {escape(summary)}"
         )
         return plain, html
 
@@ -99,7 +98,8 @@ class MatrixMessages:
     def gitlab_incident(incident_id: int, summary: str, link: str) -> tuple[str, str]:
         plain = f"GitLab Incident #{incident_id}: {summary}\n{link}"
         html = (
-            f'🦊 <b>GitLab Incident #{incident_id}:</b> <a href="{link}">{summary}</a>'
+            f"🦊 <b>GitLab Incident #{incident_id}:</b> "
+            f'<a href="{escape(link)}">{escape(summary)}</a>'
         )
         return plain, html
 
@@ -121,7 +121,7 @@ class MatrixMessages:
             + "\n".join(f"  {cmd}  —  {desc}" for cmd, desc in commands)
         )
         digest_link = (
-            f'<a href="https://matrix.to/#/{digest_room_id}">incidents room</a>'
+            f'<a href="https://matrix.to/#/{escape(digest_room_id)}">incidents room</a>'
             if digest_room_id
             else "the incidents room"
         )
@@ -131,4 +131,14 @@ class MatrixMessages:
             + "".join(f"<li><code>{cmd}</code> — {desc}</li>" for cmd, desc in commands)
             + "</ul>"
         )
+        return plain, html
+
+    @staticmethod
+    def reminder(reminder, slug: str) -> tuple[str, str]:
+        """Returns (plain_text, html) for a config-driven reminder message."""
+        # ponytail: escape only, no mrkdwn translation. Reminder messages are
+        # authored as Slack mrkdwn, so `<url|label>` renders literally on Matrix.
+        # Write a converter if anyone actually puts links in reminders.
+        plain = f"[{slug.upper()}] Reminder: {reminder.message}"
+        html = f"<b>⏰ {escape(slug.upper())}</b><br>{escape(reminder.message)}"
         return plain, html

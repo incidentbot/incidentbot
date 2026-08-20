@@ -14,6 +14,18 @@ def _set_minimal_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("POSTGRES_USER", "incident_bot")
     monkeypatch.setenv("PLATFORM", "matrix")
 
+    # Clear any MATRIX_* vars from the developer's own shell, otherwise a real
+    # local token leaks in and overrides what the test sets up.
+    for var in (
+        "MATRIX_HOMESERVER",
+        "MATRIX_USER_ID",
+        "MATRIX_ACCESS_TOKEN",
+        "MATRIX_DEVICE_ID",
+        "MATRIX_DIGEST_ROOM_ID",
+        "MATRIX_WIDGET_BASE_URL",
+    ):
+        monkeypatch.delenv(var, raising=False)
+
 
 def _set_yaml_file(monkeypatch: pytest.MonkeyPatch, path: Path) -> None:
     monkeypatch.setitem(Settings.model_config, "yaml_file", str(path))

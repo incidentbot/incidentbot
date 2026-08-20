@@ -16,36 +16,60 @@ from sqlmodel import Session, select
 from typing import Any
 
 # Initialize Slack clients
+# Constructing the client makes no network call; everything derived from
+# auth_test() is resolved lazily so importing this module is safe when
+# settings.platform is not "slack" (or when no token is configured).
 slack_web_client = WebClient(token=settings.SLACK_BOT_TOKEN)
-slack_web_client_auth_test = slack_web_client.auth_test()
 
 """
 Reusable variables
 """
 
-all_workspace_groups = (
-    slack_web_client.usergroups_list()
-    if not settings.IS_TEST_ENVIRONMENT
-    else []
-)
 
-bot_user_id = (
-    slack_web_client_auth_test.get("user_id")
-    if not settings.IS_TEST_ENVIRONMENT
-    else "test"
-)
+@lru_cache(maxsize=1)
+def _auth_test() -> dict:
+    if settings.IS_TEST_ENVIRONMENT:
+        return {"user_id": "test", "user": "test", "url": "https://test.slack.com"}
 
-bot_user_name = (
-    slack_web_client_auth_test.get("user")
-    if not settings.IS_TEST_ENVIRONMENT
-    else "test"
-)
+    return slack_web_client.auth_test()
 
-slack_workspace_id = (
-    slack_web_client_auth_test.get("url").replace("https://", "").split(".")[0]
-    if not settings.IS_TEST_ENVIRONMENT
-    else "test"
-)
+
+@lru_cache(maxsize=1)
+def _workspace_groups() -> dict:
+    if settings.IS_TEST_ENVIRONMENT:
+        return {"usergroups": []}
+
+    return slack_web_client.usergroups_list()
+
+
+def _bot_user_id() -> str:
+    return _auth_test().get("user_id")
+
+
+def _bot_user_name() -> str:
+    return _auth_test().get("user")
+
+
+def _slack_workspace_id() -> str:
+    return _auth_test().get("url").replace("https://", "").split(".")[0]
+
+
+# ponytail: PEP 562 module __getattr__ keeps the old module-level names working
+# for importers without doing the API calls at import time.
+_LAZY_ATTRS = {
+    "slack_web_client_auth_test": _auth_test,
+    "all_workspace_groups": _workspace_groups,
+    "bot_user_id": _bot_user_id,
+    "bot_user_name": _bot_user_name,
+    "slack_workspace_id": _slack_workspace_id,
+}
+
+
+def __getattr__(name: str):
+    if name in _LAZY_ATTRS:
+        return _LAZY_ATTRS[name]()
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 # Users to skip invites for
 skip_invite_for_users = ["api", "web"]
@@ -344,7 +368,7 @@ def check_bot_user_in_digest_channel():
     )["members"]
     channel_name = get_channel_name(channel_id=digest_channel_id)
 
-    if bot_user_id not in members:
+    if _bot_user_id() not in members:
         slack_web_client.conversations_join(channel=digest_channel_id)
         logger.info("added bot user to digest channel", channel=channel_name)
     else:
@@ -361,7 +385,7 @@ def check_user_in_group(user_id: str, group_name: str) -> bool:
         group_name (str): Name of the group
     """
 
-    all_groups = all_workspace_groups.get("usergroups", [])
+    all_groups = _workspace_groups().get("usergroups", [])
     target_group = [g for g in all_groups if g["handle"] == group_name]
 
     if not target_group:

@@ -1,3 +1,4 @@
+from html import escape
 from incidentbot.logging import logger
 from incidentbot.matrix.client import MatrixClient
 from incidentbot.matrix.messages import MatrixMessages
@@ -39,7 +40,7 @@ class MatrixAdapter(PlatformAdapter):
         event_id = self._matrix.send_text(
             room_id,
             f"🔖 {title}: {url}",
-            f'🔖 <b>{title}:</b> <a href="{url}">{url}</a>',
+            f'🔖 <b>{escape(title)}:</b> <a href="{escape(url)}">{escape(url)}</a>',
         )
         if event_id:
             self._matrix.pin_message(room_id, event_id)
@@ -129,3 +130,12 @@ class MatrixAdapter(PlatformAdapter):
             room_id,
             "Phare integration is active. Update your Phare incident at the configured Phare URL.",
         )
+
+    def post_reminder(self, room_id: str, reminder: Any, slug: str) -> None:
+        # ponytail: no snooze/dismiss buttons — Matrix has no interactive message
+        # actions here. Add !incident snooze/dismiss commands if people ask.
+        plain, html = MatrixMessages.reminder(reminder, slug)
+        # send_text returns an empty event id instead of raising; turn that into a
+        # failure so the caller keeps a once-only reminder job alive to retry.
+        if not self._matrix.send_text(room_id, plain, html):
+            raise RuntimeError(f"failed to send reminder to room {room_id}")

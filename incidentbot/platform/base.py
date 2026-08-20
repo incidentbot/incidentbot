@@ -106,3 +106,8 @@ class PlatformAdapter(ABC):
     @abstractmethod
     def post_phare_prompt(self, room_id: str) -> None:
         ...
+
+    @abstractmethod
+    def post_reminder(self, room_id: str, reminder: Any, slug: str) -> None:
+        """Post a configured reminder to room."""
+        ...

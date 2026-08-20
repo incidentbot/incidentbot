@@ -1,3 +1,4 @@
+from html import escape
 from incidentbot.configuration.settings import settings
 from incidentbot.logging import logger
 from incidentbot.matrix.messages import MatrixMessages
@@ -49,8 +50,9 @@ async def handle_status(room_id: str, client) -> None:
             f"  {inc.slug} | {inc.severity.upper()} | {inc.status.title()} — {inc.description}"
         )
         lines_html.append(
-            f'<li><a href="{room_link}">{inc.slug}</a> '
-            f"| {inc.severity.upper()} | {inc.status.title()} — {inc.description}</li>"
+            f'<li><a href="{escape(room_link)}">{escape(inc.slug)}</a> '
+            f"| {escape(inc.severity.upper())} | {escape(inc.status.title())} "
+            f"— {escape(inc.description)}</li>"
         )
     lines_html.append("</ul>")
     await client.send_text_async(room_id, "\n".join(lines_plain), "".join(lines_html))
