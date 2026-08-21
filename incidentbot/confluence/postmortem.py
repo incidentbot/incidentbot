@@ -1,5 +1,8 @@
 import datetime
+import mimetypes
+import re
 import uuid
+from pathlib import Path
 
 from incidentbot.configuration.settings import settings
 from incidentbot.confluence.api import ConfluenceApi
@@ -176,25 +179,55 @@ class IncidentPostmortem:
 
         base = f'<table data-table-width="760" data-layout="default" ac:local-id="{str(uuid.uuid4())}"><tbody><tr><th><p><strong>Timestamp</strong></p></th><th><p><strong>Event</strong></p></th></tr>'
         all_items_formatted = ""
+        existing_attachments = self.__get_existing_attachment_names(
+            created_page_id
+        )
         for item in self.timeline:
             if item.image is not None:
-                try:
-                    # Attach content to document
-                    self.exec.attach_content(
-                        comment=item.title,
-                        content=item.image,
-                        content_type=item.mimetype,
-                        name=item.title,
-                        page_id=created_page_id,
-                        space=settings.integrations.atlassian.confluence.space,
-                        title=item.title,
-                    )
-                except Exception as error:
-                    logger.exception(
-                        "error attaching file to postmortem", title=item.title, error=error
-                    )
+                attachment_name = self.__build_image_attachment_name(item)
+                legacy_attachment_name = item.title or attachment_name
+                attachment_name_to_render = attachment_name
 
-                all_items_formatted += f'<tr><td><p>{item.created_at}</p></td><td><p /><ac:image ac:align="center" ac:layout="center" ac:alt="{item.title}"><ri:attachment ri:filename="{item.title}" ri:version-at-save="1" /></ac:image><p /></td></tr>'
+                if attachment_name in existing_attachments:
+                    pass
+                elif legacy_attachment_name in existing_attachments:
+                    # Compatibility for older postmortems that used raw item titles.
+                    attachment_name_to_render = legacy_attachment_name
+                else:
+                    try:
+                        # Attach content to document
+                        self.exec.attach_content(
+                            comment=item.title,
+                            content=item.image,
+                            content_type=item.mimetype,
+                            name=attachment_name,
+                            page_id=created_page_id,
+                            space=settings.integrations.atlassian.confluence.space,
+                            title=attachment_name,
+                        )
+                        existing_attachments.add(attachment_name)
+                    except Exception as error:
+                        logger.error(
+                            "error attaching file to postmortem",
+                            title=item.title,
+                            attachment=attachment_name,
+                            page_id=created_page_id,
+                            error=str(error),
+                        )
+                        all_items_formatted += (
+                            f"<tr><td><p>{item.created_at}</p></td>"
+                            + "<td><p>Image attachment failed to synchronize: "
+                            + f"{item.title}</p></td></tr>"
+                        )
+                        continue
+
+                all_items_formatted += (
+                    f"<tr><td><p>{item.created_at}</p></td>"
+                    + '<td><p /><ac:image ac:align="center" ac:layout="center" '
+                    + f'ac:alt="{item.title}"><ri:attachment ri:filename="'
+                    + f'{attachment_name_to_render}" ri:version-at-save="1" '
+                    + "/></ac:image><p /></td></tr>"
+                )
             else:
                 all_items_formatted += f"<tr><td><p>{item.created_at}</p></td><td><p>{item.text}</p></td></tr>"
         all_items_formatted += (
@@ -204,6 +237,75 @@ class IncidentPostmortem:
         base += "</tbody></table>"
 
         return base
+
+    def __build_image_attachment_name(self, item: IncidentEvent) -> str:
+        original_title = (item.title or "pinned-image").strip()
+        stem = Path(original_title).stem or "pinned-image"
+        stem = re.sub(r"[^A-Za-z0-9._-]+", "-", stem).strip("-.")
+        if not stem:
+            stem = "pinned-image"
+
+        suffix = ""
+        raw_suffix = Path(original_title).suffix.lower()
+        if raw_suffix and re.fullmatch(r"\.[a-z0-9]+", raw_suffix):
+            suffix = raw_suffix
+        elif item.mimetype:
+            guessed = mimetypes.guess_extension(item.mimetype)
+            if isinstance(guessed, str):
+                suffix = guessed.lower()
+
+        unique_source = item.message_ts or str(item.id) or "unknown"
+        unique_source = re.sub(r"[^A-Za-z0-9._-]+", "-", unique_source).strip(
+            "-"
+        )
+        if not unique_source:
+            unique_source = "unknown"
+
+        return f"{stem}-{unique_source}{suffix}"
+
+    def __get_existing_attachment_names(self, page_id: str) -> set[str]:
+        names: set[str] = set()
+        get_attachments = getattr(
+            self.exec, "get_attachments_from_content", None
+        )
+        if not callable(get_attachments):
+            return names
+
+        start = 0
+        limit = 250
+
+        while True:
+            try:
+                response = get_attachments(
+                    page_id=page_id, start=start, limit=limit
+                )
+            except TypeError:
+                response = get_attachments(page_id, start=start, limit=limit)
+            except Exception as error:
+                logger.error(
+                    "unable to list existing attachments for postmortem page",
+                    page_id=page_id,
+                    error=str(error),
+                )
+                return names
+
+            if not isinstance(response, dict):
+                return names
+
+            results = response.get("results")
+            if not isinstance(results, list):
+                return names
+
+            for entry in results:
+                if not isinstance(entry, dict):
+                    continue
+                title = entry.get("title")
+                if isinstance(title, str) and title:
+                    names.add(title)
+
+            if len(results) < limit:
+                return names
+            start += limit
 
     def __get_duration(self) -> str:
         duration = datetime.datetime.now() - self.incident.created_at
