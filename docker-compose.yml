@@ -1,19 +1,32 @@
 services:
   db:
-    image: postgres:17
+    image: postgres:${COMPOSE_POSTGRES_IMAGE_TAG:-17}
     command:
-      ['postgres', '-c', 'log_statement=all', '-c', 'log_destination=stderr']
+      [
+        'postgres',
+        '-p',
+        '${COMPOSE_POSTGRES_PORT:-5432}',
+        '-c',
+        'log_statement=all',
+        '-c',
+        'log_destination=stderr',
+      ]
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready', '-d', 'incident_bot']
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${COMPOSE_POSTGRES_USER:-incident_bot} -d ${COMPOSE_POSTGRES_DB:-incident_bot} -p ${COMPOSE_POSTGRES_PORT:-5432}',
+        ]
       interval: 15s
       timeout: 10s
       retries: 10
     hostname: db
     environment:
-      POSTGRES_PASSWORD: 'somepassword'
-      POSTGRES_USER: 'incident_bot'
+      POSTGRES_DB: ${COMPOSE_POSTGRES_DB:-incident_bot}
+      POSTGRES_PASSWORD: ${COMPOSE_POSTGRES_PASSWORD:-somepassword}
+      POSTGRES_USER: ${COMPOSE_POSTGRES_USER:-incident_bot}
     ports:
-      - 5432:5432
+      - ${COMPOSE_POSTGRES_PORT:-5432}:${COMPOSE_POSTGRES_PORT:-5432}
     networks:
       - inc_bot_network
   bot:
@@ -28,11 +41,11 @@ services:
       SLACK_APP_TOKEN: ''
       SLACK_BOT_TOKEN: ''
       SLACK_USER_TOKEN: ''
-      POSTGRES_HOST: db
-      POSTGRES_DB: incident_bot
-      POSTGRES_USER: incident_bot
-      POSTGRES_PASSWORD: somepassword
-      POSTGRES_PORT: 5432
+      POSTGRES_HOST: ${COMPOSE_POSTGRES_HOST:-db}
+      POSTGRES_DB: ${COMPOSE_POSTGRES_DB:-incident_bot}
+      POSTGRES_USER: ${COMPOSE_POSTGRES_USER:-incident_bot}
+      POSTGRES_PASSWORD: ${COMPOSE_POSTGRES_PASSWORD:-somepassword}
+      POSTGRES_PORT: ${COMPOSE_POSTGRES_PORT:-5432}
       ENABLE_API_DOCS: 'true'
       # PAGERDUTY_API_TOKEN: ''
       # PAGERDUTY_API_USERNAME: ''
@@ -46,7 +59,7 @@ services:
       # ZOOM_CLIENT_SECRET: ''
     ports:
       - target: 3000
-        published: 3000
+        published: ${COMPOSE_API_PORT:-3000}
         protocol: tcp
         mode: host
     volumes:
