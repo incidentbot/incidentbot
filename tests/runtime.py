@@ -65,7 +65,7 @@ def load_module(
         import sys as _sys
         # Snapshot sys.modules before importing so we can undo side-effects.
         _before = set(_sys.modules.keys())
-        _sys.modules.pop(module_path, None)
+        _original = _sys.modules.pop(module_path, None)
         module = importlib.import_module(module_path)
         result = importlib.reload(module)
         _after = set(_sys.modules.keys())
@@ -75,4 +75,9 @@ def load_module(
     import sys as _sys
     for _key in _after - _before:
         _sys.modules.pop(_key, None)
+    # If the target module was already imported before this load, put the
+    # original back so string-based patch() targets in other test files keep
+    # resolving to the module object they imported from.
+    if _original is not None:
+        _sys.modules[module_path] = _original
     return result

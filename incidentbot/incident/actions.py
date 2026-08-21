@@ -669,6 +669,13 @@ async def generate_postmortem(channel_id: str) -> str | None:
         slack_web_client.chat_postMessage(channel=channel_id, text=err_msg)
         return None
 
+    if not _is_final_status(incident.status):
+        slack_web_client.chat_postMessage(
+            channel=channel_id,
+            text="Postmortems can only be generated after the incident is resolved.",
+        )
+        return None
+
     backfill_result = _backfill_pinned_content_from_channel(incident)
     if backfill_result["events_created"] > 0:
         EventLogHandler.create(
