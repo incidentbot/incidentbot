@@ -46,6 +46,7 @@ class Conditions(BaseModel):
     severity_is: list[str] | None = None
     status_is: list[str] | None = None
     status_is_final: bool = False
+    is_security_incident: bool | None = None
 
 
 class ReminderAction(BaseModel):

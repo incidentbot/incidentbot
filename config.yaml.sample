@@ -182,6 +182,7 @@ options:
 #     status_is           — only fire if incident status is in this list
 #     status_is_final     — only fire when the incident is in a terminal status
 #     no_roles_claimed    — only fire when no participant has claimed a role yet
+#     is_security_incident — only fire if it's a security incident
 #   actions           — interactive buttons shown on the reminder message
 #     send_update         — opens the status update modal
 #     snooze              — reschedules the reminder; provide an intervals list (minutes)
@@ -222,7 +223,7 @@ reminders:
 #   on_final_status   — incident reaches a terminal status
 #
 # Conditions (same as reminders — all must be true to fire):
-#   severity_is, status_is, status_is_final, no_roles_claimed
+#   severity_is, status_is, status_is_final, no_roles_claimed, is_security_incident
 #
 # Action types:
 #   invite_group    — invite a Slack user group into the incident channel
@@ -249,6 +250,26 @@ automations: []
 #       - type: page_pagerduty
 #         escalation_policy: PXXXXXX
 #         priority: high
+#
+#   # Route responders by incident type: security incidents go to the security
+#   # team, everything else to the on-call rotation. Security incident channels
+#   # are private, so keeping the wider on-call group out of them is usually the
+#   # point — omitting the condition entirely would invite both groups.
+#   - id: standard_response_team
+#     trigger: on_open
+#     conditions:
+#       is_security_incident: false
+#     actions:
+#       - type: invite_group
+#         name: sre-oncall
+#
+#   - id: security_response_team
+#     trigger: on_open
+#     conditions:
+#       is_security_incident: true
+#     actions:
+#       - type: invite_group
+#         name: security-team
 #
 #   # Remind responders to update the status page for sev1/sev2
 #   - id: status_page_nudge
