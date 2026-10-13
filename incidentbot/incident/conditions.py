@@ -24,6 +24,12 @@ def evaluate(conditions: Conditions | None, record) -> bool:
         if record.status not in final_statuses:
             return False
 
+    if (
+        conditions.is_security_incident is not None
+        and bool(record.is_security_incident) != conditions.is_security_incident
+    ):
+        return False
+
     if conditions.no_roles_claimed:
         participants = IncidentDatabaseInterface.list_participants(record)
         if participants:

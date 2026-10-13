@@ -21,10 +21,16 @@ from incidentbot.incident.conditions import evaluate
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 
-def _make_record(severity="sev2", status="investigating", participants=None):
+def _make_record(
+    severity="sev2",
+    status="investigating",
+    participants=None,
+    is_security_incident=None,
+):
     record = MagicMock()
     record.severity = severity
     record.status = status
+    record.is_security_incident = is_security_incident
     record.slug = "inc-test"
     record.channel_id = "C123"
     record.channel_name = "inc-test"
@@ -104,6 +110,38 @@ class TestEvaluate:
             mock_db.list_participants.return_value = [MagicMock()]
             assert evaluate(cond, record) is False
 
+    def test_is_security_incident_true_matches_only_security(self):
+        cond = Conditions(is_security_incident=True)
+        assert evaluate(cond, _make_record(is_security_incident=True)) is True
+        assert evaluate(cond, _make_record(is_security_incident=False)) is False
+
+    def test_is_security_incident_false_matches_only_non_security(self):
+        cond = Conditions(is_security_incident=False)
+        assert evaluate(cond, _make_record(is_security_incident=False)) is True
+        assert evaluate(cond, _make_record(is_security_incident=True)) is False
+
+    def test_is_security_incident_treats_null_as_non_security(self):
+        # Incidents predating the flag store NULL, not False.
+        assert (
+            evaluate(
+                Conditions(is_security_incident=False),
+                _make_record(is_security_incident=None),
+            )
+            is True
+        )
+        assert (
+            evaluate(
+                Conditions(is_security_incident=True),
+                _make_record(is_security_incident=None),
+            )
+            is False
+        )
+
+    def test_is_security_incident_omitted_matches_both(self):
+        cond = Conditions(severity_is=["sev2"])
+        assert evaluate(cond, _make_record(is_security_incident=True)) is True
+        assert evaluate(cond, _make_record(is_security_incident=False)) is True
+
     def test_multiple_conditions_all_must_pass(self):
         cond = Conditions(severity_is=["sev1"], status_is=["investigating"])
         assert evaluate(cond, _make_record(severity="sev1", status="investigating")) is True
@@ -170,6 +208,35 @@ class TestAutomationSchema:
         )
         assert a.conditions.severity_is == ["sev1"]
         assert a.actions[0].escalation_policy == "pol-123"
+
+
+class TestSecurityIncidentRouting:
+    """The two-automation split that routes security vs. standard incidents."""
+
+    def test_security_and_standard_automations_are_mutually_exclusive(self):
+        standard = Automation(
+            id="standard_response_team",
+            trigger="on_open",
+            conditions=Conditions(is_security_incident=False),
+            actions=[AutomationAction(type="invite_group", name="sre-oncall")],
+        )
+        security = Automation(
+            id="security_response_team",
+            trigger="on_open",
+            conditions=Conditions(is_security_incident=True),
+            actions=[AutomationAction(type="invite_group", name="security-team")],
+        )
+
+        sec_record = _make_record(is_security_incident=True)
+        std_record = _make_record(is_security_incident=False)
+
+        assert evaluate(standard.conditions, std_record) is True
+        assert evaluate(standard.conditions, sec_record) is False
+        assert evaluate(security.conditions, sec_record) is True
+        assert evaluate(security.conditions, std_record) is False
+
+    def test_condition_defaults_to_none_on_schema(self):
+        assert Conditions().is_security_incident is None
 
 
 class TestJobsSchema:
