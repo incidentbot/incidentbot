@@ -525,41 +525,14 @@ def reaction_added(event, say):
                     if settings.enable_pinned_images:
                         for file in message["files"]:
                             if "image" in file["mimetype"]:
-                                if not file["public_url_shared"]:
-                                    # Make the attachment public temporarily
-                                    try:
-                                        slack_web_client.files_sharedPublicURL(
-                                            file=file["id"],
-                                            token=settings.SLACK_USER_TOKEN,
-                                        )
-                                    except SlackApiError as error:
-                                        logger.exception(
-                                            "error preparing pinned file for copy", error=error
-                                        )
-
-                                # Copy the attachment into the database
-                                pub_secret = file["permalink_public"].split(
-                                    "-"
-                                )[3]
-
                                 response = requests.get(
                                     file["url_private"],
                                     headers={
                                         "Authorization": f"Bearer {settings.SLACK_BOT_TOKEN}"
                                     },
-                                    params={"pub_secret": pub_secret},
+                                    timeout=(5, 30),
                                 )
-
-                                # Revoke public access
-                                try:
-                                    slack_web_client.files_revokePublicURL(
-                                        file=file["id"],
-                                        token=settings.SLACK_USER_TOKEN,
-                                    )
-                                except SlackApiError as error:
-                                    logger.exception(
-                                        "error revoking public url for pinned file", error=error
-                                    )
+                                response.raise_for_status()
 
                                 try:
                                     result = EventLogHandler.create(
