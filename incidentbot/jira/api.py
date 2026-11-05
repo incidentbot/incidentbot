@@ -8,7 +8,11 @@ from incidentbot.logging import logger
 class JiraApi:
     def __init__(self):
         self.jira = Jira(
-            url=settings.ATLASSIAN_API_URL,
+            url=(
+                f"https://api.atlassian.com/ex/jira/{settings.ATLASSIAN_CLOUD_ID}"
+                if settings.ATLASSIAN_CLOUD_ID
+                else settings.ATLASSIAN_API_URL
+            ),
             username=settings.ATLASSIAN_API_USERNAME,
             password=settings.ATLASSIAN_API_TOKEN,
             cloud=True,

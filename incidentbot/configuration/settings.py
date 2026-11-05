@@ -1,6 +1,7 @@
 import os
 import secrets
 from typing import Literal
+from uuid import UUID
 
 from pydantic import computed_field, Field, model_validator
 from pydantic_settings import (
@@ -130,6 +131,7 @@ class Settings(BaseSettings):
     ATLASSIAN_API_URL: str | None = None
     ATLASSIAN_API_USERNAME: str | None = None
     ATLASSIAN_API_TOKEN: str | None = None
+    ATLASSIAN_CLOUD_ID: UUID | None = None
 
     PAGERDUTY_API_TOKEN: str | None = None
     PAGERDUTY_API_USERNAME: str | None = None
