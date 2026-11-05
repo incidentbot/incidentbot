@@ -1,11 +1,11 @@
 import asyncio
 import re
-import requests
 import slack_sdk
 
 from incidentbot.configuration.settings import settings
 from incidentbot.version import APP_VERSION
 from incidentbot.incident.actions import (
+    _download_pinned_image,
     archive_incident_channel,
     export_chat_logs,
     join_incident_as_role,
@@ -525,18 +525,17 @@ def reaction_added(event, say):
                     if settings.enable_pinned_images:
                         for file in message["files"]:
                             if "image" in file["mimetype"]:
-                                response = requests.get(
-                                    file["url_private"],
-                                    headers={
-                                        "Authorization": f"Bearer {settings.SLACK_BOT_TOKEN}"
-                                    },
-                                    timeout=(5, 30),
-                                )
-                                response.raise_for_status()
+                                content = _download_pinned_image(file)
+                                if content is None:
+                                    say(
+                                        channel=channel_id,
+                                        text=f":wave: I was unable to pin image {file.get('name') or file.get('title') or 'unknown'}. Please try again.",
+                                    )
+                                    continue
 
                                 try:
                                     result = EventLogHandler.create(
-                                        image=response.content,
+                                        image=content,
                                         incident_id=incident.id,
                                         incident_slug=incident.slug,
                                         message_ts=message["ts"],
