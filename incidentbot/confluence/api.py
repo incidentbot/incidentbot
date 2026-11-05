@@ -1,5 +1,6 @@
 from atlassian import Confluence
 from atlassian.errors import ApiError
+from incidentbot.atlassian_auth import client_auth
 from incidentbot.configuration.settings import settings
 from incidentbot.logging import logger
 from pydantic import BaseModel
@@ -25,9 +26,8 @@ class ConfluenceApi:
                 if settings.ATLASSIAN_CLOUD_ID
                 else settings.ATLASSIAN_API_URL
             ),
-            username=settings.ATLASSIAN_API_USERNAME,
-            password=settings.ATLASSIAN_API_TOKEN,
             cloud=True,
+            **client_auth(settings),
         )
 
     @property
