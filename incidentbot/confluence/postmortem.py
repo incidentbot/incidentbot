@@ -207,7 +207,7 @@ class IncidentPostmortem:
 
     def __get_duration(self) -> str:
         duration = datetime.datetime.now() - self.incident.created_at
-        seconds = duration.seconds
+        seconds = int(duration.total_seconds())
         hours = seconds // 3600
         minutes = (seconds // 60) % 60
 
