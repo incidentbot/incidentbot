@@ -20,7 +20,11 @@ class TemplateResponse(BaseModel):
 class ConfluenceApi:
     def __init__(self):
         self.confluence = Confluence(
-            url=settings.ATLASSIAN_API_URL,
+            url=(
+                f"https://api.atlassian.com/ex/confluence/{settings.ATLASSIAN_CLOUD_ID}/wiki"
+                if settings.ATLASSIAN_CLOUD_ID
+                else settings.ATLASSIAN_API_URL
+            ),
             username=settings.ATLASSIAN_API_USERNAME,
             password=settings.ATLASSIAN_API_TOKEN,
             cloud=True,
