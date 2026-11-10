@@ -1,11 +1,11 @@
 import asyncio
 import re
-import requests
 import slack_sdk
 
 from incidentbot.configuration.settings import settings
 from incidentbot.version import APP_VERSION
 from incidentbot.incident.actions import (
+    _download_pinned_image,
     archive_incident_channel,
     export_chat_logs,
     join_incident_as_role,
@@ -525,45 +525,17 @@ def reaction_added(event, say):
                     if settings.enable_pinned_images:
                         for file in message["files"]:
                             if "image" in file["mimetype"]:
-                                if not file["public_url_shared"]:
-                                    # Make the attachment public temporarily
-                                    try:
-                                        slack_web_client.files_sharedPublicURL(
-                                            file=file["id"],
-                                            token=settings.SLACK_USER_TOKEN,
-                                        )
-                                    except SlackApiError as error:
-                                        logger.exception(
-                                            "error preparing pinned file for copy", error=error
-                                        )
-
-                                # Copy the attachment into the database
-                                pub_secret = file["permalink_public"].split(
-                                    "-"
-                                )[3]
-
-                                response = requests.get(
-                                    file["url_private"],
-                                    headers={
-                                        "Authorization": f"Bearer {settings.SLACK_BOT_TOKEN}"
-                                    },
-                                    params={"pub_secret": pub_secret},
-                                )
-
-                                # Revoke public access
-                                try:
-                                    slack_web_client.files_revokePublicURL(
-                                        file=file["id"],
-                                        token=settings.SLACK_USER_TOKEN,
+                                content = _download_pinned_image(file)
+                                if content is None:
+                                    say(
+                                        channel=channel_id,
+                                        text=f":wave: I was unable to pin image {file.get('name') or file.get('title') or 'unknown'}. Please try again.",
                                     )
-                                except SlackApiError as error:
-                                    logger.exception(
-                                        "error revoking public url for pinned file", error=error
-                                    )
+                                    continue
 
                                 try:
                                     result = EventLogHandler.create(
-                                        image=response.content,
+                                        image=content,
                                         incident_id=incident.id,
                                         incident_slug=incident.slug,
                                         message_ts=message["ts"],

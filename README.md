@@ -28,7 +28,9 @@ An incident management framework centralized around a ChatOps bot to allow your 
 
 ## Features
 
-- Supports **Slack** and **Matrix** as chat platforms
+- Supports **Slack** and When `enable_pinned_images` is enabled, IncidentBot copies captured image attachments into its incident timeline using the bot token. The bot needs `files:read` and access to the source file. Capture does not enable or revoke public sharing.
+
+**Matrix** as chat platforms
 - Organize your efforts into channels to coordinate incident response
 - Easy to read messages that get to the point without a ton of visual distractions
 - Completely customizable status, severity, and role definitions to control all stages of incident response

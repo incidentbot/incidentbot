@@ -255,47 +255,17 @@ def _download_pinned_image(file: dict) -> bytes | None:
         logger.error("pinned file is missing required metadata", file_name=file_name)
         return None
 
-    made_public = False
-    if not file.get("public_url_shared") and getattr(settings, "SLACK_USER_TOKEN", None):
-        try:
-            slack_web_client.files_sharedPublicURL(
-                file=file_id,
-                token=settings.SLACK_USER_TOKEN,
-            )
-            made_public = True
-        except SlackApiError as error:
-            logger.exception("error preparing pinned file for copy", file_name=file_name, error=error)
-
     try:
-        params = None
-        permalink_public = file.get("permalink_public")
-        if isinstance(permalink_public, str):
-            parts = permalink_public.split("-")
-            if len(parts) > 3:
-                params = {"pub_secret": parts[3]}
-
         response = requests.get(
             url_private,
             headers={"Authorization": f"Bearer {settings.SLACK_BOT_TOKEN}"},
-            params=params,
-            timeout=30,
+            timeout=(5, 30),
         )
         response.raise_for_status()
         return response.content
     except Exception as error:
         logger.exception("error downloading pinned file", file_name=file_name, error=error)
         return None
-    finally:
-        if made_public:
-            try:
-                slack_web_client.files_revokePublicURL(
-                    file=file_id,
-                    token=settings.SLACK_USER_TOKEN,
-                )
-            except SlackApiError as error:
-                logger.exception(
-                    "error revoking public url for pinned file", file_name=file_name, error=error
-                )
 
 
 def _upsert_pinned_message_event(
