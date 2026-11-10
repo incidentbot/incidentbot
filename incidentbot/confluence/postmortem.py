@@ -206,8 +206,9 @@ class IncidentPostmortem:
         return base
 
     def __get_duration(self) -> str:
+        """Format elapsed time as total hours and remaining minutes."""
         duration = datetime.datetime.now() - self.incident.created_at
-        seconds = duration.seconds
+        seconds = int(duration.total_seconds())
         hours = seconds // 3600
         minutes = (seconds // 60) % 60
 
