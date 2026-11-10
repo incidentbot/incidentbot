@@ -29,7 +29,7 @@ class IncidentPostmortem:
         self.title = title
 
         self.confluence = ConfluenceApi()
-        self.exec = self.confluence.api
+        self.exec = self.confluence
 
     def create(self) -> str | None:
         """
@@ -92,25 +92,13 @@ class IncidentPostmortem:
                     space=self.space, title=self.parent_page
                 ):
                     try:
-                        self.exec.create_page(
-                            self.space,
-                            self.title,
-                            html,
-                            parent_id=parent_page_id,
-                            type="page",
-                            representation="storage",
-                            editor="v2",
+                        created_page = self.exec.create_page(
+                            self.title, html, parent_id=parent_page_id
                         )
-                        created_page_id = self.exec.get_page_id(
-                            self.space, self.title
-                        )
-                        created_page_info = self.exec.get_page_by_id(
-                            page_id=created_page_id
-                        )
-                        url = (
-                            created_page_info["_links"]["base"]
-                            + created_page_info["_links"]["webui"]
-                        )
+                        created_page_id = created_page["id"]
+                        webui = created_page["_links"]["webui"]
+                        site = settings.ATLASSIAN_API_URL.rstrip("/").removesuffix("/wiki")
+                        url = site + "/wiki/" + webui.removeprefix("/wiki/").lstrip("/")
                     except HTTPError as error:
                         logger.exception(
                             "error creating postmortem page", error=error
@@ -120,7 +108,7 @@ class IncidentPostmortem:
                     try:
                         # Replace timeline tag if one exists
                         page = self.exec.get_page_by_id(
-                            created_page_id, "body.storage"
+                            created_page_id
                         )
                         html = page.get("body").get("storage").get("value")
                         html = html.replace(
@@ -128,14 +116,7 @@ class IncidentPostmortem:
                             self.__generate_timeline(created_page_id),
                         )
 
-                        self.exec.update_page(
-                            created_page_id,
-                            page.get("title"),
-                            html,
-                            parent_id=parent_page_id,
-                            type="page",
-                            representation="storage",
-                        )
+                        self.exec.update_page(page, html)
 
                         return url
                     except HTTPError as error:
@@ -186,8 +167,6 @@ class IncidentPostmortem:
                         content_type=item.mimetype,
                         name=item.title,
                         page_id=created_page_id,
-                        space=settings.integrations.atlassian.confluence.space,
-                        title=item.title,
                     )
                 except Exception as error:
                     logger.exception(
