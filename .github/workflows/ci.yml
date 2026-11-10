@@ -15,7 +15,7 @@ jobs:
   # ── Lint ────────────────────────────────────────────────────────────────────
   lint:
     name: Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
@@ -45,7 +45,7 @@ jobs:
   # ── Test ────────────────────────────────────────────────────────────────────
   test:
     name: Test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     services:
       postgres:
