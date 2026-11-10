@@ -59,6 +59,14 @@ Interested in a web interface to use with Incident Bot? Check out the console pr
 
 Full setup documentation is available [here](https://docs.incidentbot.io/installation/).
 
+### Atlassian credentials
+
+Set `ATLASSIAN_API_URL` to your site URL, such as `https://example.atlassian.net`, and supply `ATLASSIAN_API_USERNAME` and `ATLASSIAN_API_TOKEN`.
+
+For scoped API tokens, also set `ATLASSIAN_CLOUD_ID` to the site's cloud ID. Find it at `https://<site>.atlassian.net/_edge/tenant_info`. IncidentBot routes Jira and Confluence API requests through `api.atlassian.com`; keep the site URL in `ATLASSIAN_API_URL` for browser links. Without a cloud ID, requests use the site URL.
+
+The credential's scopes and the account's project/space permissions must both allow the requested operations. See [.env.sample](.env.sample) for the environment variable names.
+
 ## Contributing
 
 Please see [contribution guidelines](https://github.com/incidentbot/incidentbot/blob/main/CONTRIBUTING.md) before opening a pull request.

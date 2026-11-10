@@ -107,10 +107,9 @@ class IncidentPostmortem:
                         created_page_info = self.exec.get_page_by_id(
                             page_id=created_page_id
                         )
-                        url = (
-                            created_page_info["_links"]["base"]
-                            + created_page_info["_links"]["webui"]
-                        )
+                        site = settings.ATLASSIAN_API_URL.rstrip("/").removesuffix("/wiki")
+                        webui = created_page_info["_links"]["webui"]
+                        url = site + "/wiki/" + webui.removeprefix("/wiki/").lstrip("/")
                     except HTTPError as error:
                         logger.exception(
                             "error creating postmortem page", error=error

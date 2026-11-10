@@ -64,3 +64,29 @@ def test_cloud_id_is_validated(monkeypatch):
     monkeypatch.setenv("ATLASSIAN_CLOUD_ID", "not-a-cloud-id")
     with pytest.raises(ValidationError, match="ATLASSIAN_CLOUD_ID"):
         Settings()
+
+
+@pytest.mark.parametrize("webui", ["/spaces/ENG/pages/456", "/wiki/spaces/ENG/pages/456"])
+def test_postmortem_browser_link_uses_site_url(atlassian_settings, monkeypatch, webui):
+    from datetime import datetime
+    from unittest.mock import MagicMock
+    from incidentbot.confluence import postmortem
+
+    api = MagicMock()
+    api.fetch_template.return_value = SimpleNamespace(body="<p>Incident log</p>")
+    api.api.get_page_by_id.return_value = {
+        "title": "Incident log", "body": {"storage": {"value": "<p>Incident log</p>"}},
+        "_links": {"base": f"https://api.atlassian.com/ex/confluence/{CLOUD_ID}/wiki", "webui": webui},
+    }
+    atlassian_settings.integrations = SimpleNamespace(atlassian=SimpleNamespace(confluence=SimpleNamespace(
+        parent="Incidents", space="ENG", template_id=123,
+    )))
+    monkeypatch.setattr(postmortem, "settings", atlassian_settings)
+    monkeypatch.setattr(postmortem, "ConfluenceApi", lambda: api)
+    incident = SimpleNamespace(
+        created_at=datetime(2026, 11, 10), updated_at=datetime(2026, 11, 10),
+        description="Review incident", impact="None", components="Test", severity="sev5",
+    )
+    assert postmortem.IncidentPostmortem(incident, [], [], "Incident log").create() == (
+        SITE_URL + "/wiki/spaces/ENG/pages/456"
+    )
