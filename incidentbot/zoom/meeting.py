@@ -6,7 +6,7 @@ from incidentbot.logging import logger
 
 
 class ZoomMeeting:
-    """Creates a Zoom meeting"""
+    """Create a meeting link, or return no link when Zoom is unavailable."""
 
     def __init__(self, incident: str):
         self.incident = incident
@@ -21,9 +21,7 @@ class ZoomMeeting:
     def url(self) -> str | None:
         if not self.token:
             return None
-        url = self.__create()
-
-        return url
+        return self.__create()
 
     def __create(self) -> str | None:
         meeting_details = {
