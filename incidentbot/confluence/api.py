@@ -76,7 +76,6 @@ class ConfluenceApi:
     def attach_content(
         self, content: bytes, name: str, content_type: str, page_id: str, comment: str
     ) -> dict:
-        # Upload directly to avoid the deprecated attachment-list endpoint.
         return self.confluence.put(
             f"rest/api/content/{page_id}/child/attachment",
             data={"comment": comment, "minorEdit": "true"},
@@ -84,7 +83,7 @@ class ConfluenceApi:
             files={"file": (name, content, content_type)},
         )
 
-    def fetch_template(self, template_id: int) -> TemplateResponse:
+    def fetch_template(self, template_id: int) -> TemplateResponse | None:
         """
         Fetches the body of a Confluence template
         """
@@ -117,7 +116,5 @@ class ConfluenceApi:
                 settings.integrations.atlassian.confluence.parent,
             )
         except Exception as error:
-            logger.exception("error authenticating to confluence", error=error)
-            logger.exception(
-                "please check confluence configuration and try again"
-            )
+            logger.exception("error verifying confluence parent page", error=error)
+            return False

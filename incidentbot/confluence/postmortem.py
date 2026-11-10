@@ -29,7 +29,6 @@ class IncidentPostmortem:
         self.title = title
 
         self.confluence = ConfluenceApi()
-        self.exec = self.confluence
 
     def create(self) -> str | None:
         """
@@ -37,7 +36,7 @@ class IncidentPostmortem:
         """
 
         try:
-            parent_page_id = self.exec.get_page_id(
+            parent_page_id = self.confluence.get_page_id(
                 self.space, self.parent_page
             )
             logger.info(
@@ -88,11 +87,9 @@ class IncidentPostmortem:
                 )
 
                 # Create postmortem doc
-                if self.exec.page_exists(
-                    space=self.space, title=self.parent_page
-                ):
+                if parent_page_id is not None:
                     try:
-                        created_page = self.exec.create_page(
+                        created_page = self.confluence.create_page(
                             self.title, html, parent_id=parent_page_id
                         )
                         created_page_id = created_page["id"]
@@ -107,7 +104,7 @@ class IncidentPostmortem:
 
                     try:
                         # Replace timeline tag if one exists
-                        page = self.exec.get_page_by_id(
+                        page = self.confluence.get_page_by_id(
                             created_page_id
                         )
                         html = page.get("body").get("storage").get("value")
@@ -116,7 +113,7 @@ class IncidentPostmortem:
                             self.__generate_timeline(created_page_id),
                         )
 
-                        self.exec.update_page(page, html)
+                        self.confluence.update_page(page, html)
 
                         return url
                     except HTTPError as error:
@@ -161,7 +158,7 @@ class IncidentPostmortem:
             if item.image is not None:
                 try:
                     # Attach content to document
-                    self.exec.attach_content(
+                    self.confluence.attach_content(
                         comment=item.title,
                         content=item.image,
                         content_type=item.mimetype,
