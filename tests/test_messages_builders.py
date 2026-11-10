@@ -454,3 +454,63 @@ class TestIncidentUpdateStatus:
     def test_header_present(self):
         result = IncidentUpdate.status(channel="C123", status="investigating")
         assert "header" in _block_types(result["blocks"])
+
+
+# ---------------------------------------------------------------------------
+# Digest channel notification — security incident notice
+# ---------------------------------------------------------------------------
+
+_DIGEST_KWARGS = dict(
+    channel_id="C123",
+    has_private_channel=True,
+    incident_components="Benefits",
+    incident_description="Compromised cert",
+    incident_impact="None",
+    incident_slug="inc-117",
+    severity="sev2",
+)
+
+
+def _digest_create(**extra):
+    return messages.IncidentChannelDigestNotification.create(
+        initial_status="investigating", **_DIGEST_KWARGS, **extra
+    )
+
+
+def _digest_update(**extra):
+    return messages.IncidentChannelDigestNotification.update(
+        status="resolved", **_DIGEST_KWARGS, **extra
+    )
+
+
+def _has_notice(blocks):
+    return any(b.get("block_id") == "digest_channel_security_notice" for b in blocks)
+
+
+class TestDigestSecurityNotice:
+    def test_create_includes_notice_for_security_incident(self):
+        blocks = _digest_create(is_security_incident=True)["blocks"]
+        assert _has_notice(blocks)
+        notice = next(b for b in blocks if b.get("block_id") == "digest_channel_security_notice")
+        assert notice["type"] == "section"
+        assert "Security Incident — Restricted Access" in notice["text"]["text"]
+        assert "Platform Engineering" in notice["text"]["text"]
+
+    def test_update_keeps_notice_for_security_incident(self):
+        assert _has_notice(_digest_update(is_security_incident=True))
+
+    def test_create_unchanged_for_non_security_incident(self):
+        default = _digest_create()["blocks"]
+        explicit = _digest_create(is_security_incident=False)["blocks"]
+        assert default == explicit
+        assert not _has_notice(default)
+
+    def test_update_unchanged_for_non_security_incident(self):
+        default = _digest_update()
+        assert default == _digest_update(is_security_incident=False)
+        assert not _has_notice(default)
+
+    def test_security_blocks_are_non_security_blocks_plus_notice(self):
+        base = _digest_create(is_security_incident=False)["blocks"]
+        sec = _digest_create(is_security_incident=True)["blocks"]
+        assert [b for b in sec if not _has_notice([b])] == base

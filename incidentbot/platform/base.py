@@ -81,6 +81,7 @@ class PlatformAdapter(ABC):
         initial_status: str,
         meeting_link: str | None,
         severity: str,
+        is_security_incident: bool = False,
     ) -> str:
         """Post notification to digest room. Returns event id."""
         ...

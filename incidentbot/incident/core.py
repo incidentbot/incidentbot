@@ -199,6 +199,7 @@ class Incident:
                     initial_status=record.status,
                     meeting_link=record.meeting_link,
                     severity=record.severity,
+                    is_security_incident=bool(record.is_security_incident),
                 )
 
                 record.digest_message_ts = digest_event_id

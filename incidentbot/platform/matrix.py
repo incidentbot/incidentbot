@@ -91,6 +91,7 @@ class MatrixAdapter(PlatformAdapter):
         initial_status: str,
         meeting_link: str | None,
         severity: str,
+        is_security_incident: bool = False,
     ) -> str:
         plain, html = MatrixMessages.digest_notification(
             channel_id=channel_id,

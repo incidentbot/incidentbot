@@ -1840,6 +1840,24 @@ Digest channel messages
 """
 
 
+SECURITY_INCIDENT_NOTICE_BLOCK: dict[str, Any] = {
+    "block_id": "digest_channel_security_notice",
+    "type": "section",
+    "text": {
+        "type": "mrkdwn",
+        "text": (
+            ":lock: *Security Incident — Restricted Access*\n"
+            "This incident has been classified as a security incident, so access to "
+            "its dedicated Slack channel is restricted by default.\n"
+            "If your involvement is required, an existing incident channel member "
+            "will invite you.\n"
+            "If you believe you should already have access, please contact a member "
+            "of the Platform Engineering team."
+        ),
+    },
+}
+
+
 def digest_base(
     channel_id: str,
     incident_components: str,
@@ -1848,6 +1866,7 @@ def digest_base(
     incident_slug: str,
     severity: str,
     status: str,
+    is_security_incident: bool = False,
 ) -> list[dict[str, Any]]:
     """
     Base formatting for the digest channel message
@@ -1863,7 +1882,7 @@ def digest_base(
 
     icon = settings.icons.get(settings.platform, {})
 
-    return [
+    blocks = [
         {
             "type": "header",
             "text": {
@@ -1933,6 +1952,11 @@ def digest_base(
         },
     ]
 
+    if is_security_incident:
+        blocks.append(SECURITY_INCIDENT_NOTICE_BLOCK)
+
+    return blocks
+
 
 class IncidentChannelDigestNotification:
     @staticmethod
@@ -1947,6 +1971,7 @@ class IncidentChannelDigestNotification:
         severity: str,
         meeting_link: str | None = None,
         postmortem_link: str | None = None,
+        is_security_incident: bool = False,
     ) -> dict[str, Any]:
         """
         Formats a digest channel notification for initial creation
@@ -1960,6 +1985,7 @@ class IncidentChannelDigestNotification:
             incident_slug=incident_slug,
             severity=severity,
             status=initial_status,
+            is_security_incident=is_security_incident,
         )
 
         action_buttons = []
@@ -2013,6 +2039,7 @@ class IncidentChannelDigestNotification:
         status: str,
         meeting_link: str | None = None,
         postmortem_link: str | None = None,
+        is_security_incident: bool = False,
     ) -> list[dict[str, Any]]:
         """
         Formats a digest channel notification for updates
@@ -2026,6 +2053,7 @@ class IncidentChannelDigestNotification:
             incident_slug=incident_slug,
             severity=severity,
             status=status,
+            is_security_incident=is_security_incident,
         )
 
         action_buttons = []

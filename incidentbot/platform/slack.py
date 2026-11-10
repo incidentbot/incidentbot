@@ -209,6 +209,7 @@ class SlackAdapter(PlatformAdapter):
         initial_status: str,
         meeting_link: str | None,
         severity: str,
+        is_security_incident: bool = False,
     ) -> str:
         import slack_sdk.errors
         from incidentbot.slack.messages import IncidentChannelDigestNotification
@@ -225,6 +226,7 @@ class SlackAdapter(PlatformAdapter):
                     initial_status=initial_status,
                     meeting_link=meeting_link,
                     severity=severity,
+                    is_security_incident=is_security_incident,
                 ),
                 text="A new incident has been declared!",
             )

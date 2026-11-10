@@ -646,6 +646,7 @@ def _send_postmortem_message(channel_id: str, postmortem_link: str) -> None:
             blocks=IncidentChannelDigestNotification.update(
                 channel_id=incident.channel_id,
                 has_private_channel=incident.has_private_channel,
+                is_security_incident=bool(incident.is_security_incident),
                 incident_components=incident.components,
                 incident_description=incident.description,
                 incident_impact=incident.impact,
@@ -696,6 +697,7 @@ async def generate_postmortem(channel_id: str) -> str | None:
             blocks=IncidentChannelDigestNotification.update(
                 channel_id=incident.channel_id,
                 has_private_channel=incident.has_private_channel,
+                is_security_incident=bool(incident.is_security_incident),
                 incident_components=incident.components,
                 incident_description=incident.description,
                 incident_impact=incident.impact,
@@ -1098,6 +1100,7 @@ async def set_description(channel_id: str, description: str, user: str = None):
                 blocks=IncidentChannelDigestNotification.update(
                     channel_id=incident.channel_id,
                     has_private_channel=incident.has_private_channel,
+                    is_security_incident=bool(incident.is_security_incident),
                     incident_components=incident.components,
                     incident_description=description,
                     incident_impact=incident.impact,
@@ -1246,6 +1249,7 @@ async def set_severity(channel_id: str, severity: str, user: User | str):
                 blocks=IncidentChannelDigestNotification.update(
                     channel_id=incident.channel_id,
                     has_private_channel=incident.has_private_channel,
+                    is_security_incident=bool(incident.is_security_incident),
                     incident_components=incident.components,
                     incident_description=incident.description,
                     incident_impact=incident.impact,
@@ -1458,6 +1462,7 @@ async def set_status(
                 blocks=IncidentChannelDigestNotification.update(
                     channel_id=incident.channel_id,
                     has_private_channel=incident.has_private_channel,
+                    is_security_incident=bool(incident.is_security_incident),
                     incident_components=incident.components,
                     incident_description=incident.description,
                     incident_impact=incident.impact,
