@@ -32,8 +32,8 @@ root_slash_command: /incidentbot
 
 # ── Pinned Content ────────────────────────────────────────────────────────────
 
-# Whether to pin images shared in incident channels to the channel's pin list.
-# Note: may not work on free Slack plans (files.sharedPublicURL restriction).
+# Copy image attachments into the incident timeline when capturing pinned content.
+# Downloads use SLACK_BOT_TOKEN with files:read and preserve file sharing settings.
 enable_pinned_images: true
 
 # Emoji reaction that triggers message pinning when added to a post.
