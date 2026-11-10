@@ -290,7 +290,7 @@ automations: []
   # atlassian:
 
     # Confluence — automatically create a postmortem page per incident
-    # Requires env vars: ATLASSIAN_API_URL, ATLASSIAN_API_USERNAME, ATLASSIAN_API_TOKEN
+    # Requires ATLASSIAN_API_URL and an authentication method from .env.sample.
     #
     # confluence:
     #   enabled: true
@@ -300,7 +300,7 @@ automations: []
     #   template_id: 12345   # Numeric ID of the Confluence postmortem template page
 
     # Jira — automatically create and sync issues for each incident
-    # Requires env vars: ATLASSIAN_API_URL, ATLASSIAN_API_USERNAME, ATLASSIAN_API_TOKEN
+    # Requires ATLASSIAN_API_URL and an authentication method from .env.sample.
     #
     # jira:
     #   enabled: true

@@ -24,6 +24,7 @@ An incident management framework centralized around a ChatOps bot to allow your 
   - [Features](#features)
   - [Quick Start](#quick-start)
     - [Atlassian credentials](#atlassian-credentials)
+      - [Service-account OAuth](#service-account-oauth)
   - [Contributing](#contributing)
   - [Feedback](#feedback)
 
@@ -67,6 +68,14 @@ Set `ATLASSIAN_API_URL` to your site URL, such as `https://example.atlassian.net
 For scoped API tokens, also set `ATLASSIAN_CLOUD_ID` to the site's cloud ID. Find it at `https://<site>.atlassian.net/_edge/tenant_info`. IncidentBot routes Jira and Confluence API requests through `api.atlassian.com`; keep the site URL in `ATLASSIAN_API_URL` for browser links. Without a cloud ID, requests use the site URL.
 
 The credential's scopes and the account's project/space permissions must both allow the requested operations. See [.env.sample](.env.sample) for the environment variable names.
+
+#### Service-account OAuth
+
+Create an [OAuth 2.0 credential for the service account](https://support.atlassian.com/user-management/docs/create-oauth-2-0-credential-for-service-accounts/). Set `ATLASSIAN_CLIENT_ID`, `ATLASSIAN_CLIENT_SECRET`, and `ATLASSIAN_CLOUD_ID`; keep `ATLASSIAN_API_URL` as the site URL.
+
+The client credential pair takes precedence over username/API-token authentication. IncidentBot obtains access tokens and renews them before expiry; do not put an access token in `ATLASSIAN_API_TOKEN`. Both Jira and Confluence use the same service-account credential and grants.
+
+Changing scopes requires a new credential. Replace both client fields together and restart the bot to load them. Keep the previous credential until the replacement works, then revoke it. Token renewal does not extend the lifetime of the client credential itself.
 
 ## Contributing
 
