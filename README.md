@@ -23,6 +23,7 @@ An incident management framework centralized around a ChatOps bot to allow your 
 - [Incident Bot](#incident-bot)
   - [Features](#features)
   - [Quick Start](#quick-start)
+    - [Atlassian credentials](#atlassian-credentials)
   - [Contributing](#contributing)
   - [Feedback](#feedback)
 
