@@ -290,6 +290,7 @@ automations: []
   # atlassian:
 
     # Confluence — automatically create a postmortem page per incident
+    # Template !ib-inject-duration uses total hours, e.g. 49h15m for a multi-day incident.
     # Requires env vars: ATLASSIAN_API_URL, ATLASSIAN_API_USERNAME, ATLASSIAN_API_TOKEN
     #
     # confluence:
