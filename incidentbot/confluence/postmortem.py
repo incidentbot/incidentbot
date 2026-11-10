@@ -29,7 +29,6 @@ class IncidentPostmortem:
         self.title = title
 
         self.confluence = ConfluenceApi()
-        self.exec = self.confluence.api
 
     def create(self) -> str | None:
         """
@@ -37,7 +36,7 @@ class IncidentPostmortem:
         """
 
         try:
-            parent_page_id = self.exec.get_page_id(
+            parent_page_id = self.confluence.get_page_id(
                 self.space, self.parent_page
             )
             logger.info(
@@ -88,29 +87,15 @@ class IncidentPostmortem:
                 )
 
                 # Create postmortem doc
-                if self.exec.page_exists(
-                    space=self.space, title=self.parent_page
-                ):
+                if parent_page_id is not None:
                     try:
-                        self.exec.create_page(
-                            self.space,
-                            self.title,
-                            html,
-                            parent_id=parent_page_id,
-                            type="page",
-                            representation="storage",
-                            editor="v2",
+                        created_page = self.confluence.create_page(
+                            self.title, html, parent_id=parent_page_id
                         )
-                        created_page_id = self.exec.get_page_id(
-                            self.space, self.title
-                        )
-                        created_page_info = self.exec.get_page_by_id(
-                            page_id=created_page_id
-                        )
-                        url = (
-                            created_page_info["_links"]["base"]
-                            + created_page_info["_links"]["webui"]
-                        )
+                        created_page_id = created_page["id"]
+                        webui = created_page["_links"]["webui"]
+                        site = settings.ATLASSIAN_API_URL.rstrip("/").removesuffix("/wiki")
+                        url = site + "/wiki/" + webui.removeprefix("/wiki/").lstrip("/")
                     except HTTPError as error:
                         logger.exception(
                             "error creating postmortem page", error=error
@@ -119,8 +104,8 @@ class IncidentPostmortem:
 
                     try:
                         # Replace timeline tag if one exists
-                        page = self.exec.get_page_by_id(
-                            created_page_id, "body.storage"
+                        page = self.confluence.get_page_by_id(
+                            created_page_id
                         )
                         html = page.get("body").get("storage").get("value")
                         html = html.replace(
@@ -128,14 +113,7 @@ class IncidentPostmortem:
                             self.__generate_timeline(created_page_id),
                         )
 
-                        self.exec.update_page(
-                            created_page_id,
-                            page.get("title"),
-                            html,
-                            parent_id=parent_page_id,
-                            type="page",
-                            representation="storage",
-                        )
+                        self.confluence.update_page(page, html)
 
                         return url
                     except HTTPError as error:
@@ -180,14 +158,12 @@ class IncidentPostmortem:
             if item.image is not None:
                 try:
                     # Attach content to document
-                    self.exec.attach_content(
+                    self.confluence.attach_content(
                         comment=item.title,
                         content=item.image,
                         content_type=item.mimetype,
                         name=item.title,
                         page_id=created_page_id,
-                        space=settings.integrations.atlassian.confluence.space,
-                        title=item.title,
                     )
                 except Exception as error:
                     logger.exception(

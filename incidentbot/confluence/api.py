@@ -30,7 +30,60 @@ class ConfluenceApi:
     def api(self) -> Confluence:
         return self.confluence
 
-    def fetch_template(self, template_id: int) -> TemplateResponse:
+    def get_page_id(self, space: str, title: str) -> str | None:
+        spaces = self.confluence.get("api/v2/spaces", params={"keys": space})["results"]
+        if not spaces:
+            return None
+        pages = self.confluence.get(
+            "api/v2/pages",
+            params={"space-id": spaces[0]["id"], "title": title, "status": "current"},
+        )["results"]
+        return pages[0]["id"] if pages else None
+
+    def page_exists(self, space: str, title: str) -> bool:
+        return self.get_page_id(space, title) is not None
+
+    def get_page_by_id(self, page_id: str) -> dict:
+        return self.confluence.get(
+            f"api/v2/pages/{page_id}", params={"body-format": "storage"}
+        )
+
+    def create_page(self, title: str, body: str, parent_id: str) -> dict:
+        parent = self.get_page_by_id(parent_id)
+        return self.confluence.post(
+            "api/v2/pages",
+            data={
+                "spaceId": parent["spaceId"],
+                "parentId": parent_id,
+                "status": "current",
+                "title": title,
+                "body": {"representation": "storage", "value": body},
+            },
+        )
+
+    def update_page(self, page: dict, body: str) -> dict:
+        return self.confluence.put(
+            f"api/v2/pages/{page['id']}",
+            data={
+                "id": page["id"],
+                "status": "current",
+                "title": page["title"],
+                "body": {"representation": "storage", "value": body},
+                "version": {"number": page["version"]["number"] + 1},
+            },
+        )
+
+    def attach_content(
+        self, content: bytes, name: str, content_type: str, page_id: str, comment: str
+    ) -> dict:
+        return self.confluence.put(
+            f"rest/api/content/{page_id}/child/attachment",
+            data={"comment": comment, "minorEdit": "true"},
+            headers={"X-Atlassian-Token": "nocheck", "Accept": "application/json"},
+            files={"file": (name, content, content_type)},
+        )
+
+    def fetch_template(self, template_id: int) -> TemplateResponse | None:
         """
         Fetches the body of a Confluence template
         """
@@ -58,12 +111,10 @@ class ConfluenceApi:
 
     def test(self) -> bool:
         try:
-            return self.confluence.page_exists(
+            return self.page_exists(
                 settings.integrations.atlassian.confluence.space,
                 settings.integrations.atlassian.confluence.parent,
             )
         except Exception as error:
-            logger.exception("error authenticating to confluence", error=error)
-            logger.exception(
-                "please check confluence configuration and try again"
-            )
+            logger.exception("error verifying confluence parent page", error=error)
+            return False

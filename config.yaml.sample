@@ -289,7 +289,8 @@ automations: []
 
   # atlassian:
 
-    # Confluence — automatically create a postmortem page per incident
+    # Confluence Cloud — create a postmortem page using a storage-format template
+    # Scoped credentials need read:space:confluence, read:page:confluence, write:page:confluence.
     # Requires env vars: ATLASSIAN_API_URL, ATLASSIAN_API_USERNAME, ATLASSIAN_API_TOKEN
     #
     # confluence:

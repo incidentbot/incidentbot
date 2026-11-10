@@ -23,6 +23,7 @@ An incident management framework centralized around a ChatOps bot to allow your 
 - [Incident Bot](#incident-bot)
   - [Features](#features)
   - [Quick Start](#quick-start)
+    - [Confluence Cloud](#confluence-cloud)
   - [Contributing](#contributing)
   - [Feedback](#feedback)
 
@@ -58,6 +59,14 @@ Interested in a web interface to use with Incident Bot? Check out the console pr
 - Configure and deploy the application using one of the methods described in the documentation, or however you choose. (There's a Docker image available.)
 
 Full setup documentation is available [here](https://docs.incidentbot.io/installation/).
+
+### Confluence Cloud
+
+Enable `integrations.atlassian.confluence` in your configuration, then set its space key, parent-page title, and template ID. Page operations use Confluence Cloud REST v2. The account needs access to the space and permission to create/edit pages and add attachments.
+
+Scoped credentials need `read:space:confluence`, `read:page:confluence`, and `write:page:confluence` for page operations. Retain the scopes needed to read templates and upload attachments. See the [page API](https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-page/) and [.env.sample](.env.sample) for authentication settings.
+
+For service-account credentials, changing scopes requires creating a replacement credential and restarting the bot with its new details. Existing scopes for the older content endpoints do not replace the v2 scopes above.
 
 ## Contributing
 
