@@ -1,6 +1,7 @@
 import os
 import secrets
 from typing import Literal
+from uuid import UUID
 
 from pydantic import computed_field, Field, model_validator
 from pydantic_settings import (
@@ -130,6 +131,9 @@ class Settings(BaseSettings):
     ATLASSIAN_API_URL: str | None = None
     ATLASSIAN_API_USERNAME: str | None = None
     ATLASSIAN_API_TOKEN: str | None = None
+    ATLASSIAN_CLOUD_ID: UUID | None = None
+    ATLASSIAN_CLIENT_ID: str | None = None
+    ATLASSIAN_CLIENT_SECRET: str | None = None
 
     PAGERDUTY_API_TOKEN: str | None = None
     PAGERDUTY_API_USERNAME: str | None = None
@@ -169,6 +173,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_ignore_empty=True,
+        hide_input_in_errors=True,
         extra="ignore",
         yaml_file=os.getenv("CONFIG_FILE_PATH", "config.yaml"),
     )
@@ -178,12 +183,21 @@ class Settings(BaseSettings):
             raise ValueError(f"The value of {var_name} cannot be empty.")
 
     def _check_required_integration_var(
-        self, var_name: str, value: str | None, integration: str
+        self, var_name: str, value: str | UUID | None, integration: str
     ) -> None:
         if not value:
             raise ValueError(
                 f"The value of {var_name} cannot be empty when enabling the {integration} integration."
             )
+
+    def _check_atlassian_auth(self, integration: str) -> None:
+        fields = (
+            ("ATLASSIAN_CLIENT_ID", "ATLASSIAN_CLIENT_SECRET", "ATLASSIAN_CLOUD_ID")
+            if self.ATLASSIAN_CLIENT_ID or self.ATLASSIAN_CLIENT_SECRET
+            else ("ATLASSIAN_API_USERNAME", "ATLASSIAN_API_TOKEN")
+        )
+        for field in fields:
+            self._check_required_integration_var(field, getattr(self, field), integration)
 
     def _resolve_matrix_settings(self) -> MatrixSettings | None:
         matrix_env_values = {
@@ -247,23 +261,13 @@ class Settings(BaseSettings):
                 self._check_required_integration_var(
                     "ATLASSIAN_API_URL", self.ATLASSIAN_API_URL, "Confluence"
                 )
-                self._check_required_integration_var(
-                    "ATLASSIAN_API_USERNAME", self.ATLASSIAN_API_USERNAME, "Confluence"
-                )
-                self._check_required_integration_var(
-                    "ATLASSIAN_API_TOKEN", self.ATLASSIAN_API_TOKEN, "Confluence"
-                )
+                self._check_atlassian_auth("Confluence")
 
             if atlassian and atlassian.jira and atlassian.jira.enabled:
                 self._check_required_integration_var(
                     "ATLASSIAN_API_URL", self.ATLASSIAN_API_URL, "Jira"
                 )
-                self._check_required_integration_var(
-                    "ATLASSIAN_API_USERNAME", self.ATLASSIAN_API_USERNAME, "Jira"
-                )
-                self._check_required_integration_var(
-                    "ATLASSIAN_API_TOKEN", self.ATLASSIAN_API_TOKEN, "Jira"
-                )
+                self._check_atlassian_auth("Jira")
 
             if atlassian and atlassian.statuspage and atlassian.statuspage.enabled:
                 self._check_required_integration_var(
