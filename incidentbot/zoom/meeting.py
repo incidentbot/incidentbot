@@ -6,24 +6,24 @@ from incidentbot.logging import logger
 
 
 class ZoomMeeting:
-    """Creates a Zoom meeting"""
+    """Create a meeting link, or return no link when Zoom is unavailable."""
 
     def __init__(self, incident: str):
         self.incident = incident
         self.endpoint = "https://api.zoom.us/v2"
         self.token = self.__generate_token()
         self.headers = {
-            "authorization": "Bearer " + self.token,
+            "authorization": f"Bearer {self.token}",
             "content-type": "application/json",
         }
 
     @property
-    def url(self) -> str:
-        url = self.__create()
+    def url(self) -> str | None:
+        if not self.token:
+            return None
+        return self.__create()
 
-        return url
-
-    def __create(self) -> str:
+    def __create(self) -> str | None:
         meeting_details = {
             "agenda": self.incident,
             "default_password": True,
@@ -46,17 +46,17 @@ class ZoomMeeting:
                 f"{self.endpoint}/users/me/meetings",
                 headers=self.headers,
                 data=json.dumps(meeting_details),
+                timeout=(5, 15),
             )
-            res_json = json.loads(res.text)
             if res.status_code != 201:
                 logger.error("error creating zoom meeting", status_code=res.status_code)
                 return None
 
-            return res_json["join_url"]
+            return res.json()["join_url"]
         except Exception as error:
             logger.exception("error creating zoom meeting", error=error)
 
-    def __generate_token(self) -> str:
+    def __generate_token(self) -> str | None:
         try:
             endpoint = "https://zoom.us/oauth/token"
             payload = {
@@ -69,11 +69,11 @@ class ZoomMeeting:
                     settings.ZOOM_CLIENT_ID, settings.ZOOM_CLIENT_SECRET
                 ),
                 params=payload,
+                timeout=(5, 15),
             )
-            if "access_token" in json.loads(res.text):
-                return json.loads(res.text)["access_token"]
-            else:
-                return None
+            res.raise_for_status()
+            token = res.json().get("access_token")
+            return token if isinstance(token, str) and token else None
         except Exception as error:
             logger.exception("error creating token for zoom api", error=error)
 

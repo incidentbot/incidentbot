@@ -271,7 +271,7 @@ automations: []
 # integrations:
 
   # ── Zoom ──────────────────────────────────────────────────────────────────
-  # Automatically creates a Zoom meeting when an incident is opened.
+  # Creates a Zoom meeting when an incident is opened; failures leave no meeting link.
   # Requires env vars: ZOOM_ACCOUNT_ID, ZOOM_CLIENT_ID, ZOOM_CLIENT_SECRET
   #
   # zoom:
