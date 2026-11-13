@@ -170,7 +170,7 @@ class PagerDutyInterface:
                     "/incidents", json=pagerduty_incident_data
                 )
 
-                if not response.ok:
+                if not response.is_success:
                     raise Exception(
                         f"Error creating PagerDuty incident: {response.json()}"
                     )
@@ -226,7 +226,7 @@ class PagerDutyInterface:
                 },
             )
 
-            if not response.ok:
+            if not response.is_success:
                 logger.error(
                     "error patching pagerduty incident", response=response.json()
                 )
